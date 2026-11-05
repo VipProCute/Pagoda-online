@@ -17,12 +17,12 @@ services:
       - key: FUNDS
         value: Tùy nhà chùa sử dụng
       - key: BANK_ID
-        sync: false
+        value: "970436"   # Vietcombank (mã BIN theo VietQR)
       - key: BANK_ACCOUNT
         sync: false
       - key: BANK_ACCOUNT_NAME
         sync: false
       - key: BANK_LABEL
-        sync: false
+        value: Vietcombank
       - key: SEPAY_API_KEY
         sync: false

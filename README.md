@@ -69,7 +69,7 @@ Mở http://localhost:3000. Muốn dùng file cấu hình: `cp .env.example .env
 
 1. Đăng nhập https://render.com bằng GitHub.
 2. Chọn **New → Blueprint**, chọn repo này. Render đọc `render.yaml` và tạo dịch vụ web.
-3. Điền các biến còn trống (`BANK_*`, `SEPAY_API_KEY` nếu dùng). `ADMIN_KEY` được tạo ngẫu nhiên, xem trong tab Environment.
+3. Điền các biến còn trống: `BANK_ACCOUNT` (số tài khoản), `BANK_ACCOUNT_NAME` (tên chủ tài khoản, viết hoa không dấu, ví dụ `NGUYEN VAN A`), `SEPAY_API_KEY` nếu dùng. Ngân hàng đã đặt sẵn là Vietcombank (`BANK_ID=970436`). `ADMIN_KEY` được tạo ngẫu nhiên, xem trong tab Environment.
 4. Đợi build xong, mở địa chỉ `https://chua-tam-an.onrender.com` (hoặc tên Render cấp).
 
 Lưu ý: gói miễn phí của Render ngủ sau 15 phút không có ai và không giữ file dữ liệu khi khởi động lại. Khi chạy thật, nâng lên gói trả phí và gắn **Disk** (đặt `DATA_FILE=/var/data/db.json`), hoặc dùng cách 2.

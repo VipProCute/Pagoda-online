@@ -426,6 +426,8 @@
     const on = !!(cfg && cfg.donation);
     $('#dnOff').hidden = on; $('#dnForm').hidden = !on; $('#dnQr').hidden = true; $('#dnDone').hidden = true; $('#dnWarn').hidden = true;
     if (on) {
+      const d = cfg.donation;
+      $('#dnSub').textContent = `Tiền chuyển thẳng vào tài khoản ${d.bank} ${d.account}${d.accountName ? ' (' + d.accountName + ')' : ''}. Website không giữ tiền.`;
       $('#dnFunds').innerHTML = cfg.donation.funds.map((f, i) => `<label class="opt"><input type="radio" name="fund" value="${f.id}"${i === 0 ? ' checked' : ''}><span><b></b></span></label>`).join('');
       $$('#dnFunds .opt b').forEach((b, i) => { b.textContent = cfg.donation.funds[i].name; });
       $('#dnName').value = myName;
