@@ -1,0 +1,21 @@
+{
+  "name": "chua-tam-an-online",
+  "version": "1.0.0",
+  "description": "Chùa online: chánh điện nhiều người, thắp nhang, tụng kinh chung, trò chuyện, cúng dường VietQR",
+  "main": "server.js",
+  "private": true,
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "check": "node --check server.js && node --check public/js/app.js && node --check public/js/hall.js && node --check public/js/audio.js && node --check public/js/chants.js && node --check public/js/lunar.js",
+    "start:env": "node --env-file=.env server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "UNLICENSED",
+  "dependencies": {
+    "express": "^5.1.0",
+    "socket.io": "^4.8.1"
+  }
+}

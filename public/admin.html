@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Quản trị · Chùa Tâm An</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  body { overflow: auto; display: block; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 20px 16px 60px; display: grid; gap: 18px; }
+  h1 { font-family: var(--font-display); font-size: 34px; margin: 0; }
+  h2 { font-family: var(--font-display); font-size: 24px; margin: 0 0 8px; }
+  .login { display: flex; gap: 8px; flex-wrap: wrap; max-width: 520px; }
+  .tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; }
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; min-width: 720px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 11.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); background: var(--surface-2); }
+  .st-pending { color: var(--gold-ink); } .st-confirmed { color: var(--jade); } .st-cancelled, .st-expired { color: var(--faint); }
+  .muted { color: var(--faint); }
+  .stats { display: flex; gap: 8px 18px; flex-wrap: wrap; font-size: 14px; }
+  .stats b { color: var(--gold-ink); }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 860px) { .cols { grid-template-columns: 1fr; } }
+  .item { border-bottom: 1px dashed var(--line); padding: 6px 0; display: flex; gap: 8px; justify-content: space-between; align-items: start; font-size: 13.5px; }
+  .item.hidden { opacity: .45; }
+  .item p { margin: 0; overflow-wrap: anywhere; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div><span class="eyebrow">Ban điều hành</span><h1>Quản trị chánh điện</h1></div>
+  <form class="login" id="login">
+    <label for="key" class="sr">Mã quản trị</label>
+    <input type="password" class="field" id="key" placeholder="Mã quản trị (ADMIN_KEY)" style="flex:1 1 240px">
+    <button class="btn primary" type="submit">Đăng nhập</button>
+    <p class="hint" style="width:100%">Sau khi đăng nhập, mở trang chính và vào chánh điện: bạn sẽ có huy hiệu Ban điều hành, được ẩn tin nhắn và dừng khóa tụng.</p>
+  </form>
+  <p class="warn" id="err" hidden></p>
+  <div id="app" hidden style="display:grid;gap:18px">
+    <section class="card">
+      <div class="stats" id="stats"></div>
+    </section>
+    <section class="card">
+      <h2>Thông báo đến chánh điện</h2>
+      <form class="row" id="announce"><input class="field" id="annText" maxlength="300" placeholder="Ví dụ: 20h tối nay tụng Bát Nhã, mời đại chúng tham dự."><button class="btn primary" type="submit">Gửi</button></form>
+    </section>
+    <section>
+      <h2>Cúng dường tịnh tài</h2>
+      <p class="hint">Lượt “chờ” là người đã tạo mã nhưng nhà chùa chưa thấy tiền. Nếu chưa bật SePay, đối chiếu sao kê rồi bấm Xác nhận.</p>
+      <div class="tbl"><table><thead><tr><th>Mã</th><th>Thời gian</th><th>Tên</th><th>Số tiền</th><th>Quỹ</th><th>Lời nhắn</th><th>Trạng thái</th><th></th></tr></thead><tbody id="dons"></tbody></table></div>
+    </section>
+    <div class="cols">
+      <section><h2>Tin nhắn gần đây</h2><div id="chat"></div></section>
+      <section><h2>Lời nguyện</h2><div id="prayers"></div></section>
+    </div>
+  </div>
+</div>
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+  const NUM = n => new Intl.NumberFormat('vi-VN').format(n || 0);
+  const t = ms => ms ? new Date(ms).toLocaleString('vi-VN') : '';
+  const ST = { pending: 'Chờ', confirmed: 'Đã nhận', cancelled: 'Đã hủy', expired: 'Hết hạn' };
+  let key = sessionStorage.getItem('ta-admin-key') || '';
+  const api = (path, method = 'GET', body) => fetch(path, { method, headers: { 'x-admin-key': key, 'content-type': 'application/json' }, body: body ? JSON.stringify(body) : undefined })
+    .then(async r => { const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || 'Lỗi ' + r.status); return j; });
+  const cell = (tr, text, cls) => { const td = document.createElement('td'); td.textContent = text; if (cls) td.className = cls; tr.appendChild(td); return td; };
+  function btn(label, fn, cls = 'btn small') { const b = document.createElement('button'); b.type = 'button'; b.className = cls; b.textContent = label; b.addEventListener('click', fn); return b; }
+  async function load() {
+    try {
+      const d = await api('/api/admin/summary');
+      $('#err').hidden = true; $('#app').hidden = false;
+      $('#stats').innerHTML = `<span>Đang có mặt: <b>${NUM(d.online)}</b></span><span>Nhang hôm nay: <b>${NUM(d.today.incense)}</b></span><span>Lượt vào hôm nay: <b>${NUM(d.today.visits)}</b></span><span>Tịnh tài: <b>${d.donationEnabled ? 'đang bật' : 'đang tắt'}</b></span>` +
+        d.funds.map(f => `<span>${f.name.replace(/[<>&]/g, '')}: <b>${NUM(f.raised)}đ</b></span>`).join('');
+      const tb = $('#dons'); tb.textContent = '';
+      d.donations.forEach(x => {
+        const tr = document.createElement('tr');
+        cell(tr, x.code, 'code'); cell(tr, t(x.createdAt)); cell(tr, x.name + (x.anon ? ' (ẩn danh)' : ''));
+        cell(tr, NUM(x.amount) + 'đ' + (x.hide ? ' (ẩn)' : '')); cell(tr, x.fundName); cell(tr, x.note || '');
+        cell(tr, ST[x.status] + (x.source ? ' · ' + x.source : ''), 'st-' + x.status);
+        const a = cell(tr, '');
+        if (x.status === 'pending') {
+          a.append(btn('Xác nhận', () => confirm2(x.code, 'confirm'), 'btn small gold'), ' ', btn('Hủy', () => confirm2(x.code, 'cancel')));
+        }
+        tb.appendChild(tr);
+      });
+      if (!d.donations.length) tb.innerHTML = '<tr><td colspan="8" class="muted">Chưa có lượt nào.</td></tr>';
+      const chat = $('#chat'); chat.textContent = '';
+      d.chat.filter(m => !m.sys).forEach(m => {
+        const it = document.createElement('div'); it.className = 'item' + (m.hidden ? ' hidden' : '');
+        const p = document.createElement('p'); p.textContent = `[${t(m.t)}] ${m.name}: ${m.text}` + (m.reports ? ` · ${m.reports} báo cáo` : '');
+        it.appendChild(p);
+        if (!m.hidden) it.appendChild(btn('Ẩn', () => api(`/api/admin/chat/${m.id}/hide`, 'POST').then(load)));
+        chat.appendChild(it);
+      });
+      const pr = $('#prayers'); pr.textContent = '';
+      d.prayers.forEach(m => {
+        const it = document.createElement('div'); it.className = 'item' + (m.hidden ? ' hidden' : '');
+        const p = document.createElement('p'); p.textContent = `[${m.kind}] ${m.name}: ${m.text} · tùy hỷ ${m.n}`;
+        it.appendChild(p);
+        if (!m.hidden) it.appendChild(btn('Ẩn', () => api(`/api/admin/prayers/${m.id}/hide`, 'POST').then(load)));
+        pr.appendChild(it);
+      });
+    } catch (e) { $('#err').textContent = e.message; $('#err').hidden = false; $('#app').hidden = true; }
+  }
+  function confirm2(code, action) { api(`/api/admin/donations/${code}/${action}`, 'POST').then(load).catch(e => alert(e.message)); }
+  $('#login').addEventListener('submit', e => {
+    e.preventDefault(); key = $('#key').value.trim();
+    sessionStorage.setItem('ta-admin-key', key);
+    try { localStorage.setItem('ta-admin', key); } catch (_) {}
+    load();
+  });
+  $('#announce').addEventListener('submit', e => {
+    e.preventDefault();
+    api('/api/admin/announce', 'POST', { text: $('#annText').value }).then(() => { $('#annText').value = ''; load(); }).catch(er => alert(er.message));
+  });
+  if (key) { $('#key').value = key; load(); }
+  setInterval(() => { if (!$('#app').hidden) load(); }, 15000);
+})();
+</script>
+</body>
+</html>

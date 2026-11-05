@@ -1,0 +1,28 @@
+# Triển khai một chạm trên Render: New → Blueprint → chọn repo này.
+services:
+  - type: web
+    name: chua-tam-an
+    runtime: node
+    plan: free
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: SITE_NAME
+        value: Chùa Tâm An
+      - key: ADMIN_KEY
+        generateValue: true
+      - key: FUNDS
+        value: Tùy nhà chùa sử dụng
+      - key: BANK_ID
+        sync: false
+      - key: BANK_ACCOUNT
+        sync: false
+      - key: BANK_ACCOUNT_NAME
+        sync: false
+      - key: BANK_LABEL
+        sync: false
+      - key: SEPAY_API_KEY
+        sync: false
