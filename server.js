@@ -71,7 +71,9 @@ function addMerit(p, n) {
   m.name = p.name; m.total += n; m.today += n;
   p.meritDirty = true; store.save();
   const hit = crossed(before, m.today);
-  if (hit && outranks(hit, p.milestone)) p.milestone = hit;   // chờ tới nhịp 1 giây; mốc ưu tiên cao hơn không bị mất
+  // chờ tới nhịp 1 giây; mốc ưu tiên cao hơn không bị mất. Ghi luôn công đức lúc đó: nếu nhịp 1 giây rơi qua nửa đêm
+  // giờ Việt Nam thì meritOf() đã về 0, con số gửi kèm sẽ thấp hơn chính mốc (bình thường lấy số mới nhất để khớp với thẻ công đức).
+  if (hit && outranks(hit, p.milestone)) p.milestone = { ...hit, today: m.today };
 }
 // Mốc nào vừa bị bước qua khi công đức đi từ before lên after (mỗi lần cộng là 1..15 nên có thể nhảy qua đúng số).
 // Bước qua nhiều mốc cùng lúc thì chỉ giữ một: 'scare' thắng, còn lại lấy mốc cao nhất.
@@ -132,18 +134,21 @@ const MEME_DIR = path.join(__dirname, 'public', 'img', 'memes');
 const BLESS_DIR = path.join(__dirname, 'public', 'audio', 'blessings');
 const MEME_EXT = /\.(jpe?g|png|webp|gif|avif)$/i;
 const BLESS_FILE = /^[A-Za-z0-9][A-Za-z0-9._-]{0,80}\.(mp3|ogg|m4a|wav)$/i;   // chỉ tên file thường, không có dấu / hay ..
-let fxCache = { t: 0, memes: [], blessings: [] };
+const MAX_URL = 300;   // celebrate.js safeUrl() chỉ nhận địa chỉ ngắn hơn 300 ký tự
+let fxCache = { t: 0, memes: [], blessings: [] }, fxWarned = false;
 function fxAssets() {
   const t = now();
   if (fxCache.t && t - fxCache.t < 30e3) return fxCache;
   let memes = [], blessings = [];
   try {
+    // tên file có byte lỗi UTF-8 (U+FFFD) thì địa chỉ sẽ 404; tên quá dài thì trình duyệt (safeUrl < 300 ký tự) từ chối
     memes = fs.readdirSync(MEME_DIR, { withFileTypes: true })
-      .filter(e => e.isFile() && !e.name.startsWith('.') && e.name.length <= 120 && MEME_EXT.test(e.name))
-      .map(e => e.name).sort().slice(0, 200).map(n => '/img/memes/' + encodeURIComponent(n));
+      .filter(e => e.isFile() && !e.name.startsWith('.') && e.name.length <= 120 && MEME_EXT.test(e.name) && !e.name.includes('\uFFFD'))
+      .map(e => e.name).sort().map(n => '/img/memes/' + encodeURIComponent(n)).filter(u => u.length < MAX_URL).slice(0, 200);
   } catch (e) { memes = []; }
   try {
-    const man = JSON.parse(fs.readFileSync(path.join(BLESS_DIR, 'manifest.json'), 'utf8'));
+    const raw = fs.readFileSync(path.join(BLESS_DIR, 'manifest.json'), 'utf8').replace(/^\uFEFF/, '');   // Notepad / PowerShell hay thêm BOM
+    const man = JSON.parse(raw);
     const lines = Array.isArray(man && man.lines) ? man.lines : [];
     for (const l of lines.slice(0, 40)) {
       const file = l && typeof l.file === 'string' ? l.file : '', text = clean(l && l.text, 160);
@@ -151,7 +156,10 @@ function fxAssets() {
       try { if (!fs.statSync(path.join(BLESS_DIR, file)).isFile()) continue; } catch (e) { continue; }
       blessings.push({ url: '/audio/blessings/' + encodeURIComponent(file), text });
     }
-  } catch (e) { blessings = []; }
+  } catch (e) {
+    blessings = [];
+    if (e.code !== 'ENOENT' && !fxWarned) { fxWarned = true; console.warn('[blessings] Không đọc được manifest.json, dùng giọng đọc của trình duyệt:', e.message); }
+  }
   fxCache = { t, memes, blessings };
   return fxCache;
 }
@@ -305,7 +313,9 @@ io.on('connection', socket => {
     const isMod = !!(ADMIN_KEY && data.adminKey && safeEqual(String(data.adminKey), ADMIN_KEY));
     const nm = checkName(data.name, isMod);
     if (!nm.ok) return ack({ ok: false, reason: nm.reason });
-    const uid = /^[a-zA-Z0-9_-]{8,40}$/.test(String(data.uid || '')) ? String(data.uid) : crypto.randomUUID();
+    // uid là khóa của db.merit: loại tên trùng thuộc tính của Object ('__proto__', 'constructor', 'toString'...) kẻo ghi đè lên Object.prototype
+    const want = String(data.uid || '');
+    const uid = /^[a-zA-Z0-9_-]{8,40}$/.test(want) && !(want in Object.prototype) ? want : crypto.randomUUID();
     p = {
       id: nextPid++, uid, name: nm.name, mod: isMod, socket,
       look: { g: data.look && data.look.g === 'nam' ? 'nam' : 'nu', c: num(data.look && data.look.c, 0, 11, 0) | 0, h: num(data.look && data.look.h, 0, 3, 0) | 0 },
@@ -524,7 +534,7 @@ setInterval(() => {
     for (const p of players.values()) {
       if (p.meritDirty) { p.meritDirty = false; p.socket.emit('merit', meritOf(p.uid)); }
       // mốc công đức chỉ gửi riêng cho người đạt mốc, sau khi thẻ công đức đã cập nhật
-      if (p.milestone) { p.socket.emit('milestone', { at: p.milestone.at, kind: p.milestone.kind, today: meritOf(p.uid).today }); p.milestone = null; }
+      if (p.milestone) { p.socket.emit('milestone', { at: p.milestone.at, kind: p.milestone.kind, today: Math.max(meritOf(p.uid).today, p.milestone.today) }); p.milestone = null; }
     }
     if (statsDirty) { statsDirty = false; io.emit('stats', { today: db.today, online: players.size }); }
   }

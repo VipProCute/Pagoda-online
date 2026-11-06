@@ -38,6 +38,8 @@
   let lastMeme = -1, nextMeme = -1, lastLine = -1, nextLine = -1;
   const badMemes = new Set();          // meme tải lỗi thì bỏ qua
   let seq = 0;                         // số thứ tự lượt, để bỏ kết quả bất đồng bộ của lượt cũ
+  const QUIET = 900;                   // phải yên chừng này mili giây thì chạm lên lớp phủ mới đóng được
+  let tapAt = 0, tapPrev = 0;          // pointerdown gần nhất và cái trước nó (bất kỳ đâu trên trang)
 
   /* ---------- ưu tiên & luật mốc (giống máy chủ) ---------- */
   function outranks(a, b) {
@@ -95,26 +97,33 @@
     <figure class="fx-frame"><img class="fx-meme" alt="" decoding="async"></figure>
     <p class="fx-sub"></p>
   </div>
-  <p class="fx-hint">Chạm để đóng</p>
+  <p class="fx-hint">Chạm hoặc nhấn Esc để đóng</p>
 </div>
 <canvas class="fx-canvas" aria-hidden="true"></canvas>
 <div class="fx-scare" aria-hidden="true"><div class="fx-devil-fb">😈</div><img class="fx-devil" alt="" decoding="async"><div class="fx-flash"></div></div>
-<div class="fx-cap"><div class="fx-capcard"><p class="fx-cap1">Hù bạn thôi!</p><p class="fx-cap2">A Di Đà Phật, chúc bạn bình an 🙏</p><p class="fx-hint">Chạm để đóng</p></div></div>
+<div class="fx-cap"><div class="fx-capcard"><p class="fx-cap1">Hù bạn thôi!</p><p class="fx-cap2">A Di Đà Phật, chúc bạn bình an 🙏</p><p class="fx-hint">Chạm hoặc nhấn Esc để đóng</p></div></div>
 <button type="button" class="fx-x" aria-label="Đóng">×</button>
 <p class="sr fx-live" role="status"></p>`;
   function build() {
     if (el) return el;
     const r = doc.createElement('div');
     r.className = 'fx'; r.hidden = true; r.tabIndex = -1;
-    r.setAttribute('role', 'dialog'); r.setAttribute('aria-label', 'Chúc mừng công đức');
+    r.setAttribute('role', 'dialog'); r.setAttribute('aria-modal', 'true'); r.setAttribute('aria-label', 'Chúc mừng công đức');
     if (HAS_POPOVER) r.setAttribute('popover', 'manual');   // lên lớp trên cùng, nằm trên cả hộp thoại <dialog> đang mở
     r.innerHTML = TEMPLATE;                                  // chuỗi cố định, không chèn dữ liệu ngoài
     const q = s => r.querySelector(s);
     el = {
       root: r, eyebrow: q('.fx-eyebrow'), title: q('.fx-title'), frame: q('.fx-frame'), meme: q('.fx-meme'), sub: q('.fx-sub'),
-      canvas: q('.fx-canvas'), scare: q('.fx-scare'), devil: q('.fx-devil'), live: q('.fx-live'), cap2: q('.fx-cap2')
+      canvas: q('.fx-canvas'), scare: q('.fx-scare'), devil: q('.fx-devil'), live: q('.fx-live'), cap2: q('.fx-cap2'), x: q('.fx-x')
     };
-    r.addEventListener('click', () => { if (cur && performance.now() >= cur.armedAt) dismiss(); });
+    r.addEventListener('click', e => {
+      if (!cur) return;
+      if (e.target && e.target.closest && e.target.closest('.fx-x')) { dismiss(); return; }   // nút × là chủ ý rõ ràng, luôn đóng
+      // Người đang gõ mõ liên tục vẫn chạm tiếp khi lớp phủ bật lên: chỉ đóng khi trước cú chạm này đã yên ít nhất QUIET ms.
+      // Cú chạm bị bỏ qua cũng làm đồng hồ yên bắt đầu lại (pointerdown ở dưới). Chạm không do con trỏ sinh ra (trình đọc màn hình) thì coi là chủ ý.
+      const t = performance.now(), quiet = t - tapAt >= 1000 || tapAt - tapPrev >= QUIET;
+      if (t >= cur.armedAt && quiet) dismiss();
+    });
     doc.body.appendChild(r);
     return el;
   }
@@ -182,8 +191,9 @@
   function later(fn, ms) { const t = setTimeout(() => { try { fn(); } catch (e) { /* bỏ qua */ } }, ms); cur.timers.push(t); return t; }
   function holdUntil(ms) {                                  // đặt giờ tự đóng tính từ lúc bắt đầu
     const c = cur; if (!c) return;
+    c.holdMs = Math.max(c.holdMs || 0, ms);                 // chỉ kéo dài, không rút ngắn (giọng đọc, meme tải chậm)
     clearTimeout(c.hold);
-    c.hold = setTimeout(() => { if (cur === c) dismiss(); }, Math.max(300, ms - (performance.now() - c.t0)));
+    c.hold = setTimeout(() => { if (cur === c) dismiss(); }, Math.max(300, c.holdMs - (performance.now() - c.t0)));
   }
 
   /* ----- bless / grand ----- */
@@ -215,11 +225,18 @@
     if (mi < 0 || tries > 2) { fr.hidden = true; im.removeAttribute('src'); return; }   // hết cách: thẻ chỉ có chữ
     const url = cfg.memes[mi];
     lastMeme = mi;
-    fr.hidden = false; fr.classList.remove('ready');
-    im.onload = () => { if (cur && cur.id === id) fr.classList.add('ready'); };
+    // khung ảnh chỉ hiện khi ảnh đã về (không để khoảng trống giữa tiêu đề và lời chúc); ảnh về muộn thì được xem đủ ~3,5 giây
+    fr.hidden = true; fr.classList.remove('ready');
+    const arrived = () => {
+      if (!cur || cur.id !== id) return;
+      fr.hidden = false; void fr.offsetWidth; fr.classList.add('ready');
+      holdUntil(performance.now() - cur.t0 + 3500);
+    };
+    im.onload = arrived;
     im.onerror = () => { badMemes.add(url); if (cur && cur.id === id) showMeme(id, tries + 1); };
     im.removeAttribute('src');
     im.src = url;
+    if (im.complete && im.naturalWidth) arrived();           // đã có trong bộ nhớ đệm (tải trước xong)
   }
 
   /* ----- giọng đọc ----- */
@@ -231,14 +248,16 @@
       if (!loadVoices.bound && ss.addEventListener) { loadVoices.bound = true; ss.addEventListener('voiceschanged', () => { voices = ss.getVoices() || []; }); }
     } catch (e) { /* bỏ qua */ }
   }
+  // Chỉ nhận giọng không phải giọng nam: tên có "nữ" thì cộng điểm, tên nam đã biết (An, NamMinh, Nam, Male, Đức) thì loại.
+  // Chấm trên phần tên riêng, bỏ đuôi ngôn ngữ như " - Vietnamese (Vietnam)" kẻo chữ "Vietnam" bị tính là "nam".
   function pickVoice() {
-    let best = null, bs = -9;
+    let best = null, bs = -1;
     for (const v of voices) {
       if (!/^vi([-_]|$)/i.test(v.lang || '')) continue;
-      const n = (v.name || '').toLowerCase();
+      const n = (v.name || '').toLowerCase().split(/\s[-–]\s|\(/)[0];
       let sc = 0;
       if (/hoai\s?my|hoàimy|linh|female|nữ|google/.test(n)) sc += 3;
-      if (/nam\s?minh|(^|[^a-z])male|nam\b|đức|duc/.test(n) && !/female/.test(n)) sc -= 3;
+      if (/nam\s?minh|namminh|(^|[^a-zà-ỹ])(nam|male|an|đức|duc)([^a-zà-ỹ]|$)/.test(n)) sc -= 6;
       if (sc > bs) { bs = sc; best = v; }
     }
     return best;
@@ -262,7 +281,7 @@
       try {
         loadVoices();
         const v = pickVoice();
-        if (voices.length && !v) throw new Error('Máy không có giọng tiếng Việt');   // đọc tiếng Việt bằng giọng khác nghe rất sai
+        if (voices.length && !v) throw new Error('Máy không có giọng nữ tiếng Việt');   // đọc tiếng Việt bằng giọng khác (hay giọng nam) thì thà chỉ rung chuông
         const u = new SpeechSynthesisUtterance(text);
         u.lang = v ? v.lang : 'vi-VN'; if (v) u.voice = v;
         u.rate = 0.95; u.pitch = 1.12; u.volume = 1;
@@ -345,17 +364,30 @@
 
   /* ----- jump scare 666 ----- */
   function startScare(item) {
-    const r = el.root;
+    const r = el.root, c = cur, id = c.id, im = el.devil;
     prepareScare();
     r.setAttribute('aria-label', 'Hù bạn thôi');
-    cur.say = `Bạn đạt ${NUM(item.at)} công đức. Hù bạn thôi! A Di Đà Phật, chúc bạn bình an.`;
+    c.say = `Bạn đạt ${NUM(item.at)} công đức. Hù bạn thôi! A Di Đà Phật, chúc bạn bình an.`;
     el.cap2.textContent = 'A Di Đà Phật, chúc bạn bình an 🙏';
-    r.classList.add('is-face');
-    if (root.SFX) { try { SFX.scare(); } catch (e) { /* bỏ qua */ } }
-    // mặt quỷ giữ ~1.4 giây (chỉ một lần chớp đỏ, không nhấp nháy), mờ dần, rồi thẻ trấn an ~2.5 giây
-    later(() => { r.classList.add('is-out'); }, 1400);
-    later(() => { r.classList.remove('is-face'); r.classList.add('is-calm'); }, 1800);
-    holdUntil(1800 + 2500);
+    el.scare.classList.remove('devil-wait');
+    const go = () => {
+      if (!cur || cur.id !== id || cur.leaving || cur.faced) return;
+      c.faced = true; c.t0 = performance.now(); c.armedAt = c.t0 + 600;
+      if (!(im.complete && im.naturalWidth) && !el.scare.classList.contains('devil-bad')) {   // vẫn chưa tải xong: dùng tạm 😈 cho tới khi ảnh về
+        el.scare.classList.add('devil-wait');
+        im.addEventListener('load', () => el.scare.classList.remove('devil-wait'), { once: true });
+      }
+      r.classList.add('is-face');
+      if (root.SFX) { try { SFX.scare(); } catch (e) { /* bỏ qua */ } }
+      // mặt quỷ giữ ~1.4 giây (chỉ một lần chớp đỏ, không nhấp nháy), mờ dần, rồi thẻ trấn an ~2.5 giây
+      later(() => { r.classList.add('is-out'); }, 1400);
+      later(() => { r.classList.remove('is-face'); r.classList.add('is-calm'); }, 1800);
+      holdUntil(1800 + 2500);
+    };
+    // Lần hù đầu tiên có thể xảy ra trước khi ảnh mặt quỷ tải xong (mạng chậm): chờ tối đa 0,3 giây trong màn đen
+    // để mặt quỷ hiện cùng lúc với tiếng hù, thay vì tiếng hù vang lên trên màn hình trống.
+    if (im.complete || el.scare.classList.contains('devil-bad')) go();
+    else { (im.decode ? im.decode() : Promise.reject()).then(go, go); setTimeout(go, 300); }
   }
 
   /* ---------- đóng & hàng chờ ---------- */
@@ -381,7 +413,12 @@
     cur = null;
     prepareNext();
     const nx = pending; pending = null;
-    if (nx) setTimeout(() => { if (Date.now() - nx.ts < 60000) show(nx); }, 450);   // lượt chờ quá cũ (tab ẩn lâu) thì bỏ
+    if (nx) setTimeout(() => resume(nx), 450);
+  }
+  // Lượt xếp hàng quá 60 giây (tab ẩn lâu) thì không hù/chiếu nữa, chỉ báo nhỏ
+  function resume(nx) {
+    if (Date.now() - nx.ts < 60000) show(nx);
+    else if (hooks.toast) hooks.toast(`Bạn đã đạt ${NUM(nx.at)} công đức.`);
   }
   function cleanupAfterError() {
     try {
@@ -391,11 +428,18 @@
   }
 
   doc.addEventListener('keydown', e => {
-    if (cur && e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); dismiss(); }
+    if (!cur) return;
+    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); dismiss(); }
+    else if (e.key === 'Tab') {                              // lớp phủ là hộp thoại modal: Tab không được lọt ra các nút nằm sau nó
+      e.preventDefault();
+      const x = el.x, to = x && x.getClientRects().length ? x : el.root;
+      try { to.focus({ preventScroll: true }); } catch (err) { /* bỏ qua */ }
+    }
   }, true);
+  doc.addEventListener('pointerdown', () => { tapPrev = tapAt; tapAt = performance.now(); }, true);
   doc.addEventListener('visibilitychange', () => {
     if (doc.hidden) return;
-    if (!cur && pending) { const nx = pending; pending = null; if (Date.now() - nx.ts < 60000) show(nx); }
+    if (!cur && pending) { const nx = pending; pending = null; resume(nx); }
   });
 
   /* ---------- công tắc trong mục Công đức ---------- */
@@ -420,10 +464,10 @@
       idle(prepareNext);
     } catch (e) { /* bỏ qua */ }
   }
-  function test(at) {
+  function test(at, kind) {
     const n = Math.floor(Number(at));
     if (!Number.isFinite(n) || n <= 0) return 'ignored';
-    return show({ at: n, kind: kindOf(n) }, { test: true });
+    return show({ at: n, kind: kind === 'bless' || kind === 'grand' || kind === 'scare' ? kind : kindOf(n) }, { test: true });
   }
 
   bindSettings();

@@ -57,18 +57,35 @@
 /* ---------- jump scare ---------- */
 .fx-scare, .fx-cap { display: none; }
 .fx--scare .fx-stage, .fx--scare .fx-canvas { display: none; }
-.fx--scare.is-face .fx-scare { display: block; position: absolute; inset: 0; overflow: hidden; background: #000; animation: fxShake .6s linear both; }
+.fx--scare.is-face .fx-scare { display: block; position: absolute; inset: 0; overflow: hidden; background: #000; animation: fxShake .6s linear both; will-change: transform; }
 .fx--scare.is-face .fx-x { display: none; }
-.fx-devil { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: #000; animation: fxDevil .2s cubic-bezier(.1, .9, .2, 1) both, fxCreep 1.5s linear .2s forwards; }
+/* will-change: SVG có hai bộ lọc nhiễu, nếu không tách lớp riêng thì mỗi khung hình phóng to lại phải vẽ lại bằng CPU và giật còn nửa tốc độ */
+.fx-devil { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: #000; will-change: transform; animation: fxDevil .2s cubic-bezier(.1, .9, .2, 1) both, fxCreep 1.5s linear .2s forwards; }
+@media (orientation: landscape) { .fx-devil { object-position: 50% 40%; } }   /* màn ngang: giữ sừng, mắt và hàm răng trên thay vì cắt ngay giữa mặt */
 .fx-devil-fb { display: none; position: absolute; inset: 0; place-items: center; font-size: 80vmin; line-height: 1; background: radial-gradient(circle at 50% 50%, #5a0000, #000 70%); }
 .fx-scare.devil-bad .fx-devil-fb { display: grid; animation: fxDevil .2s cubic-bezier(.1, .9, .2, 1) both; }
 .fx-scare.devil-bad .fx-devil { display: none; }
+.fx-scare.devil-wait .fx-devil-fb { display: grid; animation: fxDevil .2s cubic-bezier(.1, .9, .2, 1) both; }   /* ảnh chưa về kịp: 😈 đứng tạm */
+.fx-scare.devil-wait .fx-devil { visibility: hidden; }
 .fx-flash { position: absolute; inset: 0; background: #e00000; opacity: 0; mix-blend-mode: screen; pointer-events: none; animation: fxFlash .42s ease-out both; }
 .fx--scare.is-out .fx-scare { opacity: 0; transition: opacity .38s ease; }
 .fx--scare.is-calm .fx-cap { display: flex; position: absolute; inset: 0; align-items: center; justify-content: center; padding: 24px; animation: fxFade .45s ease both; background: radial-gradient(circle at 50% 42%, #3a1a16, #0b0605 76%); }
 .fx-capcard { display: grid; gap: 10px; justify-items: center; text-align: center; max-width: 460px; }
 .fx-cap1 { margin: 0; font-family: var(--font-display, Georgia, serif); font-weight: 700; font-size: clamp(38px, 12vw, 62px); line-height: 1; color: #ffe39a; text-shadow: 0 2px 0 #7a1f1a, 0 0 24px rgba(212, 171, 82, .45); }
 .fx-cap2 { margin: 0; font-size: clamp(17px, 4.8vw, 22px); line-height: 1.4; color: #fff3dc; text-wrap: balance; }
+
+/* điện thoại xoay ngang (màn thấp): xếp thẻ thành hàng, meme bên trái, chữ bên phải, để không bị cắt ở trên hay dưới */
+@media (max-height: 480px) and (orientation: landscape) {
+  .fx-stage { gap: 6px; padding-top: calc(env(safe-area-inset-top, 0px) + 10px); padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 6px); }
+  .fx-card { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "frame title" "frame sub"; align-items: center; column-gap: 22px; row-gap: 8px; max-width: min(94vw, 780px); }
+  .fx-eyebrow { display: none; }
+  .fx-title { grid-area: title; align-self: end; font-size: clamp(22px, 8vh, 38px); }
+  .fx--grand .fx-title { font-size: clamp(24px, 9.5vh, 44px); }
+  .fx-frame { grid-area: frame; width: min(46vw, 64vh); max-height: 64vh; }
+  .fx-sub { grid-area: sub; align-self: start; font-size: clamp(16px, 5.6vh, 22px); }
+  .fx-cap1 { font-size: clamp(32px, 12vh, 56px); }
+  .fx-capcard { gap: 6px; }
+}
 
 /* thoát */
 .fx.is-leave { opacity: 0; transition: opacity .22s ease; pointer-events: none; }
@@ -106,5 +123,5 @@
 /* ---------- công tắc trong mục Công đức ---------- */
 .fxset { display: grid; gap: 8px; }
 .fxset .tog { display: flex; font-size: 13.5px; color: var(--fg, #f2e8d5); }
-.fxset .tog input:disabled + span { opacity: .5; }
 .fxset .tog:has(input:disabled) { opacity: .55; cursor: default; }
+@supports not selector(:has(*)) { .fxset .tog input:disabled + span { opacity: .5; } }

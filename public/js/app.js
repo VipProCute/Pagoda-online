@@ -175,7 +175,13 @@
     if (previewed || !window.Celebrate) return;
     previewed = true;
     const n = (new URLSearchParams(location.search).get('celebrate') || '').trim();
-    if (/^\d{1,5}$/.test(n)) setTimeout(() => Celebrate.test(+n), 900);
+    if (!/^\d{1,5}$/.test(n)) return;
+    // Liên kết ?celebrate=666 ai mở cũng chạy được nên không tự hù: hỏi trước, từ chối (hay trình duyệt không cho hỏi) thì chỉ hiện thẻ chúc mừng
+    setTimeout(() => {
+      let kind;
+      if (+n === 666) { let ok = false; try { ok = confirm('Xem thử mặt quỷ hù ở mốc 666? Có tiếng động mạnh và màn hình chớp đỏ.'); } catch (e) { /* bỏ qua */ } if (!ok) kind = 'bless'; }
+      Celebrate.test(+n, kind);
+    }, 900);
   }
 
   /* ---------- sự kiện từ máy chủ ---------- */

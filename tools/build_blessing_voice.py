@@ -6,13 +6,12 @@ bằng VieNeu-TTS v3 Turbo (mã nguồn mở, Apache-2.0), rồi xuất:
     public/audio/blessings/binh-an-1.mp3 ... binh-an-4.mp3   (đơn kênh, 24 kHz, 48 kbps, dưới ~4,5 giây)
     public/audio/blessings/manifest.json                      (server đọc file này để gửi cho trình duyệt)
 
-!!! CHƯA CHẠY THỬ ĐẾN CUỐI !!!
-Script được viết sau khi đọc mã nguồn gói `vieneu` 3.8.3 (Vieneu(), list_preset_voices(),
-infer(text, voice=...), tts.sample_rate = 48000, tên giọng nữ trong voices_v3_turbo.json), nhưng
-máy viết script không tải được trọng số mô hình từ Hugging Face nên bước SINH GIỌNG chưa từng chạy.
-Chỉ phần xử lý sau (cắt lặng, cân âm lượng, mã hóa MP3, đo kiểm) đã được thử bằng tín hiệu giả.
-Hãy chạy trên máy có Hugging Face, NGHE LẠI từng file rồi mới commit. Nếu giọng chưa ưng, đổi
---voice (xem danh sách bằng --list-voices) hoặc tăng --tries.
+Đã chạy thật với vieneu 3.8.3 (CPU, ONNX) và giọng "Trúc Ly" (nữ, Bắc). Bộ file đang có trong repo được làm như sau:
+mỗi câu sinh 4 bản (và 4 bản với dấu câu khác), cho Whisper nhận dạng lại từng bản, giữ bản đọc đúng chữ nhất
+(độ khớp 0,96 đến 1,00; "A Di Đà" nghe thành "Azi Đà" là cách đọc miền Bắc của chữ Di), kiểm tra cao độ F0 khoảng 240 đến 280 Hz
+(đúng giọng nữ), rồi cho qua đúng các bước trong file này: cắt lặng, nén nhẹ, cân âm lượng về -16 đến -17 LUFS, mã hóa MP3.
+Script này chọn bản gần độ dài trung vị nhất (không có bước nhận dạng); muốn chọn kỹ hơn thì tự nghe lại từng bản.
+Hãy NGHE LẠI từng file rồi mới commit. Nếu giọng chưa ưng, đổi --voice (xem danh sách bằng --list-voices) hoặc tăng --tries.
 
 Cài đặt (CPU là đủ, không cần GPU):
     python -m venv .venv && . .venv/bin/activate
@@ -120,14 +119,19 @@ def run_ffmpeg(args, capture=False):
     return res.stderr if capture else ''
 
 
+# Nén nhẹ trước khi cân âm lượng: đỉnh bớt nhô lên thì loudnorm (đang bị chặn bởi đỉnh thật -2 dBFS) mới kéo được
+# cả bốn câu về gần nhau, không câu nào nhỏ hơn hẳn câu khác.
+PRE = 'acompressor=threshold=-22dB:ratio=3:attack=4:release=90:makeup=3dB,'
+
+
 def loudnorm_two_pass(wav_in: Path, mp3_out: Path):
     base = f'I={TARGET_LUFS}:TP={TRUE_PEAK}:LRA=20'
-    log = run_ffmpeg(['-i', str(wav_in), '-af', f'loudnorm={base}:print_format=json', '-f', 'null', '-'], capture=True)
+    log = run_ffmpeg(['-i', str(wav_in), '-af', f'{PRE}loudnorm={base}:print_format=json', '-f', 'null', '-'], capture=True)
     m = re.search(r'\{[^{}]*"input_i"[^{}]*\}', log, re.S)
     if not m:
         raise RuntimeError('Không đọc được kết quả đo loudnorm:\n' + log[-800:])
     s = json.loads(m.group(0))
-    flt = (f'loudnorm={base}:measured_I={s["input_i"]}:measured_TP={s["input_tp"]}:measured_LRA={s["input_lra"]}'
+    flt = (f'{PRE}loudnorm={base}:measured_I={s["input_i"]}:measured_TP={s["input_tp"]}:measured_LRA={s["input_lra"]}'
            f':measured_thresh={s["input_thresh"]}:offset={s["target_offset"]}:linear=true,aresample={OUT_SR}')
     run_ffmpeg(['-i', str(wav_in), '-af', flt, '-ac', '1', '-ar', str(OUT_SR),
                 '-c:a', 'libmp3lame', '-b:a', '48k', str(mp3_out)])
