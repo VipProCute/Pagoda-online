@@ -101,7 +101,11 @@
     b.quadraticCurveTo(x + w + 1, base - (base - tip) * 0.6, x + w, base); b.closePath();
     b.fillStyle = fill; b.fill(); b.strokeStyle = '#6e4b1f'; b.lineWidth = 1; b.stroke();
   }
-  function statue(b, cx, pedY, s) {
+  // Mặt tượng giữa: ảnh meme "Phật nhảy tường", cắt viền bầu dục mờ để hòa vào đầu tượng vàng.
+  // Tải xong thì xóa nền đã vẽ (bg = null) để khung hình sau vẽ lại có mặt.
+  const FACE = root.Image ? new Image() : null;
+  if (FACE) { FACE.onload = () => { bg = null; }; FACE.src = '/img/fx/phat-nhay-tuong.webp'; }
+  function statue(b, cx, pedY, s, face) {
     b.save(); b.translate(cx - 400 * s, pedY - 338 * s); b.scale(s, s);
     let gr = b.createRadialGradient(400, 170, 0, 400, 170, 172);
     gr.addColorStop(0, 'rgba(245,210,124,.52)'); gr.addColorStop(0.45, 'rgba(217,164,65,.16)'); gr.addColorStop(1, 'rgba(217,164,65,0)');
@@ -130,6 +134,7 @@
     b.beginPath(); b.ellipse(373, 116, 5, 13, 0, 0, TAU); b.fill();
     b.beginPath(); b.ellipse(427, 116, 5, 13, 0, 0, TAU); b.fill();
     b.beginPath(); b.ellipse(400, 109, 25, 30, 0, 0, TAU); b.fill();
+    if (face && FACE && FACE.complete && FACE.naturalWidth) b.drawImage(FACE, 375, 79, 50, 60);
     b.beginPath(); b.arc(400, 77, 10, 0, TAU); b.fill();
     const pg = b.createLinearGradient(0, 266, 0, 299); pg.addColorStop(0, '#f1d184'); pg.addColorStop(1, '#a8782e');
     [312, 341, 370, 400, 430, 459, 488].forEach(x => petal(b, x, 299, 266, 16, pg));
@@ -205,7 +210,7 @@
     const sideX = G.wb * 0.64;
     statue(b, W / 2 - sideX, G.pedY + 4 * u, 0.5 * u);
     statue(b, W / 2 + sideX, G.pedY + 4 * u, 0.5 * u);
-    statue(b, W / 2, G.pedY, 0.64 * u);
+    statue(b, W / 2, G.pedY, 0.64 * u, true);
     lantern(b, W / 2 - G.wb * 0.82); lantern(b, W / 2 + G.wb * 0.82);
     for (const [px, pw] of [[-0.34, 24], [0.34, 24], [-1, 36], [1, 36]]) pillar(b, W / 2 + G.wb * px, pw * u, G.hb + 4 * u);
     libraryCase(b);
