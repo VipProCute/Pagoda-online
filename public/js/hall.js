@@ -148,13 +148,15 @@
   let cv, g, W = 0, H = 0, DPR = 1, bg = null, u = 1, au = 1;
   const G = {};
   const players = new Map();
-  let me = 0, offset = 0, last = 0, scene = 'hall';
+  let me = 0, offset = 0, last = 0, scene = 'hall', yardDay = null;
   let incense = [];
   const parts = [], hearts = [], floaters = [], ripples = [];
   const altar = { lotus: 0, rose: 0, lamp: 0, fruit: 0 };
   const handlers = {};
   let clickMark = null;
   const serverNow = () => Date.now() + offset;
+  // Giờ Việt Nam (UTC+7), không phụ thuộc múi giờ trên thiết bị người xem.
+  const yardInDaylight = time => { const hour = new Date(time + 7 * 3600000).getUTCHours(); return hour >= 6 && hour < 18; };
 
   function geo() {
     u = Math.min(W / 960, H / 600);
@@ -1003,12 +1005,15 @@
   function drawYard() {
     bg = document.createElement('canvas'); bg.width = cv.width; bg.height = cv.height;
     const b = bg.getContext('2d'); b.setTransform(DPR, 0, 0, DPR, 0, 0);
-    const sky = b.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, '#192633'); sky.addColorStop(.5, '#967658'); sky.addColorStop(1, '#3a2720'); b.fillStyle = sky; b.fillRect(0, 0, W, H);
-    b.fillStyle = '#e4c589'; b.beginPath(); b.arc(W * .8, H * .13, 20 * u, 0, TAU); b.fill();
-    b.fillStyle = '#25372e'; b.fillRect(0, H * .35, W, H * .2);
+    const sky = b.createLinearGradient(0, 0, 0, H);
+    const colors = yardDay ? ['#71bad7', '#d7e8e4', '#e7d1b3'] : ['#192633', '#967658', '#3a2720'];
+    sky.addColorStop(0, colors[0]); sky.addColorStop(.5, colors[1]); sky.addColorStop(1, colors[2]);
+    b.fillStyle = sky; b.fillRect(0, 0, W, H);
+    b.fillStyle = yardDay ? '#fff1b4' : '#e4c589'; b.beginPath(); b.arc(W * .8, H * .13, 20 * u, 0, TAU); b.fill();
+    b.fillStyle = yardDay ? '#557b51' : '#25372e'; b.fillRect(0, H * .35, W, H * .2);
     for (let x = 0; x < W; x += 55 * u) { b.beginPath(); b.arc(x, H * .36, 42 * u, 0, TAU); b.fill(); }
-    b.fillStyle = '#6a5141'; b.fillRect(0, G.hb, W, H - G.hb);
-    b.strokeStyle = 'rgba(230,200,164,.17)'; b.lineWidth = 1; b.beginPath();
+    b.fillStyle = yardDay ? '#b5987d' : '#6a5141'; b.fillRect(0, G.hb, W, H - G.hb);
+    b.strokeStyle = yardDay ? 'rgba(90,65,48,.24)' : 'rgba(230,200,164,.17)'; b.lineWidth = 1; b.beginPath();
     for (let i=0;i<14;i++) { const a=proj(i/13,0), z=proj(i/13,1); b.moveTo(a[0],a[1]); b.lineTo(z[0],z[1]); }
     for(let j=0;j<7;j++) { const y=G.hb+(H-G.hb)*j/7; b.moveTo(0,y); b.lineTo(W,y); } b.stroke();
     b.fillStyle='#44231a'; b.fillRect(W*.41,H*.24,W*.18,H*.27); b.fillStyle='#b8894b'; b.fillRect(W*.43,H*.26,W*.14,H*.24);
@@ -1031,13 +1036,16 @@
   function readerBounds(i) {
     const width = Math.min(W * 0.29, 220 * Math.max(u, 0.6));
     const height = Math.min(H * 0.29, 200 * Math.max(u, 0.6));
-    const x = W * i, bottom = H * 0.49;
+    const x = W * i, bottom = H * 0.63;
     return { x, bottom, width, height };
   }
   function drawReaders(ts) {
     for (const [index, i, label, col] of [[0, .2, 'TỬ VI', '#6b321e'], [1, .8, 'TAROT', '#52315f']]) {
       const b = readerBounds(i), img = READERS[index];
       g.save();
+      // Bóng tiếp đất làm rõ bàn đang đặt trên nền gạch.
+      g.fillStyle = yardDay ? 'rgba(50,35,24,.2)' : 'rgba(0,0,0,.28)';
+      g.beginPath(); g.ellipse(b.x, b.bottom, b.width * .43, Math.max(3, b.height * .035), 0, 0, TAU); g.fill();
       if (img && img.complete && img.naturalWidth) {
         const scale = Math.min(b.width / img.naturalWidth, b.height / img.naturalHeight);
         const w = img.naturalWidth * scale, h = img.naturalHeight * scale;
@@ -1065,11 +1073,12 @@
   function frame(ts) {
     const dt = Math.min(64, ts - (last || ts)); last = ts;
     if (W && H && !document.hidden) {
+      const now = serverNow();
+      if (scene === 'yard') { const day = yardInDaylight(now); if (day !== yardDay) { yardDay = day; bg = null; } }
       if (!bg) { if (scene === 'yard') drawYard(); else drawBg(); }
       g.setTransform(1, 0, 0, 1, 0, 0);
       g.drawImage(bg, 0, 0);
       g.setTransform(DPR, 0, 0, DPR, 0, 0);
-      const now = serverNow();
       if (hoverLib && G.lib) {
         const L = G.lib, a = 0.35 + 0.2 * Math.sin(ts / 260);
         g.strokeStyle = `rgba(255,211,107,${a})`; g.lineWidth = 2; g.strokeRect(L.x - 6, L.y - 4, L.w + 12, L.h + 4);
