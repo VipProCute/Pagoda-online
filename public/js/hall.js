@@ -101,10 +101,10 @@
     b.quadraticCurveTo(x + w + 1, base - (base - tip) * 0.6, x + w, base); b.closePath();
     b.fillStyle = fill; b.fill(); b.strokeStyle = '#6e4b1f'; b.lineWidth = 1; b.stroke();
   }
-  // Mặt tượng giữa: ảnh meme "Phật nhảy tường", cắt viền bầu dục mờ để hòa vào đầu tượng vàng.
-  // Tải xong thì xóa nền đã vẽ (bg = null) để khung hình sau vẽ lại có mặt.
+  // Đầu tượng giữa: ảnh meme "Phật nhảy tường" (cả búi tóc), cắt theo dáng đầu, viền mờ.
+  // Tải xong thì xóa nền đã vẽ (bg = null) để khung hình sau vẽ lại có đầu mới.
   const FACE = root.Image ? new Image() : null;
-  if (FACE) { FACE.onload = () => { bg = null; }; FACE.src = '/img/fx/phat-nhay-tuong.webp'; }
+  if (FACE) { FACE.onload = () => { bg = null; }; FACE.src = '/img/fx/phat-nhay-tuong-dau.webp'; }
   function statue(b, cx, pedY, s, face) {
     b.save(); b.translate(cx - 400 * s, pedY - 338 * s); b.scale(s, s);
     let gr = b.createRadialGradient(400, 170, 0, 400, 170, 172);
@@ -131,11 +131,14 @@
     if (PATH) { b.strokeStyle = 'rgba(142,100,36,.5)'; b.lineWidth = 1.5; b.stroke(PATH.lapFold); }
     b.fillStyle = '#f3d58c'; b.beginPath(); b.ellipse(400, 241, 28, 9, 0, 0, TAU); b.fill();
     b.fillStyle = gold;
-    b.beginPath(); b.ellipse(373, 116, 5, 13, 0, 0, TAU); b.fill();
-    b.beginPath(); b.ellipse(427, 116, 5, 13, 0, 0, TAU); b.fill();
-    b.beginPath(); b.ellipse(400, 109, 25, 30, 0, 0, TAU); b.fill();
-    if (face && FACE && FACE.complete && FACE.naturalWidth) b.drawImage(FACE, 375, 79, 50, 60);
-    b.beginPath(); b.arc(400, 77, 10, 0, TAU); b.fill();
+    if (face && FACE && FACE.complete && FACE.naturalWidth) {
+      b.drawImage(FACE, 356, 47, 76, 101);                   // thay nguyên đầu (cả búi tóc), cằm chạm cổ
+    } else {
+      b.beginPath(); b.ellipse(373, 116, 5, 13, 0, 0, TAU); b.fill();
+      b.beginPath(); b.ellipse(427, 116, 5, 13, 0, 0, TAU); b.fill();
+      b.beginPath(); b.ellipse(400, 109, 25, 30, 0, 0, TAU); b.fill();
+      b.beginPath(); b.arc(400, 77, 10, 0, TAU); b.fill();
+    }
     const pg = b.createLinearGradient(0, 266, 0, 299); pg.addColorStop(0, '#f1d184'); pg.addColorStop(1, '#a8782e');
     [312, 341, 370, 400, 430, 459, 488].forEach(x => petal(b, x, 299, 266, 16, pg));
     b.restore();
