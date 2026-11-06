@@ -337,6 +337,8 @@
   }
 
   /* ----- hào quang cúng dường (9 cảnh giới) ----- */
+  // Đài sen, vầng sáng sau đầu và quang bối là hình thiết kế trên Canva (public/img/fx/aura/, dựng bằng
+  // tools/fx/prepare_aura_assets.py). Hình chưa tải xong hay tải lỗi thì tạm vẽ bằng mã như trước.
   const RAINBOW = ['#ff6b6b', '#ffb84d', '#ffe66b', '#6be08a', '#6bb8ff', '#b98bff'];
   const ELEM = ['#f2d16b', '#7fd38a', '#6bb8ff', '#ff7a5c', '#c9a27a'];   // kim, mộc, thủy, hỏa, thổ
   function rgba(hex, a) { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${Math.max(0, Math.min(1, a)).toFixed(3)})`; }
@@ -347,6 +349,54 @@
     c.fillStyle = gr; c.beginPath(); c.arc(x, y, r, 0, TAU); c.fill();
   }
   const tierColor = t => (root.AURA && root.AURA.TIERS[t - 1] ? root.AURA.TIERS[t - 1].color : '#ffd36b');
+  const FX = {};
+  function fx(name) {
+    let im = FX[name];
+    if (!im) {
+      if (typeof Image === 'undefined') return null;
+      im = FX[name] = new Image(); im.decoding = 'async'; im.src = '/img/fx/aura/' + name + '.webp';
+    }
+    return im.complete && im.naturalWidth ? im : null;
+  }
+  ['lotus-gold', 'lotus-pink', 'lotus-rainbow', 'halo-gold', 'mandorla-violet', 'mandorla-gold'].forEach(fx);   // tải sẵn
+  // Vẽ hình `name` rộng w, điểm neo (ax, ay) (tỉ lệ 0..1 trong hình) đặt tại (x, y). Chưa có hình thì trả false.
+  function sprite(c, name, x, y, w, ax, ay, alpha, mode) {
+    const im = fx(name);
+    if (!im) return false;
+    if (alpha <= 0.003) return true;
+    const h = w * im.naturalHeight / im.naturalWidth;
+    c.save(); c.globalAlpha *= Math.min(1, alpha); if (mode) c.globalCompositeOperation = mode;
+    c.drawImage(im, x - w * ax, y - h * ay, w, h); c.restore();
+    return true;
+  }
+  function flame(c, x, y, s, col, a) {                    // ngọn lửa hình giọt nước, đầu nhọn hướng lên
+    if (a <= 0.01 || s <= 0) return;
+    const gr = c.createRadialGradient(x, y + s * 0.3, 0, x, y, s * 1.5);
+    gr.addColorStop(0, rgba('#ffffff', 0.85 * a)); gr.addColorStop(0.35, rgba(col, 0.65 * a)); gr.addColorStop(1, rgba(col, 0));
+    c.fillStyle = gr; c.beginPath(); c.moveTo(x, y - s * 1.7);
+    c.quadraticCurveTo(x + s * 0.95, y - s * 0.2, x + s * 0.55, y + s * 0.55);
+    c.quadraticCurveTo(x, y + s * 1.05, x - s * 0.55, y + s * 0.55);
+    c.quadraticCurveTo(x - s * 0.95, y - s * 0.2, x, y - s * 1.7); c.fill();
+  }
+  function sparkle(c, x, y, r, col, a) {                  // sao bốn cánh lấp lánh
+    if (a <= 0.01) return;
+    glow(c, x, y, r * 1.8, col, 0.55 * a);
+    c.fillStyle = rgba('#ffffff', 0.95 * a); c.beginPath(); c.moveTo(x, y - r);
+    c.quadraticCurveTo(x, y, x + r, y); c.quadraticCurveTo(x, y, x, y + r);
+    c.quadraticCurveTo(x, y, x - r, y); c.quadraticCurveTo(x, y, x, y - r); c.fill();
+  }
+  function wisps(c, T, t, seed, col, a, back) {           // sợi khí lành bay vòng quanh người, có đuôi mờ dần
+    const mo = reduceMotion ? 0 : 1, n = 3 + Math.min(T, 6), R = 20 + T * 1.5, tail = 4;
+    for (let i = 0; i < n; i++) {
+      const base = t * 0.9 * mo + i * TAU / n + seed, yy = -24 - (i % 3) * 24;
+      for (let k = 0; k < tail; k++) {
+        const an = base - k * 0.16;
+        if ((Math.sin(an) < 0) !== back) continue;
+        glow(c, Math.cos(an) * R, yy + Math.sin(an) * 6, (4 + T * 0.4) * (1 - k * 0.15), col, (back ? 0.32 : 0.5) * a * (1 - k / tail));
+      }
+    }
+  }
+  const LOTUS_FEET = 0.22;     // chân đứng trên mặt đài: 22% chiều cao hình đài sen, tính từ mép trên
   // Vẽ trong hệ toạ độ nhân vật (chân ở 0,0; đầu ở y = -88). front = phần vẽ đè lên người.
   function aura(c, T, t, a, seed, front) {
     const col = tierColor(T), mo = reduceMotion ? 0 : 1;
@@ -356,85 +406,101 @@
       if (T >= 8) {                                                   // Đại Thừa: cột sáng từ trời
         const gr = c.createLinearGradient(0, -300, 0, 0);
         gr.addColorStop(0, rgba('#fff2c0', 0)); gr.addColorStop(0.6, rgba('#ffe7a0', 0.16 * a)); gr.addColorStop(1, rgba('#ffd36b', 0.28 * a));
-        c.fillStyle = gr; c.beginPath(); c.moveTo(-14, -300); c.lineTo(14, -300); c.lineTo(30, 0); c.lineTo(-30, 0); c.closePath(); c.fill();
+        c.fillStyle = gr; c.beginPath(); c.moveTo(-14, -300); c.lineTo(14, -300); c.lineTo(34, 0); c.lineTo(-34, 0); c.closePath(); c.fill();
       }
-      glow(c, 0, -52, 40 + T * 7, col, (0.2 + T * 0.03) * a * pulse);  // Luyện Khí trở lên: khí lành quanh thân
-      for (let i = 0, n = 3 + Math.min(T, 6); i < n; i++) {          // nửa sau của sợi khí bay vòng
-        const an = t * 0.9 * mo + i * TAU / n + seed;
-        if (Math.sin(an) >= 0) continue;
-        glow(c, Math.cos(an) * (20 + T * 1.5), -24 - (i % 3) * 24 + Math.sin(an) * 6, 4 + T * 0.4, col, 0.35 * a);
+      if (T >= 6) {                                                   // Luyện Hư: quang bối lá đề đầy sao sau lưng (Đại Thừa trở lên: kim quang)
+        const w = (92 + (T - 6) * 4) * (1 + 0.012 * Math.sin(t * 1.3 + seed) * mo);
+        if (!sprite(c, T >= 8 ? 'mandorla-gold' : 'mandorla-violet', 0, 7, w, 0.5, 1, (T >= 8 ? 0.55 : 0.78) * (0.8 + 0.2 * pulse) * a)) {
+          const H = 72 + (T - 6) * 8, Wd = 34 + (T - 6) * 4;
+          const gr = c.createLinearGradient(0, -H * 1.55, 0, 0);
+          gr.addColorStop(0, rgba(T >= 8 ? '#ffd36b' : '#6f5bd6', 0.32 * a)); gr.addColorStop(1, rgba(T >= 8 ? '#ff9f43' : '#2c3a8c', 0.12 * a));
+          c.fillStyle = gr; c.strokeStyle = rgba(T >= 8 ? '#ffe39a' : col, 0.75 * a); c.lineWidth = 1.6;
+          c.beginPath(); c.moveTo(0, -H * 1.55); c.bezierCurveTo(Wd * 1.2, -H * 1.1, Wd, -H * 0.1, 0, 2); c.bezierCurveTo(-Wd, -H * 0.1, -Wd * 1.2, -H * 1.1, 0, -H * 1.55); c.fill(); c.stroke();
+        }
+        for (let i = 0; i < 9; i++) {                                 // sao lấp lánh trong quang bối
+          const sx = Math.sin(i * 12.9 + seed) * w * 0.3, sy = -16 - ((i * 0.37 + seed) % 1) * w * 1.2;
+          sparkle(c, sx, sy, 2.4, T >= 8 ? '#ffe39a' : '#c9b8ff', (0.5 + 0.5 * Math.sin(t * 3 * mo + i * 2.1)) * 0.8 * a);
+        }
       }
-      if (T >= 2) {                                                   // Trúc Cơ: đài sáng dưới chân
-        c.save(); c.scale(1, 0.3); glow(c, 0, 0, 30 + T * 3.5, '#ffd77a', 0.55 * a * pulse);
-        c.strokeStyle = rgba('#ffe29a', 0.55 * a); c.lineWidth = 2; c.beginPath(); c.arc(0, 0, 24 + T * 1.5, 0, TAU); c.stroke(); c.restore();
-      }
-      if (T >= 4) {                                                   // Nguyên Anh: tia sáng xoay
-        const n = 12 + (T - 4) * 3, rot = t * 0.22 * mo + seed, r0 = 20, r1 = 54 + T * 7;
+      if (T >= 4) {                                                   // Nguyên Anh: tia sáng xoay chậm, mờ dần ra ngoài
+        const n = 12 + (T - 4) * 2, rot = t * 0.18 * mo + seed, cy = -62, r1 = 58 + T * 7, rc = T >= 8 ? '#ffe7a0' : col, ra = T >= 8 ? 0.2 : 0.32;
         for (let i = 0; i < n; i++) {
-          const an = rot + i * TAU / n, w = 0.07;
-          c.fillStyle = rgba(T >= 8 ? '#ffe7a0' : col, (i % 2 ? 0.1 : 0.2) * a);
-          c.beginPath(); c.moveTo(Math.cos(an - w) * r0, -58 + Math.sin(an - w) * r0);
-          c.lineTo(Math.cos(an) * r1, -58 + Math.sin(an) * r1); c.lineTo(Math.cos(an + w) * r0, -58 + Math.sin(an + w) * r0); c.closePath(); c.fill();
+          const an = rot + i * TAU / n, L = r1 * (i % 2 ? 0.7 : 1), w = i % 2 ? 0.045 : 0.075;
+          const ex = Math.cos(an) * L, ey = cy + Math.sin(an) * L, gr = c.createLinearGradient(0, cy, ex, ey);
+          gr.addColorStop(0, rgba(rc, ra * a)); gr.addColorStop(0.45, rgba(rc, ra * 0.38 * a)); gr.addColorStop(1, rgba(rc, 0));
+          c.fillStyle = gr; c.beginPath();
+          c.moveTo(Math.cos(an - w) * 14, cy + Math.sin(an - w) * 14); c.lineTo(ex, ey); c.lineTo(Math.cos(an + w) * 14, cy + Math.sin(an + w) * 14);
+          c.closePath(); c.fill();
         }
       }
-      if (T >= 6) {                                                   // Luyện Hư: vòng hư không hình lá đề, đầy sao
-        const H = 72 + (T - 6) * 8, Wd = 34 + (T - 6) * 4;
-        const gr = c.createLinearGradient(0, -H * 1.55, 0, 0);
-        gr.addColorStop(0, rgba(T >= 8 ? '#ffd36b' : '#6f5bd6', 0.32 * a)); gr.addColorStop(1, rgba(T >= 8 ? '#ff9f43' : '#2c3a8c', 0.12 * a));
-        c.fillStyle = gr; c.strokeStyle = rgba(T >= 8 ? '#ffe39a' : col, 0.75 * a); c.lineWidth = 1.6;
-        c.beginPath(); c.moveTo(0, -H * 1.55); c.bezierCurveTo(Wd * 1.2, -H * 1.1, Wd, -H * 0.1, 0, 2); c.bezierCurveTo(-Wd, -H * 0.1, -Wd * 1.2, -H * 1.1, 0, -H * 1.55); c.fill(); c.stroke();
-        for (let i = 0; i < 10; i++) {
-          const sx = Math.sin(i * 12.9 + seed) * Wd * 0.7, sy = -10 - ((i * 0.37 + seed) % 1) * H * 1.35;
-          const tw = 0.5 + 0.5 * Math.sin(t * 3 * mo + i * 2.1);
-          glow(c, sx, sy, 3.5, '#ffffff', 0.7 * tw * a);
+      const gT = Math.min(T, 6);                                      // cảnh giới cao đã có quang bối, quầng sáng không to thêm để khỏi chói
+      glow(c, 0, -52, 40 + gT * 7, col, (0.2 + gT * 0.03) * a * pulse);  // Luyện Khí trở lên: khí lành quanh thân
+      wisps(c, T, t, seed, col, a, true);                             // nửa sau của sợi khí
+      if (T >= 3) {                                                   // Kim Đan: vầng sáng viền cánh sen sau đầu, xoay rất chậm
+        c.save(); c.translate(0, -88); c.rotate(t * 0.06 * mo);
+        if (!sprite(c, 'halo-gold', 0, 0, 66 + (T - 3) * 2.5, 0.5, 0.5, (0.78 + 0.22 * pulse) * a)) {
+          glow(c, 0, 0, 22 + T, '#fff0b0', 0.42 * a);
+          c.strokeStyle = rgba('#ffd36b', 0.85 * a); c.lineWidth = 1.6; c.beginPath(); c.arc(0, 0, 16, 0, TAU); c.stroke();
         }
-      }
-      if (T >= 3) {                                                   // Kim Đan: vầng sáng trên đầu
-        glow(c, 0, -88, 22 + T, '#fff0b0', 0.42 * a);
-        c.strokeStyle = rgba('#ffd36b', 0.85 * a); c.lineWidth = 1.6; c.beginPath(); c.arc(0, -88, 16, 0, TAU); c.stroke();
+        c.restore();
       }
       if (T >= 9) {                                                   // Độ Kiếp: vòng ngũ sắc quanh đầu
         RAINBOW.forEach((rc, i) => {
           c.strokeStyle = rgba(rc, 0.6 * a); c.lineWidth = 1.4;
-          c.beginPath(); c.arc(0, -88, 19 + i * 2.6, t * (0.6 + i * 0.1) * mo + i, t * (0.6 + i * 0.1) * mo + i + Math.PI * 1.4); c.stroke();
+          c.beginPath(); c.arc(0, -88, 23 + i * 2.6, t * (0.6 + i * 0.1) * mo + i, t * (0.6 + i * 0.1) * mo + i + Math.PI * 1.4); c.stroke();
         });
       }
+      if (T >= 2) {                                                   // Trúc Cơ: đứng trên đài sen (Đại Thừa: sen hồng; Độ Kiếp: sen pha lê ngũ sắc)
+        const w = 72 + (T - 2) * 3.5, name = T >= 9 ? 'lotus-rainbow' : T >= 8 ? 'lotus-pink' : 'lotus-gold';
+        c.save(); c.scale(1, 0.32); glow(c, 0, 10, w * 0.62, T >= 8 ? '#ffc2d6' : '#ffd77a', 0.5 * a * pulse); c.restore();
+        if (sprite(c, name, 0, 1.5, w, 0.5, LOTUS_FEET, a, 'source-over')) {
+          sprite(c, name, 0, 1.5, w, 0.5, LOTUS_FEET, 0.3 * a * (pulse - 0.64) / 0.36);   // đài sen sáng lên rồi dịu xuống
+        } else {
+          c.save(); c.scale(1, 0.3); glow(c, 0, 0, 30 + T * 3.5, '#ffd77a', 0.55 * a * pulse);
+          c.strokeStyle = rgba('#ffe29a', 0.55 * a); c.lineWidth = 2; c.beginPath(); c.arc(0, 0, 24 + T * 1.5, 0, TAU); c.stroke(); c.restore();
+        }
+      }
     } else {
-      if (T >= 1) {                                                   // sợi khí bay vòng quanh người
-        const n = 3 + Math.min(T, 6);
+      wisps(c, T, t, seed, col, a, false);                            // nửa trước của sợi khí
+      if (T >= 2) {                                                   // đốm sáng bay lên từ đài sen
+        const n = 4 + T, mc = T >= 8 ? '#ffd6e4' : '#ffe29a';
         for (let i = 0; i < n; i++) {
-          const an = t * 0.9 * mo + i * TAU / n + seed;
-          if (Math.sin(an) < 0) continue;
-          glow(c, Math.cos(an) * (20 + T * 1.5), -24 - (i % 3) * 24 + Math.sin(an) * 6, 4 + T * 0.4, col, 0.5 * a);
+          const ph = (t * 0.35 * mo + i * 0.37 + seed) % 1;
+          glow(c, Math.sin(i * 9.7 + seed) * (22 + T * 1.6), -2 - ph * (38 + T * 4), 2.6, mc, Math.sin(ph * Math.PI) * 0.75 * a);
         }
       }
-      if (T >= 3) { glow(c, 0, -47, 9, '#ffd36b', 0.7 * a * pulse); c.fillStyle = rgba('#fff3c4', 0.9 * a); circle(c, 0, -47, 2.6); }   // kim đan
-      if (T >= 4) {                                                   // nguyên anh bay vòng
-        const an = t * 1.3 * mo + seed, ox = Math.cos(an) * 30, oy = -66 + Math.sin(an) * 9;
-        glow(c, ox, oy, 11, '#f2a6ff', 0.65 * a); c.fillStyle = rgba('#fff0ff', 0.9 * a); circle(c, ox, oy, 2.4);
-      }
-      if (T >= 5) {                                                   // Hóa Thần: thần hỏa và đốm sáng bốc lên
-        const n = 4 + T * 2;
-        for (let i = 0; i < n; i++) {
-          const ph = ((t * (0.28 + T * 0.02) * mo) + i * 0.618 + seed) % 1;
-          const fx = Math.sin(i * 7.31 + seed) * (16 + T * 2.2), fy = -6 - ph * (70 + T * 9);
-          glow(c, fx, fy, 3 + T * 0.35, i % 3 ? col : '#ffffff', Math.sin(ph * Math.PI) * 0.75 * a);
+      if (T >= 3) { glow(c, 0, -47, 10, '#ffd36b', 0.7 * a * pulse); sparkle(c, 0, -47, 3.4 + 1.4 * pulse, '#ffd36b', 0.9 * a); }   // kim đan
+      if (T >= 4) {                                                   // nguyên anh bay vòng, kéo đuôi sáng
+        for (let k = 5; k >= 0; k--) {
+          const an = t * 1.3 * mo + seed - k * 0.13, ox = Math.cos(an) * 30, oy = -66 + Math.sin(an) * 9;
+          glow(c, ox, oy, 11 - k * 1.4, '#f2a6ff', (k ? 0.28 : 0.7) * a * (1 - k / 7));
+          if (!k) { c.fillStyle = rgba('#fff0ff', 0.95 * a); circle(c, ox, oy, 2.4); }
         }
       }
-      if (T >= 7) {                                                   // Hợp Thể: ngũ hành châu
+      if (T >= 5) {                                                   // Hóa Thần: thần hỏa xanh bốc lên quanh thân (Đại Thừa trở lên: lửa trắng ngà, nhẹ hơn)
+        const n = 6 + Math.min(T, 7) * 2, fc = T >= 8 ? '#fff1c9' : '#7fd0ff', fa = T >= 8 ? 0.45 : 0.75;
+        for (let i = 0; i < n; i++) {
+          const ph = ((t * (0.32 + T * 0.02) * mo) + i * 0.618 + seed) % 1;
+          const px = Math.sin(i * 7.31 + seed) * (17 + T * 2.2) + Math.sin(t * 3 + i) * 2 * mo, py = -4 - ph * (64 + T * 8);
+          flame(c, px, py, (3.2 + T * 0.3) * (1 - ph * 0.55), i % 4 ? fc : '#e8f7ff', Math.sin(ph * Math.PI) * fa * a);
+        }
+      }
+      if (T >= 7) {                                                   // Hợp Thể: ngũ hành châu xoay quanh, có đuôi
         for (let i = 0; i < 5; i++) {
-          const an = t * 0.8 * mo + i * TAU / 5 + seed, ox = Math.cos(an) * 36, oy = -50 + Math.sin(an) * 12;
-          glow(c, ox, oy, 8, ELEM[i], 0.6 * a); c.fillStyle = rgba(ELEM[i], 0.95 * a); circle(c, ox, oy, 2.6);
+          for (let k = 3; k >= 0; k--) {
+            const an = t * 0.8 * mo + i * TAU / 5 + seed - k * 0.12, ox = Math.cos(an) * 36, oy = -50 + Math.sin(an) * 12;
+            glow(c, ox, oy, 8 - k * 1.3, ELEM[i], (k ? 0.25 : 0.65) * a * (1 - k / 5));
+            if (!k) { c.fillStyle = rgba(ELEM[i], 0.95 * a); circle(c, ox, oy, 2.6); }
+          }
         }
       }
-      if (T >= 8) {                                                   // Đại Thừa: hoa sen nở dưới chân
-        c.save(); c.scale(1, 0.38);
-        for (let i = 0; i < 10; i++) {
-          const an = i * TAU / 10 + t * 0.15 * mo;
-          c.save(); c.rotate(an); c.fillStyle = rgba(i % 2 ? '#ffb3cc' : '#ffd6e4', 0.55 * a);
-          c.beginPath(); c.moveTo(0, -12); c.quadraticCurveTo(9, -26, 0, -40); c.quadraticCurveTo(-9, -26, 0, -12); c.fill(); c.restore();
+      if (T >= 8) {                                                   // Đại Thừa: cánh sen hồng rơi nhẹ
+        for (let i = 0; i < 7; i++) {
+          const ph = (t * 0.12 * mo + i / 7 + seed * 0.1) % 1, x = Math.sin(i * 4.1 + seed) * 42 + Math.sin(t * 1.1 + i) * 6 * mo, y = -150 + ph * 150;
+          c.save(); c.translate(x, y); c.rotate(Math.sin(t * 1.7 + i) * 0.8 * mo + i);
+          c.fillStyle = rgba(i % 2 ? '#ffb3cc' : '#ffe0ea', Math.sin(ph * Math.PI) * 0.7 * a);
+          c.beginPath(); c.moveTo(0, -4.5); c.quadraticCurveTo(3.4, 0, 0, 4.5); c.quadraticCurveTo(-3.4, 0, 0, -4.5); c.fill(); c.restore();
         }
-        c.restore();
       }
       if (T >= 9 && mo) {                                             // Độ Kiếp: lôi kiếp
         const cyc = (t + seed) % 2.6;

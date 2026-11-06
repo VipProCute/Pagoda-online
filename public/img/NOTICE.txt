@@ -50,6 +50,13 @@ HÌNH ẢNH TRONG THƯ MỤC NÀY — NGUỒN GỐC VÀ GIẤY PHÉP
    Muốn tái sử dụng hai hình ở dự án khác, hãy kiểm tra điều khoản đó trước. devil.svg (mục 1) vẫn là
    bản CC0 và được dùng làm hình dự phòng khi devil.webp không tải được.
 
+3b) Hào quang cúng dường 9 cảnh giới (public/img/fx/aura/*.webp)
+   Ba hình gốc (đài sen vàng, vầng sáng viền cánh sen, quang bối hình lá đề đầy sao) được tạo bằng công cụ
+   tạo ảnh AI của Canva, trong tài khoản Canva của chủ dự án, trên nền đen. tools/fx/prepare_aura_assets.py
+   cắt sát hình, đổi nền đen thành trong suốt, tô lại màu để có thêm sen hồng, sen pha lê ngũ sắc và
+   quang bối vàng kim, rồi nén sang WebP. Không dùng ảnh người thật, logo hay nhân vật có bản quyền.
+   Giấy phép: giống mục 3, tuân theo điều khoản của Canva (https://www.canva.com/trust/legal/).
+
 4) Thêm meme của riêng bạn
    Chỉ cần thả ảnh (jpg, jpeg, png, webp, gif, avif) vào public/img/memes/ — máy chủ tự liệt kê và
    hiệu ứng chúc mừng sẽ bốc ngẫu nhiên cả ảnh mới. Nên dùng ảnh vuông ~720 px, dưới ~110 KB, và chỉ
