@@ -50,7 +50,7 @@ Khi công đức **hôm nay** (số ở thẻ “Công đức” trên đầu tr
 
 **Cách tính.** Máy chủ quyết định, không phải trình duyệt. Mốc tính khi một lần cộng đưa công đức hôm nay từ dưới mốc lên bằng hoặc quá mốc (mỗi lần cộng là 1 đến 15 điểm nên có thể nhảy qua đúng con số). Một lần cộng bước qua nhiều mốc thì chỉ hiện một: 666 được ưu tiên, còn lại lấy mốc cao nhất. Tải lại trang hay vào lại chùa khi đã có 700 công đức không chiếu lại mốc cũ. Công đức “hôm nay” tính lại mỗi ngày theo giờ Việt Nam, nên mốc cũng vậy. Đang có một hiệu ứng (hay tab đang ẩn) thì mốc mới xếp hàng chờ: tối đa một lượt, 666 được ưu tiên hơn mọi mốc khác. Lượt chờ quá 60 giây (tab bị ẩn lâu) thì không chiếu nữa, kể cả 666, chỉ hiện dòng báo nhỏ “Bạn đã đạt N công đức”.
 
-**Kho meme.** Thả ảnh `.jpg .jpeg .png .webp .gif .avif` vào `public/img/memes/` là tự có, không cần sửa mã (tối đa 200 ảnh, ảnh vuông khoảng 720px đẹp nhất). Máy chủ đọc lại thư mục sau tối đa 30 giây, người chơi nhận danh sách mới khi vào chùa hoặc tải lại trang. Mỗi lần chọn ngẫu nhiên và không lặp lại ảnh vừa hiện. Ảnh lỗi thì bỏ qua, hết ảnh thì thẻ chỉ còn chữ. Nên đặt tên file không dấu và ngắn: tên có byte lỗi mã hóa hay dài quá (địa chỉ từ 300 ký tự) sẽ bị bỏ qua. Mặt quỷ của mốc 666 là `public/img/devil.svg`.
+**Kho meme.** Thả ảnh `.jpg .jpeg .png .webp .gif .avif` vào `public/img/memes/` là tự có, không cần sửa mã (tối đa 200 ảnh, ảnh vuông khoảng 720px đẹp nhất). Máy chủ đọc lại thư mục sau tối đa 30 giây, người chơi nhận danh sách mới khi vào chùa hoặc tải lại trang. Mỗi lần chọn ngẫu nhiên và không lặp lại ảnh vừa hiện. Ảnh lỗi thì bỏ qua, hết ảnh thì thẻ chỉ còn chữ. Nên đặt tên file không dấu và ngắn: tên có byte lỗi mã hóa hay dài quá (địa chỉ từ 300 ký tự) sẽ bị bỏ qua. Mặt quỷ của mốc 666 là `public/img/devil.svg`. Bộ meme có 15 thẻ vẽ tay và 18 thẻ `anh-*.jpg` làm từ ảnh chụp có giấy phép tự do (CC0, public domain, CC BY); tên tác giả và nguồn từng ảnh nằm ở `public/img/PHOTO-CREDITS.txt`, thêm ảnh CC BY mới thì ghi tiếp vào đó.
 
 **Giọng chúc.** Bốn câu chúc giọng nữ (VieNeu-TTS v3 Turbo, giọng “Trúc Ly”) đã có sẵn trong `public/audio/blessings/`, kèm `manifest.json`; tạo lại bằng `tools/build_blessing_voice.py`. Muốn thêm câu hay đổi giọng thì sửa `manifest.json` (lưu UTF-8, có BOM cũng được; file lỗi thì máy chủ ghi một dòng cảnh báo vào log và trình duyệt đọc bằng giọng máy):
 
@@ -185,7 +185,7 @@ public/css/celebrate.css giao diện của hiệu ứng trên
 public/js/chants.js    kinh văn các bài tụng (đầu vào của tools/build_chants.py)
 public/audio/          bài tụng dựng sẵn (chants/), tiếng chuông (bell.mp3)
 public/audio/blessings/ giọng chúc (4 file mp3 + manifest.json)
-public/img/memes/      kho meme (thả ảnh vào là tự có), public/img/devil.svg cho mốc 666
+public/img/memes/      kho meme (thả ảnh vào là tự có), nguồn ảnh ở public/img/PHOTO-CREDITS.txt, public/img/devil.svg cho mốc 666
 tools/build_chants.py  dựng bài tụng bằng VieNeu-TTS
 tools/build_blessing_voice.py dựng giọng chúc (giọng nữ) bằng VieNeu-TTS
 public/js/lunar.js     lịch âm
