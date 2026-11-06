@@ -98,6 +98,11 @@
         <p class="hint">Tích từ thắp nhang, dâng hoa, gõ mõ, vái lạy, thả tim, tụng kinh chung và cúng dường (mỗi 1.000đ được 1 điểm). Nói lời tục tĩu trong chat sẽ bị trừ.</p>
         <div class="rank-now" id="rankNow"></div>
         <button type="button" class="btn small" data-open="rules">Luật công đức, pháp tướng và quỷ</button>
+        <div data-account hidden>
+          <p class="hint" data-auth-status></p>
+          <button type="button" class="btn small" data-auth-login hidden>Đăng nhập bằng Google</button>
+          <button type="button" class="btn small" data-auth-logout hidden>Đăng xuất</button>
+        </div>
       </section>
       <section class="card aura-card" id="auraCard" hidden>
         <span class="eyebrow">Hào quang của bạn</span>
@@ -163,7 +168,12 @@
       </div>
     </div>
     <fieldset><legend>Màu áo dài</legend><div class="swatches" id="jColors"></div></fieldset>
-    <p class="warn" id="joinWarn" hidden></p>
+    <div data-account hidden>
+      <p class="hint" data-auth-status></p>
+      <button type="button" class="btn small" data-auth-login hidden>Đăng nhập bằng Google</button>
+      <button type="button" class="btn small" data-auth-logout hidden>Đăng xuất</button>
+    </div>
+    <p class="warn" id="joinWarn" role="status" hidden></p>
     <p class="hint">Giữ lời nói hiền hòa nơi cửa Phật. Tin nhắn có số tài khoản hoặc đường link sẽ bị chặn để tránh lừa đảo.</p>
     <div class="dlg-foot"><button type="submit" class="btn primary big" id="joinBtn">Vào chánh điện</button></div>
   </form>
@@ -376,6 +386,6 @@
 <script src="/js/hall.js"></script>
 <script src="/js/voice.js"></script>
 <script src="/js/library.js"></script>
-<script src="/js/app.js"></script>
+<script src="/js/app.js?v=google-auth"></script>
 </body>
 </html>

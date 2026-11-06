@@ -10,6 +10,7 @@ const crypto = require('crypto');
 const express = require('express');
 const { Server } = require('socket.io');
 const store = require('./lib/store');
+const auth = require('./lib/auth');
 const { clean, checkMessage, checkName, rulesSummary } = require('./lib/moderation');
 const AURA = require('./public/js/aura');
 const MERITS = require('./public/js/merit');
@@ -117,7 +118,11 @@ async function iceServers() {
 const db = store.load();
 function rollDay() {
   const d = vnDay();
-  if (db.day !== d) { db.day = d; db.today = store.COUNTERS(); statsDirty = true; store.save(); }
+  if (db.day !== d) {
+    db.day = d; db.today = store.COUNTERS(); statsDirty = true;
+    for (const p of players.values()) p.meritDirty = true;
+    store.save();
+  }
 }
 let statsDirty = true;
 function bump(key, n = 1) { rollDay(); db.today[key] += n; db.total[key] += n; statsDirty = true; store.save(); }
@@ -137,17 +142,18 @@ function addMeritUid(uid, name, n, calm) {
   const hit = n > 0 ? crossed(beforeToday, m.today, calm) : null;
   for (const p of players.values()) {
     if (p.uid !== uid) continue;
-    p.meritDirty = true;
-    // mốc công đức trong ngày: chờ tới nhịp 1 giây; mốc ưu tiên cao hơn không bị mất. Ghi luôn công đức lúc đó: nếu nhịp 1 giây
-    // rơi qua nửa đêm giờ Việt Nam thì meritOf() đã về 0, con số gửi kèm sẽ thấp hơn chính mốc.
+    // Mốc trong ngày: giữ số lúc vượt mốc phòng khi nhịp gửi rơi qua nửa đêm.
     if (hit && outranks(hit, p.milestone)) p.milestone = { ...hit, today: m.today };
-    // pháp tướng / quỷ theo công đức tổng: chỉ báo cả chánh điện khi hình ảnh đổi
-    const key = MERITS.visualKey(m.total);
-    if (key !== p.mkey) {
-      p.mkey = key;
-      const up = MERITS.rankOf(m.total) > MERITS.rankOf(before);
-      io.emit('pm', { id: p.id, mt: m.total, up });
-    }
+    updatePlayerMerit(p, m.total, MERITS.rankOf(m.total) > MERITS.rankOf(before));
+  }
+}
+function updatePlayerMerit(p, total, up = false) {
+  p.meritDirty = true;
+  // Chỉ báo cả chánh điện khi pháp tướng hoặc quỷ đổi.
+  const key = MERITS.visualKey(total);
+  if (key !== p.mkey) {
+    p.mkey = key;
+    io.emit('pm', { id: p.id, mt: total, up });
   }
 }
 // Mốc nào vừa bị bước qua khi công đức đi từ before lên after (mỗi lần cộng là 1..15 nên có thể nhảy qua đúng số).
@@ -182,6 +188,47 @@ function meritOf(uid) {
   if (!m) return { today: 0, total: 0 };
   return { today: m.day === vnDay() ? m.today : 0, total: m.total };
 }
+function linkGuest(guest, uid) {
+  if (db.linkedGuests[guest]) return null;
+  const from = db.merit[guest], to = db.merit[uid];
+  const guestAura = db.auras[guest], accountAura = db.auras[uid];
+  if (from) {
+    const day = vnDay();
+    db.merit[uid] = {
+      name: to?.name || from.name,
+      total: (to?.total || 0) + from.total,
+      today: (to?.day === day ? to.today : 0) + (from.day === day ? from.today : 0),
+      day
+    };
+    delete db.merit[guest];
+  }
+  const t = now();
+  const moveAura = guestAura && guestAura.until > t;
+  if (moveAura) {
+    const active = accountAura?.until > t ? accountAura : null;
+    const amount = guestAura.amount + (active?.amount || 0);
+    db.auras[uid] = {
+      name: active?.name || guestAura.name,
+      amount, tier: AURA.tierOf(amount), until: Math.max(guestAura.until, active?.until || 0)
+    };
+    delete db.auras[guest];
+  }
+  db.linkedGuests[guest] = uid;
+  return () => {
+    delete db.linkedGuests[guest];
+    if (from) {
+      db.merit[guest] = from;
+      if (to) db.merit[uid] = to;
+      else delete db.merit[uid];
+    }
+    if (moveAura) {
+      db.auras[guest] = guestAura;
+      if (accountAura) db.auras[uid] = accountAura;
+      else delete db.auras[uid];
+    }
+  };
+}
+const accountOf = uid => db.linkedGuests[uid] || uid;
 function auraOf(uid) {
   const a = db.auras[uid];
   return a && a.tier && a.until > now() ? { t: a.tier, until: a.until } : 0;
@@ -352,6 +399,30 @@ const ipCount = new Map();
 let nextPid = 1;
 let chant = null, chantTimer = null, lastChantEnd = 0, lastGlobalBell = 0;
 
+auth.mount(app, {
+  linkGuest,
+  onGuestLinked(guest, uid) {
+    const history = offenses.get(guest);
+    if (history) {
+      offenses.set(uid, [...(offenses.get(uid) || []), ...history].filter(t => t > now() - 10 * 60e3));
+      offenses.delete(guest);
+    }
+    const aura = myAura(uid);
+    for (const p of players.values()) {
+      if (p.uid === guest) p.socket.disconnect(true);
+      if (p.uid !== uid) continue;
+      updatePlayerMerit(p, meritTotal(uid));
+      p.socket.emit('aura:me', aura);
+      io.emit('aura', { pid: p.id, au: auraOf(uid), up: false });
+    }
+  },
+  onLogout(key) {
+    for (const socket of io.sockets.sockets.values()) {
+      if (socket.data.authKey === key) socket.disconnect(true);
+    }
+  }
+});
+
 const publicPlayer = p => ({ id: p.id, name: p.name, look: p.look, x: +p.x.toFixed(3), z: +p.z.toFixed(3), mod: p.mod, v: p.v || 0, rd: p.rd || '', au: auraOf(p.uid), mt: meritTotal(p.uid) });
 const voiceCount = () => { let n = 0; for (const p of players.values()) if (p.v) n++; return n; };
 function sys(text) {
@@ -371,25 +442,26 @@ function hideMessage(id) {
   if (m && !m.hidden) { m.hidden = true; io.emit('chat:hide', { id }); store.save(); }
 }
 function confirmDonation(d, info) {
+  const uid = accountOf(d.uid);
   d.status = 'confirmed'; d.confirmedAt = now(); d.paidAmount = info.amount; d.ref = info.ref; d.source = info.source;
   if (info.amount > d.amount) d.amount = info.amount;
   // Hào quang: cộng dồn theo người cúng dường (ẩn danh hoặc tự tắt thì không hiện)
   let aura = null;
   if (!d.anon && d.aura !== false) {
-    aura = AURA.stack(db.auras[d.uid], d.amount, now());
-    db.auras[d.uid] = { amount: aura.amount, tier: aura.tier, until: aura.until, name: d.name };
+    aura = AURA.stack(db.auras[uid], d.amount, now());
+    db.auras[uid] = { amount: aura.amount, tier: aura.tier, until: aura.until, name: d.name };
     d.auraTier = aura.tier;
   }
   const tierInfo = aura && aura.tier ? AURA.TIERS[aura.tier - 1] : null;
   // Công đức: mỗi 1.000đ đã xác nhận là 1 điểm
   const gain = Math.floor(d.amount / MERITS.EARN.perVnd);
-  if (gain > 0) { addMeritUid(d.uid, d.name, gain, true); d.merit = gain; }
+  if (gain > 0) { addMeritUid(uid, d.name, gain, true); d.merit = gain; }
   store.save();
   io.emit('donation', { d: publicDonation(d), funds: fundsSummary() });
   sys(`${d.anon ? 'Một Phật tử ẩn danh' : d.name} vừa cúng dường tịnh tài cho quỹ “${d.fundName}”. Tùy hỷ công đức.`);
   for (const p of players.values()) {
-    if (p.uid !== d.uid) continue;
-    p.socket.emit('donation:ok', { code: d.code, amount: d.amount, fund: d.fundName, merit: gain, aura: aura && { ...myAura(d.uid), up: aura.up } });
+    if (p.uid !== uid) continue;
+    p.socket.emit('donation:ok', { code: d.code, amount: d.amount, fund: d.fundName, merit: gain, aura: aura && { ...myAura(uid), up: aura.up } });
     if (aura) io.emit('aura', { pid: p.id, au: auraOf(p.uid), up: aura.up });
   }
   // Đọc thông báo: soạn câu, nhờ VieNeu đọc (nếu có), rồi phát cho cả chánh điện
@@ -406,7 +478,12 @@ function endChant(completed) {
   io.emit('chant', null);
   if (completed) {
     bump('chants');
-    for (const p of players.values()) addMerit(p, MERIT.chantJoin);
+    const awarded = new Set();
+    for (const p of players.values()) {
+      if (awarded.has(p.uid) || (p.socket.data.authKey && !auth.sessionFor(p.socket.data.authKey))) continue;
+      addMerit(p, MERIT.chantJoin);
+      awarded.add(p.uid);
+    }
     sys(`Khóa tụng “${title}” đã viên mãn. Hồi hướng công đức đến tất cả chúng sinh.`);
   } else sys(`Khóa tụng “${title}” đã dừng.`);
 }
@@ -419,11 +496,17 @@ io.use((socket, next) => {
   if (n >= MAX_CONN_PER_IP) return next(new Error('Quá nhiều kết nối từ cùng một mạng.'));
   ipCount.set(ip, n + 1);
   socket.data.ip = ip;
+  socket.data.authKey = auth.sessionKey(socket.handshake.headers);
   next();
 });
 
 io.on('connection', socket => {
   let p = null;
+  const authKey = socket.data.authKey;
+  if (authKey) socket.use((_, next) => {
+    if (auth.sessionFor(authKey)) next();
+    else socket.disconnect(true);
+  });
   const fail = text => socket.emit('notice', { text });
   const allow = (key, ms) => { const t = now(); if ((p.cd[key] || 0) > t) return false; p.cd[key] = t + ms; return true; };
   const bucket = (key, rate, burst) => {
@@ -442,9 +525,9 @@ io.on('connection', socket => {
     const isMod = !!(ADMIN_KEY && data.adminKey && safeEqual(String(data.adminKey), ADMIN_KEY));
     const nm = checkName(data.name, isMod);
     if (!nm.ok) return ack({ ok: false, reason: nm.reason });
-    // uid là khóa của db.merit: loại tên trùng thuộc tính của Object ('__proto__', 'constructor', 'toString'...) kẻo ghi đè lên Object.prototype
-    const want = String(data.uid || '');
-    const uid = /^[a-zA-Z0-9_-]{8,40}$/.test(want) && !(want in Object.prototype) ? want : crypto.randomUUID();
+    const session = auth.sessionFor(authKey);
+    const guest = auth.guestId(data.uid);
+    const uid = session?.uid || (guest && !db.linkedGuests[guest] ? guest : crypto.randomUUID());
     p = {
       id: nextPid++, uid, name: nm.name, mod: isMod, socket,
       look: { g: data.look && data.look.g === 'nam' ? 'nam' : 'nu', c: num(data.look && data.look.c, 0, 11, 0) | 0, h: num(data.look && data.look.h, 0, 3, 0) | 0 },
@@ -457,7 +540,8 @@ io.on('connection', socket => {
     socket.data.pid = p.id;
     rollDay(); bump('visits');
     ack({
-      ok: true, you: p.id, uid, serverTime: now(), config: clientConfig(),
+      ok: true, you: p.id, uid: session ? undefined : uid, serverTime: now(), config: clientConfig(),
+      auth: { enabled: auth.enabled, signedIn: Boolean(session) },
       players: [...players.values()].map(publicPlayer),
       chat: db.chat.filter(m => !m.hidden).slice(-60).map(publicMsg),
       prayers: db.prayers.filter(x => !x.hidden).slice(-40).map(publicPrayer),
@@ -507,8 +591,8 @@ io.on('connection', socket => {
     const m = db.chat.find(x => x.id === Number(d.id));
     if (!m || m.hidden || m.mod || m.sys) return;
     m.reports = m.reports || [];
-    if (!m.reports.includes(p.uid)) m.reports.push(p.uid);
-    if (m.reports.length >= 3) hideMessage(m.id); else store.save();
+    if (!m.reports.some(uid => accountOf(uid) === p.uid)) m.reports.push(p.uid);
+    if (new Set(m.reports.map(accountOf)).size >= 3) hideMessage(m.id); else store.save();
     fail('Cảm ơn bạn. Ban điều hành sẽ xem tin nhắn này.');
   });
 
@@ -592,7 +676,7 @@ io.on('connection', socket => {
   socket.on('rejoice', d => {
     if (!p || !d) return;
     const pr = db.prayers.find(x => x.id === Number(d.id));
-    if (!pr || pr.hidden || pr.by.includes(p.uid)) return;
+    if (!pr || pr.hidden || pr.by.some(uid => accountOf(uid) === p.uid)) return;
     pr.by.push(p.uid); pr.n++;
     addMerit(p, 1);
     io.emit('prayer:n', { id: pr.id, n: pr.n });
@@ -715,6 +799,8 @@ setInterval(() => {
   }
   if (tick % 20 === 0) {
     for (const p of players.values()) {
+      const authKey = p.socket.data.authKey;
+      if (authKey && !auth.sessionFor(authKey)) { p.socket.disconnect(true); continue; }
       if (p.meritDirty) { p.meritDirty = false; p.socket.emit('merit', meritOf(p.uid)); }
       // mốc công đức chỉ gửi riêng cho người đạt mốc, sau khi thẻ công đức đã cập nhật
       if (p.milestone) { p.socket.emit('milestone', { at: p.milestone.at, kind: p.milestone.kind, today: Math.max(meritOf(p.uid).today, p.milestone.today) }); p.milestone = null; }
@@ -729,6 +815,7 @@ setInterval(() => {
   }
   if (tick % 1200 === 0) {
     const t = now();
+    auth.pruneSessions();
     db.incense = db.incense.filter(s => s.until > t);
     for (const k in db.auras) if (db.auras[k].until < t) delete db.auras[k];
     for (const d of db.donations) if (d.status === 'pending' && t - d.createdAt > 24 * 3600e3) d.status = 'expired';

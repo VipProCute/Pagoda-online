@@ -13,7 +13,7 @@ Chánh điện trực tuyến cho nhiều người cùng lúc. Mỗi người v�
 | Tàng Kinh Các | Kệ kinh: Dịch Cân Kinh (đủ 12 thức, 59 hình minh họa, lời thơ gốc kèm phiên âm Hán Việt), Cửu Âm Chân Kinh, Quỳ Hoa Bảo Điển, Bát Nhã Tâm Kinh. Đọc theo chương, mục lục, đổi cỡ chữ, nền giấy / nền tối, nhớ chỗ đọc dở. Ai đang đọc thì có biểu tượng sách cạnh tên. |
 | Nói chuyện | Nói chuyện bằng giọng như đi chùa thật: đứng gần nghe rõ, xa nghe nhỏ dần, người bên trái nghe ở tai trái. Đang tụng kinh thì tiếng nói chuyện tự nhỏ lại. Tắt tiếng từng người; ban điều hành khóa mic 10 phút. |
 | Cộng đồng | Chat chung (bong bóng chat hiện trên đầu nhân vật), tường lời nguyện có nút “Tùy hỷ”, báo cáo tin nhắn. |
-| Công đức | Điểm công đức cá nhân (hôm nay / tất cả) và bảng công đức hôm nay. Tính từ nhang, hoa, mõ, tim, vái lạy, tụng kinh và cúng dường (1.000đ = 1 điểm). Nói tục trong chat bị trừ theo 5 mức. Công đức cao hiện **pháp tướng** sau lưng (6 mốc), công đức âm thì có **quỷ** theo sau (4 dạng). |
+| Công đức | Điểm công đức cá nhân (hôm nay / tất cả) và bảng công đức hôm nay. Có thể đăng nhập Google để giữ điểm khi đổi thiết bị. Tính từ nhang, hoa, mõ, tim, vái lạy, tụng kinh và cúng dường (1.000đ = 1 điểm). Nói tục trong chat bị trừ theo 5 mức. Công đức cao hiện **pháp tướng** sau lưng (6 mốc), công đức âm thì có **quỷ** theo sau (4 dạng). |
 | Hiệu ứng mốc | Đạt 100, 300, 500, 888, 999 rồi mỗi 1.000 công đức trong ngày thì hiện lời chúc bằng giọng nữ kèm meme chọn ngẫu nhiên, hào quang vàng xoay quanh meme và cánh sen rơi. Mốc 666 thì hù một cái bằng mặt quỷ rồi hào quang hiện lên trấn an. Có công tắc tắt trong mục Công đức. |
 | Cúng dường | Tạo mã VietQR có sẵn số tiền và mã đối soát. Tiền vào thẳng tài khoản của chùa. Tự xác nhận qua webhook SePay, hoặc ban điều hành xác nhận tay. Xác nhận xong: chánh điện đọc thông báo bằng giọng nữ VieNeu, người cúng dường được **hào quang 9 cảnh giới** (cộng dồn). |
 | An toàn | Chặn tin có số tài khoản, số điện thoại, đường link (chống lừa đảo giả danh chùa). Che từ tục. Giới hạn tần suất. Tên “Ban điều hành / Admin / Trụ trì…” chỉ dành cho quản trị. |
@@ -142,7 +142,9 @@ Nhiều từ trong một tin thì cộng dồn (mỗi từ tính tối đa 3 l�
 
 Pháp tướng (vật sau lưng, lâu dài) và hào quang cúng dường (ánh sáng quanh thân, vài phút) đi cùng nhau được: khi có cả hai, ngọc và viền pháp tướng nhuộm theo màu cảnh giới hào quang và có thêm một quầng sáng cộng hưởng.
 
-**Quỷ theo sau khi công đức âm:** dưới 0 thì Tiểu Quỷ hiện mờ, rõ hẳn ở −100; −200 thành Ác Quỷ (sừng, cánh dơi, nanh vuốt); −500 thành Quỷ Vương (vương miện sừng, lửa đen); −1.000 thành Ma Vương (bóng khổng lồ ba mắt). Làm việc thiện để công đức về trên 0 thì quỷ tan. Sửa mốc trong `public/js/merit.js`.
+**Quỷ theo sau khi công đức âm:** dưới 0 thì Tiểu Quỷ hiện mờ, rõ hẳn ở −100; −200 thành Ác Quỷ (sừng, cánh dơi, nanh vuốt); −500 thành Quỷ Vương (vương miện sừng, lửa tím đen); −1.000 thành Ma Vương (khổng lồ ba mắt, đứng sừng sững sau lưng). Làm việc thiện để công đức về trên 0 thì quỷ tan. Sửa mốc trong `public/js/merit.js`.
+
+Hình 4 con quỷ vẽ trên Canva (trang 4–7 của thiết kế “Hiệu ứng Chùa Tâm An — hào quang & quỷ”), tách nền thành `public/img/fx/demon-1.webp` … `demon-4.webp` bằng `python3 -I tools/fx/prepare_demon_sprites.py quy1.png quy2.png quy3.png quy4.png` (cần Pillow và numpy; công cụ in ra vị trí mắt để chép vào `DEMON_ART` trong `public/js/hall.js`). Trong chánh điện quỷ có viền sáng đỏ (Quỷ Vương viền tím), quầng lửa, lửa bốc, tàn lửa bay và mắt rực thỉnh thoảng chớp. Thiếu ảnh thì tự vẽ hình cũ bằng code.
 
 Máy chủ phát sự kiện `pm` (`{ id, mt, up }`) mỗi khi hình pháp tướng / quỷ của ai đó đổi; `up: true` nghĩa là vừa lên mốc pháp tướng, dùng được cho hiệu ứng chúc mừng.
 
@@ -160,7 +162,7 @@ Khi công đức **hôm nay** (số ở thẻ “Công đức” trên đầu tr
 
 **Kho meme.** Thả ảnh `.jpg .jpeg .png .webp .gif .avif` vào `public/img/memes/` là tự có, không cần sửa mã (tối đa 200 ảnh, ảnh vuông khoảng 720px đẹp nhất). Máy chủ đọc lại thư mục sau tối đa 30 giây, người chơi nhận danh sách mới khi vào chùa hoặc tải lại trang. Mỗi lần chọn ngẫu nhiên và không lặp lại ảnh vừa hiện. Ảnh lỗi thì bỏ qua, hết ảnh thì thẻ chỉ còn chữ. Nên đặt tên file không dấu và ngắn: tên có byte lỗi mã hóa hay dài quá (địa chỉ từ 300 ký tự) sẽ bị bỏ qua. Bộ meme có 15 thẻ vẽ tay và 18 thẻ `anh-*.jpg` làm từ ảnh chụp có giấy phép tự do (CC0, public domain, CC BY); tên tác giả và nguồn từng ảnh nằm ở `public/img/PHOTO-CREDITS.txt`, thêm ảnh CC BY mới thì ghi tiếp vào đó. Mặt quỷ của mốc 666 là `public/img/devil.webp` (thiếu hay hỏng thì dùng bản vẽ cũ `public/img/devil.svg`, rồi tới biểu tượng 😈), hình hào quang là `public/img/fx/halo.webp` (thiếu thì chỉ còn tia sáng vẽ bằng CSS).
 
-**Hình từ Canva.** Hào quang và mặt quỷ được tạo bằng công cụ tạo ảnh AI của Canva, đặt trong thiết kế Canva “Hiệu ứng Chùa Tâm An — hào quang & quỷ 666” (trang 2 và 3) rồi xuất PNG. Muốn đổi hình: sửa hoặc thay ảnh trong thiết kế đó (giữ hào quang trên nền đen, cỡ vuông; mặt quỷ khổ dọc 3:4, mắt ở khoảng 40% chiều cao), xuất hai trang thành PNG, rồi chạy `python3 -I tools/fx/prepare_canva_assets.py halo.png devil.png` (cần Pillow và numpy). Công cụ đổi nền đen của hào quang thành trong suốt và nén cả hai sang WebP.
+**Hình từ Canva.** Hào quang và mặt quỷ được tạo bằng công cụ tạo ảnh AI của Canva, đặt trong thiết kế Canva “Hiệu ứng Chùa Tâm An — hào quang & quỷ” (trang 2 và 3) rồi xuất PNG. Muốn đổi hình: sửa hoặc thay ảnh trong thiết kế đó (giữ hào quang trên nền đen, cỡ vuông; mặt quỷ khổ dọc 3:4, mắt ở khoảng 40% chiều cao), xuất hai trang thành PNG, rồi chạy `python3 -I tools/fx/prepare_canva_assets.py halo.png devil.png` (cần Pillow và numpy). Công cụ đổi nền đen của hào quang thành trong suốt và nén cả hai sang WebP.
 
 **Giọng chúc.** Bốn câu chúc giọng nữ (VieNeu-TTS v3 Turbo, giọng “Trúc Ly”) đã có sẵn trong `public/audio/blessings/`, kèm `manifest.json`; tạo lại bằng `tools/build_blessing_voice.py`. Muốn thêm câu hay đổi giọng thì sửa `manifest.json` (lưu UTF-8, có BOM cũng được; file lỗi thì máy chủ ghi một dòng cảnh báo vào log và trình duyệt đọc bằng giọng máy):
 
@@ -218,6 +220,17 @@ Mở http://localhost:3000. Muốn dùng file cấu hình: `cp .env.example .env
 | `TTS_VOICE`, `TTS_API_KEY`, `TTS_TIMEOUT` | Giọng đọc (mặc định `Mai Anh`), khóa của máy chủ đọc, thời gian chờ (giây, mặc định 45). |
 
 **Chỉ điền tài khoản ngân hàng đứng tên nhà chùa, khi đã có văn bản đồng ý của nhà chùa.**
+
+## Bật đăng nhập Google
+
+1. Trong [Google Cloud Console](https://console.cloud.google.com/auth/clients), cấu hình màn hình đồng ý và tạo OAuth Client ID loại **Web application**.
+2. Thêm **Authorized redirect URI** khớp chính xác với địa chỉ trang, ví dụ `https://chuataman.vn/api/auth/google/callback`. Khi chạy thử trên máy, đăng ký `http://localhost:3000/api/auth/google/callback`.
+3. Đặt `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` và `AUTH_ORIGIN` trong cấu hình máy chủ. `AUTH_ORIGIN` là địa chỉ gốc, ví dụ `https://chuataman.vn`, không có dấu `/` ở cuối. Khởi động lại máy chủ.
+4. Nếu ứng dụng Google ở chế độ **Testing**, thêm tài khoản dùng thử trong mục **Audience**.
+
+Khách vẫn vào chánh điện như trước. Khi đăng nhập, công đức khách còn gắn với trình duyệt đó được chuyển vào tài khoản một lần. Khoản cúng dường tạo trước khi đăng nhập vẫn cộng điểm vào tài khoản sau khi được xác nhận. Điểm hôm nay tính theo giờ Việt Nam. Tên hiển thị và trang phục vẫn do người dùng chọn trên mỗi thiết bị. Máy chủ chỉ lưu mã định danh tài khoản đã băm và phiên của ứng dụng.
+
+**Lưu trữ khi triển khai:** ứng dụng dùng file JSON trên một máy chủ. Đặt `DATA_FILE` trên ổ đĩa bền vững để giữ điểm qua các lần khởi động lại hoặc triển khai. Nếu đã có dữ liệu, sao lưu và chuyển file `db.json` hiện có sang ổ mới trước khi đổi `DATA_FILE`.
 
 ## Đưa lên mạng trong ngày
 
@@ -310,6 +323,8 @@ public/audio/blessings/ giọng chúc (4 file mp3 + manifest.json)
 public/img/memes/      kho meme (thả ảnh vào là tự có), nguồn ảnh ở public/img/PHOTO-CREDITS.txt
 public/img/devil.webp  mặt quỷ mốc 666 (Canva), devil.svg là bản dự phòng
 public/img/fx/halo.webp hào quang công đức (Canva)
+public/img/fx/demon-*.webp 4 con quỷ theo sau người công đức âm (Canva)
+tools/fx/prepare_demon_sprites.py tách nền xám của 4 con quỷ thành ảnh trong suốt
 tools/fx/prepare_canva_assets.py chuyển PNG xuất từ Canva thành ảnh web
 tools/build_chants.py  dựng bài tụng bằng VieNeu-TTS
 tools/build_blessing_voice.py dựng giọng chúc (giọng nữ) bằng VieNeu-TTS
@@ -322,6 +337,5 @@ public/admin.html      trang quản trị
 
 - Thu âm bài tụng thật của chư tăng chùa đối tác, thay giọng mô phỏng.
 - Chuyển dữ liệu sang PostgreSQL + Redis khi đông người (nhiều máy chủ).
-- Đăng nhập Google / Zalo để giữ công đức khi đổi máy.
 - Chia phòng “Chánh điện 1, 2…” khi quá 300 người.
 - Hỏi luật sư về giấy phép mạng xã hội (Nghị định 147/2024/NĐ-CP) và bảo vệ dữ liệu cá nhân trước khi mở rộng.

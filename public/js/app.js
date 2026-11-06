@@ -16,13 +16,13 @@
 
   /* ---------- trạng thái ---------- */
   let uid = store.get('ta-uid');
-  if (!uid || !/^[a-zA-Z0-9_-]{8,40}$/.test(uid)) { uid = 'u' + Math.random().toString(36).slice(2, 12) + Date.now().toString(36); store.set('ta-uid', uid); }
   let look = null;
   try { look = JSON.parse(store.get('ta-look') || 'null'); } catch (e) { look = null; }
   if (!look || typeof look.c !== 'number') look = { g: 'nu', c: Math.floor(Math.random() * 8), h: Math.floor(Math.random() * 2) };
   let myName = store.get('ta-name') || '';
   let me = 0, joined = false, cfg = null, offset = 0, today = {}, chant = null, editing = false;
   const serverNow = () => Date.now() + offset;
+  let authPending = false, authKnown = false;
 
   /* ---------- tiện ích giao diện ---------- */
   let toastT;
@@ -120,6 +120,50 @@
   $('#btnProfile').addEventListener('click', () => { if (!joined) return; editing = true; $('#join-title').textContent = 'Đổi tên và trang phục'; $('#joinBtn').textContent = 'Lưu'; $('#joinClose').hidden = false; fillJoin(); openDlg('join'); });
   $('#joinClose').addEventListener('click', () => closeDlg('join'));
 
+  /* ---------- tài khoản Google ---------- */
+  function renderAuth(auth) {
+    authKnown = true;
+    $$('[data-account]').forEach(el => { el.hidden = !auth.enabled; });
+    $$('[data-auth-status]').forEach(el => {
+      el.textContent = auth.signedIn ? 'Công đức được lưu vào tài khoản Google.' : 'Đăng nhập để giữ công đức khi đổi thiết bị.';
+    });
+    $$('[data-auth-login]').forEach(el => { el.hidden = auth.signedIn; });
+    $$('[data-auth-logout]').forEach(el => { el.hidden = !auth.signedIn; });
+  }
+  function showAuthError(text) {
+    if ($('#dlg-join').open) {
+      $('#joinWarn').textContent = text;
+      $('#joinWarn').hidden = false;
+    } else toast(text);
+  }
+  async function changeAuth(login) {
+    if (authPending) return;
+    authPending = true;
+    const buttons = $$('[data-auth-login], [data-auth-logout]');
+    buttons.forEach(el => { el.disabled = true; });
+    try {
+      if (login && $('#dlg-join').open && !editing) {
+        myName = $('#jName').value.trim();
+        look = readLook();
+        saveProfile();
+      }
+      const response = await fetch(login ? '/api/auth/google' : '/api/auth/logout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: login ? JSON.stringify({ guest: uid }) : '{}',
+        signal: AbortSignal.timeout(10000)
+      });
+      if (!response.ok) throw new Error();
+      location.assign(login ? (await response.json()).url : '/');
+    } catch {
+      authPending = false;
+      buttons.forEach(el => { el.disabled = false; });
+      showAuthError(login ? 'Chưa bắt đầu được đăng nhập Google. Bạn thử lại nhé.' : 'Chưa đăng xuất được. Bạn thử lại nhé.');
+    }
+  }
+  $$('[data-auth-login]').forEach(el => el.addEventListener('click', () => changeAuth(true)));
+  $$('[data-auth-logout]').forEach(el => el.addEventListener('click', () => changeAuth(false)));
+
   /* ---------- kết nối ---------- */
   const socket = io({ transports: ['websocket', 'polling'] });
   async function syncTime() {
@@ -146,13 +190,17 @@
     syncTime();
     if (joined) { joined = false; join(); }
   });
-  socket.on('disconnect', () => { $('#conn').hidden = false; });
+  socket.on('disconnect', reason => {
+    $('#conn').hidden = false;
+    if (reason === 'io server disconnect' && !authPending) location.reload();
+  });
   socket.on('connect_error', err => { $('#conn').hidden = false; if (err && err.message && /kết nối/.test(err.message)) $('#conn').textContent = err.message; });
 
   function welcome(r) {
     joined = true; editing = false; me = r.you; cfg = r.config;
     myAura = r.aura; renderAura();
     if (window.Celebrate) Celebrate.configure(cfg, { toast });
+    if (r.auth) renderAuth(r.auth);
     if (r.uid && r.uid !== uid) { uid = r.uid; store.set('ta-uid', uid); }
     if (!offset) { offset = r.serverTime - Date.now(); Hall.setOffset(offset); }
     $('#siteName').textContent = cfg.siteName; document.title = cfg.siteName + ' · Đi chùa online';
@@ -205,6 +253,7 @@
     Hall.setAura(d.pid, d.au, d.up);
     if (d.up && d.au && d.au.t && d.pid !== me) { const p = Hall.player(d.pid); if (p) ticker(`${p.name} đột phá cảnh giới ${AURA.TIERS[d.au.t - 1].name}`); }
   });
+  socket.on('aura:me', aura => { myAura = aura; renderAura(); });
   socket.on('announce', d => announceQ(d));
   socket.on('voice:kicked', d => { Voice.leave(); voiceUI(); toast(d.text); });
   socket.on('pu', d => Hall.updatePlayer(d));
@@ -546,6 +595,7 @@
     players: () => Hall.list(),
     talk: (id, lv) => Hall.setTalk(id, lv),
     audioContext: () => SFX.context(),
+    speech: () => SFX.duckAmbience(0.45),
     notice: t => toast(t),
     change: () => voiceUI()
   });
@@ -763,4 +813,15 @@
   fillJoin();
   openDlg('join');
   if (myName) setTimeout(() => $('#jName').select(), 50);
+  const url = new URL(location.href);
+  const authResult = url.searchParams.get('auth');
+  if (authResult) {
+    url.searchParams.delete('auth');
+    history.replaceState(history.state, '', url);
+    if (authResult === 'error') showAuthError('Chưa đăng nhập được bằng Google. Bạn thử lại nhé.');
+  }
+  fetch('/api/auth/session').then(r => r.json()).then(auth => {
+    if (!authKnown) renderAuth(auth);
+    if (authResult === 'ok' && auth.signedIn) toast('Đã đăng nhập Google. Mời bạn vào chánh điện.');
+  }).catch(() => {});
 })();

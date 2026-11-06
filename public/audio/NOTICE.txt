@@ -24,3 +24,9 @@ blessings/*.mp3 (binh-an-1 ... binh-an-4) — lời chúc mốc công đức, d�
   Giọng mẫu: Trúc Ly (preset voice nữ phát hành cùng mô hình, Apache-2.0)
   Codec: MOSS-Audio-Tokenizer-Nano (OpenMOSS-Team), Apache-2.0
   Âm thanh do máy tổng hợp.
+
+ambience.mp3 — nền chánh điện, vòng lặp 32 giây.
+  Chuông: “Bell Meditation.mp3” của fauxpress, CC0.
+  https://freesound.org/people/fauxpress/sounds/42095/
+  Dùng bản Ogg từ https://github.com/nyxkn/meditation/blob/master/assets/bell_meditation.ogg
+  Tiếng mõ được tổng hợp, phối cùng một tiếng chuông và làm mềm hai đầu vòng lặp.

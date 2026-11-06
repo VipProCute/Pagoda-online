@@ -3,6 +3,7 @@
  * - Bài tụng: file MP3 dựng sẵn (giọng VieNeu-TTS đọc liền câu + mõ theo quy tắc + chuông),
  *   phát bằng thẻ <audio> và luôn chỉnh về đúng vị trí theo giờ máy chủ để mọi người nghe cùng một chữ.
  *   Dựng lại bằng tools/build_chants.py.
+ * - Nhạc nền: lặp qua Web Audio, hạ âm lượng khi có âm thanh chánh điện.
  * - Chuông: bản thu public/audio/bell.mp3. Mõ và tiếng "pop" khi thả tim: tạo bằng Web Audio.
  * - Hiệu ứng mốc công đức: playClip (lời chúc), chime (chuông ting), scare (tiếng hù), xem celebrate.js.
  */
@@ -26,9 +27,54 @@
       loadBell();
     }
     if (AC.state === 'suspended') AC.resume();
+    startAmbience();
     return AC;
   }
   const live = () => !!(AC && AC.state === 'running' && !muted);
+  const AMBIENCE_GAIN = 0.22;
+  const AMBIENCE_DUCK = 0.05;
+  let ambienceLoad = null, ambienceGain = null, ambienceLevel = null;
+  let duckUntil = 0, duckTimer = null;
+
+  function updateAmbience() {
+    if (!ambienceGain) return;
+    const level = AMBIENCE_GAIN * (ch || clipSrc || performance.now() < duckUntil ? AMBIENCE_DUCK : 1);
+    if (level === ambienceLevel) return;
+    ambienceLevel = level;
+    ambienceGain.gain.setTargetAtTime(level, AC.currentTime, level < AMBIENCE_GAIN ? 0.025 : 0.28);
+  }
+
+  function duckAmbience(seconds) {
+    const until = performance.now() + seconds * 1000;
+    if (until <= duckUntil) return;
+    duckUntil = until;
+    clearTimeout(duckTimer);
+    duckTimer = setTimeout(updateAmbience, Math.ceil(seconds * 1000) + 1);
+    updateAmbience();
+  }
+
+  function startAmbience() {
+    if (muted || ambienceLoad || !root.fetch) return;
+    ambienceLoad = fetch('/audio/ambience.mp3')
+      .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.arrayBuffer(); })
+      .then(decode)
+      .then(buffer => {
+        const src = AC.createBufferSource();
+        src.buffer = buffer;
+        src.loop = true;
+        ambienceGain = AC.createGain();
+        ambienceGain.gain.value = 0;
+        src.connect(ambienceGain);
+        ambienceGain.connect(OUT);
+        updateAmbience();
+        src.start();
+      })
+      .catch(e => {
+        ambienceLoad = null;
+        if (root.console) console.warn('Không tải được nhạc nền:', e);
+      });
+  }
+
   function impulse(sec) {
     const len = Math.floor(AC.sampleRate * sec), b = AC.createBuffer(2, len, AC.sampleRate);
     for (let ch = 0; ch < 2; ch++) { const d = b.getChannelData(ch); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3.4); }
@@ -46,6 +92,7 @@
 
   function mo(t, v = 1) {
     if (!live()) return; t = at(t);
+    duckAmbience(0.45);
     const o = AC.createOscillator(), g = AC.createGain();
     o.type = 'sine'; o.frequency.setValueAtTime(560, t); o.frequency.exponentialRampToValueAtTime(390, t + 0.08);
     env(g, t, 0.75 * v, 0.004, 0.2); o.connect(g); out(g, 0.45); o.start(t); o.stop(t + 0.24);
@@ -70,6 +117,7 @@
     const src = AC.createBufferSource(), g = AC.createGain();
     src.buffer = BELL; src.playbackRate.value = rate;
     const len = Math.min(maxDur, BELL.duration / rate);
+    duckAmbience(len + 0.1);
     g.gain.setValueAtTime(v, t);
     g.gain.setValueAtTime(v, t + Math.max(0, len - 0.4));
     g.gain.linearRampToValueAtTime(0.0001, t + len);
@@ -80,6 +128,7 @@
   const ting = () => playBell(null, 0.3, 1.6, 2.2);      // chuông nhỏ khi thắp nhang, vái lạy
   function pop(t) {
     if (!live()) return; t = at(t);
+    duckAmbience(0.35);
     const o = AC.createOscillator(), g = AC.createGain();
     o.type = 'sine'; o.frequency.setValueAtTime(880, t); o.frequency.exponentialRampToValueAtTime(1320, t + 0.06);
     env(g, t, 0.12, 0.004, 0.12); o.connect(g); out(g, 0.2); o.start(t); o.stop(t + 0.14);
@@ -88,6 +137,7 @@
   /* Chuông ting nhẹ: bốn nốt ngũ cung đi lên, dùng khi chúc mừng mà không có giọng đọc */
   function chime(t) {
     if (!live()) return; t = at(t);
+    duckAmbience(1.55);
     [1047, 1319, 1568, 2093].forEach((f, i) => {
       const s = t + i * 0.11, o = AC.createOscillator(), g = AC.createGain();
       o.type = 'sine'; o.frequency.value = f;
@@ -108,6 +158,7 @@
   function scare(t) {
     if (!live()) return; t = at(t);
     const D = 1.35, master = AC.createGain();
+    duckAmbience(D);
     master.gain.setValueAtTime(0.0001, t); master.gain.exponentialRampToValueAtTime(SCARE_GAIN, t + 0.012);
     master.gain.setValueAtTime(SCARE_GAIN, t + 0.75); master.gain.exponentialRampToValueAtTime(0.0001, t + D);
     master.connect(BUS);
@@ -145,7 +196,12 @@
     return p;
   }
   function preloadClip(url) { try { loadClip(url).catch(() => {}); } catch (e) { /* bỏ qua */ } }
-  function stopClip() { if (clipSrc) { try { clipSrc.stop(); } catch (e) { /* đã dừng */ } clipSrc = null; } }
+  function stopClip() {
+    if (!clipSrc) return;
+    try { clipSrc.stop(); } catch (e) { /* đã dừng */ }
+    clipSrc = null;
+    updateAmbience();
+  }
   // opts.cancelled(): hàm kiểm tra ngay trước khi phát, để lời chúc đến muộn (người dùng đã đóng) không bật lên
   function playClip(url, opts) {
     return loadClip(url).then(buf => {
@@ -157,8 +213,13 @@
         stopClip();
         const src = AC.createBufferSource(), g = AC.createGain();
         src.buffer = buf; src.connect(g); out(g, 0.12);
-        src.onended = () => { if (clipSrc === src) clipSrc = null; };
+        src.onended = () => {
+          if (clipSrc !== src) return;
+          clipSrc = null;
+          updateAmbience();
+        };
         src.start(); clipSrc = src;
+        updateAmbience();
         return { duration, played: true };
       });
     });
@@ -173,10 +234,12 @@
     chEl.preload = 'auto';
     chEl.volume = volume;
     blocked = false;
+    updateAmbience();
   }
   function stopChant() {
     if (chEl) { chEl.pause(); chEl.removeAttribute('src'); chEl.load(); }
     chEl = null; ch = null;
+    updateAmbience();
   }
   function syncChant(serverNow) {
     if (!ch || !chEl) return;
@@ -202,9 +265,10 @@
       muted = !!m;
       if (OUT) OUT.gain.setTargetAtTime(muted ? 0 : volume, AC.currentTime, 0.05);
       if (muted && chEl && !chEl.paused) chEl.pause();
+      if (!muted && AC) startAmbience();
     },
     setVolume(v) { volume = v; if (OUT && !muted) OUT.gain.setTargetAtTime(volume, AC.currentTime, 0.05); if (chEl) chEl.volume = v; },
-    mo: () => mo(), bell, ting, pop,
+    mo: () => mo(), bell, ting, pop, duckAmbience,
     chime: () => chime(), scare: () => scare(), playClip, preloadClip, stopClip,
     startChant, stopChant, syncChant
   };
