@@ -13,7 +13,7 @@ Tài liệu kỹ thuật cho phần tu luyện, học chiêu và luận võ. Đ�
 Quy tắc cứng:
 
 - Chỉ người đang ở `arena` mới thấy và mời được nhau. Người ở chánh điện không bao giờ bị mời, không thấy lời mời.
-- Mọi sự kiện `pk:*` chỉ nhận khi người chơi đang ở `arena` (hoặc đang có trận dở, xem `pk:resume`).
+- Mọi sự kiện `pk:*` chỉ nhận khi người chơi đang ở `arena` (kể cả `pk:resume`: người vào lại phải `place:set arena` trước). Gói `pk:*` chỉ gửi tới tab đang ở sân.
 - Người đi sang nơi khác thì nhân vật không hiện trong chánh điện (`pplace`).
 - Nơi mới (ví dụ coi bói tử vi, tarot) thêm bằng cách đăng ký một nơi mới với `Places`, không đụng chánh điện.
 

@@ -170,8 +170,13 @@
     if ($('#dlg-join').open) {
       $('#joinWarn').textContent = text;
       $('#joinWarn').hidden = false;
+    } else if ($('#dlg-login').open) {
+      $('#loginWarn').textContent = text;
+      $('#loginWarn').hidden = false;
     } else toast(text);
   }
+  // AbortSignal.timeout không có trên Safari iOS 15 trở xuống
+  function abortAfter(ms) { const ac = new AbortController(); setTimeout(() => ac.abort(), ms); return ac.signal; }
   async function changeAuth(login) {
     if (authPending) return;
     authPending = true;
@@ -187,7 +192,7 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: login ? JSON.stringify({ guest: uid }) : '{}',
-        signal: AbortSignal.timeout(10000)
+        signal: abortAfter(10000)
       });
       if (!response.ok) throw new Error();
       location.assign(login ? (await response.json()).url : '/');
@@ -264,6 +269,10 @@
     const mc = cfg.martial || {};
     $('#actDojo').hidden = !mc.enabled; $('#actArena').hidden = !mc.pk;
     Places.resume();                                          // mất mạng rồi nối lại: báo lại cho máy chủ biết đang ở nơi nào
+    if (r.hasMatch && Places.current === 'hall' && mc.pk) {   // tải lại trang giữa trận: vào lại Sân đấu để tiếp tục, kẻo bị xử thua vì quá giờ
+      toast('Bạn đang có một trận dở, đang đưa bạn về Sân đấu…');
+      setTimeout(() => { if (Places.current === 'hall') Places.go('arena'); }, 600);
+    }
   }
   // Xem thử hiệu ứng mốc công đức: mở trang với ?celebrate=100 (hoặc 300, 666, 999...). Chỉ chạy một lần mỗi lần mở trang.
   let previewed = false;
@@ -390,7 +399,7 @@
   /* ---------- tab ---------- */
   function showTab(name) {
     $$('.tabs [role=tab]').forEach(t => t.setAttribute('aria-selected', String(t.dataset.tab === name)));
-    ['chat', 'prayers', 'merit'].forEach(n => { $('#pane-' + n).hidden = n !== name; });
+    ['chat', 'prayers', 'merit', 'places'].forEach(n => { $('#pane-' + n).hidden = n !== name; });
     if (name === 'chat') scrollFeed(true);
   }
   $$('.tabs [role=tab]').forEach(t => t.addEventListener('click', () => showTab(t.dataset.tab)));
@@ -742,7 +751,11 @@
       if (ack && ack.code === 'login') { needLogin(ack.reason || 'Bạn cần đăng nhập để vào nơi này.'); return true; }
       return false;
     },
-    onChange(name) { Hall.pause(name !== 'hall'); Hall.setPlace(me, name); }
+    onChange(name) {
+      Hall.pause(name !== 'hall'); Hall.setPlace(me, name);
+      // nói chuyện chỉ ở chánh điện: sang nơi khác thì tắt micro, vì ở đó không có nút tắt và nhân vật đã biến mất khỏi chánh điện
+      if (name !== 'hall' && Voice.active) { Voice.leave(); voiceUI(); toast('Đã tắt nói chuyện khi rời chánh điện.'); }
+    }
   });
   const martialHost = {
     socket, toast, serverNow,

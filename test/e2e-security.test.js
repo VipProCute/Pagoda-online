@@ -43,7 +43,7 @@ test('danh sách chặn không lộ uid thật; chỉ chặn được người �
   assert.ok((await call(B.socket, 'pk:invite', { toPid: A.pid, mode: 'balanced' })).ok, 'bỏ chặn rồi thì mời được');
 });
 
-test('mã quản trị: nhập sai qua socket cũng bị đếm và khóa chung với trang quản trị', async t => {
+test('mã quản trị: nhập sai qua socket bị đếm và khóa riêng; trang quản trị có bộ đếm riêng', async t => {
   const srv = await startServer({});
   t.after(() => srv.stop());
   for (let i = 0; i < 10; i++) {
@@ -52,10 +52,13 @@ test('mã quản trị: nhập sai qua socket cũng bị đếm và khóa chung 
     c.socket.close();
     await sleep(20);
   }
-  // đã bị khóa: mã ĐÚNG qua socket cũng không được nhận là Ban điều hành, và trang quản trị trả 429
+  // kênh socket đã bị khóa: mã ĐÚNG qua socket cũng không được nhận là Ban điều hành...
   const ok = await enter(srv, 'Khach Ma Dung', 'uid-adm-good-0001', 'khoa-quan-tri-thu');
   assert.equal(ok.join.players.find(p => p.id === ok.pid).mod, false, 'đang khóa thì không so mã');
-  assert.equal((await srv.admin('/api/admin/summary')).status, 429);
+  // ...nhưng trang quản trị có bộ đếm riêng nên mã cũ lưu ở trình duyệt không khóa được quản trị viên
+  assert.equal((await srv.admin('/api/admin/summary')).status, 200);
+  for (let i = 0; i < 10; i++) assert.equal((await srv.admin('/api/admin/summary', 'GET', null, 'sai-ma')).status, 401);
+  assert.equal((await srv.admin('/api/admin/summary')).status, 429, 'sai 10 lần ở trang quản trị thì bị khóa');
   // sau khi máy chủ khởi động lại thì hết khóa
   ok.socket.close();
   await srv.restart();

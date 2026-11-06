@@ -5,6 +5,7 @@
  */
 const test = require('node:test');
 const assert = require('node:assert/strict');
+const sameDb = (x, y) => { assert.ok(x.seq >= y.seq, 'seq không lùi'); assert.deepEqual({ ...x, seq: 0 }, { ...y, seq: 0 }); };
 const fs = require('fs');
 const os = require('os');
 const net = require('net');
@@ -265,13 +266,13 @@ test('PostgreSQL: kho dữ liệu', async t => {
     assert.equal(a.status().flushes, 1);
     for (const s of S.SECTIONS) assert.ok(await cnt(s.name) > 0, 'phần ' + s.name + ' có dòng');
     const b = await reload();
-    assert.deepEqual(b.get(), a.get());
+    sameDb(b.get(), a.get());
     const spyB = spyOn(b);
     b.save(); assert.equal(await b.flush(), true);
-    assert.deepEqual(spyB.sqls, [], 'vừa nạp xong, flush ngay không có gì để ghi');
+    assert.deepEqual(spyB.sqls, [], 'vừa nạp xong, flush ngay không có gì để ghi (seq nhảy chỉ nằm trong RAM)');
     assert.deepEqual(b.get().prayers.map(p => p.id), [9, 10, 100]);
     assert.deepEqual(b.get().donations.map(d => d.code), ['CD100002', 'CD100001']);
-    assert.equal(b.get().seq, a.get().seq);
+    assert.equal(b.get().seq, a.get().seq + 100000, 'nạp lại thì seq nhảy lên để không trùng id với bản cũ chạy chồng');
     // sửa một dòng cũ (đổi vị trí vật lý trong bảng), xóa đầu mảng, thêm mới
     a.get().prayers[0].text = 'đã sửa';
     a.get().chat.shift();
@@ -281,7 +282,7 @@ test('PostgreSQL: kho dữ liệu', async t => {
     a.save();
     assert.equal(await a.flush(), true);
     const c = await reload();
-    assert.deepEqual(c.get(), a.get());
+    sameDb(c.get(), a.get());
     assert.deepEqual(c.get().chat.map(m => m.id), [12, 150]);
     assert.deepEqual(c.get().prayers.map(p => p.id), [9, 10, 100]);
   });
@@ -314,7 +315,7 @@ test('PostgreSQL: kho dữ liệu', async t => {
     assert.equal(await cnt('prayers'), 2);
     assert.equal(await cnt('donations'), 1);
     assert.equal(await cnt('meta'), 1);
-    assert.deepEqual((await reload()).get(), db);
+    sameDb((await reload()).get(), db);
     // xóa sạch cả phần
     db.merit = {}; a.save(); await a.flush();
     assert.equal(await cnt('merit'), 0);
@@ -390,7 +391,7 @@ test('PostgreSQL: kho dữ liệu', async t => {
     assert.ok(await waitFor(() => !a.status().dirty && a.status().flushes === 2), 'tự thử lại sau retryMs');
     assert.equal(a.status().lastError, null);
     assert.equal(await cnt('merit'), 2502);
-    assert.deepEqual((await reload()).get(), db);
+    sameDb((await reload()).get(), db);
   });
 
   it('lỗi rồi thử lại bằng flush() tay cũng thành công và giữ đủ phần xóa', async () => {
@@ -553,7 +554,7 @@ test('PostgreSQL: kho dữ liệu', async t => {
     assert.equal(a.docCount(), await cnt());
     assert.ok(fs.existsSync(file), 'không xóa file gốc');
     // nạp lại từ CSDL ra y hệt
-    assert.deepEqual((await reload()).get(), db);
+    sameDb((await reload()).get(), db);
   });
 
   it('nhập từ JSON chạy lần hai không nhập lại; CSDL đã có dữ liệu thì luôn lấy từ CSDL', async () => {
@@ -568,7 +569,7 @@ test('PostgreSQL: kho dữ liệu', async t => {
     fs.writeFileSync(file, JSON.stringify(other));
     const b = mk({ importJson: true, file });
     await b.init();
-    assert.deepEqual(b.get(), a.get());
+    sameDb(b.get(), a.get());
     assert.equal(b.get().merit.khac, undefined);
     assert.equal((await q(`SELECT value->>'at' AS ts FROM schema_info WHERE key = 'imported_from_json'`))[0].ts, at);
     assert.ok(!b.logs.some(l => /Đã nhập dữ liệu từ/.test(l)));
@@ -642,8 +643,8 @@ test('PostgreSQL: kho dữ liệu', async t => {
     a.save(); await a.flush();
     const [c, d] = [mk(), mk()];
     await Promise.all([c.init(), d.init()]);
-    assert.deepEqual(c.get(), d.get());
-    assert.deepEqual(c.get(), a.get());
+    sameDb(c.get(), d.get());
+    sameDb(c.get(), a.get());
     // b nạp từ trước khi a ghi: ghi khóa khác thì hợp nhất theo khóa, không đè khóa của a
     b.get().merit.tu_b = { name: 'B', total: 3 };
     b.save(); await b.flush();

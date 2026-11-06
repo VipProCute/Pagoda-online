@@ -142,7 +142,7 @@ async function run(browser) {
     ok((await text(page, '.dj-cd')).startsWith('03:2'), 'đếm ngược ~03:21: ' + await text(page, '.dj-cd'));
     ok(await has(page, '.dj-sp'), 'có khối hoàn thành ngay');
     const sp = await text(page, '.dj-sp');
-    for (const k of ['20.000đ', 'Ban điều hành xác nhận thủ công', 'mất vài giờ', 'Chỉ khi được xác nhận', 'công đức, hào quang và lời thông báo', 'rút ngắn thời gian', '3.000', 'nội lực tối đa theo cấp', 'tối đa 2 lần', 'Ẩn danh'])
+    for (const k of ['20.000đ', 'Ban điều hành xác nhận thủ công', 'mất vài giờ', 'Chỉ khi được xác nhận', 'công đức, hào quang và lời thông báo', 'rút ngắn thời gian', '3.000', 'nội lực tối đa vẫn chỉ tăng theo cấp nội công', 'tối đa 2 lần', 'Ẩn danh'])
       ok(sp.includes(k), 'khối hoàn thành ngay có chữ "' + k + '"');
     await noOverflow(page, 'active/tam 390'); await smallTargets(page, 'active/tam 390');
     await shot(page, 'active-390');

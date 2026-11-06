@@ -13,10 +13,10 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&family=Cormorant+Garamond:wght@500;600;700&display=swap">
 <link rel="stylesheet" href="/css/style.css">
 <link rel="stylesheet" href="/css/celebrate.css">
-<link rel="stylesheet" href="/css/account.css">
-<link rel="stylesheet" href="/css/places.css">
-<link rel="stylesheet" href="/css/dojo.css">
-<link rel="stylesheet" href="/css/arena.css">
+<link rel="stylesheet" href="/css/account.css?v=vohoc3">
+<link rel="stylesheet" href="/css/places.css?v=vohoc3">
+<link rel="stylesheet" href="/css/dojo.css?v=vohoc3">
+<link rel="stylesheet" href="/css/arena.css?v=vohoc3">
 </head>
 <body>
 <header class="top">
@@ -75,6 +75,7 @@
       <button type="button" role="tab" aria-selected="true" data-tab="chat" id="tab-chat">Trò chuyện</button>
       <button type="button" role="tab" aria-selected="false" data-tab="prayers" id="tab-prayers">Lời nguyện</button>
       <button type="button" role="tab" aria-selected="false" data-tab="merit" id="tab-merit">Công đức</button>
+      <button type="button" role="tab" aria-selected="false" data-tab="places" id="tab-places">Nơi khác</button>
     </div>
     <div class="pane" id="pane-chat" role="tabpanel" aria-labelledby="tab-chat">
       <div class="feed" id="feed"></div>
@@ -96,6 +97,19 @@
     <div class="pane" id="pane-prayers" role="tabpanel" aria-labelledby="tab-prayers" hidden>
       <div class="list" id="prayers"></div>
       <div class="pane-foot"><button type="button" class="btn" data-act="incense">Thắp nhang và gửi lời nguyện</button></div>
+    </div>
+    <div class="pane scroll" id="pane-places" role="tabpanel" aria-labelledby="tab-places" hidden>
+      <section class="card place-card" data-place-card="dojo">
+        <span class="eyebrow">Võ Học Các</span>
+        <p>Tu luyện nội công (bắt đầu rồi đóng web cũng được), học võ công ba nhánh Cương, Tốc, Nhu và chọn bộ chiêu.</p>
+        <button type="button" class="btn gold" data-act="dojo">Vào Võ Học Các</button>
+      </section>
+      <section class="card place-card" data-place-card="arena">
+        <span class="eyebrow">Sân đấu</span>
+        <p>Nơi duy nhất để luận võ một đấu một. Chỉ người tự ra sân mới thấy và mời được nhau; chánh điện không có đánh nhau.</p>
+        <button type="button" class="btn gold" data-act="arena">Ra Sân đấu</button>
+      </section>
+      <p class="hint">Cần đăng nhập Google để tu luyện và luận võ, vì tiến độ gắn với tài khoản của bạn.</p>
     </div>
     <div class="pane scroll" id="pane-merit" role="tabpanel" aria-labelledby="tab-merit" hidden>
       <section class="card mine">
@@ -175,13 +189,9 @@
       <button type="button" class="x" id="joinClose" aria-label="Đóng" hidden>×</button>
     </div>
     <div class="login-card" data-login-card hidden>
-      <b class="lc-title">Có tài khoản Google thì mọi thứ được giữ lại</b>
-      <ul class="lc-list">
-        <li>Công đức, hào quang, tịnh tài đã cúng dường: đổi máy vẫn còn</li>
-        <li>Mở Võ Học Các (tu luyện nội công, học võ công) và Sân đấu luận võ</li>
-      </ul>
+      <b class="lc-title">Đăng nhập Google để giữ công đức và tu luyện, luận võ</b>
       <button type="button" class="btn big cta-login" data-auth-login><span class="g-badge"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg></span>Đăng nhập bằng Google</button>
-      <p class="hint">Hoặc cứ vào chánh điện như khách: lễ Phật bình thường, nhưng dữ liệu chỉ nằm trên trình duyệt này.</p>
+      <p class="hint">Hoặc cứ vào chánh điện như khách (dữ liệu chỉ nằm trên trình duyệt này).</p>
     </div>
     <div class="join-grid">
       <canvas id="preview" width="260" height="220" aria-label="Xem trước nhân vật"></canvas>
@@ -222,6 +232,7 @@
         <li>Công đức đang có trên máy này được chuyển vào tài khoản một lần</li>
       </ul>
       <button type="button" class="btn big cta-login" data-auth-login><span class="g-badge"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg></span>Đăng nhập bằng Google</button>
+      <p class="warn" id="loginWarn" role="status" hidden></p>
       <p class="hint">Chỉ lấy mã định danh tài khoản (đã băm), không đọc email hay danh bạ của bạn.</p>
     </div>
   </div>
@@ -444,13 +455,13 @@
 <script src="/js/aura.js"></script>
 <script src="/js/merit.js"></script>
 <script src="/js/celebrate.js"></script>
-<script src="/js/hall.js"></script>
+<script src="/js/hall.js?v=vohoc3"></script>
 <script src="/js/voice.js"></script>
 <script src="/js/library.js"></script>
-<script src="/js/martial.js"></script>
-<script src="/js/places.js"></script>
-<script src="/js/dojo.js"></script>
-<script src="/js/arena.js"></script>
-<script src="/js/app.js?v=google-auth"></script>
+<script src="/js/martial.js?v=vohoc3"></script>
+<script src="/js/places.js?v=vohoc3"></script>
+<script src="/js/dojo.js?v=vohoc3"></script>
+<script src="/js/arena.js?v=vohoc3"></script>
+<script src="/js/app.js?v=vohoc3"></script>
 </body>
 </html>

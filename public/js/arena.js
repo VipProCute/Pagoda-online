@@ -247,7 +247,7 @@
     ui.roster = buildRoster(); ui.lobby = h('section', 'ar-screen ar-lobby', null, { 'aria-label': 'Sảnh chọn bộ chiêu' });
     ui.match = h('section', 'ar-screen ar-matchbox', null, { 'aria-label': 'Trận đấu' }); ui.end = h('section', 'ar-screen ar-end', null, { 'aria-label': 'Kết quả trận' });
     for (const s of [ui.lobby, ui.match, ui.end]) s.hidden = true;
-    add(main, ui.roster.sec, ui.lobby, ui.match, ui.end, ui.invites);
+    add(main, ui.invites, ui.roster.sec, ui.lobby, ui.match, ui.end);   // thẻ lời mời đứng đầu để Tab / trình đọc màn hình tới trước
     add(wrap, head, ui.off, main, ui.live);
     buildDialogs(wrap);
     el.appendChild(wrap);
@@ -991,7 +991,7 @@
           out.push({ who: e.side, text: `phản đòn, ${tg(e.target)} mất ${e.dmg}`, fx: [['anim', e.target, 'hit', 380], ['hp', e.target, e.dmg], ['float', e.target, '−' + e.dmg, 'dmg']] });
           break;
         case 'exposed': out.push({ who: e.side, text: `sơ hở: lượt sau nhận thêm ${EXPOSED_PCT}% sát thương`, fx: [['float', e.side, 'Sơ hở', 'warn']] }); break;
-        case 'kc': out.push({ who: e.side, text: `nhận Kim Chung: ${KC_TURNS} lượt sau đòn công đầu tiên mạnh thêm ${KC_PCT}%`, fx: [['float', e.side, 'Kim Chung', 'gold']] }); break;
+        case 'kc': out.push({ who: e.side, text: `nhận Kim Chung: trong ${KC_TURNS} lượt tới, đòn công đầu tiên mạnh thêm ${KC_PCT}%`, fx: [['float', e.side, 'Kim Chung', 'gold']] }); break;
         case 'sudden':
           out.push({ who: 'both', text: `Suy kiệt: cả hai mất ${e.dmg}`, plain: true, fx: [['anim', 'you', 'hit', 380], ['anim', 'op', 'hit', 380], ['hp', 'you', e.dmg], ['hp', 'op', e.dmg], ['float', 'you', '−' + e.dmg, 'warn'], ['float', 'op', '−' + e.dmg, 'warn']] });
           break;
@@ -1127,7 +1127,11 @@
     let text = '';
     const byWho = who || (res === 'win' ? 'op' : 'you');
     if (r === 'ko') text = res === 'win' ? 'Đối thủ hết máu trước.' : 'Bạn hết máu trước.';
-    else if (r === 'double-ko') text = 'Cả hai cùng hết máu' + (res === 'win' ? ', nhưng bạn còn ít âm hơn nên thắng.' : res === 'lose' ? ', nhưng đối thủ còn ít âm hơn nên thắng.' : ' và ngang nhau nên hòa.');
+    else if (r === 'double-ko') {
+      const dy = d.state && d.state.you && d.state.you.down, dop = d.state && d.state.op && d.state.op.down;
+      const nums = Number.isFinite(dy) && Number.isFinite(dop) ? ` (bạn âm ${dy}, đối thủ âm ${dop})` : '';
+      text = 'Cả hai cùng hết máu' + nums + (res === 'win' ? ', nhưng bạn còn ít âm hơn nên thắng.' : res === 'lose' ? ', nhưng đối thủ còn ít âm hơn nên thắng.' : ' và ngang nhau nên hòa.');
+    }
     else if (r === 'turn-limit') text = `Hết ${M.PK.MAX_TURNS} lượt. ` + (res === 'win' ? 'Bạn còn nhiều máu hơn nên thắng.' : res === 'lose' ? 'Đối thủ còn nhiều máu hơn nên thắng.' : 'Hai bên còn bằng máu nhau nên hòa.');
     else if (r === 'forfeit') text = byWho === 'you' ? 'Bạn đã bỏ cuộc nên bị xử thua.' : 'Đối thủ đã bỏ cuộc, bạn thắng.';
     else if (r === 'idle-forfeit') text = byWho === 'you' ? 'Bạn bỏ lỡ ba lượt liên tiếp (hết giờ không chọn) nên bị xử thua.' : 'Đối thủ bỏ lỡ ba lượt liên tiếp (hết giờ không chọn) nên bị xử thua.';

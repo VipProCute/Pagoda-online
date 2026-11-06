@@ -421,8 +421,8 @@ test('sảnh: pk:lobby đủ trường theo hợp đồng, balanced không có b
   });
   assert.deepEqual(la.op, { pid: B.pid, name: 'ten-B', look: { g: 'nam', c: 1, h: 0 }, level: 6, hpMax: R.HP, manaMax: M.manaMaxOf(6) });
   assert.deepEqual(lb.op, { pid: A.pid, name: 'ten-A', look: { g: 'nam', c: 1, h: 0 }, level: 4, hpMax: R.HP, manaMax: M.manaMaxOf(4) });
-  assert.equal(lb.you.loadout.length, 4, 'chưa lưu bộ nào thì gợi ý 4 chiêu đầu theo thứ tự nhập môn');
-  assert.deepEqual(lb.you.loadout, ALL.slice(0, 4));
+  assert.equal(lb.you.loadout.length, 4, 'chưa lưu bộ nào thì gợi ý 4 chiêu bậc nhập môn đầu tiên');
+  assert.deepEqual(lb.you.loadout, M.STARTERS.slice(0, 4));
   assert.equal(JSON.stringify([la, lb]).includes('seed'), false);
 });
 
@@ -951,12 +951,16 @@ test('forfeit: thua ngay "forfeit", who đúng góc nhìn, ghi thắng thua, d�
   assert.equal(e.clock.pending(), 0);
 });
 
-test('forfeit trong sảnh cũng tính thua', () => {
+test('rời sảnh (forfeit khi còn chọn bộ chiêu) hủy trận, không ai bị tính thua', () => {
   const e = env();
   const A = e.player('A'), B = e.player('B');
   const mid = startMatch(e, A, B);
   assert.equal(e.mgr.forfeit('B', mid).ok, true);
-  assert.equal(e.lastOf('A', 'pk:end').result, 'win');
+  const ea = e.lastOf('A', 'pk:end'), eb = e.lastOf('B', 'pk:end');
+  assert.equal(ea.result, 'draw'); assert.equal(ea.reason, 'void'); assert.equal(ea.who, 'op');
+  assert.equal(eb.result, 'draw'); assert.equal(eb.who, 'you');
+  assert.equal(e.results.length, 0, 'không ghi thắng thua');
+  assert.equal(e.saved[0].result, 'void');
   assert.deepEqual(e.saved[0].loadouts, { a: null, b: null });
   assert.equal(e.clock.pending(), 0);
 });
@@ -1385,4 +1389,46 @@ test('rngFor tiêm vào được: dãy cố định ép kết quả né / đỡ'
   const rv = e.lastOf('A', 'pk:reveal');
   const dodge = rv.events.find(x => x.k === 'dodge');
   assert.equal(dodge.ok, true, 'số 0.0 luôn nhỏ hơn xác suất ⇒ né được');
+});
+
+test("leave('left') khi còn ở sảnh cũng chỉ hủy trận, không tính thua", () => {
+  const e = env();
+  const A = e.player('A'), B = e.player('B');
+  startMatch(e, A, B);
+  e.mgr.leave('B', 'left');
+  assert.equal(e.lastOf('A', 'pk:end').reason, 'void');
+  assert.equal(e.results.length, 0);
+  assert.equal(e.mgr.rowOf('A').st, 'free');
+});
+
+test('bộ chiêu mặc định khi hết giờ sảnh: chiêu bậc thấp, và luôn có ít nhất một đòn công nếu học được', () => {
+  const e = env();
+  // 3 chiêu nhập môn đều không phải đòn công, thêm Kim Chung (bậc 2) và Liên Hoàn Cước (đòn công, bậc 3)
+  const learned = ['thiet-bich', 'anh-bo-ho-than', 'nhu-van-bo', 'kim-chung-trao', 'khinh-than-bo', 'lien-hoan-cuoc'];
+  const A = e.player('A'), B = e.player('B', { learned });
+  startMatch(e, A, B);
+  const lb = e.lastOf('B', 'pk:lobby');
+  assert.deepEqual(lb.you.loadout, ['thiet-bich', 'anh-bo-ho-than', 'nhu-van-bo', 'lien-hoan-cuoc']);
+  assert.ok(lb.you.loadout.some(id => M.isAttacking(M.SKILLS[id])));
+  // học đủ cả 15 chiêu mà chưa lưu bộ: không bị đẩy vào trận toàn thủ
+  const e2 = env();
+  const C = e2.player('C'), D = e2.player('D');
+  startMatch(e2, C, D);
+  assert.ok(e2.lastOf('C', 'pk:lobby').you.loadout.some(id => M.isAttacking(M.SKILLS[id])));
+});
+
+test('người rớt mạng bị xử thua lúc vắng: vào lại được báo kết quả một lần', () => {
+  const e = env();
+  const { A, B, mid } = duel(e);
+  e.online.delete('B');
+  for (let i = 0; i < 3; i++) { pickFor(e, A, mid, 'dieu-tuc'); e.clock.advance(R.TURN_MS); if (e.mgr.hasMatch('A')) e.clock.advance(R.REVEAL_MS); }
+  assert.equal(e.mgr.hasMatch('A'), false);
+  assert.equal(e.results.find(x => x.uid === 'B').r, 'loss');
+  e.online.add('B');
+  const r1 = e.mgr.resume('B');
+  assert.equal(r1.ok, true); assert.equal(r1.snapshot, null);
+  assert.match(r1.message, /bạn thua/);
+  assert.match(r1.message, /quá giờ/);
+  assert.equal(e.mgr.resume('B').message, undefined, 'chỉ báo một lần');
+  assert.equal(e.mgr.resume('A').message, undefined, 'người còn online lúc kết thúc đã nhận pk:end nên không báo lại');
 });

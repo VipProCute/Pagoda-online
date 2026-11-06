@@ -458,7 +458,7 @@ const waitReveal = pg => pg.waitForFunction(() => { const r = document.querySele
     const l1 = await grab('&jump=A:choosing:1', '.ar-pk[data-skill="trong-quyen"]');
     assert.ok(/Đối thủ đỡ thành công nhịp 1 \(\d+%\)/.test(l1) && /Đối thủ phản đòn, bạn mất \d+/.test(l1) && /Bạn sơ hở: lượt sau nhận thêm 25% sát thương/.test(l1), l1);
     const l5 = await grab('&jump=A:choosing:5', '.ar-pk[data-skill="kim-chung-trao"]');
-    assert.ok(/Bạn thủ, giảm 45% sát thương/.test(l5) && /Bạn nhận Kim Chung: 2 lượt sau đòn công đầu tiên mạnh thêm 25%/.test(l5) && /trúng bạn, gây \d+/.test(l5), l5);
+    assert.ok(/Bạn thủ, giảm 45% sát thương/.test(l5) && /Bạn nhận Kim Chung: trong 2 lượt tới, đòn công đầu tiên mạnh thêm 25%/.test(l5) && /trúng bạn, gây \d+/.test(l5), l5);
     const l4 = await grab('&jump=B:choosing:4', '.ar-pk[data-skill="anh-bo-ho-than"]');
     assert.ok(/Suy kiệt: cả hai mất 5/.test(l4), l4);
     const l3 = await grab('&jump=C:choosing:1', '.ar-pk[data-skill="trong-quyen"]');

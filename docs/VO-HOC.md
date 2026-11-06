@@ -10,7 +10,7 @@ Tài liệu cho người quản trị nhà chùa và người phát triển. Ph�
 | **Võ Học Các** | Tu luyện nội công, học chiêu, chọn bộ 4 chiêu mặc định. |
 | **Sân đấu** | Nơi duy nhất luận võ 1 đấu 1. Người chơi tự ra sân; chỉ người đang ở sân mới thấy và mời được nhau. |
 
-Người đi sang nơi khác thì nhân vật không hiện trong chánh điện. Máy chủ từ chối mọi sự kiện đấu nếu người gửi không ở sân đấu. Người chỉ muốn viếng chùa không cần biết đến phần này (nút "Võ học các" và "Sân đấu" nằm cuối thanh nút, tắt được bằng `MARTIAL_ENABLED=0`).
+Ngoài thanh nút lễ Phật, cả hai nơi còn có thẻ ở tab **Nơi khác** (cho màn hình nhỏ nút bị che). Người đang có trận dở mà tải lại trang sẽ được đưa thẳng về Sân đấu. Người đi sang nơi khác thì nhân vật không hiện trong chánh điện. Máy chủ từ chối mọi sự kiện đấu nếu người gửi không ở sân đấu. Người chỉ muốn viếng chùa không cần biết đến phần này (nút "Võ học các" và "Sân đấu" nằm cuối thanh nút, tắt được bằng `MARTIAL_ENABLED=0`).
 
 Khi nhà chùa muốn thêm nơi mới (coi bói tử vi, tarot…): thêm tên vào `PLACES` trong `server.js`, viết một module có `init / mount / show / hide` rồi `Places.register(tên, { el, mod })` trong `app.js`. Chưa có nơi này; phần coi bói chưa được làm trong đợt này.
 
@@ -69,7 +69,7 @@ Cặp chiêu gặp nhau:
 - **Tụ Lực Phá Sơn**: lượt 1 tụ lực (giảm 30% sát thương, đối thủ thấy), lượt 2 tự tung đòn 70. Bị đánh khi tụ không bị ngắt. Khi tung, xác suất bị **né** giảm một nửa (chấn địa), bị đỡ thì bình thường.
 - **Sơ hở**: đòn của bạn bị né hoặc đỡ hết thì lượt sau bạn nhận thêm 25% sát thương.
 - **Tránh hòa vô hạn**: từ lượt 20, hoặc sớm hơn nếu 4 lượt liền không ai mất máu, cả hai mất 5, 10, 15… máu mỗi lượt; tối đa 40 lượt. Cùng về 0: ai còn ít âm hơn thắng, bằng nhau thì hòa.
-- **Quá giờ, mất mạng**: quá giờ thì tự "Đứng yên"; 3 lượt liền quá giờ thì thua; rớt mạng vẫn vào lại được đúng trận; cả hai vắng quá 60 giây thì hủy trận; máy chủ khởi động lại giữa trận thì hủy, không ai bị tính thua. Rời sân giữa trận là bỏ cuộc (có hỏi xác nhận).
+- **Quá giờ, mất mạng**: quá giờ thì tự "Đứng yên"; 3 lượt liền quá giờ thì thua; rớt mạng vẫn vào lại được đúng trận; cả hai vắng quá 60 giây thì hủy trận; máy chủ khởi động lại giữa trận thì hủy, không ai bị tính thua. Rời sân giữa trận là bỏ cuộc (có hỏi xác nhận). Rời hoặc bỏ ở phòng chờ chọn chiêu (trận chưa bắt đầu) thì trận **hủy, không ai bị tính thua**. Nếu trận kết thúc lúc một người đang offline thì lần vào lại sau đó, trang báo kết quả bằng một thông báo ngắn. Người không kịp chọn 4 chiêu thì máy chủ tự chọn bộ mặc định: ưu tiên chiêu bậc thấp và luôn có ít nhất một đòn công.
 - PK không có thưởng, không cược công đức; chỉ ghi thắng / thua / hòa.
 
 ### Phòng có buff

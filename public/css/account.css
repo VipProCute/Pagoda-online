@@ -39,8 +39,21 @@
 .ac-list dt { color: var(--muted); font-size: 13px; flex: none; }
 .ac-list dd { margin: 0; text-align: right; font-weight: 600; font-size: 13.5px; font-variant-numeric: tabular-nums; min-width: 0; overflow-wrap: anywhere; }
 
+/* điện thoại hẹp: thanh đầu trang không được tràn ngang; nút đăng nhập vẫn đủ lớn để bấm và vẫn nổi nhất */
+.login-cta { min-height: 36px; }
+.acct-chip { min-height: 36px; }
 @media (max-width: 430px) {
-  .login-cta { padding: 3px 11px 3px 4px; font-size: 12.5px; }
+  .login-cta { padding: 3px 12px 3px 4px; font-size: 13px; }
+  .top-right { flex-wrap: wrap; justify-content: flex-end; min-width: 0; gap: 6px; }
+  .pill.merit { padding: 4px 9px; }
   .lc-title { font-size: 20px; }
 }
+@media (max-width: 360px) {
+  .top { padding-left: 8px; padding-right: 8px; }
+  .top-right { gap: 5px; }
+  .login-cta { padding-right: 10px; gap: 6px; }
+  .pill { padding: 4px 8px; font-size: 12.5px; }
+  .icon-btn { width: 34px; height: 34px; }
+}
+@media (max-width: 340px) { .top-right .pill:not(.merit) { display: none; } }   /* màn rất hẹp: bỏ số người đang có mặt để một hàng đủ chỗ */
 @media (prefers-reduced-motion: reduce) { .login-cta, .btn.cta-login { animation: none; } }

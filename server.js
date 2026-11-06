@@ -148,6 +148,7 @@ function addMerit(p, n) { addMeritUid(p.uid, p.name, n); }
  * calm: lần cộng từ cúng dường (nhảy nhiều điểm một lúc) thì không hù ở mốc 666, chỉ chúc mừng.
  */
 function addMeritUid(uid, name, n, calm) {
+  uid = accountOf(uid);      // khách đã gộp vào tài khoản thì cộng vào tài khoản, không tạo lại dòng mồ côi
   const d = vnDay();
   let m = db.merit[uid];
   if (!m) m = db.merit[uid] = { name, total: 0, today: 0, day: d };
@@ -157,7 +158,7 @@ function addMeritUid(uid, name, n, calm) {
   store.save();
   const hit = n > 0 ? crossed(beforeToday, m.today, calm) : null;
   for (const p of players.values()) {
-    if (p.uid !== uid) continue;
+    if (accountOf(p.uid) !== uid) continue;
     // Mốc trong ngày: giữ số lúc vượt mốc phòng khi nhịp gửi rơi qua nửa đêm.
     if (hit && outranks(hit, p.milestone)) p.milestone = { ...hit, today: m.today };
     updatePlayerMerit(p, m.total, MERITS.rankOf(m.total) > MERITS.rankOf(before));
@@ -364,8 +365,39 @@ function donationAck(don) {
   return { ok: true, code: don.code, amount: don.amount, fund: don.fundName, qr, bank: BANK.label, account: BANK.account, accountName: BANK.name, auto: !!SEPAY_API_KEY };
 }
 
+/* Render chạy bản cũ chồng bản mới vài chục giây lúc deploy: lượt cúng dường tạo ở bản kia chưa có trong RAM của bản này.
+ * Thiếu trong RAM thì đọc thẳng từ PostgreSQL (chỉ ở chế độ PG). */
+async function adoptDonation(code) {
+  code = String(code || '');
+  const d = db.donations.find(x => x.code === code);
+  if (d || store.backend !== 'pg' || !/^[A-Z0-9]{4,20}$/.test(code)) return d || null;
+  try {
+    const raw = await store.fetchDoc('donations', code);
+    if (!raw || typeof raw !== 'object' || raw.code !== code) return null;
+    const again = db.donations.find(x => x.code === code);   // có bản khác nạp xong trong lúc chờ
+    if (again) return again;
+    db.donations.push(raw);
+    db.donations.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+    store.save();
+    return raw;
+  } catch (e) { return null; }
+}
+let donSyncAt = 0;
+async function syncDonations() {
+  if (store.backend !== 'pg' || now() - donSyncAt < 20e3) return;
+  donSyncAt = now();
+  try {
+    const have = new Set(db.donations.map(x => x.code));
+    let added = 0;
+    for (const raw of await store.fetchDocs('donations')) {
+      if (raw && typeof raw === 'object' && typeof raw.code === 'string' && !have.has(raw.code)) { db.donations.push(raw); added++; }
+    }
+    if (added) { db.donations.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0)); store.save(); }
+  } catch (e) { /* CSDL bận: lần xem sau */ }
+}
+
 /* ----- webhook SePay: tự xác nhận khi tài khoản chùa nhận tiền ----- */
-app.post('/api/webhooks/sepay', (req, res) => {
+app.post('/api/webhooks/sepay', async (req, res) => {
   if (!SEPAY_API_KEY) return res.status(404).json({ success: false });
   const lock = 'sepay:' + req.ip;
   if (failLock(lock)) return res.status(429).json({ success: false });
@@ -375,16 +407,27 @@ app.post('/api/webhooks/sepay', (req, res) => {
   if (b.transferType && b.transferType !== 'in') return res.json({ success: true });
   const content = String(b.content || '') + ' ' + String(b.description || '') + ' ' + String(b.code || '');
   const codes = content.toUpperCase().replace(/[^A-Z0-9]/g, ' ').match(/CD[A-Z0-9]{6}/g) || [];
-  const amount = Number(b.transferAmount) || 0;
-  const d = codes.map(c => db.donations.find(x => x.code === c && x.status === 'pending')).find(Boolean);
+  const amount = Number(b.transferAmount) || 0, ref = String(b.referenceCode || b.id || '');
+  let d = null, seen = null;
+  for (const c of codes) {
+    const x = await adoptDonation(c);
+    if (x && !seen) seen = x;
+    if (x && x.status === 'pending') { d = x; break; }
+  }
+  // SePay gọi lại lượt đã xác nhận mà lần trước chưa ghi bền được: chỉ trả thành công khi đã ghi bền
+  if (!d && seen && seen.status === 'confirmed' && seen.source === 'sepay' && seen.ref === ref) {
+    return (await store.flush()) ? res.json({ success: true, matched: true, duplicate: true }) : res.status(503).json({ success: false });
+  }
   if (!d) return res.json({ success: true, matched: false });
   if (amount < d.amount) return res.json({ success: true, matched: false, reason: 'amount_too_low' });
   if (d.purpose === 'speedup') {   // hoàn thành tu luyện ngay chỉ xong khi Ban điều hành bấm xác nhận: ngân hàng báo thì chỉ đánh dấu
-    d.bank = { at: now(), amount, ref: String(b.referenceCode || b.id || '') };
-    store.save();
+    d.bank = { at: now(), amount, ref };
+    if (!(await store.flush())) return res.status(503).json({ success: false });
     return res.json({ success: true, matched: true, manual: true });
   }
-  confirmDonation(d, { amount, ref: String(b.referenceCode || b.id || ''), source: 'sepay' });
+  confirmDonation(d, { amount, ref, source: 'sepay' });
+  // Chỉ báo "thành công" cho ngân hàng khi đã ghi bền: SePay không gửi lại khi đã nhận success
+  if (!(await store.flush())) return res.status(503).json({ success: false });
   res.json({ success: true, matched: true });
 });
 
@@ -413,7 +456,8 @@ const speedupView = x => {
   const sess = db.martial.sessions[x.sessionId];
   return { methodName: (MARTIAL.METHODS[x.methodId] || {}).name || x.methodId, durationKey: x.durationKey, sessionStatus: sess ? sess.status : 'missing', endsAt: sess ? sess.endsAt : null, bankReported: !!x.bank };
 };
-app.get('/api/admin/summary', admin, (req, res) => {
+app.get('/api/admin/summary', admin, async (req, res) => {
+  await syncDonations();
   res.json({
     online: players.size, today: db.today, total: db.total, funds: fundsSummary(), donationEnabled: DONATION_ENABLED,
     donations: db.donations.slice(-300).reverse().map(x => (x.purpose === 'speedup' ? { ...x, speedup: speedupView(x) } : x)),
@@ -428,23 +472,23 @@ app.get('/api/admin/summary', admin, (req, res) => {
   });
 });
 app.post('/api/admin/donations/:code/confirm', admin, async (req, res) => {
-  const d = db.donations.find(x => x.code === req.params.code);
+  const d = await adoptDonation(req.params.code);
   if (!d) return res.status(404).json({ error: 'Không thấy mã này.' });
   if (d.status === 'confirmed') return res.json({ ok: true, already: true, outcome: d.outcome || null });
   const from = d.status;
   const a = confirmDonation(d, { amount: d.amount, ref: 'admin', source: 'admin' });
   audit(req, 'donation.confirm', d.code, { from, amount: d.amount, purpose: d.purpose || 'donation', outcome: d.outcome || null });
-  await store.flush();
-  res.json({ ok: true, outcome: d.outcome || null, aura: a ? { tier: a.tier, tierName: a.tier ? AURA.TIERS[a.tier - 1].name : '', up: a.up, amount: a.amount, until: a.until } : null });
+  const saved = await store.flush();     // false: đã ghi nhận trong bộ nhớ nhưng CHƯA ghi bền; hệ thống tự thử lại
+  res.json({ ok: true, saved, outcome: d.outcome || null, aura: a ? { tier: a.tier, tierName: a.tier ? AURA.TIERS[a.tier - 1].name : '', up: a.up, amount: a.amount, until: a.until } : null });
 });
 app.post('/api/admin/donations/:code/cancel', admin, async (req, res) => {
-  const d = db.donations.find(x => x.code === req.params.code);
+  const d = await adoptDonation(req.params.code);
   if (!d) return res.status(404).json({ error: 'Không thấy mã này.' });
   if (d.status === 'pending') {
     d.status = 'cancelled';
     if (d.purpose === 'speedup') deliverUpdates(martial.onDonationClosed(d));
     audit(req, 'donation.cancel', d.code, { amount: d.amount, purpose: d.purpose || 'donation' });
-    await store.flush();
+    return res.json({ ok: true, saved: await store.flush() });
   }
   res.json({ ok: true });
 });
@@ -632,7 +676,7 @@ io.on('connection', socket => {
     if (players.size >= MAX_PLAYERS) return ack({ ok: false, reason: 'Chánh điện đang quá đông. Bạn đợi ít phút rồi vào lại nhé.' });
     data = data || {};
     // mã quản trị gửi kèm khi vào chùa: dùng chung bộ đếm sai với trang quản trị, để không thử mã vô hạn qua socket
-    const modKey = 'ip:' + socket.data.ip;
+    const modKey = 'sock:' + socket.data.ip;     // đếm riêng với trang quản trị: mã cũ còn lưu ở trình duyệt không được khóa trang quản trị
     const modTry = !!(ADMIN_KEY && data.adminKey) && !failLock(modKey);
     const isMod = modTry && safeEqual(String(data.adminKey), ADMIN_KEY);
     if (modTry) { if (isMod) authFails.delete(modKey); else failHit(modKey); }
@@ -660,7 +704,7 @@ io.on('connection', socket => {
       prayers: db.prayers.filter(x => !x.hidden).slice(-40).map(publicPrayer),
       incense: activeIncense().slice(-60),
       today: db.today, total: db.total, online: players.size,
-      board: board(), merit: meritOf(uid), aura: myAura(uid),
+      board: board(), merit: meritOf(uid), aura: myAura(uid), hasMatch: !!(arena && arena.hasMatch(uid)),
       donations: db.donations.filter(d => d.status === 'confirmed').slice(-20).map(publicDonation),
       funds: fundsSummary(), chant
     });
@@ -814,7 +858,7 @@ io.on('connection', socket => {
   });
   socket.on('chant:stop', () => { if (p && p.mod) endChant(false); });
 
-  socket.on('donate', (d, ack) => {
+  socket.on('donate', async (d, ack) => {
     if (!p || !d || typeof ack !== 'function') return;
     if (!DONATION_ENABLED) return ack({ ok: false, reason: 'Nhà chùa chưa mở nhận tịnh tài trực tuyến.' });
     if (!allow('donate', 8000)) return ack({ ok: false, reason: 'Đợi vài giây rồi tạo mã mới nhé.' });
@@ -827,6 +871,8 @@ io.on('connection', socket => {
     let name = p.name;
     if (d.name && String(d.name).trim()) { const nm = checkName(d.name, p.mod); if (!nm.ok) return ack(nm); name = nm.name; }
     const don = addDonation({ amount, fund: fund.id, fundName: fund.name, name, anon: !!d.anon, hide: !!d.hide, aura: !d.anon && d.aura !== false, note, uid: p.uid });
+    // mã đã có trong sổ chùa rồi mới đưa cho người cúng dường, để webhook / admin tìm thấy được
+    if (!(await store.flush())) return ack({ ok: false, reason: 'Chưa lưu được mã cúng dường. Bạn thử lại sau ít giây nhé.' });
     ack(donationAck(don));
   });
 
@@ -885,7 +931,7 @@ io.on('connection', socket => {
     if (!p || typeof ack !== 'function') return;
     const place = d && d.place;
     if (!PLACES.includes(place)) return ack({ ok: false, reason: 'Không có nơi này.' });
-    if (!bucket('place', 0.5, 5)) return ack({ ok: false, reason: 'Bạn đổi nơi hơi nhanh, đợi một chút nhé.' });
+    if (place !== 'hall' && !bucket('place', 0.5, 5)) return ack({ ok: false, reason: 'Bạn đổi nơi hơi nhanh, đợi một chút nhé.' });   // về chánh điện luôn được
     if (place !== 'hall' && !MARTIAL_ENABLED) return ack({ ok: false, reason: 'Nơi này chưa mở.' });
     const info = { ok: true, place };
     if (place === 'arena') {
@@ -1085,7 +1131,8 @@ async function shutdown() {
   closing = true;
   try {
     if (arena) arena.shutdown();
-    await Promise.race([store.close(), new Promise(r => setTimeout(r, 8000))]);   // Render chờ SIGTERM tối đa ~30 giây
+    const saved = await Promise.race([store.close(), new Promise(r => setTimeout(() => r(false), 8000))]);   // Render chờ SIGTERM tối đa ~30 giây
+    if (!saved) console.error('[store] Cảnh báo: chưa ghi nốt được thay đổi cuối trước khi tắt.');
   } catch (e) { console.error('[store] Lỗi khi tắt:', e && e.message); }
   process.exit(0);
 }

@@ -143,7 +143,7 @@
       if (action === 'confirm') {
         const a = r && r.aura;
         const oc = r && r.outcome ? ' ' + ({ applied: 'Đã hoàn thành phiên tu luyện của người chơi.', late: 'Phiên đã xong hoặc đã hủy từ trước nên KHÔNG cộng thêm; người chơi được cấp một phiếu hoàn thành ngay dùng cho phiên sau.' }[r.outcome] || '') : '';
-        m.textContent = `Đã xác nhận ${code}. Chánh điện đang đọc thông báo.` + oc + (a && a.tier ? ` Hào quang: cảnh giới ${a.tierName}${a.up ? ' (vừa đột phá)' : ''}, cộng dồn ${NUM(a.amount)}đ.` : a ? ` Đang cộng dồn ${NUM(a.amount)}đ, chưa đủ mốc hào quang đầu (20.000đ).` : ' Lượt này ẩn danh hoặc tắt hào quang.');
+        m.textContent = `Đã xác nhận ${code}. Chánh điện đang đọc thông báo.` + oc + (r && r.saved === false ? ' CẢNH BÁO: đã ghi nhận nhưng CHƯA lưu được vào cơ sở dữ liệu; hệ thống đang tự thử lại. Đừng bấm lại, hãy tải lại trang sau ít phút để kiểm tra.' : '') + (a && a.tier ? ` Hào quang: cảnh giới ${a.tierName}${a.up ? ' (vừa đột phá)' : ''}, cộng dồn ${NUM(a.amount)}đ.` : a ? ` Đang cộng dồn ${NUM(a.amount)}đ, chưa đủ mốc hào quang đầu (20.000đ).` : ' Lượt này ẩn danh hoặc tắt hào quang.');
         m.hidden = false;
       }
       load();

@@ -584,7 +584,7 @@
     h('li', null, 'Ban điều hành xác nhận thủ công nên có thể mất vài giờ.'),
     h('li', null, 'Chỉ khi được xác nhận, phiên mới hoàn thành. Trong lúc chờ, phiên vẫn chạy bình thường.'),
     h('li', null, 'Xác nhận xong, bạn nhận công đức, hào quang và lời thông báo như một lượt cúng dường thường.'),
-    h('li', null, `Tác dụng chỉ là rút ngắn thời gian: công lực không vượt trần ${NUM(M.CONG_LUC_MAX)}, và chỉ số trong trận không tăng thêm ngoài nội lực tối đa theo cấp.`),
+    h('li', null, `Tác dụng chỉ là rút ngắn thời gian: công lực không vượt trần ${NUM(M.CONG_LUC_MAX)}, và chỉ giúp bạn xong sớm, không làm bạn mạnh hơn trong trận (nội lực tối đa vẫn chỉ tăng theo cấp nội công).`),
     h('li', null, limitText));
 
   function speedCard(s) {

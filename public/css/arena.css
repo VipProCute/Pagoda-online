@@ -280,7 +280,8 @@ dialog.ar-dlg .dlg-head h2 { font-size: 26px; overflow-wrap: anywhere; }
   .ar-pk .ar-cs { display: none; }
   .ar-pk .ar-ck { position: static; }
   .ar-pk .ar-cn { padding-right: 0; }
-  .ar-flip { height: 64px; }
+  .ar-flip { height: 74px; }
+  .ar-fl-sub { display: none; }
   .ar-status { min-height: 16px; font-size: 12px; }
 }
 
