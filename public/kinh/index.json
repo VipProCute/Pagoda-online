@@ -42,18 +42,20 @@
       "title": "Chú Đại Bi",
       "han": "大悲咒",
       "sub": "Đại Bi Tâm Đà La Ni · Phiên âm 84 câu",
-      "desc": "Bản âm tụng tiếng Việt, chia từng câu để dễ theo dõi.",
+      "desc": "Bản âm tụng tiếng Việt, chia từng câu để dễ theo dõi. Có thể khởi tụng chung với cả chánh điện.",
       "file": "chu-dai-bi.md",
-      "cover": "lam"
+      "cover": "lam",
+      "chant": "daibi"
     },
     {
       "id": "kinh-duoc-su",
       "title": "Kinh Dược Sư",
       "han": "藥師經",
       "sub": "Dược Sư Lưu Ly Quang Như Lai · Bản dịch tiếng Việt",
-      "desc": "Toàn văn Kinh Dược Sư theo bản Hán của Huyền Trang, gồm mười hai đại nguyện và Chú Dược Sư.",
+      "desc": "Toàn văn Kinh Dược Sư theo bản Hán của Huyền Trang, gồm mười hai đại nguyện và Chú Dược Sư. Có thể khởi tụng chung Chú Dược Sư với cả chánh điện.",
       "file": "kinh-duoc-su.md",
-      "cover": "son"
+      "cover": "son",
+      "chant": "duocsu"
     }
   ]
 }

@@ -30,9 +30,12 @@ sự đồng ý của chính người đó. VieNeu-TTS v3 Turbo không cần l�
     python tools/build_chants.py --ref-audio /duong/dan/ngoai/repo/giong_mau.wav
     python tools/build_chants.py --ref-audio giong_mau.wav --ref-mode speaker   # chỉ lấy âm sắc
     python tools/build_chants.py --ref-audio giong_mau.wav --no-denoise-ref     # không khử nhiễu mẫu
-  --ref-mode full     (mặc định) lấy cả âm sắc lẫn cách nhả chữ từ ~8 giây đầu của file mẫu.
+    python tools/build_chants.py --ref-audio giong_mau.mp3 --ref-seconds 60     # dùng 60 giây đầu (mặc định)
+  --ref-seconds N     dùng N giây đầu của file mẫu (mặc định 60). Âm sắc tính trên cả N giây;
+                      cách nhả chữ lấy từ ~8 giây nói rõ nhất trong đó (mô hình chỉ nhận tối đa 8 giây).
+  --ref-mode full     (mặc định) lấy cả âm sắc lẫn cách nhả chữ của file mẫu.
   --ref-mode speaker  chỉ lấy âm sắc người nói, cách đọc theo mô hình (đôi khi rõ chữ hơn).
-  Chỉ ~8 giây đầu của file mẫu được dùng; nên cắt đoạn 8–20 giây nói rõ, một người, ít ồn.
+  File mẫu nên là một người nói rõ, ít ồn, không nhạc nền.
 LƯU Ý RIÊNG TƯ: file giọng mẫu là dữ liệu cá nhân, phải để NGOÀI repo (công cụ từ chối đường dẫn
 nằm trong repo), không commit, không tải lên dịch vụ nào. Mọi bước chạy ngay trên máy này.
 Trong MP3/JSON và cache chỉ ghi nhãn "nhân bản từ giọng mẫu #xxxxxxxx" (8 ký tự đầu của sha256
@@ -61,6 +64,10 @@ SR = 24000
 # Tốc độ (1 = tốc độ đọc tự nhiên; < 1 chậm hơn; > 1 nhanh hơn)
 TEMPO = {
     'batnha':   {'kind': 'kinh',  'speed': 1.0, 'mantra_from': 23, 'mantra_speed': 1.12},
+    'daibi':    {'kind': 'kinh',  'speed': 1.0, 'mantra_from': 4, 'mantra_speed': 1.12},
+    # Dược Sư: khai kinh, chú (nhanh hơn), rồi từ dòng 15 niệm danh hiệu nhanh dần đều
+    'duocsu':   {'kind': 'kinh',  'speed': 1.0, 'mantra_from': 3, 'mantra_speed': 1.08,
+                 'niem_from': 15, 'speed_start': 0.88, 'speed_end': 1.15},
     'niemphat': {'kind': 'niem',  'speed_start': 0.82, 'speed_end': 1.15},
     'quanam':   {'kind': 'niem',  'speed_start': 0.88, 'speed_end': 1.18},
     'thien':    {'kind': 'thien', 'beat': 1.3},
@@ -154,12 +161,18 @@ def warp(y, bounds, speeds):
     return w.data[0].astype(np.float32)
 
 
+def is_niem(cfg, li):
+    """Dòng này là niệm danh hiệu? (cả bài 'niem', hoặc phần cuối bài kinh từ 'niem_from')."""
+    return cfg['kind'] == 'niem' or li >= cfg.get('niem_from', 10 ** 9)
+
+
 def line_speeds(track_id, li, n_lines, n_words, last):
     cfg = TEMPO[track_id]
-    if cfg['kind'] == 'kinh':
+    if not is_niem(cfg, li):
         base = cfg['mantra_speed'] if li >= cfg.get('mantra_from', 10 ** 9) else cfg['speed']
     else:
-        frac = li / max(1, n_lines - 1)                      # niệm danh hiệu: nhanh dần đều
+        first = cfg.get('niem_from', 0)
+        frac = (li - first) / max(1, n_lines - 1 - first)    # niệm danh hiệu: nhanh dần đều
         base = cfg['speed_start'] + (cfg['speed_end'] - cfg['speed_start']) * frac
     sp = np.full(n_words, base, dtype=np.float64)
     if last:                                                 # câu cuối: lơi dần
@@ -253,7 +266,7 @@ def render(track_id, data, tts, model, voice, cache, variants, voice_only=False,
         t += len(out) / SR
         if not last:
             events.append([round(t, 3), li, -1])
-            t += PAUSE_NIEM if cfg['kind'] == 'niem' else (PAUSE_STOP if line.rstrip()[-1:] in '.!:' else PAUSE_COMMA)
+            t += PAUSE_NIEM if is_niem(cfg, li) and is_niem(cfg, li + 1) else (PAUSE_STOP if line.rstrip()[-1:] in '.!:' else PAUSE_COMMA)
     t_end = t
     for k in range(END_BELLS):                                # thỉnh chuông kết
         bt = t_end + 0.9 + k * END_BELL_GAP
@@ -280,28 +293,79 @@ def encode(mix, path):
         subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', str(wav), '-ac', '1', '-c:a', 'libmp3lame', '-b:a', '64k', str(path)], check=True)
 
 
+CODES_SECONDS = 8.0   # VieNeu v3 Turbo chỉ nhận tối đa 8 giây cho phần "cách nhả chữ" (ref codes)
+
+
+def best_window(y, sr, length=CODES_SECONDS):
+    """Đoạn dài nhất (≤ length giây) bắt đầu và kết thúc ở khoảng lặng, nhiều tiếng nói nhất:
+    không cắt ngang chữ nào ở hai đầu."""
+    hop = int(sr * 0.01)
+    r = librosa.feature.rms(y=y, frame_length=hop * 4, hop_length=hop)[0]
+    quiet = r < r.max() * 0.04
+    gaps, i = [], 0                                       # khoảng lặng ≥ 0,12 giây
+    while i < len(quiet):
+        if quiet[i]:
+            j = i
+            while j < len(quiet) and quiet[j]:
+                j += 1
+            if j - i >= 12:
+                gaps.append(((i + j) // 2) * hop / sr)
+            i = j
+        else:
+            i += 1
+    gaps = [0.0] + gaps + [len(y) / sr]
+    best = (0.0, 0.0, min(length, len(y) / sr))
+    for a in gaps:
+        for b in gaps:
+            if 3.0 <= b - a <= length:
+                voiced = float(np.sum(~quiet[int(a * sr / hop):int(b * sr / hop)])) * hop / sr
+                if voiced > best[0]:
+                    best = (voiced, a, b)
+    return best[1], best[2]
+
+
 class CloneVoice:
     """Bọc VieNeu để mọi câu đều đọc bằng giọng nhân bản từ file mẫu (render() không phải sửa).
-    render() vẫn gọi tts.infer(câu, voice=nhãn): nhãn chỉ để làm khóa cache, giọng thật lấy từ file mẫu."""
+    render() vẫn gọi tts.infer(câu, voice=nhãn): nhãn chỉ để làm khóa cache, giọng thật lấy từ file mẫu.
 
-    def __init__(self, tts, ref_audio, denoise=True, speaker_only=False):
-        self.tts, self.ref_audio, self.denoise, self.speaker_only = tts, str(ref_audio), denoise, speaker_only
+    Dùng trọn `ref_seconds` giây đầu của file mẫu (mặc định 60 giây):
+      - âm sắc (speaker embedding) tính trên cả đoạn — càng dài, âm sắc càng ổn định;
+      - cách nhả chữ (ref codes) lấy từ ~8 giây nói rõ nhất trong đoạn đó (giới hạn của mô hình)."""
+
+    def __init__(self, tts, ref_audio, denoise=True, speaker_only=False, ref_seconds=60.0):
+        self.tts, self.speaker_only = tts, speaker_only
+        y, sr = sf.read(str(ref_audio), dtype='float32', always_2d=True)
+        y = y.mean(axis=1)[:int(ref_seconds * sr)]
+        y, _ = librosa.effects.trim(y, top_db=30)
+        eng = tts.engine
+        with tempfile.TemporaryDirectory() as td:
+            full = Path(td) / 'full.wav'; sf.write(full, y, sr)
+            emb, _ = eng.prepare_reference(str(full), denoise=denoise, use_ref_codes=False,
+                                           max_seconds=ref_seconds + 1)
+            codes = None
+            if not speaker_only:
+                a, b = best_window(y, sr)
+                clip = Path(td) / 'clip.wav'; sf.write(clip, y[int(a * sr):int(b * sr)], sr)
+                _, codes = eng.prepare_reference(str(clip), denoise=denoise, use_ref_codes=True)
+                print(f'  cách nhả chữ lấy từ giây {a:.1f}–{b:.1f} của mẫu')
+        print(f'  âm sắc tính trên {len(y) / sr:.0f} giây mẫu')
+        self.voice = {'speaker_emb': emb, 'codes': codes}
 
     def infer(self, text, voice=None, **kw):
-        return self.tts.infer(text, ref_audio=self.ref_audio, denoise=self.denoise,
-                              use_ref_codes=not self.speaker_only, **kw)
+        return self.tts.infer(text, voice=self.voice, use_ref_codes=not self.speaker_only, **kw)
 
 
-def clone_label(ref_audio, denoise, speaker_only):
+def clone_label(ref_audio, denoise, speaker_only, ref_seconds):
     """Nhãn giọng nhân bản: không chứa tên người hay đường dẫn, chỉ 8 ký tự đầu sha256 nội dung file mẫu."""
     h = hashlib.sha256(Path(ref_audio).read_bytes()).hexdigest()[:8]
-    return f'nhân bản từ giọng mẫu #{h} ({"âm sắc" if speaker_only else "đầy đủ"}, {"khử nhiễu" if denoise else "không khử nhiễu"})'
+    return (f'nhân bản từ giọng mẫu #{h} ({ref_seconds:g} giây, {"âm sắc" if speaker_only else "đầy đủ"}, '
+            f'{"khử nhiễu" if denoise else "không khử nhiễu"})')
 
 
 def main():
     ap = argparse.ArgumentParser(description='Dựng bài tụng (MP3 + JSON) bằng VieNeu-TTS v3 Turbo')
     ap.add_argument('--voice', default='Thiền Tâm Đức')
-    ap.add_argument('--tracks', default='batnha,niemphat,quanam,thien')
+    ap.add_argument('--tracks', default='batnha,daibi,duocsu,niemphat,quanam,thien')
     ap.add_argument('--variants', type=int, default=3, help='Số bản đọc khác nhau cho câu lặp lại')
     ap.add_argument('--onnx-dir', default=None)
     ap.add_argument('--whisper', default='small')
@@ -314,6 +378,8 @@ def main():
                     help='Khử nhiễu file mẫu trước khi nhân bản (mặc định: có)')
     ap.add_argument('--ref-mode', choices=['full', 'speaker'], default='full',
                     help='full: âm sắc + cách nhả chữ của mẫu; speaker: chỉ âm sắc')
+    ap.add_argument('--ref-seconds', type=float, default=60.0,
+                    help='Dùng bao nhiêu giây đầu của file mẫu để nhân bản (mặc định: 60)')
     args = ap.parse_args()
     if args.ref_audio:
         ref = Path(args.ref_audio).expanduser().resolve()
@@ -321,7 +387,7 @@ def main():
             ap.error(f'không thấy file giọng mẫu: {args.ref_audio}')
         if ROOT in ref.parents:
             ap.error('file giọng mẫu là dữ liệu cá nhân, phải để NGOÀI thư mục dự án; hãy chuyển nó ra ngoài rồi chạy lại')
-        args.voice = clone_label(ref, args.denoise_ref, args.ref_mode == 'speaker')
+        args.voice = clone_label(ref, args.denoise_ref, args.ref_mode == 'speaker', args.ref_seconds)
         print(f'Nhân bản giọng: {args.voice}')
 
     data = chant_data()
@@ -336,7 +402,7 @@ def main():
         from faster_whisper import WhisperModel
         tts = Vieneu(onnx_dir=args.onnx_dir) if args.onnx_dir else Vieneu()
         if args.ref_audio:
-            tts = CloneVoice(tts, ref, args.denoise_ref, args.ref_mode == 'speaker')
+            tts = CloneVoice(tts, ref, args.denoise_ref, args.ref_mode == 'speaker', args.ref_seconds)
         model = WhisperModel(args.whisper, device='cpu', compute_type='int8')
     if args.eval:
         tid = ids[0]

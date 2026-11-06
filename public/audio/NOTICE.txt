@@ -1,5 +1,6 @@
-chants/batnha, niemphat, quanam (.mp3 .json) — bài tụng dựng bằng tools/build_chants.py
-  Giọng tụng do máy tổng hợp bằng VieNeu-TTS v3 Turbo, nhân bản từ giọng đọc của một vị thầy, đã được thầy đồng ý.
+chants/batnha, daibi, duocsu, niemphat, quanam (.mp3 .json) — bài tụng dựng bằng tools/build_chants.py
+  Giọng tụng do máy tổng hợp bằng VieNeu-TTS v3 Turbo, nhân bản âm sắc từ 60 giây đầu một bản đọc
+  giọng nam do chủ dự án cung cấp.
   Đây là giọng tổng hợp, không phải bản thu âm thật; có thể đọc sai hoặc thiếu rõ một số từ Hán Việt.
   Bản ghi giọng mẫu không nằm trong dự án và không được đăng tải.
   Mô hình: https://huggingface.co/pnnbao-ump/VieNeu-TTS-v3-Turbo
@@ -8,7 +9,8 @@ chants/batnha, niemphat, quanam (.mp3 .json) — bài tụng dựng bằng tools
   Codec: MOSS-Audio-Tokenizer-Nano (OpenMOSS-Team), Apache-2.0
   Mốc chữ dò bằng faster-whisper (MIT) với mô hình Whisper "small" (MIT).
   Mõ: tiếng gõ tạo bằng toán.
-  Kinh văn: Bát Nhã Ba La Mật Đa Tâm Kinh (bản Hán Việt phổ thông), các câu niệm danh hiệu.
+  Kinh văn: Bát Nhã Ba La Mật Đa Tâm Kinh (bản Hán Việt phổ thông), Chú Đại Bi (84 câu, bản âm tụng
+  phổ thông), Chú Dược Sư (bản phiên âm trong public/kinh/kinh-duoc-su.md), các câu niệm danh hiệu.
 chants/thien.mp3 — chỉ có tiếng mõ và chuông, không có giọng.
 
 bell.mp3 — tiếng chuông

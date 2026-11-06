@@ -4,19 +4,31 @@
    "title": "Bát Nhã Tâm Kinh",
    "file": "batnha.mp3",
    "json": "batnha.json",
-   "duration": 109.86
+   "duration": 109.28
+  },
+  "daibi": {
+   "title": "Chú Đại Bi",
+   "file": "daibi.mp3",
+   "json": "daibi.json",
+   "duration": 143.91
+  },
+  "duocsu": {
+   "title": "Kinh Dược Sư · Chú Dược Sư",
+   "file": "duocsu.mp3",
+   "json": "duocsu.json",
+   "duration": 95.77
   },
   "niemphat": {
    "title": "Niệm Phật A Di Đà",
    "file": "niemphat.mp3",
    "json": "niemphat.json",
-   "duration": 37.65
+   "duration": 35.3
   },
   "quanam": {
    "title": "Niệm Quán Thế Âm Bồ Tát",
    "file": "quanam.mp3",
    "json": "quanam.json",
-   "duration": 50.08
+   "duration": 50.3
   },
   "thien": {
    "title": "Chuông mõ ngồi thiền",
