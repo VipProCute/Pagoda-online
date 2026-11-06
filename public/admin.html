@@ -48,8 +48,13 @@
     </section>
     <section>
       <h2>Cúng dường tịnh tài</h2>
-      <p class="hint">Lượt “chờ” là người đã tạo mã nhưng nhà chùa chưa thấy tiền. Nếu chưa bật SePay, đối chiếu sao kê rồi bấm Xác nhận.</p>
+      <p class="hint">Lượt “chờ” là người đã tạo mã nhưng nhà chùa chưa thấy tiền. Nếu chưa bật SePay, đối chiếu sao kê rồi bấm Xác nhận. Bấm Xác nhận xong, chánh điện đọc thông báo và người cúng dường được hào quang theo số tiền (cộng dồn).</p>
+      <p class="warn" id="confirmMsg" hidden style="color:var(--jade)"></p>
       <div class="tbl"><table><thead><tr><th>Mã</th><th>Thời gian</th><th>Tên</th><th>Số tiền</th><th>Quỹ</th><th>Lời nhắn</th><th>Trạng thái</th><th></th></tr></thead><tbody id="dons"></tbody></table></div>
+    </section>
+    <section>
+      <h2>Hào quang đang sáng</h2>
+      <div id="auras"></div>
     </section>
     <div class="cols">
       <section><h2>Tin nhắn gần đây</h2><div id="chat"></div></section>
@@ -72,7 +77,7 @@
     try {
       const d = await api('/api/admin/summary');
       $('#err').hidden = true; $('#app').hidden = false;
-      $('#stats').innerHTML = `<span>Đang có mặt: <b>${NUM(d.online)}</b></span><span>Nhang hôm nay: <b>${NUM(d.today.incense)}</b></span><span>Lượt vào hôm nay: <b>${NUM(d.today.visits)}</b></span><span>Tịnh tài: <b>${d.donationEnabled ? 'đang bật' : 'đang tắt'}</b></span>` +
+      $('#stats').innerHTML = `<span>Đang có mặt: <b>${NUM(d.online)}</b></span><span>Nhang hôm nay: <b>${NUM(d.today.incense)}</b></span><span>Lượt vào hôm nay: <b>${NUM(d.today.visits)}</b></span><span>Tịnh tài: <b>${d.donationEnabled ? 'đang bật' : 'đang tắt'}</b></span><span>Đang nói chuyện: <b>${NUM(d.voice)}</b></span><span>Giọng đọc thông báo: <b>${d.tts ? 'VieNeu “' + d.tts.replace(/[<>&]/g, '') + '”' : 'trình duyệt tự đọc'}</b></span>` +
         d.funds.map(f => `<span>${f.name.replace(/[<>&]/g, '')}: <b>${NUM(f.raised)}đ</b></span>`).join('');
       const tb = $('#dons'); tb.textContent = '';
       d.donations.forEach(x => {
@@ -87,10 +92,17 @@
         tb.appendChild(tr);
       });
       if (!d.donations.length) tb.innerHTML = '<tr><td colspan="8" class="muted">Chưa có lượt nào.</td></tr>';
+      const au = $('#auras'); au.textContent = '';
+      (d.auras || []).forEach(a => {
+        const it = document.createElement('div'); it.className = 'item';
+        const p = document.createElement('p'); p.textContent = `${a.name} · cảnh giới ${a.tier}: ${a.tierName} · cộng dồn ${NUM(a.amount)}đ · sáng đến ${new Date(a.until).toLocaleTimeString('vi-VN')}`;
+        it.appendChild(p); au.appendChild(it);
+      });
+      if (!(d.auras || []).length) au.innerHTML = '<p class="muted">Chưa có ai đang có hào quang.</p>';
       const chat = $('#chat'); chat.textContent = '';
       d.chat.filter(m => !m.sys).forEach(m => {
         const it = document.createElement('div'); it.className = 'item' + (m.hidden ? ' hidden' : '');
-        const p = document.createElement('p'); p.textContent = `[${t(m.t)}] ${m.name}: ${m.text}` + (m.reports ? ` · ${m.reports} báo cáo` : '');
+        const p = document.createElement('p'); p.textContent = `[${t(m.t)}] ${m.name}: ${m.text}` + (m.reports ? ` · ${m.reports} báo cáo` : '') + (m.pen ? ` · bị trừ ${m.pen} công đức` : '');
         it.appendChild(p);
         if (!m.hidden) it.appendChild(btn('Ẩn', () => api(`/api/admin/chat/${m.id}/hide`, 'POST').then(load)));
         chat.appendChild(it);
@@ -105,7 +117,17 @@
       });
     } catch (e) { $('#err').textContent = e.message; $('#err').hidden = false; $('#app').hidden = true; }
   }
-  function confirm2(code, action) { api(`/api/admin/donations/${code}/${action}`, 'POST').then(load).catch(e => alert(e.message)); }
+  function confirm2(code, action) {
+    api(`/api/admin/donations/${code}/${action}`, 'POST').then(r => {
+      const m = $('#confirmMsg');
+      if (action === 'confirm') {
+        const a = r && r.aura;
+        m.textContent = `Đã xác nhận ${code}. Chánh điện đang đọc thông báo.` + (a && a.tier ? ` Hào quang: cảnh giới ${a.tierName}${a.up ? ' (vừa đột phá)' : ''}, cộng dồn ${NUM(a.amount)}đ.` : a ? ` Đang cộng dồn ${NUM(a.amount)}đ, chưa đủ mốc hào quang đầu (20.000đ).` : ' Lượt này ẩn danh hoặc tắt hào quang.');
+        m.hidden = false;
+      }
+      load();
+    }).catch(e => alert(e.message));
+  }
   $('#login').addEventListener('submit', e => {
     e.preventDefault(); key = $('#key').value.trim();
     sessionStorage.setItem('ta-admin-key', key);

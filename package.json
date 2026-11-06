@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "check": "node --check server.js && node --check public/js/app.js && node --check public/js/hall.js && node --check public/js/audio.js && node --check public/js/chants.js && node --check public/js/lunar.js",
+    "check": "node --check server.js && node --check lib/announce.js && node --check public/js/app.js && node --check public/js/hall.js && node --check public/js/audio.js && node --check public/js/chants.js && node --check public/js/lunar.js && node --check public/js/aura.js && node --check public/js/voice.js && node --check public/js/library.js && node --check public/js/merit.js && node --check lib/moderation.js",
     "start:env": "node --env-file=.env server.js"
   },
   "engines": {

@@ -46,9 +46,21 @@
         <button type="button" class="btn small" id="cbStop" hidden>Dừng khóa tụng</button>
       </div>
     </div>
+    <div class="announce" id="announce" role="status" aria-live="polite" hidden>
+      <span class="an-ico" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24"><path d="M6 17V11a6 6 0 0 1 12 0v6Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M4 17h16M12 3v2M12 20v1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span>
+      <p id="announceText"></p>
+    </div>
     <div class="ticker" id="ticker" aria-live="polite"></div>
     <div class="today" id="todayStats"></div>
-    <p class="stage-hint">Chạm sàn để đi lại · chạm bát hương để thắp nhang · chạm tượng Phật để vái lạy</p>
+    <div class="voicebar" id="voicebar" hidden>
+      <button type="button" class="vb-mic" id="vbMic" aria-pressed="true" title="Bật / tắt micro">
+        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" fill="currentColor"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/><path class="slash" d="M4 4l16 16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+      <div class="vb-text"><b id="vbTitle">Đang nói chuyện</b><span id="vbSub"></span></div>
+      <button type="button" class="btn small" id="vbList">Người gần</button>
+      <button type="button" class="btn small" id="vbLeave">Rời</button>
+    </div>
+    <p class="stage-hint">Chạm sàn để đi lại · chạm bát hương để thắp nhang · chạm tượng Phật để vái lạy · chạm tủ Tàng Kinh Các để đọc kinh</p>
   </section>
 
   <aside class="side" aria-label="Cộng đồng">
@@ -82,7 +94,15 @@
       <section class="card mine">
         <span class="eyebrow">Công đức của bạn</span>
         <div class="mine-row"><div><b id="mtToday">0</b><span>hôm nay</span></div><div><b id="mtTotal">0</b><span>tất cả</span></div></div>
-        <p class="hint">Tích từ thắp nhang, dâng hoa, gõ mõ, vái lạy, thả tim và tụng kinh chung. Công đức không tính theo tiền cúng dường.</p>
+        <p class="hint">Tích từ thắp nhang, dâng hoa, gõ mõ, vái lạy, thả tim, tụng kinh chung và cúng dường (mỗi 1.000đ được 1 điểm). Nói lời tục tĩu trong chat sẽ bị trừ.</p>
+        <div class="rank-now" id="rankNow"></div>
+        <button type="button" class="btn small" data-open="rules">Luật công đức, pháp tướng và quỷ</button>
+      </section>
+      <section class="card aura-card" id="auraCard" hidden>
+        <span class="eyebrow">Hào quang của bạn</span>
+        <div class="aura-now"><b id="auraName"></b><span id="auraLeft"></span></div>
+        <p class="hint" id="auraNext"></p>
+        <button type="button" class="btn small" data-open="aura">Xem 9 cảnh giới hào quang</button>
       </section>
       <section class="card">
         <span class="eyebrow">Hôm nay ở chánh điện</span>
@@ -103,12 +123,14 @@
 
 <nav class="actions" aria-label="Lễ Phật">
   <button type="button" class="act primary" data-act="incense"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21V8M8 21V10M16 21V10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M12 5c1.5-1 1.5-2.5 0-3.5M8 7c1.2-.9 1.2-2 0-3M16 7c1.2-.9 1.2-2 0-3" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linecap="round"/></svg><span>Thắp nhang</span></button>
+  <button type="button" class="act voice" data-act="voice" id="actVoice" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" fill="currentColor"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg><span id="actVoiceLbl">Nói chuyện</span></button>
   <button type="button" class="act" data-act="flower"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4c2.6 3 3.2 6.2 0 11-3.2-4.8-2.6-8 0-11Z" fill="currentColor"/><path d="M12 15c-4-.6-7-3.4-8-7 4 0 6.6 2.4 8 7Zm0 0c4-.6 7-3.4 8-7-4 0-6.6 2.4-8 7Z" fill="currentColor" opacity=".6"/><path d="M5 19h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>Dâng hoa</span></button>
   <button type="button" class="act heart" data-act="heart"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z" fill="currentColor"/></svg><span>Thả tim</span></button>
   <button type="button" class="act" data-act="bow"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v7M9 11l3-3 3 3M8 21c0-4 1.6-7 4-7s4 3 4 7" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Vái lạy</span></button>
   <button type="button" class="act" data-act="mo"><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="11" cy="14" rx="8" ry="6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M6 14h7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M15 4l6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>Gõ mõ</span></button>
   <button type="button" class="act" data-act="bell"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 17V11a6 6 0 0 1 12 0v6Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M4 17h16M12 3v2M12 20v1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>Thỉnh chuông</span></button>
   <button type="button" class="act" data-act="chant"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h7a3 3 0 0 1 3 3v12a2.5 2.5 0 0 0-2.5-2.5H4ZM20 5h-4" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linejoin="round"/><path d="M17 9h3M17 13h3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span>Tụng kinh</span></button>
+  <button type="button" class="act" data-act="library"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9l9-5 9 5" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linejoin="round"/><path d="M5 9v11h14V9M5 14h14" stroke="currentColor" stroke-width="1.7" fill="none"/><path d="M8 11v3M10.5 11v3M15 16v4M13 16.5v3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>Tàng Kinh Các</span></button>
   <button type="button" class="act gold" data-act="donate"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11h16v9H4zM3 7h18v4H3zM12 7v13M12 7c-2-3-6-3-5 0M12 7c2-3 6-3 5 0" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linejoin="round"/></svg><span>Cúng dường</span></button>
 </nav>
 
@@ -221,7 +243,8 @@
         <div class="grow"><label for="dnName" class="lbl">Tên ghi công đức</label><input type="text" class="field" id="dnName" maxlength="24"></div>
         <div class="grow"><label for="dnNote" class="lbl">Lời nhắn (không bắt buộc)</label><input type="text" class="field" id="dnNote" maxlength="120" placeholder="Hồi hướng cho…"></div>
       </div>
-      <div class="checks"><label><input type="checkbox" id="dnAnon"> Ẩn danh</label><label><input type="checkbox" id="dnHide"> Không hiện số tiền</label></div>
+      <div class="checks"><label><input type="checkbox" id="dnAnon"> Ẩn danh</label><label><input type="checkbox" id="dnHide"> Không hiện số tiền</label><label><input type="checkbox" id="dnAura" checked> Hiện hào quang quanh nhân vật</label></div>
+      <p class="hint">Khi nhà chùa xác nhận đã nhận, nhân vật của bạn tỏa hào quang theo số tiền, cộng dồn qua nhiều lần cúng dường. <button type="button" class="linkbtn" data-open="aura">Xem 9 cảnh giới</button></p>
       <p class="warn" id="dnWarn" hidden></p>
       <div class="dlg-foot"><button type="button" class="btn" data-close>Để sau</button><button type="submit" class="btn primary">Tạo mã VietQR</button></div>
     </form>
@@ -250,12 +273,101 @@
   </div>
 </dialog>
 
+<!-- Tàng Kinh Các -->
+<dialog class="dlg lib" id="dlg-library" aria-labelledby="lib-title">
+  <div class="lib-wrap">
+    <header class="lib-head">
+      <button type="button" class="btn small lib-back" id="libBack" hidden>‹ Kệ kinh</button>
+      <div class="lib-titles"><span class="eyebrow">Tàng Kinh Các</span><h2 id="lib-title">Kệ kinh</h2><p id="libSub"></p></div>
+      <button type="button" class="x" data-close aria-label="Đóng">×</button>
+    </header>
+    <div class="lib-tools" id="libTools" hidden>
+      <button type="button" class="btn small" id="libToc">Mục lục</button>
+      <span class="grp"><button type="button" class="btn small" id="libSmaller" aria-label="Chữ nhỏ hơn">A−</button><button type="button" class="btn small" id="libBigger" aria-label="Chữ to hơn">A+</button></span>
+      <button type="button" class="btn small" id="libTheme">Nền tối</button>
+      <button type="button" class="btn small gold" id="libChant" hidden>Khởi tụng chung</button>
+    </div>
+    <div class="lib-shelf" id="libShelf"></div>
+    <div class="lib-reader" id="libReader" hidden>
+      <nav class="lib-toc" id="libTocList" aria-label="Mục lục"></nav>
+      <article class="lib-page" id="libPage" tabindex="0"></article>
+    </div>
+    <footer class="lib-foot" id="libFoot" hidden>
+      <button type="button" class="btn small" id="libPrev">‹ Chương trước</button>
+      <span id="libPos"></span>
+      <button type="button" class="btn small" id="libNext">Chương sau ›</button>
+    </footer>
+  </div>
+</dialog>
+
+<!-- nói chuyện -->
+<dialog class="dlg" id="dlg-voice" aria-labelledby="vc-title">
+  <div class="dlg-body">
+    <div class="dlg-head">
+      <div><h2 id="vc-title">Nói chuyện</h2><p>Đứng gần ai thì nghe người đó rõ, đứng xa thì nhỏ dần. Đi lại trong chánh điện để đến gần đạo hữu muốn trò chuyện.</p></div>
+      <button type="button" class="x" data-close aria-label="Đóng">×</button>
+    </div>
+    <div class="vc-vol">
+      <label for="vcVol" class="lbl">Âm lượng giọng nói</label>
+      <input type="range" id="vcVol" min="0" max="150" step="5" value="100">
+    </div>
+    <div class="vc-list" id="vcList"></div>
+    <p class="hint">Đeo tai nghe để không bị vọng tiếng. Khi đại chúng tụng kinh, tiếng nói chuyện tự nhỏ lại. Tiếng nói đi thẳng giữa các máy, nhà chùa không ghi âm.</p>
+  </div>
+</dialog>
+
+<!-- 9 cảnh giới hào quang -->
+<dialog class="dlg" id="dlg-aura" aria-labelledby="au-title">
+  <div class="dlg-body">
+    <div class="dlg-head">
+      <div><h2 id="au-title">Hào quang 9 cảnh giới</h2><p>Hào quang sáng khi nhà chùa xác nhận đã nhận tịnh tài. Cúng dường thêm khi hào quang còn sáng thì cộng dồn để đột phá cảnh giới cao hơn. Cảnh giới càng cao, hào quang sáng càng lâu.</p></div>
+      <button type="button" class="x" data-close aria-label="Đóng">×</button>
+    </div>
+    <div class="aura-grid" id="auraGrid"></div>
+    <p class="hint">Ví dụ: ba lần 20.000đ liên tiếp (60.000đ) là lên Trúc Cơ. Hết thời gian mà chưa cúng dường thêm thì hào quang tắt và cộng dồn lại từ đầu. Ẩn danh thì không hiện hào quang. Ngoài hào quang, mỗi 1.000đ còn được 1 điểm công đức (giúp mở pháp tướng sau lưng).</p>
+  </div>
+</dialog>
+
+<!-- luật công đức -->
+<dialog class="dlg" id="dlg-rules" aria-labelledby="ru-title">
+  <div class="dlg-body">
+    <div class="dlg-head">
+      <div><h2 id="ru-title">Luật công đức</h2><p>Công đức tính trên tổng điểm của bạn. Công đức cao thì hiện pháp tướng sau lưng; công đức âm thì có quỷ theo sau.</p></div>
+      <button type="button" class="x" data-close aria-label="Đóng">×</button>
+    </div>
+    <section class="rules-sec">
+      <h3>Được cộng</h3>
+      <ul class="earn" id="ruEarn"></ul>
+    </section>
+    <section class="rules-sec">
+      <h3>Bị trừ khi chat lời tục tĩu</h3>
+      <p class="hint">Áp dụng cho tin nhắn và lời nguyện, không áp dụng cho nói chuyện bằng giọng. Chửi càng nặng trừ càng nhiều; nhiều từ tục trong một tin thì cộng dồn.</p>
+      <div class="tbl-rules" id="ruPen"></div>
+      <p class="hint">Gào thét (viết HOA gần hết) nhân 1,5. Tái phạm trong 10 phút nhân thêm 0,5 mỗi lần (tối đa nhân 3). Một tin trừ tối đa 300 điểm. Lời tục đi kèm danh hiệu Phật, Bồ Tát, chư Tăng, nhà chùa tính là báng bổ.</p>
+    </section>
+    <section class="rules-sec">
+      <h3>Pháp tướng công đức (6 mốc)</h3>
+      <p class="hint">Hiện sau lưng nhân vật, còn mãi khi công đức còn đủ mốc. Từ mốc 1.000 trở lên thì pháp tướng xoay. Khi có cả hào quang cúng dường, ngọc và viền pháp tướng nhuộm theo màu hào quang.</p>
+      <div class="aura-grid" id="ruRanks"></div>
+    </section>
+    <section class="rules-sec">
+      <h3>Quỷ theo sau khi công đức âm</h3>
+      <p class="hint">Công đức dưới 0 thì quỷ bắt đầu hiện mờ, đến −100 thì rõ hẳn. Càng âm quỷ càng tiến hóa. Làm việc thiện (thắp nhang, tụng kinh, cúng dường…) để công đức về lại trên 0 thì quỷ tan.</p>
+      <div class="aura-grid demons" id="ruDemons"></div>
+    </section>
+  </div>
+</dialog>
+
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script src="/socket.io/socket.io.js"></script>
 <script src="/js/lunar.js"></script>
 <script src="/js/audio.js"></script>
+<script src="/js/aura.js"></script>
+<script src="/js/merit.js"></script>
 <script src="/js/hall.js"></script>
+<script src="/js/voice.js"></script>
+<script src="/js/library.js"></script>
 <script src="/js/app.js"></script>
 </body>
 </html>

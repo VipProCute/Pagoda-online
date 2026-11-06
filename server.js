@@ -10,7 +10,10 @@ const crypto = require('crypto');
 const express = require('express');
 const { Server } = require('socket.io');
 const store = require('./lib/store');
-const { clean, checkMessage, checkName } = require('./lib/moderation');
+const { clean, checkMessage, checkName, rulesSummary } = require('./lib/moderation');
+const AURA = require('./public/js/aura');
+const MERITS = require('./public/js/merit');
+const announce = require('./lib/announce');
 const fs = require('fs');
 
 // Bài tụng dựng sẵn (tools/build_chants.py): tên, file và thời lượng thật của từng bài
@@ -20,6 +23,16 @@ const TRACKS = (() => {
   } catch (e) {
     console.error('Không đọc được public/audio/chants/manifest.json — chạy tools/build_chants.py để dựng bài tụng.', e.message);
     return {};
+  }
+})();
+// Kinh trong Tàng Kinh Các (public/kinh/index.json): để kiểm tra ai đang đọc bộ nào
+const BOOKS = (() => {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(__dirname, 'public', 'kinh', 'index.json'), 'utf8')).books
+      .map(b => ({ id: String(b.id), title: clean(String(b.title), 60) }));
+  } catch (e) {
+    console.error('Không đọc được public/kinh/index.json:', e.message);
+    return [];
   }
 })();
 
@@ -42,12 +55,21 @@ const DONATION_ENABLED = !!(BANK.id && BANK.account);
 const FUNDS = (process.env.FUNDS || 'Tùy nhà chùa sử dụng').split(';').map(s => s.trim()).filter(Boolean).slice(0, 8)
   .map((s, i) => { const [name, goal] = s.split('|'); return { id: 'q' + i, name: clean(name, 60), goal: Math.max(0, parseInt(goal, 10) || 0) }; });
 
-const MERIT = { heart: 1, mo: 1, bow: 2, bell: 3, offer: 5, incense: 10, chantStart: 5, chantJoin: 15 };
+const MERIT = MERITS.EARN;   // thắp nhang +10, dâng lễ +5, … ; cúng dường +1 cho mỗi 1.000đ
 const ITEMS = { lotus: 'dâng một đóa sen', rose: 'dâng một bó hoa hồng', lamp: 'thắp một ngọn đèn', fruit: 'dâng một mâm ngũ quả' };
 const KINDS = ['Cầu an', 'Cầu siêu', 'Tạ ơn', 'Sám hối', 'Hồi hướng'];
+const PENALTY_RULES = rulesSummary();
 const SPEED = 0.24;          // tốc độ đi (đơn vị sàn / giây)
 const X_WEIGHT = 1.6;        // sàn rộng hơn sâu
 const Z_MIN = 0.12, Z_MAX = 0.97, X_MIN = 0.03, X_MAX = 0.97;
+
+/* ----- nói chuyện bằng giọng (WebRTC) ----- */
+// Máy chủ chỉ chuyển lời mời kết nối giữa hai trình duyệt; tiếng nói đi thẳng giữa hai máy, không qua máy chủ.
+const VOICE_ENABLED = process.env.VOICE !== '0';
+const VOICE_MAX = Number(process.env.VOICE_MAX) || 150;
+const STUN_URLS = (process.env.STUN_URLS || 'stun:stun.l.google.com:19302,stun:stun.cloudflare.com:3478').split(',').map(s => s.trim()).filter(Boolean);
+const TURN = { urls: (process.env.TURN_URLS || '').split(',').map(s => s.trim()).filter(Boolean), username: process.env.TURN_USERNAME || '', credential: process.env.TURN_CREDENTIAL || '' };
+const CF_TURN = { id: (process.env.CF_TURN_KEY_ID || '').trim(), token: (process.env.CF_TURN_API_TOKEN || '').trim() };
 
 /* ---------------- tiện ích ---------------- */
 const vnDay = (ms = Date.now()) => new Date(ms + 7 * 3600e3).toISOString().slice(0, 10);
@@ -60,6 +82,34 @@ function safeEqual(a, b) {
   return x.length === y.length && crypto.timingSafeEqual(x, y);
 }
 
+/* Máy chủ STUN/TURN cho trình duyệt. TURN giúp nối được khi mạng 4G hoặc mạng công ty chặn kết nối thẳng. */
+let cfIce = null, cfIceAt = 0, cfIceJob = null;
+async function iceServers() {
+  const list = [];
+  if (STUN_URLS.length) list.push({ urls: STUN_URLS });
+  if (TURN.urls.length) list.push({ urls: TURN.urls, username: TURN.username, credential: TURN.credential });
+  if (!CF_TURN.id || !CF_TURN.token) return list;
+  if (!cfIce || Date.now() - cfIceAt > 3600e3) {
+    // Cloudflare TURN: xin thông tin đăng nhập tạm (24 giờ), dùng chung trong 1 giờ
+    if (!cfIceJob) {
+      cfIceJob = fetch(`https://rtc.live.cloudflare.com/v1/turn/keys/${encodeURIComponent(CF_TURN.id)}/credentials/generate-ice-servers`, {
+        method: 'POST', headers: { authorization: 'Bearer ' + CF_TURN.token, 'content-type': 'application/json' },
+        body: JSON.stringify({ ttl: 86400 }), signal: AbortSignal.timeout(6000)
+      }).then(r => (r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status))))
+        .then(j => {
+          const arr = Array.isArray(j.iceServers) ? j.iceServers : [j.iceServers];
+          // trình duyệt hay treo ở cổng 53, bỏ đi
+          cfIce = arr.filter(x => x && x.urls).map(x => ({ ...x, urls: [].concat(x.urls).filter(u => !/:53(\?|$)/.test(u)) })).filter(x => x.urls.length);
+          cfIceAt = Date.now();
+        })
+        .catch(e => console.error('[voice] Không lấy được TURN của Cloudflare:', e.message))
+        .finally(() => { cfIceJob = null; });
+    }
+    await cfIceJob;
+  }
+  return list.concat(cfIce || []);
+}
+
 /* ---------------- dữ liệu ---------------- */
 const db = store.load();
 function rollDay() {
@@ -68,18 +118,52 @@ function rollDay() {
 }
 let statsDirty = true;
 function bump(key, n = 1) { rollDay(); db.today[key] += n; db.total[key] += n; statsDirty = true; store.save(); }
-function addMerit(p, n) {
+function addMerit(p, n) { addMeritUid(p.uid, p.name, n); }
+/** Cộng (hoặc trừ, n < 0) công đức theo uid; người đang có mặt thì cập nhật hình ảnh cho cả chánh điện. */
+function addMeritUid(uid, name, n) {
   const d = vnDay();
-  let m = db.merit[p.uid];
-  if (!m) m = db.merit[p.uid] = { name: p.name, total: 0, today: 0, day: d };
+  let m = db.merit[uid];
+  if (!m) m = db.merit[uid] = { name, total: 0, today: 0, day: d };
   if (m.day !== d) { m.day = d; m.today = 0; }
-  m.name = p.name; m.total += n; m.today += n;
-  p.meritDirty = true; store.save();
+  const before = m.total;
+  m.name = name; m.total += n; m.today += n;
+  store.save();
+  for (const p of players.values()) {
+    if (p.uid !== uid) continue;
+    p.meritDirty = true;
+    const key = MERITS.visualKey(m.total);
+    if (key !== p.mkey) {
+      p.mkey = key;
+      const up = MERITS.rankOf(m.total) > MERITS.rankOf(before);
+      io.emit('pm', { id: p.id, mt: m.total, up });
+    }
+  }
+}
+const meritTotal = uid => (db.merit[uid] ? db.merit[uid].total : 0);
+// Tái phạm lời tục trong 10 phút (theo uid, giữ trong bộ nhớ)
+const offenses = new Map();
+function penalize(p, pen, where) {
+  const t = now(), list = (offenses.get(p.uid) || []).filter(x => t - x < 10 * 60e3);
+  const mult = Math.min(3, 1 + 0.5 * list.length);
+  const pts = Math.min(300, Math.round(pen.pts * mult));
+  list.push(t); offenses.set(p.uid, list);
+  addMerit(p, -pts);
+  io.emit('penalty', { pid: p.id, n: pts });
+  p.socket.emit('penalty:me', { n: pts, lv: pen.lv, name: pen.name, shout: !!pen.shout, mult, where, total: meritTotal(p.uid) });
+  return pts;
 }
 function meritOf(uid) {
   const m = db.merit[uid];
   if (!m) return { today: 0, total: 0 };
   return { today: m.day === vnDay() ? m.today : 0, total: m.total };
+}
+function auraOf(uid) {
+  const a = db.auras[uid];
+  return a && a.tier && a.until > now() ? { t: a.tier, until: a.until } : 0;
+}
+function myAura(uid) {
+  const a = db.auras[uid];
+  return a && a.until > now() ? { amount: a.amount, t: a.tier, until: a.until } : null;
 }
 function board() {
   const d = vnDay();
@@ -113,16 +197,24 @@ app.use(express.static(path.join(__dirname, 'public'), {
   maxAge: '10m',
   setHeaders: (res, file) => { if (file.endsWith('.html')) res.set('Cache-Control', 'no-cache'); }
 }));
-app.get('/healthz', (req, res) => res.json({ ok: true, online: players.size }));
+app.get('/healthz', (req, res) => res.json({ ok: true, online: players.size, voice: voiceCount() }));
 app.get('/api/config', (req, res) => res.json(clientConfig()));
+app.get('/api/announce/:id', (req, res) => {
+  const c = announce.get(req.params.id);
+  if (!c) return res.status(404).end();
+  res.set('Cache-Control', 'public, max-age=1800').type(c.type).send(c.buf);
+});
 
 function clientConfig() {
   return {
+    penaltyRules: PENALTY_RULES, meritPerVnd: MERITS.EARN.perVnd,
     siteName: SITE_NAME,
     incenseMinutes: INCENSE_MINUTES,
     donation: DONATION_ENABLED ? { bank: BANK.label, account: BANK.account, accountName: BANK.name, funds: FUNDS.map(f => ({ id: f.id, name: f.name })) } : null,
     tracks: TRACKS,
-    kinds: KINDS
+    kinds: KINDS,
+    voice: VOICE_ENABLED,
+    tts: announce.enabled
   };
 }
 
@@ -153,17 +245,20 @@ app.get('/api/admin/summary', admin, (req, res) => {
   res.json({
     online: players.size, today: db.today, total: db.total, funds: fundsSummary(), donationEnabled: DONATION_ENABLED,
     donations: db.donations.slice(-300).reverse(),
-    chat: db.chat.slice(-150).reverse().map(m => ({ ...publicMsg(m), hidden: !!m.hidden, reports: (m.reports || []).length })),
+    chat: db.chat.slice(-150).reverse().map(m => ({ ...publicMsg(m), hidden: !!m.hidden, reports: (m.reports || []).length, pen: m.pen || 0 })),
     prayers: db.prayers.slice(-100).reverse().map(p => ({ ...publicPrayer(p), hidden: !!p.hidden })),
-    chant
+    chant, voice: voiceCount(), tts: announce.enabled ? announce.voice : null,
+    auras: Object.entries(db.auras).filter(([, a]) => a.tier && a.until > now())
+      .map(([, a]) => ({ name: a.name, tier: a.tier, tierName: AURA.TIERS[a.tier - 1].name, amount: a.amount, until: a.until }))
+      .sort((a, b) => b.tier - a.tier)
   });
 });
 app.post('/api/admin/donations/:code/confirm', admin, (req, res) => {
   const d = db.donations.find(x => x.code === req.params.code);
   if (!d) return res.status(404).json({ error: 'Không thấy mã này.' });
   if (d.status === 'confirmed') return res.json({ ok: true });
-  confirmDonation(d, { amount: d.amount, ref: 'admin', source: 'admin' });
-  res.json({ ok: true });
+  const a = confirmDonation(d, { amount: d.amount, ref: 'admin', source: 'admin' });
+  res.json({ ok: true, aura: a ? { tier: a.tier, tierName: a.tier ? AURA.TIERS[a.tier - 1].name : '', up: a.up, amount: a.amount, until: a.until } : null });
 });
 app.post('/api/admin/donations/:code/cancel', admin, (req, res) => {
   const d = db.donations.find(x => x.code === req.params.code);
@@ -194,14 +289,16 @@ const ipCount = new Map();
 let nextPid = 1;
 let chant = null, chantTimer = null, lastChantEnd = 0, lastGlobalBell = 0;
 
-const publicPlayer = p => ({ id: p.id, name: p.name, look: p.look, x: +p.x.toFixed(3), z: +p.z.toFixed(3), mod: p.mod });
+const publicPlayer = p => ({ id: p.id, name: p.name, look: p.look, x: +p.x.toFixed(3), z: +p.z.toFixed(3), mod: p.mod, v: p.v || 0, rd: p.rd || '', au: auraOf(p.uid), mt: meritTotal(p.uid) });
+const voiceCount = () => { let n = 0; for (const p of players.values()) if (p.v) n++; return n; };
 function sys(text) {
   const m = { id: store.nextId(), pid: 0, name: '', c: 0, text, t: now(), sys: true };
   db.chat.push(m); if (db.chat.length > 250) db.chat.splice(0, db.chat.length - 250);
   io.emit('chat', publicMsg(m));
 }
-function postChat(p, text) {
+function postChat(p, text, pen) {
   const m = { id: store.nextId(), pid: p.id || 0, uid: p.uid, name: p.name, c: p.look ? p.look.c : p.c, text, t: now(), mod: !!p.mod };
+  if (pen) m.pen = pen;
   db.chat.push(m); if (db.chat.length > 250) db.chat.splice(0, db.chat.length - 250);
   store.save();
   io.emit('chat', publicMsg(m));
@@ -213,10 +310,30 @@ function hideMessage(id) {
 function confirmDonation(d, info) {
   d.status = 'confirmed'; d.confirmedAt = now(); d.paidAmount = info.amount; d.ref = info.ref; d.source = info.source;
   if (info.amount > d.amount) d.amount = info.amount;
+  // Hào quang: cộng dồn theo người cúng dường (ẩn danh hoặc tự tắt thì không hiện)
+  let aura = null;
+  if (!d.anon && d.aura !== false) {
+    aura = AURA.stack(db.auras[d.uid], d.amount, now());
+    db.auras[d.uid] = { amount: aura.amount, tier: aura.tier, until: aura.until, name: d.name };
+    d.auraTier = aura.tier;
+  }
+  const tierInfo = aura && aura.tier ? AURA.TIERS[aura.tier - 1] : null;
+  // Công đức: mỗi 1.000đ đã xác nhận là 1 điểm
+  const gain = Math.floor(d.amount / MERITS.EARN.perVnd);
+  if (gain > 0) { addMeritUid(d.uid, d.name, gain); d.merit = gain; }
   store.save();
   io.emit('donation', { d: publicDonation(d), funds: fundsSummary() });
   sys(`${d.anon ? 'Một Phật tử ẩn danh' : d.name} vừa cúng dường tịnh tài cho quỹ “${d.fundName}”. Tùy hỷ công đức.`);
-  for (const p of players.values()) if (p.uid === d.uid) p.socket.emit('donation:ok', { code: d.code, amount: d.amount, fund: d.fundName });
+  for (const p of players.values()) {
+    if (p.uid !== d.uid) continue;
+    p.socket.emit('donation:ok', { code: d.code, amount: d.amount, fund: d.fundName, merit: gain, aura: aura && { ...myAura(d.uid), up: aura.up } });
+    if (aura) io.emit('aura', { pid: p.id, au: auraOf(p.uid), up: aura.up });
+  }
+  // Đọc thông báo: soạn câu, nhờ VieNeu đọc (nếu có), rồi phát cho cả chánh điện
+  const msg = announce.compose(d, aura, tierInfo);
+  const base = { text: msg.text, speak: msg.speak, tier: aura && aura.up ? aura.tier : 0 };
+  announce.speak(msg.speak).then(r => io.emit('announce', { ...base, audio: r.audio }));
+  return aura;
 }
 function endChant(completed) {
   clearTimeout(chantTimer); chantTimer = null;
@@ -266,9 +383,11 @@ io.on('connection', socket => {
     p = {
       id: nextPid++, uid, name: nm.name, mod: isMod, socket,
       look: { g: data.look && data.look.g === 'nam' ? 'nam' : 'nu', c: num(data.look && data.look.c, 0, 11, 0) | 0, h: num(data.look && data.look.h, 0, 3, 0) | 0 },
-      x: 0.5 + rand(-0.28, 0.28), z: rand(0.68, 0.92), tx: 0, tz: 0, dirty: false, cd: {}, bk: {}, lastText: '', meritDirty: false
+      x: 0.5 + rand(-0.28, 0.28), z: rand(0.68, 0.92), tx: 0, tz: 0, dirty: false, cd: {}, bk: {}, lastText: '', meritDirty: false,
+      v: 0, rd: '', voiceBanUntil: 0
     };
     p.tx = p.x; p.tz = p.z;
+    p.mkey = MERITS.visualKey(meritTotal(uid));
     players.set(p.id, p);
     socket.data.pid = p.id;
     rollDay(); bump('visits');
@@ -279,7 +398,7 @@ io.on('connection', socket => {
       prayers: db.prayers.filter(x => !x.hidden).slice(-40).map(publicPrayer),
       incense: activeIncense().slice(-60),
       today: db.today, total: db.total, online: players.size,
-      board: board(), merit: meritOf(uid),
+      board: board(), merit: meritOf(uid), aura: myAura(uid),
       donations: db.donations.filter(d => d.status === 'confirmed').slice(-20).map(publicDonation),
       funds: fundsSummary(), chant
     });
@@ -313,8 +432,9 @@ io.on('connection', socket => {
     if (!r.ok) return reply(r);
     if (r.text === p.lastText && !allow('same', 30000)) return reply({ ok: false, reason: 'Bạn vừa gửi tin này rồi.' });
     p.lastText = r.text;
-    postChat(p, r.text);
-    reply({ ok: true });
+    const pen = r.pen && r.pen.pts ? penalize(p, r.pen, 'chat') : 0;
+    postChat(p, r.text, pen);
+    reply({ ok: true, pen });
   });
 
   socket.on('report', d => {
@@ -376,6 +496,7 @@ io.on('connection', socket => {
     if (d.text && String(d.text).trim()) {
       const r = checkMessage(d.text, 200);
       if (!r.ok) { p.cd.incense = 0; return reply(r); }
+      if (r.pen && r.pen.pts) penalize(p, r.pen, 'prayer');
       if (d.pub) {
         prayer = { id: store.nextId(), kind, text: r.text, name: who, t: now(), n: 0, by: [] };
         db.prayers.push(prayer); if (db.prayers.length > 300) db.prayers.splice(0, db.prayers.length - 300);
@@ -444,12 +565,62 @@ io.on('connection', socket => {
     let name = p.name;
     if (d.name && String(d.name).trim()) { const nm = checkName(d.name, p.mod); if (!nm.ok) return ack(nm); name = nm.name; }
     const code = makeCode();
-    const don = { code, amount, fund: fund.id, fundName: fund.name, name, anon: !!d.anon, hide: !!d.hide, note, uid: p.uid, status: 'pending', createdAt: now() };
+    const don = { code, amount, fund: fund.id, fundName: fund.name, name, anon: !!d.anon, hide: !!d.hide, aura: !d.anon && d.aura !== false, note, uid: p.uid, status: 'pending', createdAt: now() };
     db.donations.push(don);
     if (db.donations.length > 3000) db.donations.splice(0, db.donations.length - 3000);
     store.save();
     const qr = `https://img.vietqr.io/image/${encodeURIComponent(BANK.id)}-${encodeURIComponent(BANK.account)}-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(code)}&accountName=${encodeURIComponent(BANK.name)}`;
     ack({ ok: true, code, amount, fund: fund.name, qr, bank: BANK.label, account: BANK.account, accountName: BANK.name, auto: !!SEPAY_API_KEY });
+  });
+
+  /* ----- Tàng Kinh Các: ai đang đọc kinh gì ----- */
+  socket.on('reading', d => {
+    if (!p) return;
+    const b = d && BOOKS.find(x => x.id === d.book);
+    const rd = b ? b.id : '';
+    if (rd === p.rd || !bucket('read', 1, 5)) return;
+    p.rd = rd;
+    io.emit('prd', { id: p.id, rd });
+    if (b && players.size <= 80 && allow('readTicker', 60000)) socket.broadcast.emit('ticker', { text: `${p.name} vào Tàng Kinh Các đọc “${b.title}”` });
+  });
+
+  /* ----- nói chuyện bằng giọng ----- */
+  socket.on('voice:join', async (d, ack) => {
+    if (!p || typeof ack !== 'function') return;
+    if (!VOICE_ENABLED) return ack({ ok: false, reason: 'Nhà chùa chưa mở nói chuyện bằng giọng.' });
+    if (p.voiceBanUntil > now()) return ack({ ok: false, reason: `Bạn đang bị khóa mic thêm ${Math.ceil((p.voiceBanUntil - now()) / 60e3)} phút.` });
+    if (!p.v && voiceCount() >= VOICE_MAX) return ack({ ok: false, reason: 'Đang có quá nhiều người nói chuyện. Bạn đợi ít phút nhé.' });
+    if (!bucket('voiceJoin', 0.2, 3)) return ack({ ok: false, reason: 'Đợi vài giây rồi thử lại nhé.' });
+    const me = p;
+    const ice = await iceServers();
+    if (p !== me) return;                                   // đã rời chánh điện trong lúc chờ
+    p.v = d && d.mic ? 2 : 1;
+    io.emit('pv', { id: p.id, v: p.v });
+    ack({ ok: true, ice });
+  });
+  socket.on('voice:mic', d => {
+    if (!p || !p.v || !d || !bucket('voiceMic', 2, 6)) return;
+    const v = d.on ? 2 : 1;
+    if (v !== p.v) { p.v = v; io.emit('pv', { id: p.id, v }); }
+  });
+  socket.on('voice:leave', () => { if (p && p.v) { p.v = 0; io.emit('pv', { id: p.id, v: 0 }); } });
+  socket.on('voice:signal', d => {
+    if (!p || !p.v || !d || typeof d !== 'object' || !bucket('signal', 40, 160)) return;
+    const t = players.get(Number(d.to)), s = d.s;
+    if (!t || t === p || !t.v || !s || typeof s !== 'object') return;
+    if (!['offer', 'answer', 'ice', 'bye'].includes(s.type)) return;
+    let size = 0;
+    try { size = JSON.stringify(s).length; } catch (e) { return; }
+    if (size > 14000) return;
+    t.socket.emit('voice:signal', { from: p.id, s });
+  });
+  socket.on('mod:voice', d => {
+    if (!p || !p.mod || !d) return;
+    const t = players.get(Number(d.pid));
+    if (!t || t.mod) return;
+    t.voiceBanUntil = now() + 10 * 60e3;
+    t.socket.emit('voice:kicked', { text: 'Ban điều hành đã khóa mic của bạn 10 phút. Mời bạn giữ lời nói hiền hòa nơi cửa Phật.' });
+    if (t.v) { t.v = 0; io.emit('pv', { id: t.id, v: 0 }); }
   });
 
   socket.on('disconnect', () => {
@@ -490,6 +661,7 @@ setInterval(() => {
   if (tick % 1200 === 0) {
     const t = now();
     db.incense = db.incense.filter(s => s.until > t);
+    for (const k in db.auras) if (db.auras[k].until < t) delete db.auras[k];
     for (const d of db.donations) if (d.status === 'pending' && t - d.createdAt > 24 * 3600e3) d.status = 'expired';
     store.save();
   }
@@ -502,4 +674,5 @@ process.on('SIGINT', shutdown);
 server.listen(PORT, () => {
   console.log(`${SITE_NAME} đang chạy tại http://localhost:${PORT}`);
   console.log(`Cúng dường tịnh tài: ${DONATION_ENABLED ? 'BẬT (' + BANK.id + ')' : 'TẮT (chưa đặt BANK_ID / BANK_ACCOUNT)'} · Tự xác nhận SePay: ${SEPAY_API_KEY ? 'BẬT' : 'TẮT'} · Quản trị: ${ADMIN_KEY ? 'BẬT' : 'TẮT (chưa đặt ADMIN_KEY)'}`);
+  console.log(`Nói chuyện bằng giọng: ${VOICE_ENABLED ? 'BẬT' : 'TẮT'} (TURN: ${CF_TURN.id ? 'Cloudflare' : TURN.urls.length ? 'tự cấu hình' : 'chưa có, chỉ STUN'}) · Giọng đọc thông báo: ${announce.enabled ? 'VieNeu “' + announce.voice + '” tại ' + announce.url : 'chưa đặt TTS_URL, trình duyệt tự đọc'}`);
 });

@@ -114,6 +114,7 @@
 
   root.SFX = {
     unlock() { const ok = !!ctx(); blocked = false; return ok; },
+    context() { return ctx(); },
     get ready() { return live(); },
     get muted() { return muted; },
     get chantBlocked() { return blocked; },
