@@ -9,7 +9,7 @@ Chánh điện trực tuyến cho nhiều người cùng lúc. Mỗi người v�
 | Chánh điện | Ba tôn tượng, bàn thờ, bát hương, nến, đèn lồng, tủ Tàng Kinh Các. Chạm sàn (hoặc phím mũi tên / WASD) để đi lại. Chạm bát hương để thắp nhang, chạm tượng để vái lạy, chạm tủ kinh để đọc kinh. |
 | Nhân vật | Tên hoặc pháp danh, giới tính, 4 kiểu tóc (có khăn vấn), 12 màu áo dài (có áo tràng lam, áo tràng nâu). |
 | Lễ Phật | Thắp 1 hoặc 3 nén nhang kèm lời nguyện (nhang cháy 30 phút, khói bay, ai cũng thấy). Dâng hoa sen, hoa hồng, đèn dầu, mâm ngũ quả (hiện lên bàn thờ). Thả tim. Vái lạy (nhân vật cúi người). Gõ mõ. Thỉnh chuông (cả chánh điện cùng nghe). |
-| Tụng kinh chung | Bát Nhã Tâm Kinh, Niệm Phật A Di Đà, Niệm Quán Thế Âm, Chuông mõ ngồi thiền. Giọng VieNeu-TTS v3 Turbo đọc liền câu, mõ và chuông theo nghi thức (vào mõ, kết mõ). Mọi người nghe cùng một chữ (đồng bộ theo giờ máy chủ), chữ sáng lên theo tiếng mõ. Người vào muộn nghe đúng đoạn đang tụng. |
+| Tụng kinh chung | Bát Nhã Tâm Kinh, Chú Đại Bi, Kinh Dược Sư (Chú Dược Sư), Niệm Phật A Di Đà, Niệm Quán Thế Âm, Chuông mõ ngồi thiền. Giọng VieNeu-TTS v3 Turbo đọc liền câu, mõ và chuông theo nghi thức (vào mõ, kết mõ). Mọi người nghe cùng một chữ (đồng bộ theo giờ máy chủ), chữ sáng lên theo tiếng mõ. Người vào muộn nghe đúng đoạn đang tụng. |
 | Tàng Kinh Các | Kệ kinh: Dịch Cân Kinh (đủ 12 thức, 59 hình minh họa, lời thơ gốc kèm phiên âm Hán Việt), Cửu Âm Chân Kinh, Quỳ Hoa Bảo Điển, Bát Nhã Tâm Kinh. Đọc theo chương, mục lục, đổi cỡ chữ, nền giấy / nền tối, nhớ chỗ đọc dở. Ai đang đọc thì có biểu tượng sách cạnh tên. |
 | Nói chuyện | Nói chuyện bằng giọng như đi chùa thật: đứng gần nghe rõ, xa nghe nhỏ dần, người bên trái nghe ở tai trái. Đang tụng kinh thì tiếng nói chuyện tự nhỏ lại. Tắt tiếng từng người; ban điều hành khóa mic 10 phút. |
 | Cộng đồng | Chat chung (bong bóng chat hiện trên đầu nhân vật), tường lời nguyện có nút “Tùy hỷ”, báo cáo tin nhắn. |
@@ -24,7 +24,7 @@ Chánh điện trực tuyến cho nhiều người cùng lúc. Mỗi người v�
 
 Mỗi bài tụng là một file MP3 dựng sẵn trong `public/audio/chants/` (giọng + mõ + chuông) kèm file JSON ghi mốc từng chữ. Khi có người khởi tụng, mọi trình duyệt phát cùng một file và tự chỉnh về đúng vị trí theo giờ máy chủ, nên cả chánh điện nghe cùng một chữ; chữ trên màn hình sáng theo tiếng.
 
-- **Giọng:** do máy tổng hợp bằng [VieNeu-TTS v3 Turbo](https://huggingface.co/pnnbao-ump/VieNeu-TTS-v3-Turbo) (Apache-2.0, tác giả Phạm Nguyễn Ngọc Bảo), nhân bản từ giọng đọc của một vị thầy, đã được thầy đồng ý; đọc **liền từng câu**. Đây là giọng tổng hợp chứ không phải bản thu âm thật, có thể đọc sai hoặc thiếu rõ một số từ Hán Việt. Đo bằng Whisper, giọng nhân bản nhận ra chữ kém hơn giọng sẵn có “Thiền Tâm Đức” (sai khoảng một nửa số chữ, giọng sẵn có khoảng một phần ba), nên cần nghe lại và chỉnh khi cần.
+- **Giọng:** do máy tổng hợp bằng [VieNeu-TTS v3 Turbo](https://huggingface.co/pnnbao-ump/VieNeu-TTS-v3-Turbo) (Apache-2.0, tác giả Phạm Nguyễn Ngọc Bảo), nhân bản âm sắc (`--ref-mode speaker`) từ 60 giây đầu một bản đọc giọng nam do chủ dự án cung cấp; đọc **liền từng câu**. Đây là giọng tổng hợp chứ không phải bản thu âm thật, có thể đọc sai hoặc thiếu rõ một số từ Hán Việt. Đo bằng Whisper (không gợi ý lời) trên 10 dòng đầu Chú Đại Bi, giọng này nhận ra 48% số chữ, hơn giọng sẵn có “Thiền Tâm Đức” (36%) và hơn khi chép cả cách đọc của mẫu (39%); thần chú phiên âm vốn khó nhận, nên vẫn cần nghe lại và chỉnh khi cần.
 - **Mõ** (theo hướng dẫn sử dụng chuông mõ của các đạo tràng): mõ gõ đúng lúc từng chữ cất lên, nương theo người tụng. Vào mõ: chữ 1 chưa gõ, chữ 2 gõ, chữ 3 không gõ, từ chữ 4 gõ đều. Thần chú nhanh hơn; niệm danh hiệu nhanh dần đều. Kết thúc lơi dần, hai tiếng mõ áp chót dính liền, tiếng cuối rời ra.
 - **Chuông:** `public/audio/bell.mp3`. Một tiếng khai kinh, ba tiếng kết; cũng dùng cho nút “Thỉnh chuông”.
 
@@ -41,12 +41,12 @@ python tools/build_chants.py --voice "Thiền Tâm Đức"
 Nhân bản giọng (chỉ làm khi người được nhân bản đồng ý):
 
 ```bash
-python tools/build_chants.py --ref-audio /duong/dan/ngoai/repo/giong_mau.wav
+python tools/build_chants.py --ref-audio /duong/dan/ngoai/repo/giong_mau.mp3 --ref-seconds 60
 ```
 
-Chỉ khoảng 8 giây đầu của file mẫu được dùng; nên chọn đoạn nói rõ, một người, ít ồn. File mẫu là dữ liệu cá nhân: để **ngoài** repo, không commit, không tải lên dịch vụ nào (công cụ từ chối đường dẫn nằm trong repo; trong MP3/JSON chỉ ghi nhãn “nhân bản từ giọng mẫu #xxxxxxxx”, không có tên hay đường dẫn). Mỗi lần dựng lại ra giọng hơi khác vì lấy mẫu ngẫu nhiên, nên nghe lại, nhất là các câu Hán Việt và chỗ vào mõ. Không có `--ref-audio` thì dùng giọng sẵn có “Thiền Tâm Đức”.
+Mặc định dùng 60 giây đầu của file mẫu: âm sắc tính trên cả 60 giây, còn cách nhả chữ lấy từ khoảng 8 giây nói rõ nhất trong đó (VieNeu chỉ nhận tối đa 8 giây cho phần này). Nên chọn file một người nói rõ, ít ồn, không nhạc nền. File mẫu là dữ liệu cá nhân: để **ngoài** repo, không commit, không tải lên dịch vụ nào (công cụ từ chối đường dẫn nằm trong repo; trong MP3/JSON chỉ ghi nhãn “nhân bản từ giọng mẫu #xxxxxxxx”, không có tên hay đường dẫn). Mỗi lần dựng lại ra giọng hơi khác vì lấy mẫu ngẫu nhiên, nên nghe lại, nhất là các câu Hán Việt và chỗ vào mõ. Không có `--ref-audio` thì dùng giọng sẵn có “Thiền Tâm Đức”.
 
-Giới hạn: VieNeu được huấn luyện để đọc, không phải để tụng, nên giọng nghe như đọc kinh chậm rãi hơn là xướng tụng. Muốn giọng tụng thật nhất, hãy thu âm chư tăng chùa đối tác (có sự đồng ý) rồi thay file MP3, giữ cùng định dạng JSON. Giọng nhân bản nghe cao hơn giọng sẵn có (khoảng 205 Hz so với 107 Hz) vì file mẫu là giọng nói chuyện chứ không phải giọng tụng.
+Giới hạn: VieNeu được huấn luyện để đọc, không phải để tụng, nên giọng nghe như đọc kinh chậm rãi hơn là xướng tụng. Muốn giọng tụng thật nhất, hãy thu âm chư tăng chùa đối tác (có sự đồng ý) rồi thay file MP3, giữ cùng định dạng JSON. Giọng hiện tại trầm (khoảng 97 Hz, giọng sẵn có “Thiền Tâm Đức” khoảng 103 Hz); file mẫu là giọng kể chuyện nên chỉ lấy âm sắc, cách đọc theo mô hình cho đỡ kịch tính.
 
 ## Tàng Kinh Các
 
@@ -57,6 +57,8 @@ Cú pháp trong file kinh: `# Tên chương` (mỗi chương một trang, có m�
 - **Dịch Cân Kinh**: chép từ tài liệu của Trần Đại Sỹ (sưu tầm từ ttvnol.com) do chủ dự án cung cấp, giữ thứ tự chữ và hình. Hình trong `public/kinh/dich-can-kinh/`. Lời thơ chữ Hán trong các hình “Nguyên bản” được chép lại kèm phiên âm Hán Việt.
 - **Cửu Âm Chân Kinh**, **Quỳ Hoa Bảo Điển**: sách võ công hư cấu trong tiểu thuyết Kim Dung, ngoài đời không có toàn văn. Tiểu thuyết còn bản quyền nên Tàng Kinh Các không chép nguyên văn; nội dung là bài tự viết: lai lịch, các môn võ, câu khẩu quyết, lời bàn nơi cửa Phật, và chương 77 Đạo Đức Kinh (nguồn gốc thật của câu tổng cương Cửu Âm).
 - **Bát Nhã Tâm Kinh**: bản phiên âm Hán Việt, có nút khởi tụng chung.
+- **Chú Đại Bi**: khai chú và 84 câu, có nút khởi tụng chung (bài tụng `daibi`, câu 81–84 tụng ba lần).
+- **Kinh Dược Sư**: toàn văn để đọc; nút khởi tụng chung mở bài tụng ngắn `duocsu` (khai kinh, Chú Dược Sư ba biến, niệm danh hiệu Đức Dược Sư).
 
 Nên hỏi ý kiến người giữ bản quyền tài liệu Trần Đại Sỹ trước khi phát hành rộng.
 
