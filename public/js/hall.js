@@ -1002,6 +1002,10 @@
     }
   }
 
+  // Mặt tiền chánh điện dựng lại từ ảnh Canva, nền trong suốt.
+  const YARD_TEMPLE = root.Image ? new Image() : null;
+  if (YARD_TEMPLE) { YARD_TEMPLE.onload = () => { bg = null; }; YARD_TEMPLE.src = '/img/courtyard/chanh-dien.webp'; }
+
   function drawYard() {
     bg = document.createElement('canvas'); bg.width = cv.width; bg.height = cv.height;
     const b = bg.getContext('2d'); b.setTransform(DPR, 0, 0, DPR, 0, 0);
@@ -1016,9 +1020,16 @@
     b.strokeStyle = yardDay ? 'rgba(90,65,48,.24)' : 'rgba(230,200,164,.17)'; b.lineWidth = 1; b.beginPath();
     for (let i=0;i<14;i++) { const a=proj(i/13,0), z=proj(i/13,1); b.moveTo(a[0],a[1]); b.lineTo(z[0],z[1]); }
     for(let j=0;j<7;j++) { const y=G.hb+(H-G.hb)*j/7; b.moveTo(0,y); b.lineTo(W,y); } b.stroke();
-    b.fillStyle='#44231a'; b.fillRect(W*.41,H*.24,W*.18,H*.27); b.fillStyle='#b8894b'; b.fillRect(W*.43,H*.26,W*.14,H*.24);
-    b.fillStyle='#321812'; b.beginPath(); b.moveTo(W*.37,H*.25); b.lineTo(W*.5,H*.14); b.lineTo(W*.63,H*.25); b.closePath(); b.fill();
-    b.font=`600 ${Math.max(10,14*u)}px sans-serif`; b.textAlign='center'; b.fillStyle='#f7dfab'; b.fillText('CHÁNH ĐIỆN',W*.5,H*.31);
+    if (YARD_TEMPLE && YARD_TEMPLE.complete && YARD_TEMPLE.naturalWidth) {
+      const scale = Math.min(W * .48 / YARD_TEMPLE.naturalWidth, H * .46 / YARD_TEMPLE.naturalHeight);
+      const w = YARD_TEMPLE.naturalWidth * scale, h = YARD_TEMPLE.naturalHeight * scale;
+      const top = H * .52 - h;
+      b.drawImage(YARD_TEMPLE, W * .5 - w / 2, top, w, h);
+      // Viết biển bằng chữ thật để giữ đúng tiếng Việt khi thay đổi kích thước.
+      b.fillStyle = '#f7dc99'; b.textAlign = 'center'; b.textBaseline = 'middle';
+      b.font = `bold ${Math.max(5, Math.round(w * .029))}px Georgia, serif`;
+      b.fillText('CHÁNH ĐIỆN', W * .5, top + h * .32);
+    }
   }
   function drawFortuneJar() {
     const x=G.bowl.x+G.bowl.rx+25*u, y=G.ty-2*u;
@@ -1034,8 +1045,8 @@
     READERS[1].src = '/img/readers/tarot.webp';
   }
   function readerBounds(i) {
-    const width = Math.min(W * 0.29, 220 * Math.max(u, 0.6));
-    const height = Math.min(H * 0.29, 200 * Math.max(u, 0.6));
+    const width = Math.min(W * 0.22, 165 * Math.max(u, 0.6));
+    const height = Math.min(H * 0.22, 150 * Math.max(u, 0.6));
     const x = W * i, bottom = H * 0.63;
     return { x, bottom, width, height };
   }
