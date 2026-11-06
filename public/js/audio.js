@@ -99,10 +99,12 @@
   }
 
   /* Tiếng hù cho mốc 666: cú "bùm" trầm + tiếng rít răng cưa tụt xuống + chút nhiễu. Tổng ~1.4 giây, không đuôi vang.
-   * Mức hù đặt theo tiếng chuông, không to hơn nó. Đo bằng ebur128 qua cùng chuỗi âm thanh chính (đỉnh ngắn hạn, LUFS):
-   * chuông bản thu bell.mp3 -11.9, hù mức 0.9 -12.7, mõ -28.7. (Với chuông tạo bằng toán cũ là -16.7 thì mức tương ứng là 0.5.)
-   * Đổi tiếng chuông thì đo lại và chỉnh hằng số này: 0.5 → -17.5, 0.7 → -14.7, 0.9 → -12.7, 1.0 → -11.9. */
-  const SCARE_GAIN = 0.9;
+   * Mức hù đặt theo tiếng chuông, hơi nhỏ hơn và không to hơn nó. Đo bằng ebur128 qua cùng chuỗi âm thanh chính, âm lượng 0.8,
+   * đỉnh ngắn hạn (LUFS), lúc bộ nén đã chạy sẵn: chuông bản thu bell.mp3 -11.7, hù mức 0.7 -12.7 (nhỏ hơn chuông 1 LU; đo trực tiếp trên trang là 1.3 LU), mõ -20.2.
+   * Các mức khác: 0.5 → -15.5, 0.6 → -14.0, 0.8 → -11.6 (bằng chuông), 0.9 → -10.7, 1.0 → -9.9.
+   * Đo offline mà cho âm thanh bắt đầu ngay ở t=0 (bộ nén còn "lạnh") sẽ thấp hơn thực tế ~2 LU với mõ và hù; hãy bắt đầu sau
+   * ≥0.5 giây hoặc đo trực tiếp trên trang. Đổi tiếng chuông thì đo lại và chỉnh hằng số này. */
+  const SCARE_GAIN = 0.7;
   function scare(t) {
     if (!live()) return; t = at(t);
     const D = 1.35, master = AC.createGain();

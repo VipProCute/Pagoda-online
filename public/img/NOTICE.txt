@@ -1,8 +1,8 @@
 HÌNH ẢNH TRONG THƯ MỤC NÀY — NGUỒN GỐC VÀ GIẤY PHÉP
 ======================================================
 
-1) Bộ meme chúc mừng (public/img/memes/*.jpg) và hình mặt quỷ dự phòng (public/img/devil.svg)
-   Tất cả là tác phẩm gốc do dự án Chùa Tâm An tạo ra bằng mã lệnh (SVG, HTML, CSS, gradient;
+1) Meme vẽ tay (public/img/memes/*.jpg, tên KHÔNG bắt đầu bằng "anh-") và hình mặt quỷ dự phòng (public/img/devil.svg)
+   Là tác phẩm gốc do dự án Chùa Tâm An tạo ra bằng mã lệnh (SVG, HTML, CSS, gradient;
    meme dựng thành ảnh bằng trình duyệt Chromium; devil.svg là vector do
    python3 tools/devil-preview/gen_devil.py sinh ra, mặc định ghi đè public/img/devil.svg).
    Không dùng ảnh mạng, clipart, ảnh người thật, logo hay nhân vật có bản quyền; không có hình tượng thờ cúng nào (chỉ có hoa sen, đèn lồng,
@@ -15,6 +15,15 @@ HÌNH ẢNH TRONG THƯ MỤC NÀY — NGUỒN GỐC VÀ GIẤY PHÉP
    Mã nguồn từng thẻ meme: tools/memes/cards/*.html (+ lib.js, card.css).
    Dựng lại toàn bộ ảnh:   node tools/memes/render.mjs        (xem hướng dẫn ở đầu file render.mjs;
    cần Playwright + Chromium, chỉ là công cụ phát triển, không phải dependency của dự án)
+
+1b) Meme làm từ ảnh chụp có giấy phép tự do (public/img/memes/anh-*.jpg, 18 thẻ)
+   Làm từ ảnh chụp của các tác giả khác, đều có giấy phép CC0, public domain hoặc CC BY.
+   Dự án chỉ cắt vuông, chỉnh màu, thêm chữ chúc và hiệu ứng lấp lánh. Ảnh gốc vẫn thuộc về tác giả.
+   7 thẻ theo giấy phép CC BY BẮT BUỘC ghi tên tác giả; tên tác giả, tên ảnh gốc, giấy phép và đường dẫn
+   nguồn của từng thẻ nằm trong public/img/PHOTO-CREDITS.txt. Khi chép lại hay phân phối các thẻ này
+   hãy giữ kèm file đó. Chữ chúc và bố cục do dự án làm (CC0). Những thẻ này không dựng lại bằng
+   tools/memes/render.mjs vì ảnh gốc không nằm trong repo; muốn thay ảnh, xem link nguồn trong PHOTO-CREDITS.txt.
+   Không có người, logo hay chữ nhận diện được trong các ảnh này.
 
 2) Phông chữ dùng khi dựng meme
    Chữ đã được "nướng" thẳng vào ảnh JPEG. Các file phông (tools/memes/fonts/*.woff2) chỉ phục vụ

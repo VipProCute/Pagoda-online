@@ -24,7 +24,7 @@ Chánh điện trực tuyến cho nhiều người cùng lúc. Mỗi người v�
 
 Mỗi bài tụng là một file MP3 dựng sẵn trong `public/audio/chants/` (giọng + mõ + chuông) kèm file JSON ghi mốc từng chữ. Khi có người khởi tụng, mọi trình duyệt phát cùng một file và tự chỉnh về đúng vị trí theo giờ máy chủ, nên cả chánh điện nghe cùng một chữ; chữ trên màn hình sáng theo tiếng.
 
-- **Giọng:** [VieNeu-TTS v3 Turbo](https://huggingface.co/pnnbao-ump/VieNeu-TTS-v3-Turbo) (Apache-2.0, tác giả Phạm Nguyễn Ngọc Bảo), giọng mẫu “Thiền Tâm Đức”, đọc **liền từng câu**. Đo bằng Whisper: đọc liền rõ chữ nhất (sai ~33% trên bản có mõ và chuông), cắt rời từng chữ sai trên 50%.
+- **Giọng:** do máy tổng hợp bằng [VieNeu-TTS v3 Turbo](https://huggingface.co/pnnbao-ump/VieNeu-TTS-v3-Turbo) (Apache-2.0, tác giả Phạm Nguyễn Ngọc Bảo), nhân bản từ giọng đọc của một vị thầy, đã được thầy đồng ý; đọc **liền từng câu**. Đây là giọng tổng hợp chứ không phải bản thu âm thật, có thể đọc sai hoặc thiếu rõ một số từ Hán Việt. Đo bằng Whisper, giọng nhân bản nhận ra chữ kém hơn giọng sẵn có “Thiền Tâm Đức” (sai khoảng một nửa số chữ, giọng sẵn có khoảng một phần ba), nên cần nghe lại và chỉnh khi cần.
 - **Mõ** (theo hướng dẫn sử dụng chuông mõ của các đạo tràng): mõ gõ đúng lúc từng chữ cất lên, nương theo người tụng. Vào mõ: chữ 1 chưa gõ, chữ 2 gõ, chữ 3 không gõ, từ chữ 4 gõ đều. Thần chú nhanh hơn; niệm danh hiệu nhanh dần đều. Kết thúc lơi dần, hai tiếng mõ áp chót dính liền, tiếng cuối rời ra.
 - **Chuông:** `public/audio/bell.mp3`. Một tiếng khai kinh, ba tiếng kết; cũng dùng cho nút “Thỉnh chuông”.
 
@@ -38,7 +38,15 @@ python -m venv .venv && . .venv/bin/activate && pip install vieneu librosa sound
 python tools/build_chants.py --voice "Thiền Tâm Đức"
 ```
 
-Giới hạn: VieNeu được huấn luyện để đọc, không phải để tụng, nên giọng nghe như đọc kinh chậm rãi hơn là xướng tụng. Muốn giọng tụng thật nhất, hãy thu âm chư tăng chùa đối tác (có sự đồng ý) rồi thay file MP3, giữ cùng định dạng JSON.
+Nhân bản giọng (chỉ làm khi người được nhân bản đồng ý):
+
+```bash
+python tools/build_chants.py --ref-audio /duong/dan/ngoai/repo/giong_mau.wav
+```
+
+Chỉ khoảng 8 giây đầu của file mẫu được dùng; nên chọn đoạn nói rõ, một người, ít ồn. File mẫu là dữ liệu cá nhân: để **ngoài** repo, không commit, không tải lên dịch vụ nào (công cụ từ chối đường dẫn nằm trong repo; trong MP3/JSON chỉ ghi nhãn “nhân bản từ giọng mẫu #xxxxxxxx”, không có tên hay đường dẫn). Mỗi lần dựng lại ra giọng hơi khác vì lấy mẫu ngẫu nhiên, nên nghe lại, nhất là các câu Hán Việt và chỗ vào mõ. Không có `--ref-audio` thì dùng giọng sẵn có “Thiền Tâm Đức”.
+
+Giới hạn: VieNeu được huấn luyện để đọc, không phải để tụng, nên giọng nghe như đọc kinh chậm rãi hơn là xướng tụng. Muốn giọng tụng thật nhất, hãy thu âm chư tăng chùa đối tác (có sự đồng ý) rồi thay file MP3, giữ cùng định dạng JSON. Giọng nhân bản nghe cao hơn giọng sẵn có (khoảng 205 Hz so với 107 Hz) vì file mẫu là giọng nói chuyện chứ không phải giọng tụng.
 
 ## Tàng Kinh Các
 
@@ -150,7 +158,7 @@ Khi công đức **hôm nay** (số ở thẻ “Công đức” trên đầu tr
 
 **Cách tính.** Máy chủ quyết định, không phải trình duyệt. Mốc tính khi một lần cộng đưa công đức hôm nay từ dưới mốc lên bằng hoặc quá mốc (mỗi lần cộng là 1 đến 15 điểm nên có thể nhảy qua đúng con số). Một lần cộng bước qua nhiều mốc thì chỉ hiện một: 666 được ưu tiên, còn lại lấy mốc cao nhất. Tải lại trang hay vào lại chùa khi đã có 700 công đức không chiếu lại mốc cũ. Công đức “hôm nay” tính lại mỗi ngày theo giờ Việt Nam, nên mốc cũng vậy. Đang có một hiệu ứng (hay tab đang ẩn) thì mốc mới xếp hàng chờ: tối đa một lượt, 666 được ưu tiên hơn mọi mốc khác. Lượt chờ quá 60 giây (tab bị ẩn lâu) thì không chiếu nữa, kể cả 666, chỉ hiện dòng báo nhỏ “Bạn đã đạt N công đức”.
 
-**Kho meme.** Thả ảnh `.jpg .jpeg .png .webp .gif .avif` vào `public/img/memes/` là tự có, không cần sửa mã (tối đa 200 ảnh, ảnh vuông khoảng 720px đẹp nhất). Máy chủ đọc lại thư mục sau tối đa 30 giây, người chơi nhận danh sách mới khi vào chùa hoặc tải lại trang. Mỗi lần chọn ngẫu nhiên và không lặp lại ảnh vừa hiện. Ảnh lỗi thì bỏ qua, hết ảnh thì thẻ chỉ còn chữ. Nên đặt tên file không dấu và ngắn: tên có byte lỗi mã hóa hay dài quá (địa chỉ từ 300 ký tự) sẽ bị bỏ qua. Mặt quỷ của mốc 666 là `public/img/devil.webp` (thiếu hay hỏng thì dùng bản vẽ cũ `public/img/devil.svg`, rồi tới biểu tượng 😈), hình hào quang là `public/img/fx/halo.webp` (thiếu thì chỉ còn tia sáng vẽ bằng CSS).
+**Kho meme.** Thả ảnh `.jpg .jpeg .png .webp .gif .avif` vào `public/img/memes/` là tự có, không cần sửa mã (tối đa 200 ảnh, ảnh vuông khoảng 720px đẹp nhất). Máy chủ đọc lại thư mục sau tối đa 30 giây, người chơi nhận danh sách mới khi vào chùa hoặc tải lại trang. Mỗi lần chọn ngẫu nhiên và không lặp lại ảnh vừa hiện. Ảnh lỗi thì bỏ qua, hết ảnh thì thẻ chỉ còn chữ. Nên đặt tên file không dấu và ngắn: tên có byte lỗi mã hóa hay dài quá (địa chỉ từ 300 ký tự) sẽ bị bỏ qua. Bộ meme có 15 thẻ vẽ tay và 18 thẻ `anh-*.jpg` làm từ ảnh chụp có giấy phép tự do (CC0, public domain, CC BY); tên tác giả và nguồn từng ảnh nằm ở `public/img/PHOTO-CREDITS.txt`, thêm ảnh CC BY mới thì ghi tiếp vào đó. Mặt quỷ của mốc 666 là `public/img/devil.webp` (thiếu hay hỏng thì dùng bản vẽ cũ `public/img/devil.svg`, rồi tới biểu tượng 😈), hình hào quang là `public/img/fx/halo.webp` (thiếu thì chỉ còn tia sáng vẽ bằng CSS).
 
 **Hình từ Canva.** Hào quang và mặt quỷ được tạo bằng công cụ tạo ảnh AI của Canva, đặt trong thiết kế Canva “Hiệu ứng Chùa Tâm An — hào quang & quỷ 666” (trang 2 và 3) rồi xuất PNG. Muốn đổi hình: sửa hoặc thay ảnh trong thiết kế đó (giữ hào quang trên nền đen, cỡ vuông; mặt quỷ khổ dọc 3:4, mắt ở khoảng 40% chiều cao), xuất hai trang thành PNG, rồi chạy `python3 -I tools/fx/prepare_canva_assets.py halo.png devil.png` (cần Pillow và numpy). Công cụ đổi nền đen của hào quang thành trong suốt và nén cả hai sang WebP.
 
@@ -299,7 +307,7 @@ public/css/celebrate.css giao diện của hiệu ứng trên
 public/js/chants.js    kinh văn các bài tụng (đầu vào của tools/build_chants.py)
 public/audio/          bài tụng dựng sẵn (chants/), tiếng chuông (bell.mp3)
 public/audio/blessings/ giọng chúc (4 file mp3 + manifest.json)
-public/img/memes/      kho meme (thả ảnh vào là tự có)
+public/img/memes/      kho meme (thả ảnh vào là tự có), nguồn ảnh ở public/img/PHOTO-CREDITS.txt
 public/img/devil.webp  mặt quỷ mốc 666 (Canva), devil.svg là bản dự phòng
 public/img/fx/halo.webp hào quang công đức (Canva)
 tools/fx/prepare_canva_assets.py chuyển PNG xuất từ Canva thành ảnh web
