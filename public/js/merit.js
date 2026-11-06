@@ -19,9 +19,9 @@
     { n: 6, min: 50000, name: 'Cửu Tiêu Thánh Luân', desc: 'Thánh luân chín tầng trời, cánh ngũ sắc', color: '#fff6d8', spin: true }
   ];
   const DEMONS = [
-    { n: 1, at: -1, name: 'Tiểu Quỷ', desc: 'Bóng quỷ nhỏ mắt đỏ lẽo đẽo theo sau. Hiện mờ từ khi công đức âm, rõ hẳn ở −100.' },
+    { n: 1, at: -1, name: 'Tiểu Quỷ', desc: 'Quỷ nhỏ mắt vàng rực, đuôi khói đỏ, lẽo đẽo theo sau. Hiện mờ từ khi công đức âm, rõ hẳn ở −100.' },
     { n: 2, at: -200, name: 'Ác Quỷ', desc: 'Quỷ có sừng, cánh dơi, nanh vuốt.' },
-    { n: 3, at: -500, name: 'Quỷ Vương', desc: 'Quỷ vương đội vương miện sừng, lửa đen bao quanh.' },
+    { n: 3, at: -500, name: 'Quỷ Vương', desc: 'Quỷ vương đội vương miện sừng, lửa tím đen bao quanh.' },
     { n: 4, at: -1000, name: 'Ma Vương', desc: 'Bóng ma vương khổng lồ ba mắt, cao hơn cả người.' }
   ];
   // Cách cộng công đức (máy chủ dùng đúng các con số này)

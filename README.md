@@ -142,7 +142,9 @@ Nhiều từ trong một tin thì cộng dồn (mỗi từ tính tối đa 3 l�
 
 Pháp tướng (vật sau lưng, lâu dài) và hào quang cúng dường (ánh sáng quanh thân, vài phút) đi cùng nhau được: khi có cả hai, ngọc và viền pháp tướng nhuộm theo màu cảnh giới hào quang và có thêm một quầng sáng cộng hưởng.
 
-**Quỷ theo sau khi công đức âm:** dưới 0 thì Tiểu Quỷ hiện mờ, rõ hẳn ở −100; −200 thành Ác Quỷ (sừng, cánh dơi, nanh vuốt); −500 thành Quỷ Vương (vương miện sừng, lửa đen); −1.000 thành Ma Vương (bóng khổng lồ ba mắt). Làm việc thiện để công đức về trên 0 thì quỷ tan. Sửa mốc trong `public/js/merit.js`.
+**Quỷ theo sau khi công đức âm:** dưới 0 thì Tiểu Quỷ hiện mờ, rõ hẳn ở −100; −200 thành Ác Quỷ (sừng, cánh dơi, nanh vuốt); −500 thành Quỷ Vương (vương miện sừng, lửa tím đen); −1.000 thành Ma Vương (khổng lồ ba mắt, đứng sừng sững sau lưng). Làm việc thiện để công đức về trên 0 thì quỷ tan. Sửa mốc trong `public/js/merit.js`.
+
+Hình 4 con quỷ vẽ trên Canva (trang 4–7 của thiết kế “Hiệu ứng Chùa Tâm An — hào quang & quỷ”), tách nền thành `public/img/fx/demon-1.webp` … `demon-4.webp` bằng `python3 -I tools/fx/prepare_demon_sprites.py quy1.png quy2.png quy3.png quy4.png` (cần Pillow và numpy; công cụ in ra vị trí mắt để chép vào `DEMON_ART` trong `public/js/hall.js`). Trong chánh điện quỷ có viền sáng đỏ (Quỷ Vương viền tím), quầng lửa, lửa bốc, tàn lửa bay và mắt rực thỉnh thoảng chớp. Thiếu ảnh thì tự vẽ hình cũ bằng code.
 
 Máy chủ phát sự kiện `pm` (`{ id, mt, up }`) mỗi khi hình pháp tướng / quỷ của ai đó đổi; `up: true` nghĩa là vừa lên mốc pháp tướng, dùng được cho hiệu ứng chúc mừng.
 
@@ -160,7 +162,7 @@ Khi công đức **hôm nay** (số ở thẻ “Công đức” trên đầu tr
 
 **Kho meme.** Thả ảnh `.jpg .jpeg .png .webp .gif .avif` vào `public/img/memes/` là tự có, không cần sửa mã (tối đa 200 ảnh, ảnh vuông khoảng 720px đẹp nhất). Máy chủ đọc lại thư mục sau tối đa 30 giây, người chơi nhận danh sách mới khi vào chùa hoặc tải lại trang. Mỗi lần chọn ngẫu nhiên và không lặp lại ảnh vừa hiện. Ảnh lỗi thì bỏ qua, hết ảnh thì thẻ chỉ còn chữ. Nên đặt tên file không dấu và ngắn: tên có byte lỗi mã hóa hay dài quá (địa chỉ từ 300 ký tự) sẽ bị bỏ qua. Bộ meme có 15 thẻ vẽ tay và 18 thẻ `anh-*.jpg` làm từ ảnh chụp có giấy phép tự do (CC0, public domain, CC BY); tên tác giả và nguồn từng ảnh nằm ở `public/img/PHOTO-CREDITS.txt`, thêm ảnh CC BY mới thì ghi tiếp vào đó. Mặt quỷ của mốc 666 là `public/img/devil.webp` (thiếu hay hỏng thì dùng bản vẽ cũ `public/img/devil.svg`, rồi tới biểu tượng 😈), hình hào quang là `public/img/fx/halo.webp` (thiếu thì chỉ còn tia sáng vẽ bằng CSS).
 
-**Hình từ Canva.** Hào quang và mặt quỷ được tạo bằng công cụ tạo ảnh AI của Canva, đặt trong thiết kế Canva “Hiệu ứng Chùa Tâm An — hào quang & quỷ 666” (trang 2 và 3) rồi xuất PNG. Muốn đổi hình: sửa hoặc thay ảnh trong thiết kế đó (giữ hào quang trên nền đen, cỡ vuông; mặt quỷ khổ dọc 3:4, mắt ở khoảng 40% chiều cao), xuất hai trang thành PNG, rồi chạy `python3 -I tools/fx/prepare_canva_assets.py halo.png devil.png` (cần Pillow và numpy). Công cụ đổi nền đen của hào quang thành trong suốt và nén cả hai sang WebP.
+**Hình từ Canva.** Hào quang và mặt quỷ được tạo bằng công cụ tạo ảnh AI của Canva, đặt trong thiết kế Canva “Hiệu ứng Chùa Tâm An — hào quang & quỷ” (trang 2 và 3) rồi xuất PNG. Muốn đổi hình: sửa hoặc thay ảnh trong thiết kế đó (giữ hào quang trên nền đen, cỡ vuông; mặt quỷ khổ dọc 3:4, mắt ở khoảng 40% chiều cao), xuất hai trang thành PNG, rồi chạy `python3 -I tools/fx/prepare_canva_assets.py halo.png devil.png` (cần Pillow và numpy). Công cụ đổi nền đen của hào quang thành trong suốt và nén cả hai sang WebP.
 
 **Giọng chúc.** Bốn câu chúc giọng nữ (VieNeu-TTS v3 Turbo, giọng “Trúc Ly”) đã có sẵn trong `public/audio/blessings/`, kèm `manifest.json`; tạo lại bằng `tools/build_blessing_voice.py`. Muốn thêm câu hay đổi giọng thì sửa `manifest.json` (lưu UTF-8, có BOM cũng được; file lỗi thì máy chủ ghi một dòng cảnh báo vào log và trình duyệt đọc bằng giọng máy):
 
@@ -310,6 +312,8 @@ public/audio/blessings/ giọng chúc (4 file mp3 + manifest.json)
 public/img/memes/      kho meme (thả ảnh vào là tự có), nguồn ảnh ở public/img/PHOTO-CREDITS.txt
 public/img/devil.webp  mặt quỷ mốc 666 (Canva), devil.svg là bản dự phòng
 public/img/fx/halo.webp hào quang công đức (Canva)
+public/img/fx/demon-*.webp 4 con quỷ theo sau người công đức âm (Canva)
+tools/fx/prepare_demon_sprites.py tách nền xám của 4 con quỷ thành ảnh trong suốt
 tools/fx/prepare_canva_assets.py chuyển PNG xuất từ Canva thành ảnh web
 tools/build_chants.py  dựng bài tụng bằng VieNeu-TTS
 tools/build_blessing_voice.py dựng giọng chúc (giọng nữ) bằng VieNeu-TTS

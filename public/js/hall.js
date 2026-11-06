@@ -552,8 +552,78 @@
     c.restore();
   }
 
-  /* ----- quỷ theo sau người công đức âm (4 dạng) ----- */
+  /* ----- quỷ theo sau người công đức âm (4 dạng) -----
+     Hình vẽ trên Canva (img/fx/demon-N.webp, nền trong suốt, tools/fx/prepare_demon_sprites.py) kèm quầng lửa,
+     lửa bốc, tàn lửa và mắt rực chớp. Ảnh chưa tải được (hay hỏng) thì vẽ hình giọt mực cũ bên dưới.
+     h: cao bao nhiêu đơn vị (người cao ~100), ar: rộng/cao của ảnh, eyes: tâm mắt trong ảnh (0..1),
+     er: cỡ quầng mắt theo h (mắt sát nhau thì nhỏ kẻo dính thành một cục), fire: màu lửa, rim: viền sáng quanh hình */
+  const DEMON_ART = [null,
+    { h: 64, ar: 0.544, er: 0.07, eyes: [[0.331, 0.359], [0.666, 0.358]], fire: ['#ff5a1f', '#ff2848'], rim: 'rgba(255,70,30,.9)' },
+    { h: 82, ar: 1.155, er: 0.05, eyes: [[0.449, 0.422], [0.55, 0.422]], fire: ['#ff3a1a', '#ff2848'], rim: 'rgba(255,50,30,.9)' },
+    { h: 106, ar: 0.757, er: 0.03, eyes: [[0.453, 0.357], [0.548, 0.357], [0.501, 0.329]], fire: ['#8a2cff', '#ff3355'], rim: 'rgba(160,60,255,.9)' },
+    { h: 168, ar: 1.161, er: 0.035, eyes: [[0.445, 0.38], [0.544, 0.381], [0.493, 0.317]], fire: ['#ff4a14', '#a020ff'], rim: 'rgba(255,60,20,.85)' }
+  ];
+  // vị trí quỷ so với chân người (đơn vị nhân vật): Ma Vương đứng sừng sững ngay sau lưng (mắt cao hơn bảng tên), các dạng khác lơ lửng sau vai trái
+  function demonOffset(n) {
+    if (n >= 4) return [0, demonImg(4) ? -114 : -92];
+    const A = DEMON_ART[n];
+    return A && demonImg(n) ? [-(10 + A.h * A.ar * 0.42), -(40 + A.h / 2)] : [-30, -(64 + n * 6)];
+  }
+  const demonImgs = [];
+  function demonImg(n) {
+    let im = demonImgs[n];
+    if (im === undefined) {                                   // tải lần đầu cần tới; hỏng thì thôi, dùng hình vẽ cũ
+      im = demonImgs[n] = new Image(); im.decoding = 'async';
+      im.onerror = () => { demonImgs[n] = null; };
+      im.src = '/img/fx/demon-' + n + '.webp';
+    }
+    return im && im.complete && im.naturalWidth ? im : null;
+  }
+  const hash = (i, k) => { const x = Math.sin(i * 127.1 + k * 311.7) * 43758.5453; return x - Math.floor(x); };
+  function demonArt(c, n, t, a, img) {
+    const A = DEMON_ART[n], mo = reduceMotion ? 0 : 1, tt = t * mo;
+    const h = A.h * (1 + 0.025 * Math.sin(tt * 2.2)), w = h * A.ar;   // thở nhẹ
+    c.save(); c.globalAlpha = a;
+    c.globalCompositeOperation = 'lighter';
+    glow(c, 0, 0, h * 0.62, A.fire[0], 0.3);                 // quầng lửa sau lưng
+    glow(c, 0, h * 0.12, h * 0.42, A.fire[1], 0.22);
+    // lửa bốc lên sau lưng: vị trí tính thẳng từ thời gian, không cần nhớ hạt
+    const flames = n >= 3 ? 12 : 7;
+    for (let i = 0; i < flames; i++) {
+      const ph = (tt * (0.32 + 0.12 * hash(i, 1)) + hash(i, 2)) % 1;
+      const x = (hash(i, 3) - 0.5) * w * 0.85 + Math.sin(tt * 2 + i) * 3, y = h * 0.32 - ph * h * 0.9;
+      glow(c, x, y, (h * 0.075 + 3) * (1 - ph * 0.6), A.fire[i % 2], 0.42 * Math.sin(Math.PI * ph));
+    }
+    c.globalCompositeOperation = 'source-over';
+    c.save(); c.rotate(Math.sin(tt * 1.3) * 0.035);           // lắc lư
+    // viền sáng quanh hình để quỷ nổi lên trên nền chánh điện tối (shadowBlur tính theo điểm ảnh thật nên nhân với tỉ lệ đang vẽ)
+    const px = Math.abs(c.getTransform ? c.getTransform().a : 1);
+    c.shadowColor = A.rim; c.shadowBlur = Math.min(40, Math.max(4, h * 0.09 * px * (0.85 + 0.15 * Math.sin(tt * 3))));
+    c.drawImage(img, -w / 2, -h / 2, w, h);
+    c.shadowBlur = 0; c.shadowColor = 'transparent';
+    // mắt rực, thỉnh thoảng chớp; từ Ác Quỷ trở lên có thêm vệt sáng ngang như ánh mắt lóe
+    c.globalCompositeOperation = 'lighter';
+    const blink = (tt % 4.3) < 0.12 ? 0.1 : 1, pulse = 0.72 + 0.28 * Math.sin(tt * 5 + n);
+    for (const [ex, ey] of A.eyes) {
+      const x = -w / 2 + ex * w, y = -h / 2 + ey * h;
+      glow(c, x, y, h * A.er + 2, '#ff9a1a', 0.65 * blink * pulse);
+      glow(c, x, y, h * A.er * 0.38 + 0.8, '#fff1c0', 0.9 * blink);
+      if (n >= 2) { c.save(); c.translate(x, y); c.scale(3, 0.3); glow(c, 0, 0, h * A.er * 0.8 + 1.5, '#ffc04a', 0.5 * blink * pulse); c.restore(); }
+    }
+    c.restore();
+    // tàn lửa bay lên từ thân
+    const sparks = 6 + n * 3;
+    for (let i = 0; i < sparks; i++) {
+      const ph = (tt * (0.45 + 0.3 * hash(i, 4)) + hash(i, 5)) % 1;
+      const x = (hash(i, 6) - 0.5) * w * 0.9 + Math.sin(tt * 3 + i * 1.7) * 4, y = h * 0.28 - ph * h * 1.05;
+      c.globalAlpha = a * (1 - ph) * 0.9; c.fillStyle = i % 3 ? '#ffb347' : '#ffe6a0';
+      circle(c, x, y, 0.6 + hash(i, 7) * 0.9);
+    }
+    c.restore();
+  }
   function demon(c, n, t, a) {
+    const img = DEMON_ART[n] ? demonImg(n) : null;
+    if (img) { demonArt(c, n, t, a, img); return; }
     const mo = reduceMotion ? 0 : 1, tt = t * mo, S = [0, 1, 1.45, 2.1, 3.6][n];
     c.save(); c.scale(S, S); c.globalAlpha = a;
     c.globalCompositeOperation = 'lighter';
@@ -728,7 +798,7 @@
       const aa = aur ? Math.min(1, (aur.until - srvNow) / 20000) : 0;   // mờ dần 20 giây cuối
       const dm = root.MERIT ? root.MERIT.demonOf(p.mt) : null, rk = root.MERIT ? root.MERIT.rankOf(p.mt) : 0;
       if (dm) {                                               // quỷ lẽo đẽo theo sau, trễ một nhịp
-        const big = dm.n >= 4, tx = sx + (big ? 0 : -30 * s), ty = sy - (big ? 92 : 64 + dm.n * 6) * s + Math.sin(now / 520 + p.id) * 4 * s;
+        const [ox, oy] = demonOffset(dm.n), tx = sx + ox * s, ty = sy + oy * s + Math.sin(now / 520 + p.id) * 4 * s;
         if (!p.dmp) p.dmp = { x: tx, y: ty };
         const fk = 1 - Math.exp(-dt / 380);
         p.dmp.x += (tx - p.dmp.x) * fk; p.dmp.y += (ty - p.dmp.y) * fk;
@@ -945,9 +1015,9 @@
       const gr = c.createRadialGradient(w / 2, h * 0.6, 4, w / 2, h * 0.55, w * 0.9);
       gr.addColorStop(0, demonN ? '#24101a' : '#3a1d10'); gr.addColorStop(1, '#0d0705');
       c.fillStyle = gr; c.fillRect(0, 0, w, h);
-      const s = h / (demonN >= 4 ? 230 : 210);
-      c.save(); c.translate(w / 2 + (demonN && demonN < 4 ? 10 : 0), h * 0.9); c.scale(s, s);
-      if (demonN) { c.save(); c.translate(demonN >= 4 ? 0 : -32, -(demonN >= 4 ? 96 : 66 + demonN * 6) + Math.sin(time * 2) * 3); demon(c, demonN, time, 1); c.restore(); }
+      const s = h / (demonN >= 4 ? 245 : 210), off = demonN ? demonOffset(demonN) : [0, 0];
+      c.save(); c.translate(w / 2 - off[0] * s * 0.45, h * 0.9); c.scale(s, s);   // dời cả cặp người + quỷ vào giữa khung
+      if (demonN) { c.save(); c.translate(off[0], off[1] - (demonN >= 4 ? 4 : 2) + Math.sin(time * 2) * 3); demon(c, demonN, time, 1); c.restore(); }
       if (rank) meritHalo(c, rank, time, null);
       drawAvatar(c, look, true, time, 0, false);
       c.restore();
