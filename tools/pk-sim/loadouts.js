@@ -15,8 +15,10 @@ const PRESETS = [
   ['Nhu1', 'LDC NVB TKP TLB'], ['Nhu2', 'LDC TLH TKP TLB'],
   ['Cuồng công', 'TQ TPQ LHC TL'], ['Phản đòn', 'TKP TLB DAP TB'],
   ['Phối1', 'TQ TPQ KTB TLB'], ['Phối2', 'TQ KTB TKP TB'], ['Phối3', 'TPQ DAP TB TKP'],
-  ['Tân thủ', 'TQ TPQ TB NVB'], ['Toàn thủ', 'TB KCT TLH ABH']
+  ['Tân thủ', 'TQ TPQ TB NVB']
 ].map(([name, s]) => ({ name, ids: ids(s) }));
+/** Bộ kiểm chứng: không có đòn tấn công nào, phải luôn thua. */
+const NO_ATTACK = { name: 'Toàn thủ', ids: ids('TB KCT TLH ABH') };
 
 /** Tên bộ theo viết tắt chiêu: "TQ KCT TB TL". */
 const label = list => list.map(abbr).join(' ');
@@ -54,4 +56,4 @@ function branchOf(M, list) {
   return top[0][1] >= 3 ? top[0][0] : 'phoi';
 }
 
-module.exports = { CODE, abbr, ids, label, PRESETS, combos, pureSets, allSets, branchOf };
+module.exports = { CODE, abbr, ids, label, PRESETS, NO_ATTACK, combos, pureSets, allSets, branchOf };

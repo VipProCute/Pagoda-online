@@ -11,7 +11,7 @@
 const { outcomes, expectedValue } = require('./enumerate');
 
 /* trọng số định giá một lượt, quy ra "máu": nội lực, nộ, Kim Chung, sơ hở, thắng/thua dứt điểm */
-const W = { mana: 0.45, rage: 0.08, kc: 4, exposed: 3.2, terminal: 40 };
+const W = { mana: 0.3, rage: 0.08, kc: 4, exposed: 3.2, terminal: 40 };
 
 /** Giá trị trạng thái sau lượt theo góc nhìn của bên a (dương là a lợi). */
 function value(d) {

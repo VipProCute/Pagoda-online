@@ -763,6 +763,7 @@
     const m = S.m, sec = clear(S.ui.match);
     dropPaint('lobby'); dropPaint('match');
     const U = m.ui = { fc: {}, cards: {} };
+    m.legal = []; m.sel = null; m.forced = null; m.locked = false; m.pending = false; m.timeUp = false; m.opLocked = false;
     const wrap = h('div', 'ar-mwrap');
     U.fc.op = fighterCard('op', m.op, m.buffs && m.buffs.op); U.fc.you = fighterCard('you', m.you, m.buffs && m.buffs.you);
     U.fc.op.root.style.gridArea = 'opp'; U.fc.you.root.style.gridArea = 'me';
@@ -830,7 +831,7 @@
   }
   function flipCard(side) {
     const w = h('div', 'ar-flip', null, { role: 'group', 'aria-label': side === 'you' ? 'Chiêu của bạn' : 'Chiêu của đối thủ' }), inn = h('div', 'ar-flip-in');
-    const back = h('div', 'ar-face ar-back', '?', { 'aria-hidden': 'true' }), front = h('div', 'ar-face ar-front', null, { 'aria-hidden': 'true' });
+    const back = h('div', 'ar-face ar-fback', '?', { 'aria-hidden': 'true' }), front = h('div', 'ar-face ar-ffront', null, { 'aria-hidden': 'true' });
     const nm = h('b', 'ar-fl-name'), kd = h('span', 'ar-fl-kind'), sb = h('span', 'ar-fl-sub');
     add(front, h('span', 'ar-fl-who', side === 'you' ? 'Bạn' : 'Đối thủ'), nm, kd, sb);
     add(inn, back, front); w.appendChild(inn);
@@ -1191,7 +1192,8 @@
     if (m.phase === 'ended') return;
     if (m.phase === 'lobby' || !m.ui.fc) {
       if (d.loadouts) m.loadouts = d.loadouts;
-      m.phase = 'choosing'; buildMatch(); go('match');
+      m.phase = 'choosing'; buildMatch(); beginTurn(d); go('match');
+      return;
     }
     beginTurn(d);
   }
@@ -1255,15 +1257,16 @@
       });
       return;
     }
-    m.phase = 'choosing'; buildMatch(); go('match');
+    m.phase = 'choosing'; buildMatch();
     const lr = snap.lastReveal;
     if (snap.phase === 'reveal' && lr) {
       m.turn = lr.turn;
       startReveal(lr, { resume: true, instant: lr.nextAt ? lr.nextAt - nowMs() < 1800 : true });
-      return;
+    } else {
+      if (lr) { lr.steps = buildSteps(lr); addLog(lr, pairLabel(lr.picks || {})); }
+      beginTurn({ turn: snap.turn, deadlineAt: snap.deadlineAt, forced: snap.forced, legal: snap.legal, state: snap.state }, { myPick: snap.myPick, opLocked: snap.opLocked });
     }
-    if (lr) { lr.steps = buildSteps(lr); addLog(lr, pairLabel(lr.picks || {})); }
-    beginTurn({ turn: snap.turn, deadlineAt: snap.deadlineAt, forced: snap.forced, legal: snap.legal, state: snap.state }, { myPick: snap.myPick, opLocked: snap.opLocked });
+    go('match');
   }
 
   /* ---------- vòng đời ---------- */

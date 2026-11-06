@@ -65,7 +65,7 @@
 .ar-invites:empty { display: none; }
 .ar-ic { pointer-events: auto; width: 100%; max-width: 560px; margin: 0 auto; display: grid; gap: 8px; padding: 12px; border: 1px solid var(--gold); border-radius: 14px; background: linear-gradient(180deg, rgba(60, 20, 12, .98), rgba(28, 12, 8, .98)); box-shadow: 0 12px 30px rgba(0, 0, 0, .55), 0 0 22px rgba(212, 171, 82, .18); animation: ar-in .3s ease; }
 .ar-ic-top { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 10px; align-items: center; }
-.ar-ic-top .ar-mini { width: 44px; height: 54px; }
+.ar-ic-top .ar-mini { grid-area: auto; width: 44px; height: 54px; }
 .ar-ic-who { display: grid; min-width: 0; }
 .ar-ic-who b { font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ar-ic-who span { font-size: 12.5px; color: var(--muted); }
@@ -227,8 +227,8 @@ dialog.ar-dlg .dlg-head h2 { font-size: 26px; overflow-wrap: anywhere; }
 .ar-flip-in { position: relative; width: 100%; height: 100%; transform-style: preserve-3d; transition: transform .6s cubic-bezier(.2, .7, .2, 1); }
 .ar-flip.on .ar-flip-in { transform: rotateY(180deg); }
 .ar-face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: 10px; display: grid; align-content: center; justify-items: center; gap: 1px; padding: 6px 8px; text-align: center; overflow: hidden; }
-.ar-back { border: 1px solid var(--gold); background: repeating-linear-gradient(45deg, rgba(212, 171, 82, .14) 0 6px, transparent 6px 12px), linear-gradient(160deg, #7a1d17, #3d0d09); font: 600 32px var(--font-display); color: var(--gold-ink); }
-.ar-front { transform: rotateY(180deg); border: 1px solid var(--bc, var(--gold)); background: var(--surface-2); }
+.ar-fback { border: 1px solid var(--gold); background: repeating-linear-gradient(45deg, rgba(212, 171, 82, .14) 0 6px, transparent 6px 12px), linear-gradient(160deg, #7a1d17, #3d0d09); font: 600 32px var(--font-display); color: var(--gold-ink); }
+.ar-ffront { transform: rotateY(180deg); border: 1px solid var(--bc, var(--gold)); background: var(--surface-2); }
 .ar-fl-who { font-size: 11px; color: var(--muted); }
 .ar-fl-name { font-family: var(--font-display); font-size: 18px; line-height: 1.1; overflow-wrap: anywhere; }
 .ar-fl-kind { font-size: 11.5px; color: var(--bc, var(--muted)); }

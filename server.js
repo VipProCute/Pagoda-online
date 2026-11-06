@@ -898,6 +898,7 @@ io.on('connection', socket => {
 
   /* ----- những gì được lưu theo tài khoản Google (cho màn "Tài khoản đã lưu") ----- */
   socket.on('account:summary', (d, ack) => {
+    if (typeof d === 'function') { ack = d; d = {}; }
     if (!p || typeof ack !== 'function') return;
     if (!bucket('acct', 1, 4)) return ack({ ok: false, reason: 'Bạn tải hơi nhanh, đợi một chút nhé.' });
     const signedIn = !!auth.sessionFor(p.socket.data.authKey);
@@ -917,6 +918,7 @@ io.on('connection', socket => {
 
   /* ----- tu luyện và học chiêu (Võ Học Các) ----- */
   const martialOnly = fn => (d, ack) => {
+    if (typeof d === 'function') { ack = d; d = {}; }          // client chỉ truyền callback
     if (!p || typeof ack !== 'function') return;
     if (!MARTIAL_ENABLED) return ack({ ok: false, reason: 'Võ Học Các chưa mở.' });
     if (!accountReady(p)) return ack({ ok: false, code: 'login', reason: LOGIN_MSG });
@@ -929,6 +931,7 @@ io.on('connection', socket => {
     Promise.resolve(fn(d && typeof d === 'object' ? d : {}, done)).catch(e => { console.error('[martial]', e && e.stack || e); ack({ ok: false, reason: 'Có lỗi, bạn thử lại nhé.' }); });
   };
   socket.on('martial:state', (d, ack) => {
+    if (typeof d === 'function') { ack = d; d = {}; }
     if (!p || typeof ack !== 'function') return;
     if (!MARTIAL_ENABLED) return ack({ ok: true, enabled: false });
     if (!bucket('mstate', 5, 15)) return ack({ ok: false, reason: 'Bạn tải hơi nhanh, đợi một chút nhé.' });
@@ -969,6 +972,7 @@ io.on('connection', socket => {
 
   /* ----- Sân đấu: danh sách người, mời, vào trận (chỉ người đang ở sân) ----- */
   const inArena = fn => (d, ack) => {
+    if (typeof d === 'function') { ack = d; d = {}; }
     if (!p || typeof ack !== 'function') return;
     if (!PK_ENABLED) return ack({ ok: false, reason: 'Sân đấu chưa mở.' });
     if (p.place !== 'arena') return ack({ ok: false, code: 'place', reason: 'Bạn cần ra Sân đấu trước.' });
