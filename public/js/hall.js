@@ -1022,18 +1022,45 @@
     g.fillStyle='#a32019';g.fillRect(x-12*u,y-27*u,24*u,27*u);g.strokeStyle='#e7bd68';g.strokeRect(x-12*u,y-27*u,24*u,27*u);
     g.fillStyle='#ffe0a0';g.font=`bold ${Math.max(10,12*u)}px sans-serif`;g.textAlign='center';g.fillText('XĂM',x,y-9*u);g.restore();
   }
+  // Các thầy là hình nền trong suốt, dựng lại từ mẫu Canva người dùng chọn.
+  const READERS = root.Image ? [new Image(), new Image()] : [];
+  if (READERS.length) {
+    READERS[0].src = '/img/readers/tu-vi.webp';
+    READERS[1].src = '/img/readers/tarot.webp';
+  }
+  function readerBounds(i) {
+    const width = Math.min(W * 0.29, 220 * Math.max(u, 0.6));
+    const height = Math.min(H * 0.29, 200 * Math.max(u, 0.6));
+    const x = W * i, bottom = H * 0.49;
+    return { x, bottom, width, height };
+  }
   function drawReaders(ts) {
-    for(const [i,label,col] of [[.2,'TỬ VI','#5c4176'],[.8,'TAROT','#7c364a']]) {
-      const x=W*i,y=H*.49,s=Math.max(.65,u);
-      g.save();g.translate(x,y);g.scale(s,s);
-      drawAvatar(g,{g:'nam',c: i<.5 ? 9 : 4,h:2},true,ts/1000,0,false);
-      g.fillStyle=col;g.fillRect(-48,-43,96,30);g.strokeStyle='#d9b879';g.strokeRect(-48,-43,96,30);
-      g.fillStyle='#f7e6be';g.textAlign='center';g.font='bold 14px sans-serif';g.fillText(label,0,-23);
-      g.fillStyle='#f6dc9e';g.font='11px sans-serif';g.fillText('Chạm để xem',0,10);g.restore();
+    for (const [index, i, label, col] of [[0, .2, 'TỬ VI', '#6b321e'], [1, .8, 'TAROT', '#52315f']]) {
+      const b = readerBounds(i), img = READERS[index];
+      g.save();
+      if (img && img.complete && img.naturalWidth) {
+        const scale = Math.min(b.width / img.naturalWidth, b.height / img.naturalHeight);
+        const w = img.naturalWidth * scale, h = img.naturalHeight * scale;
+        g.drawImage(img, b.x - w / 2, b.bottom - h, w, h);
+      } else {
+        // Vẫn có thể tương tác nếu ảnh đang tải hoặc kết nối chậm.
+        const scale = Math.max(.65, u);
+        g.translate(b.x, b.bottom); g.scale(scale, scale);
+        drawAvatar(g, { g: 'nam', c: index ? 4 : 9, h: 2 }, true, ts / 1000, 0, false);
+        g.setTransform(DPR, 0, 0, DPR, 0, 0);
+      }
+      const font = Math.max(10, Math.round(12 * Math.max(u, .75)));
+      const labelWidth = Math.max(64, 78 * Math.max(u, .75));
+      g.fillStyle = col; g.strokeStyle = '#d9b879'; g.lineWidth = 1;
+      rrect(g, b.x - labelWidth / 2, b.bottom + 2, labelWidth, font + 9, 4); g.fill(); g.stroke();
+      g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = `bold ${font}px sans-serif`;
+      g.fillStyle = '#f7e6be'; g.fillText(label, b.x, b.bottom + 6 + font / 2);
+      g.font = `${Math.max(10, font - 2)}px sans-serif`; g.fillText('Chạm để xem', b.x, b.bottom + font + 18);
+      g.restore();
     }
   }
   const hitJar = (x,y) => Math.abs(x-(G.bowl.x+G.bowl.rx+25*u)) < 22*u && y>G.ty-55*u && y<G.ty+5*u;
-  const hitReader = (x,y) => y>H*.25 && y<H*.57 && (x<W*.35 || x>W*.65);
+  const hitReader = (x, y) => [.2, .8].some(i => { const b = readerBounds(i); return Math.abs(x - b.x) <= b.width / 2 + 12 && y >= b.bottom - b.height && y <= b.bottom + 38; });
 
   function frame(ts) {
     const dt = Math.min(64, ts - (last || ts)); last = ts;
