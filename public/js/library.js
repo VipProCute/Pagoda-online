@@ -126,7 +126,7 @@
     $('#lib-title').textContent = b.title;
     $('#libSub').textContent = b.sub || '';
     $('#libShelf').hidden = true; $('#libReader').hidden = false; $('#libFoot').hidden = false; $('#libTools').hidden = false; $('#libBack').hidden = false;
-    $('#libChant').hidden = !b.chant;
+    $('#libChant').hidden = !b.chant || (hooks.hasChant && !hooks.hasChant(b.chant));   // bài chưa dựng âm thanh thì ẩn nút
     $('#libPage').textContent = 'Đang mở kinh…';
     hooks.reading && hooks.reading(b.id);
     try {

@@ -23,6 +23,7 @@ Cài đặt (CPU là đủ):
 Chạy:
     python tools/build_chants.py                      # dựng mọi bài
     python tools/build_chants.py --tracks batnha      # chỉ một bài
+    python tools/build_chants.py --tracks daibi,duocsu   # Chú Đại Bi, Chú Dược Sư
 
 Nhân bản giọng (tùy chọn): thay giọng mẫu "Thiền Tâm Đức" bằng giọng của một người cụ thể, với
 sự đồng ý của chính người đó. VieNeu-TTS v3 Turbo không cần lời thoại của file mẫu; chỉ cần một
@@ -61,6 +62,10 @@ SR = 24000
 # Tốc độ (1 = tốc độ đọc tự nhiên; < 1 chậm hơn; > 1 nhanh hơn)
 TEMPO = {
     'batnha':   {'kind': 'kinh',  'speed': 1.0, 'mantra_from': 23, 'mantra_speed': 1.12},
+    'daibi':    {'kind': 'kinh',  'speed': 1.0, 'mantra_from': 4, 'mantra_speed': 1.12},
+    # khai kinh, ba biến chú, rồi niệm hồng danh nhanh dần từ câu niem_from
+    'duocsu':   {'kind': 'kinh',  'speed': 1.0, 'mantra_from': 3, 'mantra_speed': 1.12,
+                 'niem_from': 15, 'speed_start': 0.88, 'speed_end': 1.18},
     'niemphat': {'kind': 'niem',  'speed_start': 0.82, 'speed_end': 1.15},
     'quanam':   {'kind': 'niem',  'speed_start': 0.88, 'speed_end': 1.18},
     'thien':    {'kind': 'thien', 'beat': 1.3},
@@ -154,12 +159,18 @@ def warp(y, bounds, speeds):
     return w.data[0].astype(np.float32)
 
 
+def niem_from(cfg):
+    """Câu đầu tiên của phần niệm danh hiệu (bài 'niem' niệm từ đầu; bài 'kinh' có thể niệm ở cuối)."""
+    return cfg.get('niem_from', 0 if cfg['kind'] == 'niem' else 10 ** 9)
+
+
 def line_speeds(track_id, li, n_lines, n_words, last):
     cfg = TEMPO[track_id]
-    if cfg['kind'] == 'kinh':
+    n0 = niem_from(cfg)
+    if li < n0:
         base = cfg['mantra_speed'] if li >= cfg.get('mantra_from', 10 ** 9) else cfg['speed']
     else:
-        frac = li / max(1, n_lines - 1)                      # niệm danh hiệu: nhanh dần đều
+        frac = (li - n0) / max(1, n_lines - 1 - n0)          # niệm danh hiệu: nhanh dần đều
         base = cfg['speed_start'] + (cfg['speed_end'] - cfg['speed_start']) * frac
     sp = np.full(n_words, base, dtype=np.float64)
     if last:                                                 # câu cuối: lơi dần
@@ -253,7 +264,7 @@ def render(track_id, data, tts, model, voice, cache, variants, voice_only=False,
         t += len(out) / SR
         if not last:
             events.append([round(t, 3), li, -1])
-            t += PAUSE_NIEM if cfg['kind'] == 'niem' else (PAUSE_STOP if line.rstrip()[-1:] in '.!:' else PAUSE_COMMA)
+            t += PAUSE_NIEM if li >= niem_from(cfg) else (PAUSE_STOP if line.rstrip()[-1:] in '.!:' else PAUSE_COMMA)
     t_end = t
     for k in range(END_BELLS):                                # thỉnh chuông kết
         bt = t_end + 0.9 + k * END_BELL_GAP
@@ -301,7 +312,7 @@ def clone_label(ref_audio, denoise, speaker_only):
 def main():
     ap = argparse.ArgumentParser(description='Dựng bài tụng (MP3 + JSON) bằng VieNeu-TTS v3 Turbo')
     ap.add_argument('--voice', default='Thiền Tâm Đức')
-    ap.add_argument('--tracks', default='batnha,niemphat,quanam,thien')
+    ap.add_argument('--tracks', default=','.join(TEMPO))
     ap.add_argument('--variants', type=int, default=3, help='Số bản đọc khác nhau cho câu lặp lại')
     ap.add_argument('--onnx-dir', default=None)
     ap.add_argument('--whisper', default='small')
@@ -363,6 +374,8 @@ def main():
         print(f'   {duration:.0f}s âm thanh · {(out / f"{tid}.mp3").stat().st_size // 1024} KB · {time.time() - t0:.0f}s dựng')
         if args.cache:
             np.savez_compressed(args.cache, **cache)
+    order = list(data) + [k for k in manifest['tracks'] if k not in data]   # theo thứ tự trong chants.js
+    manifest['tracks'] = {k: manifest['tracks'][k] for k in order if k in manifest['tracks']}
     man_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=1), encoding='utf-8')
 
 

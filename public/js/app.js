@@ -620,6 +620,7 @@
 
   /* ---------- Tàng Kinh Các ---------- */
   Library.init({
+    hasChant: track => !!(cfg && cfg.tracks && cfg.tracks[track]),
     reading(book) { if (joined) { socket.emit('reading', { book }); Hall.setReading(me, book); } },
     chant(track) {
       if (!joined) return;
