@@ -12,7 +12,7 @@ Chánh điện trực tuyến cho nhiều người cùng lúc. Mỗi người v�
 | Tụng kinh chung | Bát Nhã Tâm Kinh, Niệm Phật A Di Đà, Niệm Quán Thế Âm, Chuông mõ ngồi thiền. Giọng VieNeu-TTS v3 Turbo đọc liền câu, mõ và chuông theo nghi thức (vào mõ, kết mõ). Mọi người nghe cùng một chữ (đồng bộ theo giờ máy chủ), chữ sáng lên theo tiếng mõ. Người vào muộn nghe đúng đoạn đang tụng. |
 | Cộng đồng | Chat chung (bong bóng chat hiện trên đầu nhân vật), tường lời nguyện có nút “Tùy hỷ”, báo cáo tin nhắn. |
 | Công đức | Điểm công đức cá nhân (hôm nay / tất cả) và bảng công đức hôm nay. Tính từ nhang, hoa, mõ, tim, vái lạy, tụng kinh. Không tính theo tiền. |
-| Hiệu ứng mốc | Đạt 100, 300, 500, 888, 999 rồi mỗi 1.000 công đức trong ngày thì hiện lời chúc bằng giọng nữ kèm meme chọn ngẫu nhiên và cánh sen rơi. Mốc 666 thì hù một cái bằng mặt quỷ rồi trấn an. Có công tắc tắt trong mục Công đức. |
+| Hiệu ứng mốc | Đạt 100, 300, 500, 888, 999 rồi mỗi 1.000 công đức trong ngày thì hiện lời chúc bằng giọng nữ kèm meme chọn ngẫu nhiên, hào quang vàng xoay quanh meme và cánh sen rơi. Mốc 666 thì hù một cái bằng mặt quỷ rồi hào quang hiện lên trấn an. Có công tắc tắt trong mục Công đức. |
 | Cúng dường | Tạo mã VietQR có sẵn số tiền và mã đối soát. Tiền vào thẳng tài khoản của chùa. Tự xác nhận qua webhook SePay, hoặc ban điều hành xác nhận tay. |
 | An toàn | Chặn tin có số tài khoản, số điện thoại, đường link (chống lừa đảo giả danh chùa). Che từ tục. Giới hạn tần suất. Tên “Ban điều hành / Admin / Trụ trì…” chỉ dành cho quản trị. |
 | Quản trị | `/admin.html`: xác nhận/hủy lượt cúng dường, ẩn tin nhắn và lời nguyện, gửi thông báo vào chánh điện. |
@@ -44,13 +44,15 @@ Khi công đức **hôm nay** (số ở thẻ “Công đức” trên đầu tr
 
 | Mốc | Hiệu ứng |
 |---|---|
-| 100, 300, 500 | Lời chúc bằng giọng nữ (“Chúc bạn một ngày bình an…”) kèm một meme ngẫu nhiên, cánh sen và hoa giấy rơi nhẹ. |
-| 666 | Hù: mặt quỷ phóng ra chiếm màn hình khoảng 1,4 giây (một lần chớp đỏ, rung màn hình, tiếng hù), rồi mờ đi và hiện thẻ trấn an “Hù bạn thôi! A Di Đà Phật, chúc bạn bình an 🙏”. |
-| 888, 999, 1.000, 2.000, 3.000… | Bản lớn: tiêu đề vàng to, nhiều hoa giấy hơn, cũng có giọng chúc và meme. |
+| 100, 300, 500 | Lời chúc bằng giọng nữ (“Chúc bạn một ngày bình an…”) kèm một meme ngẫu nhiên. Sau meme là vòng hào quang vàng (vòng cánh sen, tia sáng) nở ra rồi xoay chậm; cánh sen và hoa giấy rơi nhẹ. |
+| 666 | Hù: mặt quỷ sừng cong, mắt vàng rực phóng ra chiếm màn hình khoảng 1,4 giây (một lần chớp đỏ, sóng lửa tỏa ra, tàn lửa bay, viền đỏ thở, rung màn hình, tiếng hù, mặt dồn tới hai nhịp như tim đập), rồi mờ đi; hào quang vàng nở ra sau thẻ trấn an “Hù bạn thôi! A Di Đà Phật, chúc bạn bình an 🙏”. |
+| 888, 999, 1.000, 2.000, 3.000… | Bản lớn: tiêu đề vàng to, hào quang to hơn với thêm một vòng phụ xoay ngược và tia sáng đậm hơn, nhiều hoa giấy hơn, cũng có giọng chúc và meme. |
 
 **Cách tính.** Máy chủ quyết định, không phải trình duyệt. Mốc tính khi một lần cộng đưa công đức hôm nay từ dưới mốc lên bằng hoặc quá mốc (mỗi lần cộng là 1 đến 15 điểm nên có thể nhảy qua đúng con số). Một lần cộng bước qua nhiều mốc thì chỉ hiện một: 666 được ưu tiên, còn lại lấy mốc cao nhất. Tải lại trang hay vào lại chùa khi đã có 700 công đức không chiếu lại mốc cũ. Công đức “hôm nay” tính lại mỗi ngày theo giờ Việt Nam, nên mốc cũng vậy. Đang có một hiệu ứng (hay tab đang ẩn) thì mốc mới xếp hàng chờ: tối đa một lượt, 666 được ưu tiên hơn mọi mốc khác. Lượt chờ quá 60 giây (tab bị ẩn lâu) thì không chiếu nữa, kể cả 666, chỉ hiện dòng báo nhỏ “Bạn đã đạt N công đức”.
 
-**Kho meme.** Thả ảnh `.jpg .jpeg .png .webp .gif .avif` vào `public/img/memes/` là tự có, không cần sửa mã (tối đa 200 ảnh, ảnh vuông khoảng 720px đẹp nhất). Máy chủ đọc lại thư mục sau tối đa 30 giây, người chơi nhận danh sách mới khi vào chùa hoặc tải lại trang. Mỗi lần chọn ngẫu nhiên và không lặp lại ảnh vừa hiện. Ảnh lỗi thì bỏ qua, hết ảnh thì thẻ chỉ còn chữ. Nên đặt tên file không dấu và ngắn: tên có byte lỗi mã hóa hay dài quá (địa chỉ từ 300 ký tự) sẽ bị bỏ qua. Mặt quỷ của mốc 666 là `public/img/devil.svg`.
+**Kho meme.** Thả ảnh `.jpg .jpeg .png .webp .gif .avif` vào `public/img/memes/` là tự có, không cần sửa mã (tối đa 200 ảnh, ảnh vuông khoảng 720px đẹp nhất). Máy chủ đọc lại thư mục sau tối đa 30 giây, người chơi nhận danh sách mới khi vào chùa hoặc tải lại trang. Mỗi lần chọn ngẫu nhiên và không lặp lại ảnh vừa hiện. Ảnh lỗi thì bỏ qua, hết ảnh thì thẻ chỉ còn chữ. Nên đặt tên file không dấu và ngắn: tên có byte lỗi mã hóa hay dài quá (địa chỉ từ 300 ký tự) sẽ bị bỏ qua. Mặt quỷ của mốc 666 là `public/img/devil.webp` (thiếu hay hỏng thì dùng bản vẽ cũ `public/img/devil.svg`, rồi tới biểu tượng 😈), hình hào quang là `public/img/fx/halo.webp` (thiếu thì chỉ còn tia sáng vẽ bằng CSS).
+
+**Hình từ Canva.** Hào quang và mặt quỷ được tạo bằng công cụ tạo ảnh AI của Canva, đặt trong thiết kế Canva “Hiệu ứng Chùa Tâm An — hào quang & quỷ 666” (trang 2 và 3) rồi xuất PNG. Muốn đổi hình: sửa hoặc thay ảnh trong thiết kế đó (giữ hào quang trên nền đen, cỡ vuông; mặt quỷ khổ dọc 3:4, mắt ở khoảng 40% chiều cao), xuất hai trang thành PNG, rồi chạy `python3 -I tools/fx/prepare_canva_assets.py halo.png devil.png` (cần Pillow và numpy). Công cụ đổi nền đen của hào quang thành trong suốt và nén cả hai sang WebP.
 
 **Giọng chúc.** Bốn câu chúc giọng nữ (VieNeu-TTS v3 Turbo, giọng “Trúc Ly”) đã có sẵn trong `public/audio/blessings/`, kèm `manifest.json`; tạo lại bằng `tools/build_blessing_voice.py`. Muốn thêm câu hay đổi giọng thì sửa `manifest.json` (lưu UTF-8, có BOM cũng được; file lỗi thì máy chủ ghi một dòng cảnh báo vào log và trình duyệt đọc bằng giọng máy):
 
@@ -70,7 +72,7 @@ Mỗi lần hiện, trình duyệt chọn ngẫu nhiên một dòng, phát file 
 - “Hiệu ứng chúc mừng ở các mốc công đức”: tắt thì chỉ còn dòng thông báo nhỏ “Bạn đạt N công đức”, kể cả mốc 666.
 - “Cho phép hù ở mốc 666”: tắt thì mốc 666 hiện lời chúc bình thường thay cho mặt quỷ.
 
-Người bật chế độ giảm chuyển động của hệ điều hành (`prefers-reduced-motion`) không bị rung, phóng to, chớp hay hạt bay: hình chỉ mờ hiện, mặt quỷ hiện mờ 0,2 giây không chớp đỏ. Chạm vào màn hình hoặc nhấn Esc để đóng sớm, nút × luôn đóng được. Chạm lên màn hình chỉ đóng khi trước đó đã ngừng chạm khoảng 0,9 giây (và sau 0,7 giây đầu), để người đang gõ mõ liên tục không lỡ tay tắt mất lời chúc; mỗi cú chạm bị bỏ qua làm đồng hồ này tính lại. Tab không lọt ra các nút phía sau lớp phủ. Điện thoại xoay ngang (màn thấp) thì thẻ xếp thành hàng, meme bên trái, chữ bên phải.
+Người bật chế độ giảm chuyển động của hệ điều hành (`prefers-reduced-motion`) không bị rung, phóng to, chớp, sóng lửa hay hạt bay: hình chỉ mờ hiện, hào quang đứng yên không xoay, mặt quỷ hiện mờ 0,2 giây không chớp đỏ. Chạm vào màn hình hoặc nhấn Esc để đóng sớm, nút × luôn đóng được. Chạm lên màn hình chỉ đóng khi trước đó đã ngừng chạm khoảng 0,9 giây (và sau 0,7 giây đầu), để người đang gõ mõ liên tục không lỡ tay tắt mất lời chúc; mỗi cú chạm bị bỏ qua làm đồng hồ này tính lại. Tab không lọt ra các nút phía sau lớp phủ. Điện thoại xoay ngang (màn thấp) thì thẻ xếp thành hàng, meme bên trái, chữ bên phải.
 
 Nguồn và giấy phép của ảnh, mặt quỷ, giọng đọc ghi trong `public/img/NOTICE.txt` và `public/audio/NOTICE.txt`.
 
@@ -185,7 +187,10 @@ public/css/celebrate.css giao diện của hiệu ứng trên
 public/js/chants.js    kinh văn các bài tụng (đầu vào của tools/build_chants.py)
 public/audio/          bài tụng dựng sẵn (chants/), tiếng chuông (bell.mp3)
 public/audio/blessings/ giọng chúc (4 file mp3 + manifest.json)
-public/img/memes/      kho meme (thả ảnh vào là tự có), public/img/devil.svg cho mốc 666
+public/img/memes/      kho meme (thả ảnh vào là tự có)
+public/img/devil.webp  mặt quỷ mốc 666 (Canva), devil.svg là bản dự phòng
+public/img/fx/halo.webp hào quang công đức (Canva)
+tools/fx/prepare_canva_assets.py chuyển PNG xuất từ Canva thành ảnh web
 tools/build_chants.py  dựng bài tụng bằng VieNeu-TTS
 tools/build_blessing_voice.py dựng giọng chúc (giọng nữ) bằng VieNeu-TTS
 public/js/lunar.js     lịch âm

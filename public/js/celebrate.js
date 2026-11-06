@@ -1,8 +1,10 @@
 /*
  * Hiệu ứng chúc mừng ở các mốc công đức trong ngày.
  * Máy chủ quyết định lúc nào đạt mốc (socket 'milestone' {at, kind}); file này chỉ lo phần hiển thị:
- *   bless / grand: meme ngẫu nhiên + lời chúc bằng giọng nữ + cánh sen, hoa giấy lấp lánh
- *   scare (666):   mặt quỷ hù một cái rồi hiện câu trấn an
+ *   bless / grand: hào quang vàng xoay sau meme + lời chúc bằng giọng nữ + cánh sen, hoa giấy lấp lánh
+ *   scare (666):   mặt quỷ (tàn lửa bay, sóng lửa, viền đỏ) hù một cái rồi hào quang hiện lên kèm câu trấn an
+ * Hình hào quang (img/fx/halo.webp) và mặt quỷ (img/devil.webp) thiết kế trên Canva; thiếu file thì vẫn chạy
+ * (hào quang chỉ còn tia sáng vẽ bằng CSS, mặt quỷ lùi về img/devil.svg rồi tới biểu tượng 😈).
  * Có hai công tắc tắt (lưu trong localStorage): 'ta-fx' (hiệu ứng) và 'ta-scare' (hù ở 666).
  * Thử nhanh: mở trang với ?celebrate=100 (hoặc 300, 666, 999...) hay gõ Celebrate.test(666) trong console.
  */
@@ -10,7 +12,8 @@
   'use strict';
   const doc = root.document;
   const KEY_FX = 'ta-fx', KEY_SCARE = 'ta-scare';
-  const DEVIL = '/img/devil.svg';
+  const DEVIL = '/img/devil.webp', DEVIL_SVG = '/img/devil.svg';   // ảnh Canva, hỏng thì lùi về bản vẽ SVG cũ
+  const HALO = '/img/fx/halo.webp';                                  // trùng với url() trong celebrate.css
   // Lời chúc dự phòng (cùng nội dung với bộ file giọng đọc), dùng khi chưa có file mp3
   const BLESSINGS = [
     'Chúc bạn một ngày bình an.',
@@ -40,6 +43,7 @@
   let seq = 0;                         // số thứ tự lượt, để bỏ kết quả bất đồng bộ của lượt cũ
   const QUIET = 900;                   // phải yên chừng này mili giây thì chạm lên lớp phủ mới đóng được
   let tapAt = 0, tapPrev = 0;          // pointerdown gần nhất và cái trước nó (bất kỳ đâu trên trang)
+  let haloImg = null;                  // tải trước hình hào quang
 
   /* ---------- ưu tiên & luật mốc (giống máy chủ) ---------- */
   function outranks(a, b) {
@@ -75,13 +79,15 @@
       if (slow) return;
       if (nextMeme >= 0) { const im = new Image(), u = cfg.memes[nextMeme]; im.decoding = 'async'; im.onerror = () => { badMemes.add(u); if (cfg.memes[nextMeme] === u) nextMeme = -1; }; im.src = u; }
       if (cfg.blessings.length && nextLine >= 0 && root.SFX) SFX.preloadClip(cfg.blessings[nextLine].url);
+      if (!haloImg) { haloImg = new Image(); haloImg.decoding = 'async'; haloImg.src = HALO; }   // vào bộ nhớ đệm, CSS dùng lại
       if (scareOn()) prepareScare();
     } catch (e) { /* không được làm hỏng trang */ }
   }
   function prepareScare() {
     build();
     if (!el.devil.getAttribute('src')) {
-      el.devil.onerror = () => el.scare.classList.add('devil-bad');   // thiếu file mặt quỷ: dùng biểu tượng 😈 thay
+      // ảnh Canva hỏng thì lùi về bản vẽ SVG cũ; cả hai cùng hỏng thì dùng biểu tượng 😈
+      el.devil.onerror = () => { if (el.devil.getAttribute('src') === DEVIL) el.devil.src = DEVIL_SVG; else el.scare.classList.add('devil-bad'); };
       el.devil.src = DEVIL;
       if (el.devil.decode) el.devil.decode().catch(() => {});
     }
@@ -90,6 +96,7 @@
   /* ---------- dựng giao diện (chỉ một lần) ---------- */
   const TEMPLATE = `
 <div class="fx-bg"></div>
+<div class="fx-aura" aria-hidden="true"><i class="fx-rays"></i><i class="fx-halo fx-halo--back"></i><i class="fx-halo"></i><i class="fx-core"></i></div>
 <div class="fx-stage">
   <div class="fx-card">
     <p class="fx-eyebrow" hidden>Tùy hỷ công đức</p>
@@ -100,7 +107,7 @@
   <p class="fx-hint">Chạm hoặc nhấn Esc để đóng</p>
 </div>
 <canvas class="fx-canvas" aria-hidden="true"></canvas>
-<div class="fx-scare" aria-hidden="true"><div class="fx-devil-fb">😈</div><img class="fx-devil" alt="" decoding="async"><div class="fx-flash"></div></div>
+<div class="fx-scare" aria-hidden="true"><div class="fx-devil-fb">😈</div><img class="fx-devil" alt="" decoding="async"><i class="fx-vig"></i><i class="fx-ring"></i><div class="fx-flash"></div></div>
 <div class="fx-cap"><div class="fx-capcard"><p class="fx-cap1">Hù bạn thôi!</p><p class="fx-cap2">A Di Đà Phật, chúc bạn bình an 🙏</p><p class="fx-hint">Chạm hoặc nhấn Esc để đóng</p></div></div>
 <button type="button" class="fx-x" aria-label="Đóng">×</button>
 <p class="sr fx-live" role="status"></p>`;
@@ -114,8 +121,10 @@
     const q = s => r.querySelector(s);
     el = {
       root: r, eyebrow: q('.fx-eyebrow'), title: q('.fx-title'), frame: q('.fx-frame'), meme: q('.fx-meme'), sub: q('.fx-sub'),
-      canvas: q('.fx-canvas'), scare: q('.fx-scare'), devil: q('.fx-devil'), live: q('.fx-live'), cap2: q('.fx-cap2'), x: q('.fx-x')
+      canvas: q('.fx-canvas'), scare: q('.fx-scare'), devil: q('.fx-devil'), live: q('.fx-live'), cap2: q('.fx-cap2'), x: q('.fx-x'),
+      aura: q('.fx-aura'), card: q('.fx-card')
     };
+    root.addEventListener('resize', () => { if (cur && cur.item.kind !== 'scare') placeAura(); });
     r.addEventListener('click', e => {
       if (!cur) return;
       if (e.target && e.target.closest && e.target.closest('.fx-x')) { dismiss(); return; }   // nút × là chủ ý rõ ràng, luôn đóng
@@ -185,6 +194,7 @@
     const typing = !!(ae && ae.matches && ae.matches('input, textarea, select, [contenteditable=""], [contenteditable="true"]'));
     if (item.kind === 'scare') startScare(item); else startBless(item);
     present();
+    if (item.kind !== 'scare') placeAura();
     if (!typing) { try { r.focus({ preventScroll: true }); } catch (e) { /* bỏ qua */ } } else cur.prevFocus = null;
   }
 
@@ -230,6 +240,7 @@
     const arrived = () => {
       if (!cur || cur.id !== id) return;
       fr.hidden = false; void fr.offsetWidth; fr.classList.add('ready');
+      placeAura();
       holdUntil(performance.now() - cur.t0 + 3500);
     };
     im.onload = arrived;
@@ -237,6 +248,22 @@
     im.removeAttribute('src');
     im.src = url;
     if (im.complete && im.naturalWidth) arrived();           // đã có trong bộ nhớ đệm (tải trước xong)
+  }
+
+  /* Hào quang đặt đúng tâm meme (chưa có meme thì tâm thẻ) và to theo khung ảnh, để vòng sáng ôm quanh ảnh.
+     Đo bằng offset* (không tính transform) nên đo đúng cả lúc thẻ đang bật lên. Lần đặt đầu không trượt. */
+  function placeAura() {
+    const a = el.aura, f = el.frame;
+    if (!a || !cur) return;
+    const useFrame = !f.hidden && f.offsetWidth > 0, t = useFrame ? f : el.card;
+    if (!t.offsetWidth) return;
+    let x = t.offsetWidth / 2, y = t.offsetHeight / 2;
+    for (let n = t; n && n !== el.root; n = n.offsetParent) { x += n.offsetLeft; y += n.offsetTop; }
+    const first = !cur.auraSet;
+    if (first) a.style.transition = 'none';
+    a.style.setProperty('--ax', Math.round(x) + 'px'); a.style.setProperty('--ay', Math.round(y) + 'px');
+    if (useFrame) a.style.setProperty('--as', f.offsetWidth + 'px'); else a.style.removeProperty('--as');
+    if (first) { void a.offsetWidth; a.style.transition = ''; cur.auraSet = true; }
   }
 
   /* ----- giọng đọc ----- */
@@ -362,6 +389,44 @@
     cur.raf = requestAnimationFrame(frame);
   }
 
+  /* ----- tàn lửa cho mặt quỷ: nổ tung từ giữa mặt rồi bốc lên từ đáy màn hình (canvas, hòa sáng lên ảnh) ----- */
+  const EMBER = ['#ffb347', '#ff8a2a', '#ffd27a', '#ff5a1f', '#ffe6a0'];
+  function startEmbers(id) {
+    if (reduced() || !el.canvas.getContext) return;
+    const cv = el.canvas, dpr = Math.min(2, root.devicePixelRatio || 1), W = root.innerWidth, H = root.innerHeight;
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+    const g = cv.getContext('2d'); if (!g) return;
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const parts = [], sc = Math.max(0.7, Math.min(1.4, Math.min(W, H) / 500));
+    const ember = (x, y, vx, vy, drag, max) => parts.push({ x, y, vx, vy, drag, s: rnd(1.2, 3.2) * sc, col: pick(EMBER), ph: rnd(0, 6.3), life: 0, max });
+    for (let i = 0; i < 70; i++) { const a = rnd(0, 6.283), sp = rnd(260, 950) * sc; ember(W / 2, H * 0.45, Math.cos(a) * sp, Math.sin(a) * sp, 2.6, rnd(0.6, 1.3)); }
+    let last = performance.now(), acc = 0;
+    const born = last, emitMs = 1500;
+    const frame = now => {
+      if (!cur || cur.id !== id) { g.clearRect(0, 0, W, H); return; }
+      const dt = Math.min(0.05, (now - last) / 1000); last = now;
+      const emitting = now - born < emitMs;
+      if (emitting) { acc += 55 * dt; while (acc >= 1) { acc--; ember(rnd(0, W), H + 10, rnd(-30, 30), -rnd(160, 420) * sc, 0.25, rnd(1.2, 2.4)); } }
+      g.clearRect(0, 0, W, H);
+      g.globalCompositeOperation = 'lighter';
+      for (let i = parts.length - 1; i >= 0; i--) {
+        const p = parts[i];
+        p.life += dt;
+        if (p.life > p.max || p.y < -30) { parts.splice(i, 1); continue; }
+        const k = Math.exp(-p.drag * dt);
+        p.vx *= k; p.vy = p.vy * k - 50 * dt;                 // khí nóng đẩy lên
+        p.ph += dt * 6; p.x += (p.vx + Math.sin(p.ph) * 16) * dt; p.y += p.vy * dt;
+        const a = Math.max(0, Math.min(1, (1 - p.life / p.max) * 1.6) * (0.78 + 0.22 * Math.sin(p.ph * 2.3)));
+        g.globalAlpha = a * 0.28; g.fillStyle = '#ff5a14'; g.beginPath(); g.arc(p.x, p.y, p.s * 3.2, 0, 6.283); g.fill();
+        g.globalAlpha = a; g.fillStyle = p.col; g.beginPath(); g.arc(p.x, p.y, p.s * 0.8, 0, 6.283); g.fill();
+      }
+      g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
+      if (emitting || parts.length) cur.raf = requestAnimationFrame(frame);
+      else g.clearRect(0, 0, W, H);
+    };
+    cur.raf = requestAnimationFrame(frame);
+  }
+
   /* ----- jump scare 666 ----- */
   function startScare(item) {
     const r = el.root, c = cur, id = c.id, im = el.devil;
@@ -379,7 +444,8 @@
       }
       r.classList.add('is-face');
       if (root.SFX) { try { SFX.scare(); } catch (e) { /* bỏ qua */ } }
-      // mặt quỷ giữ ~1.4 giây (chỉ một lần chớp đỏ, không nhấp nháy), mờ dần, rồi thẻ trấn an ~2.5 giây
+      startEmbers(id);
+      // mặt quỷ giữ ~1.4 giây (chỉ một lần chớp đỏ, không nhấp nháy), mờ dần, rồi hào quang hiện lên cùng thẻ trấn an ~2.5 giây
       later(() => { r.classList.add('is-out'); }, 1400);
       later(() => { r.classList.remove('is-face'); r.classList.add('is-calm'); }, 1800);
       holdUntil(1800 + 2500);

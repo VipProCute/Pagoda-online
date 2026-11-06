@@ -1,7 +1,7 @@
 HÌNH ẢNH TRONG THƯ MỤC NÀY — NGUỒN GỐC VÀ GIẤY PHÉP
 ======================================================
 
-1) Bộ meme chúc mừng (public/img/memes/*.jpg) và hình mặt quỷ (public/img/devil.svg)
+1) Bộ meme chúc mừng (public/img/memes/*.jpg) và hình mặt quỷ dự phòng (public/img/devil.svg)
    Tất cả là tác phẩm gốc do dự án Chùa Tâm An tạo ra bằng mã lệnh (SVG, HTML, CSS, gradient;
    meme dựng thành ảnh bằng trình duyệt Chromium; devil.svg là vector do
    python3 tools/devil-preview/gen_devil.py sinh ra, mặc định ghi đè public/img/devil.svg).
@@ -30,7 +30,18 @@ HÌNH ẢNH TRONG THƯ MỤC NÀY — NGUỒN GỐC VÀ GIẤY PHÉP
 
    Phông chữ giữ nguyên, không sửa đổi; chỉ trích tập con ký tự (do gói @fontsource thực hiện).
 
-3) Thêm meme của riêng bạn
+3) Hào quang công đức (public/img/fx/halo.webp) và mặt quỷ mốc 666 (public/img/devil.webp)
+   KHÁC với mục 1: hai hình này được tạo bằng công cụ tạo ảnh AI của Canva, trong tài khoản Canva
+   của chủ dự án, đặt trong thiết kế Canva "Hiệu ứng Chùa Tâm An — hào quang & quỷ 666" (trang 2 và 3)
+   rồi xuất PNG; sau đó tools/fx/prepare_canva_assets.py đổi nền đen của hào quang thành trong suốt,
+   thu nhỏ và nén sang WebP. Không dùng ảnh người thật, logo hay nhân vật có bản quyền.
+
+   Giấy phép: KHÔNG thuộc CC0 như mục 1. Việc dùng hai hình này tuân theo điều khoản của Canva
+   (Content License Agreement và điều khoản cho sản phẩm AI): https://www.canva.com/trust/legal/
+   Muốn tái sử dụng hai hình ở dự án khác, hãy kiểm tra điều khoản đó trước. devil.svg (mục 1) vẫn là
+   bản CC0 và được dùng làm hình dự phòng khi devil.webp không tải được.
+
+4) Thêm meme của riêng bạn
    Chỉ cần thả ảnh (jpg, jpeg, png, webp, gif, avif) vào public/img/memes/ — máy chủ tự liệt kê và
    hiệu ứng chúc mừng sẽ bốc ngẫu nhiên cả ảnh mới. Nên dùng ảnh vuông ~720 px, dưới ~110 KB, và chỉ
    dùng ảnh bạn có quyền sử dụng (tự làm, CC0, hoặc được cho phép).
