@@ -22,7 +22,7 @@
   let myName = store.get('ta-name') || '';
   let me = 0, joined = false, cfg = null, offset = 0, today = {}, chant = null, editing = false;
   const serverNow = () => Date.now() + offset;
-  let authPending = false, authKnown = false;
+  let authPending = false, authKnown = false, authInfo = { enabled: false, signedIn: false };
 
   /* ---------- tiện ích giao diện ---------- */
   let toastT;
@@ -122,7 +122,7 @@
 
   /* ---------- tài khoản Google ---------- */
   function renderAuth(auth) {
-    authKnown = true;
+    authKnown = true; authInfo = { enabled: !!auth.enabled, signedIn: !!auth.signedIn };
     $$('[data-account]').forEach(el => { el.hidden = !auth.enabled; });
     $$('[data-auth-status]').forEach(el => {
       el.textContent = auth.signedIn ? 'Công đức được lưu vào tài khoản Google.' : 'Đăng nhập để giữ công đức khi đổi thiết bị.';
@@ -186,12 +186,12 @@
     });
   }
   socket.on('connect', () => {
-    $('#conn').hidden = true;
+    $('#conn').hidden = true; Places.setConnected(true);
     syncTime();
     if (joined) { joined = false; join(); }
   });
   socket.on('disconnect', reason => {
-    $('#conn').hidden = false;
+    $('#conn').hidden = false; Places.setConnected(false);
     if (reason === 'io server disconnect' && !authPending) location.reload();
   });
   socket.on('connect_error', err => { $('#conn').hidden = false; if (err && err.message && /kết nối/.test(err.message)) $('#conn').textContent = err.message; });
@@ -221,6 +221,9 @@
     if (Voice.wanted && cfg.voice) startVoice(true);          // mất mạng rồi vào lại: nối lại tiếng
     if (Library.book) socket.emit('reading', { book: Library.book.id });
     previewCelebrate();
+    const mc = cfg.martial || {};
+    $('#actDojo').hidden = !mc.enabled; $('#actArena').hidden = !mc.pk;
+    Places.resume();                                          // mất mạng rồi nối lại: báo lại cho máy chủ biết đang ở nơi nào
   }
   // Xem thử hiệu ứng mốc công đức: mở trang với ?celebrate=100 (hoặc 300, 666, 999...). Chỉ chạy một lần mỗi lần mở trang.
   let previewed = false;
@@ -242,6 +245,7 @@
   socket.on('pl', d => { Voice.drop(d.id); Hall.removePlayer(d.id); $('#online').textContent = NUM(Hall.count()); voiceUI(); });
   socket.on('pv', d => { Hall.setVoice(d.id, d.v); voiceUI(); });
   socket.on('prd', d => Hall.setReading(d.id, d.rd));
+  socket.on('pplace', d => Hall.setPlace(d.id, d.place));
   socket.on('pm', d => { Hall.setMerit(d.id, d.mt, d.up); if (d.id === me) renderRank(); });
   socket.on('penalty', d => Hall.penalty(d.pid, d.n));
   socket.on('penalty:me', d => {
@@ -508,6 +512,7 @@
         else openDlg('chant');
         break;
       case 'donate': openDonate(); break;
+      case 'dojo': case 'arena': Places.go(name); break;
     }
   }
   document.addEventListener('click', e => { const b = e.target.closest('[data-act]'); if (b) act(b.dataset.act, b); });
@@ -683,6 +688,28 @@
       });
     }
   });
+
+  /* ---------- các nơi: Võ Học Các, Sân đấu (tách khỏi chánh điện) ---------- */
+  Places.init({
+    setPlace: (name, cb) => socket.emit('place:set', { place: name }, cb),
+    toast,
+    onChange(name) { Hall.pause(name !== 'hall'); Hall.setPlace(me, name); }
+  });
+  const martialHost = {
+    socket, toast, serverNow,
+    goto: name => Places.go(name),
+    cfg: () => cfg || { martial: { enabled: false } },
+    auth: () => authInfo,
+    login: () => changeAuth(true),
+    me: () => ({ pid: me, name: myName, look }),
+    meritTotal: () => myTotal,
+    vnd: VND
+  };
+  for (const [name, mod, el] of [['dojo', window.Dojo, $('#place-dojo')], ['arena', window.Arena, $('#place-arena')]]) {
+    if (!mod) continue;
+    mod.init(martialHost);
+    Places.register(name, { el, mod });
+  }
 
   /* ---------- hào quang cúng dường ---------- */
   let myAura = null;

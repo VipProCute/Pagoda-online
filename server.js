@@ -15,6 +15,9 @@ const { clean, checkMessage, checkName, rulesSummary } = require('./lib/moderati
 const AURA = require('./public/js/aura');
 const MERITS = require('./public/js/merit');
 const announce = require('./lib/announce');
+const MARTIAL = require('./public/js/martial');
+const { createMartialService } = require('./lib/martial/service');
+const { createArenaManager } = require('./lib/pk/manager');
 const fs = require('fs');
 
 // Bài tụng dựng sẵn (tools/build_chants.py): tên, file và thời lượng thật của từng bài
@@ -55,6 +58,17 @@ const DONATION_ENABLED = !!(BANK.id && BANK.account);
 // FUNDS="Tu sửa chánh điện|300000000;Bếp cơm từ thiện;Tùy nhà chùa sử dụng"  (mục tiêu là tùy chọn)
 const FUNDS = (process.env.FUNDS || 'Tùy nhà chùa sử dụng').split(';').map(s => s.trim()).filter(Boolean).slice(0, 8)
   .map((s, i) => { const [name, goal] = s.split('|'); return { id: 'q' + i, name: clean(name, 60), goal: Math.max(0, parseInt(goal, 10) || 0) }; });
+
+/* ----- Võ Học Các và Sân đấu ----- */
+const MARTIAL_ENABLED = process.env.MARTIAL_ENABLED !== '0';
+const PK_ENABLED = MARTIAL_ENABLED && process.env.PK_ENABLED !== '0';
+const PK_MAX_MATCHES = Number(process.env.PK_MAX_MATCHES) || 20;
+const PK_TIME_SCALE = Number(process.env.PK_TIME_SCALE) > 0 ? Number(process.env.PK_TIME_SCALE) : 1;   // chỉ để thử: 0.05 = mọi mốc giờ trong trận ngắn gấp 20 lần
+const SPEEDUP_ENABLED = MARTIAL_ENABLED && DONATION_ENABLED && process.env.SPEEDUP_ENABLED !== '0';
+const SPEEDUP_PER_DAY = Math.max(1, Number(process.env.SPEEDUP_PER_DAY) || 2);
+const CULTIVATION_TIME_SCALE = Number(process.env.CULTIVATION_TIME_SCALE) > 0 ? Number(process.env.CULTIVATION_TIME_SCALE) : 1;   // chỉ để thử: 0.001 = nhanh gấp nghìn lần
+const MARTIAL_SWEEP_MS = Math.max(100, Number(process.env.MARTIAL_SWEEP_MS) || 15000);
+const PLACES = ['hall', 'dojo', 'arena'];     // thêm nơi mới (ví dụ coi bói, tarot) ở đây và đăng ký phía trình duyệt
 
 const MERIT = MERITS.EARN;   // thắp nhang +10, dâng lễ +5, … ; cúng dường +1 cho mỗi 1.000đ
 // Mốc công đức trong ngày → hiệu ứng chúc mừng ở trình duyệt. Máy chủ quyết định, trình duyệt chỉ hiển thị.
@@ -115,7 +129,8 @@ async function iceServers() {
 }
 
 /* ---------------- dữ liệu ---------------- */
-const db = store.load();
+const db = store.get();    // cùng một object suốt vòng đời; main() gọi store.init() điền dữ liệu trước khi mở cổng
+let martial = null, arena = null;   // dịch vụ tu luyện và quản lý sân đấu, tạo trong main() sau khi dữ liệu đã nạp
 function rollDay() {
   const d = vnDay();
   if (db.day !== d) {
@@ -269,7 +284,7 @@ app.use(express.static(path.join(__dirname, 'public'), {
   maxAge: '10m',
   setHeaders: (res, file) => { if (file.endsWith('.html')) res.set('Cache-Control', 'no-cache'); }
 }));
-app.get('/healthz', (req, res) => res.json({ ok: true, online: players.size, voice: voiceCount() }));
+app.get('/healthz', (req, res) => { const st = store.status(); res.json({ ok: true, online: players.size, voice: voiceCount(), db: store.backend, dbOk: !!st.ready && !st.lastError }); });
 app.get('/api/config', (req, res) => res.json(clientConfig()));
 app.get('/api/announce/:id', (req, res) => {
   const c = announce.get(req.params.id);
@@ -324,8 +339,25 @@ function clientConfig() {
     tracks: TRACKS,
     kinds: KINDS,
     voice: VOICE_ENABLED,
-    tts: announce.enabled
+    tts: announce.enabled,
+    martial: { enabled: MARTIAL_ENABLED, pk: PK_ENABLED, speedup: SPEEDUP_ENABLED, loginRequired: auth.enabled }
   };
+}
+
+/* ----- bản ghi cúng dường + mã VietQR (dùng chung: cúng dường thường và hoàn thành tu luyện ngay) ----- */
+function addDonation(fields) {
+  const don = Object.assign({ code: makeCode(), status: 'pending', createdAt: now() }, fields);
+  // đã xác nhận thì không bao giờ xóa: chỉ dọn lượt đã hủy / hết hạn cũ nhất khi quá nhiều
+  db.donations.push(don);
+  for (let i = 0; db.donations.length > 3000 && i < db.donations.length; ) {
+    if (db.donations[i].status === 'cancelled' || db.donations[i].status === 'expired') db.donations.splice(i, 1); else i++;
+  }
+  store.save();
+  return don;
+}
+function donationAck(don) {
+  const qr = `https://img.vietqr.io/image/${encodeURIComponent(BANK.id)}-${encodeURIComponent(BANK.account)}-compact2.png?amount=${don.amount}&addInfo=${encodeURIComponent(don.code)}&accountName=${encodeURIComponent(BANK.name)}`;
+  return { ok: true, code: don.code, amount: don.amount, fund: don.fundName, qr, bank: BANK.label, account: BANK.account, accountName: BANK.name, auto: !!SEPAY_API_KEY };
 }
 
 /* ----- webhook SePay: tự xác nhận khi tài khoản chùa nhận tiền ----- */
@@ -341,20 +373,46 @@ app.post('/api/webhooks/sepay', (req, res) => {
   const d = codes.map(c => db.donations.find(x => x.code === c && x.status === 'pending')).find(Boolean);
   if (!d) return res.json({ success: true, matched: false });
   if (amount < d.amount) return res.json({ success: true, matched: false, reason: 'amount_too_low' });
+  if (d.purpose === 'speedup') {   // hoàn thành tu luyện ngay chỉ xong khi Ban điều hành bấm xác nhận: ngân hàng báo thì chỉ đánh dấu
+    d.bank = { at: now(), amount, ref: String(b.referenceCode || b.id || '') };
+    store.save();
+    return res.json({ success: true, matched: true, manual: true });
+  }
   confirmDonation(d, { amount, ref: String(b.referenceCode || b.id || ''), source: 'sepay' });
   res.json({ success: true, matched: true });
 });
 
 /* ----- quản trị ----- */
+const adminFails = new Map();     // ip -> { n, until } đếm lần nhập sai mã quản trị
 function admin(req, res, next) {
   if (!ADMIN_KEY) return res.status(503).json({ error: 'Chưa đặt ADMIN_KEY trên máy chủ.' });
-  if (!safeEqual(req.get('x-admin-key') || '', ADMIN_KEY)) return res.status(401).json({ error: 'Sai mã quản trị.' });
+  const f = adminFails.get(req.ip);
+  if (f && f.n >= 10 && f.until > now()) return res.status(429).set('Retry-After', String(Math.ceil((f.until - now()) / 1000))).json({ error: 'Nhập sai mã quá nhiều lần. Đợi vài phút rồi thử lại.' });
+  if (!safeEqual(req.get('x-admin-key') || '', ADMIN_KEY)) {
+    const g = f && f.until > now() ? f : { n: 0, until: 0 };
+    g.n += 1; g.until = now() + 10 * 60e3; adminFails.set(req.ip, g);
+    return res.status(401).json({ error: 'Sai mã quản trị.' });
+  }
+  adminFails.delete(req.ip);
   next();
 }
+/** Nhật ký thao tác quản trị (chỉ thêm; giữ 500 dòng gần nhất). Không ghi mã quản trị; IP chỉ ghi dạng băm ngắn. */
+function audit(req, action, target, detail) {
+  const ip = crypto.createHash('sha256').update('audit:' + (req ? req.ip : '')).digest('hex').slice(0, 10);
+  db.martial.audit.push({ id: store.nextId(), at: now(), actor: 'admin', ip, action, target: String(target || ''), detail: detail || null });
+  if (db.martial.audit.length > 500) db.martial.audit.splice(0, db.martial.audit.length - 500);
+  store.save();
+}
+const speedupView = x => {
+  const sess = db.martial.sessions[x.sessionId];
+  return { methodName: (MARTIAL.METHODS[x.methodId] || {}).name || x.methodId, durationKey: x.durationKey, sessionStatus: sess ? sess.status : 'missing', endsAt: sess ? sess.endsAt : null, bankReported: !!x.bank };
+};
 app.get('/api/admin/summary', admin, (req, res) => {
   res.json({
     online: players.size, today: db.today, total: db.total, funds: fundsSummary(), donationEnabled: DONATION_ENABLED,
-    donations: db.donations.slice(-300).reverse(),
+    donations: db.donations.slice(-300).reverse().map(x => (x.purpose === 'speedup' ? { ...x, speedup: speedupView(x) } : x)),
+    martial: { profiles: Object.keys(db.martial.profiles).length, activeSessions: Object.values(db.martial.sessions).filter(x => x.status === 'active').length, pendingSpeedups: db.donations.filter(x => x.purpose === 'speedup' && x.status === 'pending').length, matches: db.martial.matches.length, arena: arena ? arena.stats() : null },
+    db: store.status(),
     chat: db.chat.slice(-150).reverse().map(m => ({ ...publicMsg(m), hidden: !!m.hidden, reports: (m.reports || []).length, pen: m.pen || 0 })),
     prayers: db.prayers.slice(-100).reverse().map(p => ({ ...publicPrayer(p), hidden: !!p.hidden })),
     chant, voice: voiceCount(), tts: announce.enabled ? announce.voice : null,
@@ -363,32 +421,49 @@ app.get('/api/admin/summary', admin, (req, res) => {
       .sort((a, b) => b.tier - a.tier)
   });
 });
-app.post('/api/admin/donations/:code/confirm', admin, (req, res) => {
+app.post('/api/admin/donations/:code/confirm', admin, async (req, res) => {
   const d = db.donations.find(x => x.code === req.params.code);
   if (!d) return res.status(404).json({ error: 'Không thấy mã này.' });
-  if (d.status === 'confirmed') return res.json({ ok: true });
+  if (d.status === 'confirmed') return res.json({ ok: true, already: true, outcome: d.outcome || null });
+  const from = d.status;
   const a = confirmDonation(d, { amount: d.amount, ref: 'admin', source: 'admin' });
-  res.json({ ok: true, aura: a ? { tier: a.tier, tierName: a.tier ? AURA.TIERS[a.tier - 1].name : '', up: a.up, amount: a.amount, until: a.until } : null });
+  audit(req, 'donation.confirm', d.code, { from, amount: d.amount, purpose: d.purpose || 'donation', outcome: d.outcome || null });
+  await store.flush();
+  res.json({ ok: true, outcome: d.outcome || null, aura: a ? { tier: a.tier, tierName: a.tier ? AURA.TIERS[a.tier - 1].name : '', up: a.up, amount: a.amount, until: a.until } : null });
 });
-app.post('/api/admin/donations/:code/cancel', admin, (req, res) => {
+app.post('/api/admin/donations/:code/cancel', admin, async (req, res) => {
   const d = db.donations.find(x => x.code === req.params.code);
   if (!d) return res.status(404).json({ error: 'Không thấy mã này.' });
-  if (d.status === 'pending') { d.status = 'cancelled'; store.save(); }
+  if (d.status === 'pending') {
+    d.status = 'cancelled';
+    if (d.purpose === 'speedup') deliverUpdates(martial.onDonationClosed(d));
+    audit(req, 'donation.cancel', d.code, { amount: d.amount, purpose: d.purpose || 'donation' });
+    await store.flush();
+  }
   res.json({ ok: true });
 });
-app.post('/api/admin/chat/:id/hide', admin, (req, res) => { hideMessage(Number(req.params.id)); res.json({ ok: true }); });
+app.get('/api/admin/audit', admin, (req, res) => res.json({ audit: db.martial.audit.slice(-200).reverse() }));
+// Sao lưu toàn bộ dữ liệu ra JSON (cùng hình dạng db.json). Phiên đăng nhập là dữ liệu nhạy cảm nên mặc định không xuất.
+app.get('/api/admin/export', admin, (req, res) => {
+  const out = { ...db };
+  if (req.query.sessions !== '1') delete out.authSessions;
+  audit(req, 'export', 'db', { sessions: req.query.sessions === '1' });
+  res.set('Content-Disposition', 'attachment; filename="chua-tam-an-db.json"').type('application/json').send(JSON.stringify(out));
+});
+app.post('/api/admin/chat/:id/hide', admin, (req, res) => { hideMessage(Number(req.params.id)); audit(req, 'chat.hide', req.params.id); res.json({ ok: true }); });
 app.post('/api/admin/prayers/:id/hide', admin, (req, res) => {
   const p = db.prayers.find(x => x.id === Number(req.params.id));
-  if (p) { p.hidden = true; io.emit('prayer:hide', { id: p.id }); store.save(); }
+  if (p) { p.hidden = true; io.emit('prayer:hide', { id: p.id }); audit(req, 'prayer.hide', p.id); store.save(); }
   res.json({ ok: true });
 });
 app.post('/api/admin/announce', admin, (req, res) => {
   const text = clean((req.body || {}).text, 300);
   if (!text) return res.status(400).json({ error: 'Nội dung trống.' });
   postChat({ pid: 0, uid: 'admin', name: 'Ban điều hành', c: 3, mod: true }, text);
+  audit(req, 'announce', 'chat', { text: text.slice(0, 80) });
   res.json({ ok: true });
 });
-app.post('/api/admin/chant/stop', admin, (req, res) => { endChant(false); res.json({ ok: true }); });
+app.post('/api/admin/chant/stop', admin, (req, res) => { endChant(false); audit(req, 'chant.stop', 'chant'); res.json({ ok: true }); });
 
 const server = http.createServer(app);
 const io = new Server(server, { maxHttpBufferSize: 16e3, pingInterval: 20000, pingTimeout: 25000 });
@@ -423,7 +498,7 @@ auth.mount(app, {
   }
 });
 
-const publicPlayer = p => ({ id: p.id, name: p.name, look: p.look, x: +p.x.toFixed(3), z: +p.z.toFixed(3), mod: p.mod, v: p.v || 0, rd: p.rd || '', au: auraOf(p.uid), mt: meritTotal(p.uid) });
+const publicPlayer = p => ({ id: p.id, name: p.name, look: p.look, x: +p.x.toFixed(3), z: +p.z.toFixed(3), mod: p.mod, v: p.v || 0, rd: p.rd || '', au: auraOf(p.uid), mt: meritTotal(p.uid), at: p.place && p.place !== 'hall' ? p.place : undefined });
 const voiceCount = () => { let n = 0; for (const p of players.values()) if (p.v) n++; return n; };
 function sys(text) {
   const m = { id: store.nextId(), pid: 0, name: '', c: 0, text, t: now(), sys: true };
@@ -468,6 +543,8 @@ function confirmDonation(d, info) {
   const msg = announce.compose(d, aura, tierInfo);
   const base = { text: msg.text, speak: msg.speak, tier: aura && aura.up ? aura.tier : 0 };
   announce.speak(msg.speak).then(r => io.emit('announce', { ...base, audio: r.audio }));
+  // Cúng dường để hoàn thành tu luyện ngay: chỉ tới đây (Ban điều hành đã xác nhận) phiên mới được hoàn thành, và chỉ một lần.
+  if (d.purpose === 'speedup' && martial) deliverUpdates(martial.onDonationConfirmed(d));
   return aura;
 }
 function endChant(completed) {
@@ -486,6 +563,30 @@ function endChant(completed) {
     }
     sys(`Khóa tụng “${title}” đã viên mãn. Hồi hướng công đức đến tất cả chúng sinh.`);
   } else sys(`Khóa tụng “${title}” đã dừng.`);
+}
+
+/* ---------------- Võ Học Các và Sân đấu: hàm hỗ trợ ---------------- */
+const LOGIN_MSG = 'Cần đăng nhập Google để tu luyện và luận võ, vì tiến độ gắn với tài khoản của bạn.';
+const accountReady = p => !auth.enabled || !!auth.sessionFor(p.socket.data.authKey);
+function emitToUid(uid, ev, payload) { for (const q of players.values()) if (q.uid === uid) q.socket.emit(ev, payload); }
+function deliverUpdates(r) { if (r && r.updates) for (const u of r.updates) emitToUid(u.uid, 'tu:update', u.update); }
+/** Cấp pháp tướng (Lc), quỷ (Lq), hào quang (Ld) ngay lúc này; lấy từ đúng dữ liệu công đức / cúng dường đang chạy. */
+function buffInputsOf(uid) {
+  const mt = meritTotal(uid), dm = MERITS.demonOf(mt), a = auraOf(uid);
+  return { Lc: MERITS.rankOf(mt), Lq: dm ? dm.n : 0, Ld: a ? a.t : 0 };
+}
+const guestMartialState = () => {
+  const li = MARTIAL.levelInfo(0);
+  return {
+    ok: true, enabled: true, serverTime: now(), login: { required: true, signedIn: false },
+    profile: { congLuc: 0, level: 1, levelFrom: li.from, levelTo: li.to, pct: 0, manaMax: li.manaMax, tam: { cuong: 0, toc: 0, nhu: 0 }, learned: MARTIAL.STARTERS.slice(), loadout: [], wins: 0, losses: 0, draws: 0, vouchers: [] },
+    session: null, recent: [], speedup: { enabled: false, perDay: SPEEDUP_PER_DAY, usedToday: 0 }
+  };
+};
+const otherInArena = p => { for (const q of players.values()) if (q !== p && q.uid === p.uid && q.place === 'arena') return true; return false; };
+function leaveArena(p, reason) {
+  p.socket.leave('arena');
+  if (!otherInArena(p)) arena.leave(p.uid, reason);     // còn tab khác của cùng tài khoản ở sân thì giữ nguyên chỗ
 }
 
 /* ---------------- kết nối ---------------- */
@@ -532,7 +633,7 @@ io.on('connection', socket => {
       id: nextPid++, uid, name: nm.name, mod: isMod, socket,
       look: { g: data.look && data.look.g === 'nam' ? 'nam' : 'nu', c: num(data.look && data.look.c, 0, 11, 0) | 0, h: num(data.look && data.look.h, 0, 3, 0) | 0 },
       x: 0.5 + rand(-0.28, 0.28), z: rand(0.68, 0.92), tx: 0, tz: 0, dirty: false, cd: {}, bk: {}, lastText: '', meritDirty: false,
-      v: 0, rd: '', voiceBanUntil: 0, milestone: null
+      v: 0, rd: '', voiceBanUntil: 0, milestone: null, place: 'hall'
     };
     p.tx = p.x; p.tz = p.z;
     p.mkey = MERITS.visualKey(meritTotal(uid));
@@ -713,13 +814,8 @@ io.on('connection', socket => {
     if (d.note && String(d.note).trim()) { const r = checkMessage(d.note, 120); if (!r.ok) return ack(r); note = r.text; }
     let name = p.name;
     if (d.name && String(d.name).trim()) { const nm = checkName(d.name, p.mod); if (!nm.ok) return ack(nm); name = nm.name; }
-    const code = makeCode();
-    const don = { code, amount, fund: fund.id, fundName: fund.name, name, anon: !!d.anon, hide: !!d.hide, aura: !d.anon && d.aura !== false, note, uid: p.uid, status: 'pending', createdAt: now() };
-    db.donations.push(don);
-    if (db.donations.length > 3000) db.donations.splice(0, db.donations.length - 3000);
-    store.save();
-    const qr = `https://img.vietqr.io/image/${encodeURIComponent(BANK.id)}-${encodeURIComponent(BANK.account)}-compact2.png?amount=${amount}&addInfo=${encodeURIComponent(code)}&accountName=${encodeURIComponent(BANK.name)}`;
-    ack({ ok: true, code, amount, fund: fund.name, qr, bank: BANK.label, account: BANK.account, accountName: BANK.name, auto: !!SEPAY_API_KEY });
+    const don = addDonation({ amount, fund: fund.id, fundName: fund.name, name, anon: !!d.anon, hide: !!d.hide, aura: !d.anon && d.aura !== false, note, uid: p.uid });
+    ack(donationAck(don));
   });
 
   /* ----- Tàng Kinh Các: ai đang đọc kinh gì ----- */
@@ -772,15 +868,132 @@ io.on('connection', socket => {
     if (t.v) { t.v = 0; io.emit('pv', { id: t.id, v: 0 }); }
   });
 
+  /* ----- các nơi: chánh điện, Võ Học Các, Sân đấu ----- */
+  socket.on('place:set', (d, ack) => {
+    if (!p || typeof ack !== 'function') return;
+    const place = d && d.place;
+    if (!PLACES.includes(place)) return ack({ ok: false, reason: 'Không có nơi này.' });
+    if (!bucket('place', 0.5, 5)) return ack({ ok: false, reason: 'Bạn đổi nơi hơi nhanh, đợi một chút nhé.' });
+    if (place !== 'hall' && !MARTIAL_ENABLED) return ack({ ok: false, reason: 'Nơi này chưa mở.' });
+    const info = { ok: true, place };
+    if (place === 'arena') {
+      if (!PK_ENABLED) return ack({ ok: false, reason: 'Sân đấu chưa mở.' });
+      if (!accountReady(p)) return ack({ ok: false, code: 'login', reason: LOGIN_MSG });
+      const prof = martial.profile(p.uid, true);
+      socket.join('arena');
+      arena.join(p.uid, { pid: p.id, name: p.name, look: p.look });
+      if (prof.dnd) arena.setDnd(p.uid, true);
+      info.arena = { players: arena.list(), dnd: !!prof.dnd, hasMatch: arena.hasMatch(p.uid), enabled: true };
+    } else if (p.place === 'arena') {
+      leaveArena(p, 'left');
+    }
+    p.place = place;
+    io.emit('pplace', { id: p.id, place });
+    ack(info);
+  });
+
+  /* ----- tu luyện và học chiêu (Võ Học Các) ----- */
+  const martialOnly = fn => (d, ack) => {
+    if (!p || typeof ack !== 'function') return;
+    if (!MARTIAL_ENABLED) return ack({ ok: false, reason: 'Võ Học Các chưa mở.' });
+    if (!accountReady(p)) return ack({ ok: false, code: 'login', reason: LOGIN_MSG });
+    if (!bucket('martial', 3, 10)) return ack({ ok: false, reason: 'Bạn thao tác hơi nhanh, đợi một chút nhé.' });
+    // dịch vụ kèm `updates` (phiên vừa xong theo giờ, đã hủy…): đẩy thành tu:update cho mọi tab rồi mới trả ack
+    const done = r => {
+      if (r && Array.isArray(r.updates)) { const { updates, ...rest } = r; for (const u of updates) emitToUid(p.uid, 'tu:update', u.update || u); return ack(rest); }
+      return ack(r);
+    };
+    Promise.resolve(fn(d && typeof d === 'object' ? d : {}, done)).catch(e => { console.error('[martial]', e && e.stack || e); ack({ ok: false, reason: 'Có lỗi, bạn thử lại nhé.' }); });
+  };
+  socket.on('martial:state', (d, ack) => {
+    if (!p || typeof ack !== 'function') return;
+    if (!MARTIAL_ENABLED) return ack({ ok: true, enabled: false });
+    if (!bucket('mstate', 2, 6)) return ack({ ok: false, reason: 'Bạn tải hơi nhanh, đợi một chút nhé.' });
+    if (!accountReady(p)) return ack(guestMartialState());
+    const st = martial.state(p.uid);
+    ack({ ...st, login: { required: auth.enabled, signedIn: !!auth.sessionFor(p.socket.data.authKey) } });
+  });
+  socket.on('tu:start', martialOnly(async (d, ack) => {
+    const r = martial.start(p.uid, String(d.methodId || ''), String(d.duration || ''));
+    if (r.ok) await store.flush();
+    ack(r);
+  }));
+  socket.on('tu:cancel', martialOnly(async (d, ack) => {
+    const r = martial.cancel(p.uid, String(d.sessionId || ''));
+    if (r.ok) await store.flush();
+    ack(r);
+  }));
+  socket.on('tu:speedup', martialOnly(async (d, ack) => {
+    const r = martial.speedup(p.uid, String(d.sessionId || ''), { anon: !!d.anon, name: p.name });
+    if (!r.ok) return ack(r);
+    await store.flush();
+    const sess = db.martial.sessions[r.donation.sessionId] || {};
+    ack({ ...donationAck(r.donation), existing: !!r.existing, methodName: (MARTIAL.METHODS[r.donation.methodId] || {}).name || '', durationKey: r.donation.durationKey, endsAt: sess.endsAt || null, updates: r.updates });
+  }));
+  socket.on('tu:speedup:cancel', martialOnly(async (d, ack) => {
+    const r = martial.cancelSpeedup(p.uid, String(d.code || ''));
+    if (r.ok) await store.flush();
+    ack(r);
+  }));
+  socket.on('tu:voucher', martialOnly(async (d, ack) => {
+    const r = martial.useVoucher(p.uid, String(d.voucherId || ''), String(d.sessionId || ''));
+    if (r.ok) await store.flush();
+    ack(r);
+  }));
+  socket.on('martial:seen', martialOnly((d, ack) => { martial.markSeen(p.uid, Array.isArray(d.ids) ? d.ids.slice(0, 20).map(String) : []); ack({ ok: true }); }));
+  socket.on('vo:learn', martialOnly((d, ack) => { const r = martial.learn(p.uid, String(d.skillId || '')); if (r.ok) store.save(); ack(r); }));
+  socket.on('vo:loadout', martialOnly((d, ack) => { const r = martial.setLoadout(p.uid, Array.isArray(d.skills) ? d.skills.slice(0, 8).map(String) : []); if (r.ok) store.save(); ack(r); }));
+
+  /* ----- Sân đấu: danh sách người, mời, vào trận (chỉ người đang ở sân) ----- */
+  const inArena = fn => (d, ack) => {
+    if (!p || typeof ack !== 'function') return;
+    if (!PK_ENABLED) return ack({ ok: false, reason: 'Sân đấu chưa mở.' });
+    if (p.place !== 'arena') return ack({ ok: false, code: 'place', reason: 'Bạn cần ra Sân đấu trước.' });
+    if (!accountReady(p)) return ack({ ok: false, code: 'login', reason: LOGIN_MSG });
+    if (!bucket('pk', 4, 10)) return ack({ ok: false, reason: 'Bạn thao tác hơi nhanh, đợi một chút nhé.' });
+    try { fn(d && typeof d === 'object' ? d : {}, ack); } catch (e) { console.error('[arena]', e && e.stack || e); ack({ ok: false, reason: 'Có lỗi, bạn thử lại nhé.' }); }
+  };
+  socket.on('arena:dnd', inArena((d, ack) => {
+    const on = !!d.on, prof = martial.profile(p.uid, true);
+    prof.dnd = on; store.save();
+    arena.setDnd(p.uid, on);
+    ack({ ok: true, dnd: on });
+  }));
+  socket.on('arena:blocks', inArena((d, ack) => ack({ ok: true, list: martial.profile(p.uid, true).blocked.map(b => ({ uid: b.uid, name: b.name })) })));
+  socket.on('pk:block', inArena((d, ack) => {
+    const t = players.get(Number(d.pid));
+    if (!t || t.uid === p.uid) return ack({ ok: false, reason: 'Không thấy người này.' });
+    const prof = martial.profile(p.uid, true);
+    if (!prof.blocked.some(b => b.uid === t.uid)) { prof.blocked.push({ uid: t.uid, name: t.name }); if (prof.blocked.length > 200) prof.blocked.shift(); store.save(); }
+    ack({ ok: true });
+  }));
+  socket.on('pk:unblock', inArena((d, ack) => {
+    const prof = martial.profile(p.uid, true), before = prof.blocked.length;
+    prof.blocked = prof.blocked.filter(b => b.uid !== String(d.uid || ''));
+    if (prof.blocked.length !== before) store.save();
+    ack({ ok: true });
+  }));
+  socket.on('pk:invite', inArena((d, ack) => ack(arena.invite(p.uid, Number(d.toPid), d.mode))));
+  socket.on('pk:invite:cancel', inArena((d, ack) => ack(arena.cancelInvite(p.uid, d.inviteId))));
+  socket.on('pk:respond', inArena((d, ack) => ack(arena.respond(p.uid, d.inviteId, !!d.accept))));
+  socket.on('pk:loadout', inArena((d, ack) => ack(arena.setLoadout(p.uid, d.matchId, d.skills))));
+  socket.on('pk:pick', inArena((d, ack) => ack(arena.pick(p.uid, d.matchId, d.turn, d.skillId))));
+  socket.on('pk:forfeit', inArena((d, ack) => ack(arena.forfeit(p.uid, d.matchId))));
+  socket.on('pk:resume', inArena((d, ack) => ack(arena.resume(p.uid))));
+
   socket.on('disconnect', () => {
     const ip = socket.data.ip, n = (ipCount.get(ip) || 1) - 1;
     if (n <= 0) ipCount.delete(ip); else ipCount.set(ip, n);
-    if (p) { players.delete(p.id); io.emit('pl', { id: p.id }); p = null; }
+    if (p) {
+      if (p.place === 'arena' && arena) leaveArena(p, 'disconnect');
+      players.delete(p.id); io.emit('pl', { id: p.id }); p = null;
+    }
   });
 });
 
 /* ---------------- vòng lặp ---------------- */
 let tick = 0, lastBoard = '';
+function startLoops() {
 setInterval(() => {
   const dt = 0.05;
   for (const p of players.values()) {
@@ -818,17 +1031,69 @@ setInterval(() => {
     auth.pruneSessions();
     db.incense = db.incense.filter(s => s.until > t);
     for (const k in db.auras) if (db.auras[k].until < t) delete db.auras[k];
-    for (const d of db.donations) if (d.status === 'pending' && t - d.createdAt > 24 * 3600e3) d.status = 'expired';
+    for (const d of db.donations) {
+      if (d.status === 'pending' && t - d.createdAt > 24 * 3600e3) {
+        d.status = 'expired';
+        if (d.purpose === 'speedup' && martial) deliverUpdates(martial.onDonationClosed(d));
+      }
+    }
+    if (martial) martial.prune();
     store.save();
   }
 }, 50);
+// phiên tu luyện tới giờ: hoàn thành và báo cho người chơi (kể cả khi họ đã đóng web, lần sau vào sẽ thấy trong Võ Học Các)
+setInterval(() => {
+  try {
+    for (const u of martial.sweep()) emitToUid(u.uid, 'tu:update', u.update);
+  } catch (e) { console.error('[martial] sweep:', e && e.stack || e); }
+}, MARTIAL_SWEEP_MS);
+}
 
-function shutdown() { store.flush(); process.exit(0); }
+let closing = false;
+async function shutdown() {
+  if (closing) return;
+  closing = true;
+  try {
+    if (arena) arena.shutdown();
+    await Promise.race([store.close(), new Promise(r => setTimeout(r, 8000))]);   // Render chờ SIGTERM tối đa ~30 giây
+  } catch (e) { console.error('[store] Lỗi khi tắt:', e && e.message); }
+  process.exit(0);
+}
 process.on('SIGTERM', shutdown);
 process.on('SIGINT', shutdown);
 
-server.listen(PORT, () => {
-  console.log(`${SITE_NAME} đang chạy tại http://localhost:${PORT}`);
-  console.log(`Cúng dường tịnh tài: ${DONATION_ENABLED ? 'BẬT (' + BANK.id + ')' : 'TẮT (chưa đặt BANK_ID / BANK_ACCOUNT)'} · Tự xác nhận SePay: ${SEPAY_API_KEY ? 'BẬT' : 'TẮT'} · Quản trị: ${ADMIN_KEY ? 'BẬT' : 'TẮT (chưa đặt ADMIN_KEY)'}`);
-  console.log(`Nói chuyện bằng giọng: ${VOICE_ENABLED ? 'BẬT' : 'TẮT'} (TURN: ${CF_TURN.id ? 'Cloudflare' : TURN.urls.length ? 'tự cấu hình' : 'chưa có, chỉ STUN'}) · Giọng đọc thông báo: ${announce.enabled ? 'VieNeu “' + announce.voice + '” tại ' + announce.url : 'chưa đặt TTS_URL, trình duyệt tự đọc'}`);
-});
+async function main() {
+  await store.init();     // JSON: đọc file · Postgres: kết nối, nạp, nhập từ JSON nếu CSDL còn trống
+  martial = createMartialService({
+    db, store, now, vnDay,
+    config: { timeScale: CULTIVATION_TIME_SCALE, speedupEnabled: SPEEDUP_ENABLED, speedupPerDay: SPEEDUP_PER_DAY },
+    createSpeedupDonation: f => addDonation({
+      amount: f.amount, fund: FUNDS[0].id, fundName: FUNDS[0].name, name: f.name, anon: !!f.anon, hide: false, aura: !f.anon,
+      note: 'Hoàn thành tu luyện ngay', uid: f.uid, purpose: 'speedup', sessionId: f.sessionId, methodId: f.methodId, durationKey: f.durationKey, price: f.amount
+    })
+  });
+  arena = createArenaManager({
+    now, setTimer: (fn, ms) => setTimeout(fn, ms), clearTimer: h => clearTimeout(h),
+    emit: emitToUid,
+    emitRoom: (ev, payload) => io.to('arena').emit(ev, payload),
+    isOnline: uid => { for (const q of players.values()) if (q.uid === uid) return true; return false; },
+    fighterOf: uid => martial.pkIdentity(uid),
+    buffInputsOf,
+    recordResult: (uid, r) => martial.recordResult(uid, r),
+    setActiveMatch: (uid, id) => { martial.profile(uid, true).activeMatch = id; store.save(); },
+    getActiveMatch: uid => { const pr = martial.profile(uid, false); return pr ? pr.activeMatch || null : null; },
+    saveMatch: rec => { db.martial.matches.push(rec); if (db.martial.matches.length > 300) db.martial.matches.splice(0, db.martial.matches.length - 300); store.save(); },
+    isBlocked: (by, other) => { const pr = martial.profile(by, false); return !!(pr && pr.blocked.some(b => b.uid === other)); },
+    newId: () => store.nextId(),
+    log: (...a) => console.error('[arena]', ...a),
+    config: { enabled: PK_ENABLED, maxMatches: PK_MAX_MATCHES, timeScale: PK_TIME_SCALE }
+  });
+  startLoops();
+  server.listen(PORT, () => {
+    console.log(`${SITE_NAME} đang chạy tại http://localhost:${PORT}`);
+    console.log(`Cúng dường tịnh tài: ${DONATION_ENABLED ? 'BẬT (' + BANK.id + ')' : 'TẮT (chưa đặt BANK_ID / BANK_ACCOUNT)'} · Tự xác nhận SePay: ${SEPAY_API_KEY ? 'BẬT' : 'TẮT'} · Quản trị: ${ADMIN_KEY ? 'BẬT' : 'TẮT (chưa đặt ADMIN_KEY)'}`);
+    console.log(`Nói chuyện bằng giọng: ${VOICE_ENABLED ? 'BẬT' : 'TẮT'} (TURN: ${CF_TURN.id ? 'Cloudflare' : TURN.urls.length ? 'tự cấu hình' : 'chưa có, chỉ STUN'}) · Giọng đọc thông báo: ${announce.enabled ? 'VieNeu “' + announce.voice + '” tại ' + announce.url : 'chưa đặt TTS_URL, trình duyệt tự đọc'}`);
+    console.log(`Lưu trữ: ${store.backend === 'pg' ? 'PostgreSQL' : 'file JSON ' + store.FILE} · Võ Học Các: ${MARTIAL_ENABLED ? 'BẬT' : 'TẮT'} · Sân đấu: ${PK_ENABLED ? 'BẬT' : 'TẮT'} · Hoàn thành tu luyện ngay: ${SPEEDUP_ENABLED ? 'BẬT' : 'TẮT'}`);
+  });
+}
+main().catch(e => { console.error('Không khởi động được máy chủ:', e && e.message || e); process.exit(1); });

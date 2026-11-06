@@ -8,7 +8,8 @@
     "start": "node server.js",
     "dev": "node --watch server.js",
     "check": "node --check server.js && node --check lib/auth.js && node --check lib/announce.js && node --check public/js/app.js && node --check public/js/hall.js && node --check public/js/audio.js && node --check public/js/chants.js && node --check public/js/lunar.js && node --check public/js/aura.js && node --check public/js/voice.js && node --check public/js/library.js && node --check public/js/merit.js && node --check lib/moderation.js && node --check public/js/celebrate.js",
-    "start:env": "node --env-file=.env server.js"
+    "start:env": "node --env-file=.env server.js",
+    "test": "node --test --test-concurrency=1 test/"
   },
   "engines": {
     "node": ">=18"
@@ -16,6 +17,10 @@
   "license": "UNLICENSED",
   "dependencies": {
     "express": "^5.1.0",
+    "pg": "^8.23.1",
     "socket.io": "^4.8.1"
+  },
+  "devDependencies": {
+    "socket.io-client": "^4.8.4"
   }
 }

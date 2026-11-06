@@ -18,7 +18,25 @@ Chánh điện trực tuyến cho nhiều người cùng lúc. Mỗi người v�
 | Cúng dường | Tạo mã VietQR có sẵn số tiền và mã đối soát. Tiền vào thẳng tài khoản của chùa. Tự xác nhận qua webhook SePay, hoặc ban điều hành xác nhận tay. Xác nhận xong: chánh điện đọc thông báo bằng giọng nữ VieNeu, người cúng dường được **hào quang 9 cảnh giới** (cộng dồn). |
 | An toàn | Chặn tin có số tài khoản, số điện thoại, đường link (chống lừa đảo giả danh chùa). Che từ tục. Giới hạn tần suất. Tên “Ban điều hành / Admin / Trụ trì…” chỉ dành cho quản trị. |
 | Quản trị | `/admin.html`: xác nhận/hủy lượt cúng dường, xem ai đang có hào quang, ẩn tin nhắn và lời nguyện (thấy cả số công đức bị trừ), gửi thông báo vào chánh điện. |
+| Võ Học Các | Nơi **tu luyện nội công** và **học chiêu**, tách khỏi chánh điện. 6 công pháp (Tĩnh Tâm Quyết, Kim Cương / Phi Yến / Nhu Thủy Tâm Pháp, Cửu Âm Tâm Kinh, Vô Cực Chân Kinh): bắt đầu rồi đóng web cũng được, hết giờ máy chủ tự ghi nhận. 15 chiêu thuộc 3 nhánh Cương / Tốc / Nhu, không khóa phái: học đủ điều kiện (cấp nội công + tâm đắc) là học được cả ba nhánh. Có thể cúng dường để hoàn thành phiên ngay (Ban điều hành xác nhận thủ công). |
+| Sân đấu | Nơi **duy nhất** luận võ 1 đấu 1, người chơi tự ra sân. Mời, nhận lời, chọn 4 chiêu, rồi mỗi lượt hai bên **chọn kín cùng lúc**, máy chủ lật chiêu và giải kết quả (có xác suất né / đỡ). Phòng cân bằng hoặc phòng có buff (pháp tướng, quỷ ám, hào quang). Chánh điện không có đánh nhau. |
 | Khác | Lịch âm và đếm ngược đến Rằm / Mùng Một, cài lên màn hình điện thoại (PWA). |
+
+## Các "nơi" của chùa
+
+Mỗi nơi một màn hình riêng; chạm nút ở thanh dưới chánh điện để sang nơi khác, nút "Về chánh điện" để quay lại.
+
+| Nơi | Dùng để | Ghi chú |
+|---|---|---|
+| Chánh điện | Cúng, thắp nhang, tụng kinh, trò chuyện | Không có đánh nhau, không ai bị mời đấu ở đây |
+| Võ Học Các | Tu luyện, học chiêu, chọn bộ 4 chiêu | `public/js/dojo.js` |
+| Sân đấu | Danh sách người ở sân, mời và luận võ | `public/js/arena.js`; chỉ người đã ra sân mới thấy và mời được nhau |
+
+Người đang ở nơi khác không hiện trong chánh điện. Thêm nơi mới (ví dụ coi bói tử vi, tarot) thì đăng ký thêm một nơi trong `PLACES` của `server.js` và `Places.register` ở `public/js/app.js`, không đụng chánh điện. Chi tiết luật chơi và giao thức: [docs/VO-HOC.md](docs/VO-HOC.md), [docs/VO-HOC-GIAO-THUC.md](docs/VO-HOC-GIAO-THUC.md), số liệu cân bằng: [docs/VO-HOC-CAN-BANG.md](docs/VO-HOC-CAN-BANG.md).
+
+## Lưu trữ bền bằng PostgreSQL (Neon)
+
+Mặc định ứng dụng lưu mọi thứ vào một file JSON, và trên Render Free file này **mất mỗi lần khởi động lại hoặc deploy**. Đặt biến `DATABASE_URL` (chuỗi kết nối PostgreSQL, ví dụ của Neon) thì dữ liệu được ghi nền vào PostgreSQL; nếu CSDL còn trống mà có file JSON cũ thì tự nhập một lần. Cách làm từng bước: [docs/NEON.md](docs/NEON.md). Công cụ nhập / xác minh / xuất: `node tools/db-migrate.js`.
 
 ## Bài tụng: giọng, mõ và chuông
 
@@ -217,6 +235,9 @@ Mở http://localhost:3000. Muốn dùng file cấu hình: `cp .env.example .env
 | `MAX_PLAYERS`, `MAX_CONN_PER_IP` | Giới hạn số người và số kết nối mỗi mạng. |
 | `DATA_FILE` | Nơi lưu dữ liệu, mặc định `data/db.json`. |
 | `TRUST_PROXY` | Đặt `0` nếu không chạy sau proxy (nginx, Render…). |
+| `DATABASE_URL` | Chuỗi kết nối PostgreSQL (Neon). Có thì lưu vào PostgreSQL thay cho file JSON. `PG_FLUSH_MS` (mặc định 10000) là nhịp ghi nền, `PG_SSL=0` tắt SSL khi chạy cục bộ, `PG_IMPORT_JSON=0` tắt tự nhập file JSON cũ. |
+| `MARTIAL_ENABLED`, `PK_ENABLED` | Đặt `0` để tắt cả Võ Học Các và Sân đấu, hoặc chỉ Sân đấu. `PK_MAX_MATCHES` (mặc định 20) là số trận cùng lúc tối đa. |
+| `SPEEDUP_ENABLED`, `SPEEDUP_PER_DAY` | Cúng dường để hoàn thành tu luyện ngay (cần bật cúng dường tịnh tài). `0` để tắt; mỗi người tối đa 2 lần đã xác nhận mỗi ngày. |
 | `VOICE` | Đặt `0` để tắt nói chuyện bằng giọng. `VOICE_MAX`: số người tối đa bật nói chuyện cùng lúc (mặc định 150). |
 | `CF_TURN_KEY_ID`, `CF_TURN_API_TOKEN` | TURN của Cloudflare cho nói chuyện bằng giọng qua 4G / mạng công ty. |
 | `TURN_URLS`, `TURN_USERNAME`, `TURN_CREDENTIAL` | TURN tự dựng (coturn…). `STUN_URLS` để đổi máy chủ STUN. |
@@ -311,6 +332,13 @@ lib/moderation.js      lọc tin nhắn, tên, số tài khoản, link; luật t
 lib/announce.js        soạn câu thông báo cúng dường, gọi máy chủ đọc VieNeu
 lib/store.js           lưu dữ liệu ra file JSON
 public/index.html      trang chánh điện
+lib/store.js           kho dữ liệu: file JSON hoặc PostgreSQL (store-pg.js, store-sections.js), nhập / xuất ở tools/db-migrate.js
+lib/martial/service.js tu luyện, học chiêu, bộ chiêu, hoàn thành ngay (logic thuần, có test)
+lib/pk/engine.js       luật luận võ so chiêu đồng thời (thuần, dùng chung với tools/pk-sim)
+lib/pk/manager.js      sân đấu: người ở sân, lời mời, sảnh, vòng lượt, giờ, vào lại
+lib/pk/buffs.js        buff pháp tướng / quỷ / hào quang cho phòng có buff; rules.js, rng.js
+public/js/martial.js   3 nhánh, 15 chiêu, 6 công pháp, cấp nội công (dùng chung máy chủ và trình duyệt)
+public/js/places.js    chuyển giữa các nơi (chánh điện, Võ Học Các, Sân đấu); dojo.js, arena.js là giao diện hai nơi sau
 public/js/hall.js      vẽ chánh điện, tủ kinh, nhân vật, hào quang, pháp tướng, quỷ (Canvas 2D)
 public/js/voice.js     nói chuyện bằng giọng (WebRTC, nghe theo khoảng cách)
 public/js/library.js   Tàng Kinh Các: kệ kinh và trang đọc
@@ -340,6 +368,6 @@ public/admin.html      trang quản trị
 ## Việc nên làm tiếp
 
 - Thu âm bài tụng thật của chư tăng chùa đối tác, thay giọng mô phỏng.
-- Chuyển dữ liệu sang PostgreSQL + Redis khi đông người (nhiều máy chủ).
+- Chuyển dữ liệu sang Redis khi đông người (nhiều máy chủ); PostgreSQL đã có (xem trên).
 - Chia phòng “Chánh điện 1, 2…” khi quá 300 người.
 - Hỏi luật sư về giấy phép mạng xã hội (Nghị định 147/2024/NĐ-CP) và bảo vệ dữ liệu cá nhân trước khi mở rộng.

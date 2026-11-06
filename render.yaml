@@ -16,6 +16,8 @@ services:
         generateValue: true
       - key: FUNDS
         value: Tùy nhà chùa sử dụng
+      - key: DATABASE_URL       # chuỗi kết nối Neon (PostgreSQL), xem docs/NEON.md. Để trống: lưu file JSON, MẤT khi Render khởi động lại
+        sync: false
       - key: BANK_ID
         value: "970436"   # Vietcombank (mã BIN theo VietQR)
       - key: BANK_ACCOUNT
