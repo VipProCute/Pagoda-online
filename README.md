@@ -253,7 +253,7 @@ Mở http://localhost:3000. Muốn dùng file cấu hình: `cp .env.example .env
 3. Đặt `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` và `AUTH_ORIGIN` trong cấu hình máy chủ. `AUTH_ORIGIN` là địa chỉ gốc, ví dụ `https://chuataman.vn`, không có dấu `/` ở cuối. Khởi động lại máy chủ.
 4. Nếu ứng dụng Google ở chế độ **Testing**, thêm tài khoản dùng thử trong mục **Audience**.
 
-Khách vẫn vào chánh điện như trước. Khi đăng nhập, công đức khách còn gắn với trình duyệt đó được chuyển vào tài khoản một lần. Khoản cúng dường tạo trước khi đăng nhập vẫn cộng điểm vào tài khoản sau khi được xác nhận. Điểm hôm nay tính theo giờ Việt Nam. Tên hiển thị và trang phục vẫn do người dùng chọn trên mỗi thiết bị. Máy chủ chỉ lưu mã định danh tài khoản đã băm và phiên của ứng dụng.
+Khách vẫn vào chánh điện như trước, nhưng **tu luyện, Võ Học Các và Sân đấu chỉ dành cho tài khoản đã đăng nhập**, và những gì khách tích chỉ nằm trên trình duyệt đó. Đăng nhập thì công đức, tịnh tài đã cúng dường, hào quang, nội công, chiêu đã học, thắng thua được lưu theo tài khoản (xem [docs/VO-HOC.md](docs/VO-HOC.md)). Khi đăng nhập, công đức khách còn gắn với trình duyệt đó được chuyển vào tài khoản một lần. Khoản cúng dường tạo trước khi đăng nhập vẫn cộng điểm vào tài khoản sau khi được xác nhận. Điểm hôm nay tính theo giờ Việt Nam. Tên hiển thị và trang phục vẫn do người dùng chọn trên mỗi thiết bị. Máy chủ chỉ lưu mã định danh tài khoản đã băm và phiên của ứng dụng.
 
 **Lưu trữ khi triển khai:** ứng dụng dùng file JSON trên một máy chủ. Đặt `DATA_FILE` trên ổ đĩa bền vững để giữ điểm qua các lần khởi động lại hoặc triển khai. Nếu đã có dữ liệu, sao lưu và chuyển file `db.json` hiện có sang ổ mới trước khi đổi `DATA_FILE`.
 

@@ -13,6 +13,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&family=Cormorant+Garamond:wght@500;600;700&display=swap">
 <link rel="stylesheet" href="/css/style.css">
 <link rel="stylesheet" href="/css/celebrate.css">
+<link rel="stylesheet" href="/css/account.css">
 <link rel="stylesheet" href="/css/places.css">
 <link rel="stylesheet" href="/css/dojo.css">
 <link rel="stylesheet" href="/css/arena.css">
@@ -25,6 +26,8 @@
   </div>
   <div class="lunar" id="lunar"></div>
   <div class="top-right">
+    <button type="button" class="login-cta" id="btnLogin" data-auth-login hidden title="Đăng nhập Google để lưu công đức, tu luyện và luận võ"><span class="g-badge"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg></span><span>Đăng nhập</span></button>
+    <button type="button" class="acct-chip" id="btnAccount" hidden title="Xem những gì đã được lưu vào tài khoản Google của bạn"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Đã lưu</span></button>
     <span class="pill"><i class="live"></i><b id="online">0</b><span class="lbl-long">&nbsp;đang có mặt</span></span>
     <button type="button" class="pill merit" id="meritPill" title="Công đức của bạn hôm nay">Công đức <b id="meritToday">0</b></button>
     <button type="button" class="icon-btn" id="btnSound" aria-label="Tắt tiếng" title="Bật / tắt tiếng">
@@ -103,9 +106,18 @@
         <button type="button" class="btn small" data-open="rules">Luật công đức, pháp tướng và quỷ</button>
         <div data-account hidden>
           <p class="hint" data-auth-status></p>
-          <button type="button" class="btn small" data-auth-login hidden>Đăng nhập bằng Google</button>
-          <button type="button" class="btn small" data-auth-logout hidden>Đăng xuất</button>
+          <div class="row wrap"><button type="button" class="btn small gold" data-open="account" data-auth-signedin hidden>Xem những gì đã lưu</button><button type="button" class="btn small" data-auth-logout hidden>Đăng xuất</button></div>
         </div>
+      </section>
+      <section class="card login-card" data-login-card hidden>
+        <b class="lc-title">Đăng nhập Google để giữ những gì bạn đã tích</b>
+        <ul class="lc-list">
+          <li>Công đức, hào quang và tịnh tài đã cúng dường lưu theo tài khoản, đổi máy vẫn còn</li>
+          <li>Tu luyện nội công, học võ công và ra Sân đấu luận võ (dành cho tài khoản đã đăng nhập)</li>
+          <li>Công đức hiện có trên máy này được chuyển vào tài khoản ngay lần đăng nhập đầu</li>
+        </ul>
+        <button type="button" class="btn big cta-login" data-auth-login><span class="g-badge"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg></span>Đăng nhập bằng Google</button>
+        <p class="hint">Khách vãng lai vẫn vào chánh điện lễ Phật bình thường, nhưng dữ liệu chỉ nằm trên trình duyệt này và mất nếu xóa dữ liệu trình duyệt.</p>
       </section>
       <section class="card aura-card" id="auraCard" hidden>
         <span class="eyebrow">Hào quang của bạn</span>
@@ -162,6 +174,15 @@
       <div><h2 id="join-title">Vào chánh điện</h2><p>Chọn tên và trang phục để mọi người thấy bạn trong chánh điện.</p></div>
       <button type="button" class="x" id="joinClose" aria-label="Đóng" hidden>×</button>
     </div>
+    <div class="login-card" data-login-card hidden>
+      <b class="lc-title">Có tài khoản Google thì mọi thứ được giữ lại</b>
+      <ul class="lc-list">
+        <li>Công đức, hào quang, tịnh tài đã cúng dường: đổi máy vẫn còn</li>
+        <li>Mở Võ Học Các (tu luyện nội công, học võ công) và Sân đấu luận võ</li>
+      </ul>
+      <button type="button" class="btn big cta-login" data-auth-login><span class="g-badge"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg></span>Đăng nhập bằng Google</button>
+      <p class="hint">Hoặc cứ vào chánh điện như khách: lễ Phật bình thường, nhưng dữ liệu chỉ nằm trên trình duyệt này.</p>
+    </div>
     <div class="join-grid">
       <canvas id="preview" width="260" height="220" aria-label="Xem trước nhân vật"></canvas>
       <div class="join-fields">
@@ -179,13 +200,44 @@
     <fieldset><legend>Màu áo dài</legend><div class="swatches" id="jColors"></div></fieldset>
     <div data-account hidden>
       <p class="hint" data-auth-status></p>
-      <button type="button" class="btn small" data-auth-login hidden>Đăng nhập bằng Google</button>
       <button type="button" class="btn small" data-auth-logout hidden>Đăng xuất</button>
     </div>
     <p class="warn" id="joinWarn" role="status" hidden></p>
     <p class="hint">Giữ lời nói hiền hòa nơi cửa Phật. Tin nhắn có số tài khoản hoặc đường link sẽ bị chặn để tránh lừa đảo.</p>
     <div class="dlg-foot"><button type="submit" class="btn primary big" id="joinBtn">Vào chánh điện</button></div>
   </form>
+</dialog>
+
+<!-- mời đăng nhập khi cần tài khoản -->
+<dialog class="dlg" id="dlg-login" aria-labelledby="lg-title">
+  <div class="dlg-body">
+    <div class="dlg-head">
+      <div><h2 id="lg-title">Đăng nhập để tiếp tục</h2><p id="loginWhy">Tính năng này gắn với tài khoản để tiến độ của bạn không bị mất.</p></div>
+      <button type="button" class="x" data-close aria-label="Đóng">×</button>
+    </div>
+    <div class="login-card plain" data-login-card hidden>
+      <ul class="lc-list">
+        <li>Công đức, hào quang và tịnh tài đã cúng dường lưu theo tài khoản, đổi máy vẫn còn</li>
+        <li>Võ công đã luyện, cấp nội công, chiêu đã học, thắng thua ở Sân đấu đều được giữ</li>
+        <li>Công đức đang có trên máy này được chuyển vào tài khoản một lần</li>
+      </ul>
+      <button type="button" class="btn big cta-login" data-auth-login><span class="g-badge"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg></span>Đăng nhập bằng Google</button>
+      <p class="hint">Chỉ lấy mã định danh tài khoản (đã băm), không đọc email hay danh bạ của bạn.</p>
+    </div>
+  </div>
+</dialog>
+
+<!-- tài khoản đã lưu -->
+<dialog class="dlg" id="dlg-account" aria-labelledby="ac-title">
+  <div class="dlg-body">
+    <div class="dlg-head">
+      <div><h2 id="ac-title">Tài khoản đã lưu</h2><p>Mọi thứ dưới đây gắn với tài khoản Google của bạn. Đổi máy, đăng nhập lại là còn.</p></div>
+      <button type="button" class="x" data-close aria-label="Đóng">×</button>
+    </div>
+    <dl class="ac-list" id="acList"></dl>
+    <p class="hint" id="acNote"></p>
+    <div class="dlg-foot"><button type="button" class="btn small" data-auth-logout hidden>Đăng xuất</button><button type="button" class="btn primary" data-close>Đóng</button></div>
+  </div>
 </dialog>
 
 <!-- thắp nhang -->

@@ -17,6 +17,7 @@ const MERITS = require('./public/js/merit');
 const announce = require('./lib/announce');
 const MARTIAL = require('./public/js/martial');
 const { createMartialService } = require('./lib/martial/service');
+const { mergeMartialGuest, donatedBy } = require('./lib/account');
 const { createArenaManager } = require('./lib/pk/manager');
 const fs = require('fs');
 
@@ -228,8 +229,11 @@ function linkGuest(guest, uid) {
     };
     delete db.auras[guest];
   }
+  // hồ sơ võ học của khách (nếu có) cũng theo về tài khoản: công lực, tâm đắc, chiêu đã học, phiên tu, phiếu, thắng thua
+  const undoMartial = mergeMartialGuest(db, guest, uid, now());
   db.linkedGuests[guest] = uid;
   return () => {
+    if (undoMartial) undoMartial();
     delete db.linkedGuests[guest];
     if (from) {
       db.merit[guest] = from;
@@ -890,6 +894,25 @@ io.on('connection', socket => {
     p.place = place;
     io.emit('pplace', { id: p.id, place });
     ack(info);
+  });
+
+  /* ----- những gì được lưu theo tài khoản Google (cho màn "Tài khoản đã lưu") ----- */
+  socket.on('account:summary', (d, ack) => {
+    if (!p || typeof ack !== 'function') return;
+    if (!bucket('acct', 1, 4)) return ack({ ok: false, reason: 'Bạn tải hơi nhanh, đợi một chút nhé.' });
+    const signedIn = !!auth.sessionFor(p.socket.data.authKey);
+    const out = {
+      ok: true, auth: { enabled: auth.enabled, signedIn },
+      merit: meritOf(p.uid), donated: donatedBy(db, p.uid, accountOf), aura: myAura(p.uid), martial: null
+    };
+    if (MARTIAL_ENABLED && accountReady(p)) {
+      const v = martial.view(p.uid);
+      out.martial = {
+        level: v.level, congLuc: v.congLuc, manaMax: v.manaMax, tam: v.tam, learned: v.learned.length, totalSkills: MARTIAL.SKILL_ORDER.length,
+        wins: v.wins, losses: v.losses, draws: v.draws, vouchers: v.vouchers.length
+      };
+    }
+    ack(out);
   });
 
   /* ----- tu luyện và học chiêu (Võ Học Các) ----- */

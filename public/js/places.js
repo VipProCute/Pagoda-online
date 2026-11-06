@@ -82,7 +82,7 @@
       host.setPlace(name, ack => {
         if (my !== ticket) return resolve(false);                 // có lần chuyển mới hơn
         if (!ack || !ack.ok) {
-          if (host.toast) host.toast((ack && ack.reason) || 'Chưa đi tới đó được, thử lại nhé.');
+          if (!(host.denied && host.denied(ack)) && host.toast) host.toast((ack && ack.reason) || 'Chưa đi tới đó được, thử lại nhé.');
           return resolve(false);
         }
         apply(name, ack, prev);

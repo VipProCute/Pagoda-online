@@ -103,9 +103,24 @@ Chỉ khi cả hai đồng ý. Buff được **chụp một lần lúc nhận l�
 
 Nhà chùa cần đồng ý bằng văn bản cho việc dùng tài khoản nhận cúng dường trong trò chơi (xem cảnh báo ở README), và nên hỏi luật sư về quy định trò chơi trực tuyến trước khi mở rộng. `SPEEDUP_ENABLED=0` tắt riêng phần này.
 
-## Đăng nhập
+## Đăng nhập Google và những gì được bảo lưu
 
-Khi bật đăng nhập Google, tu luyện và luận võ **cần đăng nhập** vì tiến độ gắn với tài khoản (khách tạo được vô số danh tính). Chưa bật đăng nhập (chạy thử trên máy) thì khách cũng dùng được.
+Khi bật đăng nhập Google (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `AUTH_ORIGIN`), người đăng nhập được giữ **theo tài khoản** (đổi máy, đăng nhập lại là còn):
+
+| Được lưu | Ghi chú |
+|---|---|
+| Công đức (hôm nay và tất cả) | Công đức đang có trên trình duyệt lúc đăng nhập lần đầu được chuyển vào tài khoản một lần |
+| Tịnh tài đã cúng dường | Gồm cả các lượt tạo lúc còn là khách; xem ở màn "Tài khoản đã lưu" |
+| Hào quang đang sáng | Hào quang chỉ sáng 5 đến 13 phút sau mỗi lần cúng dường, hết giờ thì tắt như thường |
+| Nội công: công lực, cấp, nội lực tối đa, tâm đắc ba nhánh | |
+| Võ công: chiêu đã học, bộ 4 chiêu mặc định | |
+| Phiên tu đang chạy, phiếu hoàn thành ngay, thắng / thua / hòa | |
+
+- **Tu luyện, Võ Học Các và Sân đấu chỉ dành cho tài khoản đã đăng nhập**, vì tiến độ gắn với tài khoản. Khách vãng lai vẫn vào chánh điện lễ Phật bình thường; dữ liệu của khách chỉ nằm trên trình duyệt đó và mất nếu xóa dữ liệu trình duyệt hay đổi máy. Đó là chủ ý: đăng nhập thì có quyền lợi.
+- Nút "Đăng nhập" vàng, có vòng sáng nhấp nháy, luôn nằm ở thanh đầu trang khi chưa đăng nhập; thẻ mời đăng nhập hiện ngay ở hộp vào chùa và tab Công đức; bấm "Võ học các" hoặc "Sân đấu" khi chưa đăng nhập thì hiện hộp mời đăng nhập, không bị đẩy vào ngõ cụt. Đã đăng nhập thì thanh đầu trang hiện huy hiệu xanh "Đã lưu"; bấm vào để xem **Tài khoản đã lưu** (công đức, tịnh tài, hào quang, nội công, số chiêu đã học, thắng thua).
+- Nếu nhà chùa từng cho khách tu luyện (lúc chưa bật đăng nhập), tiến độ võ học của khách đó cũng được gộp vào tài khoản ở lần đăng nhập đầu: công lực và tâm đắc cộng dồn (có trần), chiêu đã học hợp lại, phiên tu và yêu cầu hoàn thành ngay đang chờ theo về tài khoản. Logic ở `lib/account.js`, có test.
+- Máy chủ chỉ lưu mã định danh tài khoản đã băm và phiên của ứng dụng; không đọc email hay danh bạ.
+- Không bật đăng nhập (chạy thử trên máy) thì khách cũng dùng được mọi thứ, nhưng dữ liệu chỉ gắn với trình duyệt.
 
 ## Quản trị
 

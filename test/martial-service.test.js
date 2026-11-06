@@ -1031,3 +1031,391 @@ test('dữ liệu lưu ra JSON rồi nạp lại vẫn chạy đúng, không c�
   assert.equal(svc2.profile('u1').congLuc, 75);
   assert.equal(svc2.profile('u1').vouchers[0].id, 101);
 });
+
+/* ---------- bổ sung: id trùng, cấu hình lạ, chống tạo mã hàng loạt ---------- */
+
+test('start: id trùng phiên hoặc sổ cộng cũ thì lấy id khác, không mất thưởng', () => {
+  const db = { donations: [], martial: { profiles: {}, sessions: {}, ledger: {}, matches: [], audit: [] } };
+  db.martial.ledger['session:1'] = { uid: 'u9', at: T0, congLuc: 5, tam: { cuong: 0, toc: 0, nhu: 0 } };
+  db.martial.sessions[2] = { id: 2, uid: 'u9', methodId: 'tinh-tam-quyet', durationKey: '15m', status: 'completed', completedAt: T0 };
+  const ids = [1, 1, 2, 2, 3];
+  const store = { save() {}, nextId: () => ids.shift() };
+  const clock = { t: T0 };
+  const svc = createMartialService({ db, store, now: () => clock.t, config: {}, createSpeedupDonation: () => ({}), vnDay });
+  const r = svc.start('u1', 'tinh-tam-quyet', '15m');
+  assert.equal(r.ok, true);
+  assert.equal(r.session.id, 3);
+  assert.equal(db.martial.sessions[2].uid, 'u9', 'phiên cũ không bị ghi đè');
+  clock.t += 15 * MIN;
+  assert.equal(svc.sweep()[0].update.reward.congLuc, 5);
+  // bộ đếm hỏng hẳn: từ chối chứ không ghi đè
+  const stuck = createMartialService({ db, store: { save() {}, nextId: () => 2 }, now: () => clock.t, config: {}, createSpeedupDonation: () => ({}), vnDay });
+  const bad = stuck.start('u2', 'tinh-tam-quyet', '15m');
+  assert.equal(bad.ok, false);
+  assert.equal(db.martial.sessions[2].uid, 'u9');
+  assert.equal(stuck.profile('u2').activeSession, null);
+});
+
+test('timeScale không hợp lệ (0, âm, NaN, chuỗi) thì coi như 1', () => {
+  for (const ts of [0, -1, NaN, 'abc', null, undefined, Infinity]) {
+    const e = env({ timeScale: ts });
+    const s = e.svc.start('u1', 'tinh-tam-quyet', '15m').session;
+    assert.equal(s.endsAt - s.startedAt, 15 * MIN, `timeScale=${String(ts)}`);
+  }
+  const e = env({ timeScale: '0.5' });
+  const s = e.svc.start('u1', 'tinh-tam-quyet', '15m').session;
+  assert.equal(s.endsAt - s.startedAt, 7.5 * MIN);
+});
+
+test('speedupPerDay = 0: coi như chưa mở hoàn thành ngay', () => {
+  const e = env({ speedupPerDay: 0 });
+  const s = e.svc.start('u1', 'tinh-tam-quyet', '4h').session;
+  const r = e.svc.speedup('u1', s.id, {});
+  assert.equal(r.ok, false);
+  assert.equal(r.code, 'disabled');
+  assert.equal(e.db.donations.length, 0);
+  assert.equal(e.svc.state('u1').speedup.enabled, false);
+});
+
+test('chống tạo mã hàng loạt: tối đa 10 yêu cầu chưa xác nhận trong 24 giờ, đã xác nhận không tính', () => {
+  const e = env({ speedupPerDay: 100 });
+  const s = e.svc.start('u1', 'tinh-tam-quyet', '4h').session;
+  for (let i = 0; i < 10; i++) {
+    const r = e.svc.speedup('u1', s.id, {});
+    assert.equal(r.ok, true, `lần ${i + 1}`);
+    assert.equal(e.svc.cancelSpeedup('u1', r.donation.code).ok, true);
+  }
+  const blocked = e.svc.speedup('u1', s.id, {});
+  assert.equal(blocked.ok, false);
+  assert.equal(blocked.code, 'limit');
+  assert.equal(e.db.donations.length, 10, 'không tạo thêm bản ghi');
+  assert.equal(e.svc.speedup('u2', e.svc.start('u2', 'tinh-tam-quyet', '4h').session.id, {}).ok, true, 'người khác không bị ảnh hưởng');
+  e.clock.t += DAY + 1;
+  const s2 = e.svc.start('u1', 'tinh-tam-quyet', '4h').session;
+  assert.equal(e.svc.speedup('u1', s2.id, {}).ok, true, 'sau 24 giờ tạo lại được');
+
+  // yêu cầu đã xác nhận không chiếm chỗ
+  const f = env({ speedupPerDay: 100 });
+  for (let i = 0; i < 12; i++) {
+    const t = f.svc.start('u1', 'tinh-tam-quyet', '4h').session;
+    const r = f.svc.speedup('u1', t.id, {});
+    assert.equal(r.ok, true, `đã xác nhận lần ${i + 1}`);
+    f.confirm(r.donation);
+  }
+  assert.equal(f.svc.profile('u1').congLuc, 12 * 45);
+});
+
+test('speedup: tên quá dài bị cắt, thiếu uid ở bản ghi thì được bù', () => {
+  const e = env();
+  const s = e.svc.start('u1', 'tinh-tam-quyet', '4h').session;
+  const d = e.svc.speedup('u1', s.id, { name: 'A'.repeat(500) }).donation;
+  assert.equal(d.name.length, 60);
+
+  const db = { donations: [], martial: { profiles: {}, sessions: {}, ledger: {}, matches: [], audit: [] } };
+  const svc = createMartialService({
+    db, store: { save() {}, nextId: (() => { let n = 0; return () => ++n; })() }, now: () => T0,
+    config: { speedupEnabled: true }, vnDay,
+    createSpeedupDonation: f => { const x = { code: 'CDBARE01', amount: f.amount, status: 'pending', createdAt: T0 }; db.donations.push(x); return x; }
+  });
+  const ss = svc.start('u1', 'tinh-tam-quyet', '4h').session;
+  const bare = svc.speedup('u1', ss.id, {}).donation;
+  assert.equal(bare.uid, 'u1');
+  assert.equal(bare.purpose, 'speedup');
+  assert.equal(bare.sessionId, ss.id);
+  assert.equal(bare.price, 10000);
+  assert.equal(svc.cancelSpeedup('u1', bare.code).ok, true, 'hủy được vì đã có uid');
+});
+
+test('speedup: hàm tạo trả về thứ lạ thì báo lỗi donation', () => {
+  for (const bad of [null, undefined, 5, {}, { code: 7 }]) {
+    const db = { donations: [], martial: { profiles: {}, sessions: {}, ledger: {}, matches: [], audit: [] } };
+    const svc = createMartialService({
+      db, store: { save() {}, nextId: (() => { let n = 0; return () => ++n; })() }, now: () => T0,
+      config: { speedupEnabled: true }, vnDay, createSpeedupDonation: () => bad
+    });
+    const s = svc.start('u1', 'tinh-tam-quyet', '4h').session;
+    const r = svc.speedup('u1', s.id, {});
+    assert.equal(r.ok, false);
+    assert.equal(r.code, 'donation');
+    assert.equal(db.martial.sessions[s.id].speedupCode, undefined);
+  }
+});
+
+/* ---------- bổ sung: mọi đường hoàn thành chỉ cộng một lần ---------- */
+
+test('phiếu: dùng xong rồi tới giờ, sweep và xác nhận muộn đều không cộng lại', () => {
+  const e = env();
+  e.svc.profile('u1', true).vouchers.push({ id: 50, value: 10000, code: 'CDV', createdAt: T0 });     // đúng bằng giá: đủ
+  const s = e.svc.start('u1', 'tinh-tam-quyet', '4h').session;
+  const d = e.svc.speedup('u1', s.id, {}).donation;
+  const r = e.svc.useVoucher('u1', 50, s.id);
+  assert.equal(r.ok, true);
+  assert.equal(e.svc.profile('u1').congLuc, 45);
+  e.clock.t = s.endsAt + HOUR;
+  assert.deepEqual(e.svc.sweep(), []);
+  assert.deepEqual(e.svc.completeDue('u1'), []);
+  const late = e.confirm(d);
+  assert.equal(late.outcome, 'late');
+  assert.equal(e.svc.profile('u1').congLuc, 45, 'tiền tới sau khi dùng phiếu: chỉ thêm phiếu, không cộng');
+  assert.equal(e.svc.profile('u1').vouchers.length, 2);
+  assert.equal(e.svc.state('u1').profile.vouchers.length, 1, 'chỉ phiếu mới chưa dùng hiện ra');
+  assert.deepEqual(ledgerKeys(e), ['session:' + s.id]);
+});
+
+test('phiếu tặng sau đó dùng tiếp được cho phiên khác, mỗi phiếu một lần', () => {
+  const e = env();
+  const a = e.svc.start('u1', 'tinh-tam-quyet', '4h').session;
+  const d = e.svc.speedup('u1', a.id, {}).donation;
+  e.svc.cancel('u1', a.id);
+  e.confirm(d, 10000);
+  const vid = e.svc.profile('u1').vouchers[0].id;
+  const b = e.svc.start('u1', 'tinh-tam-quyet', '1h').session;
+  assert.equal(e.svc.useVoucher('u1', String(vid), b.id).ok, true);
+  const c = e.svc.start('u1', 'tinh-tam-quyet', '1h').session;
+  const again = e.svc.useVoucher('u1', vid, c.id);
+  assert.equal(again.ok, false);
+  assert.equal(again.code, 'used');
+  assert.equal(e.svc.profile('u1').congLuc, 15);
+  assert.equal(ledgerKeys(e).length, 1);
+});
+
+test('hai yêu cầu cho cùng một phiên (cái đã hủy vẫn được trả tiền): chỉ một lần cộng, cái còn lại thành phiếu', () => {
+  const e = env();
+  const s = e.svc.start('u1', 'tinh-tam-quyet', '4h').session;
+  const a = e.svc.speedup('u1', s.id, {}).donation;
+  e.svc.cancelSpeedup('u1', a.code);
+  const b = e.svc.speedup('u1', s.id, {}).donation;
+  assert.notEqual(a.code, b.code);
+  const ra = e.confirm(a);
+  assert.equal(ra.outcome, 'applied');
+  const rb = e.confirm(b);
+  assert.equal(rb.outcome, 'late');
+  assert.equal(e.svc.profile('u1').congLuc, 45);
+  assert.equal(e.svc.profile('u1').vouchers.length, 1);
+  assert.equal(e.svc.profile('u1').vouchers[0].code, b.code);
+  assert.deepEqual(ledgerKeys(e), ['session:' + s.id]);
+});
+
+test('xác nhận đúng ranh giới giờ: trước 1ms thì hoàn thành ngay, đúng giờ thì đã tự xong nên thành phiếu', () => {
+  for (const [offset, outcome] of [[-1, 'applied'], [0, 'late']]) {
+    const e = env();
+    const s = e.svc.start('u1', 'tinh-tam-quyet', '4h').session;
+    const d = e.svc.speedup('u1', s.id, {}).donation;
+    e.clock.t = s.endsAt + offset;
+    const r = e.confirm(d);
+    assert.equal(r.outcome, outcome, `offset ${offset}`);
+    assert.equal(e.svc.profile('u1').congLuc, 45);
+    assert.equal(e.svc.profile('u1').vouchers.length, outcome === 'late' ? 1 : 0);
+    assert.equal(ledgerKeys(e).length, 1);
+  }
+});
+
+test('trần công lực khi hoàn thành ngay và khi dùng phiếu: sổ cộng ghi phần thật sự cộng', () => {
+  const e = env();
+  const p = e.svc.profile('u1', true);
+  p.congLuc = 2995; p.tam = { cuong: 299, toc: 0, nhu: 0 };
+  p.vouchers.push({ id: 60, value: 100000, code: 'CDV', createdAt: T0 });
+  const s = e.svc.start('u1', 'vo-cuc-chan-kinh', '8h').session;
+  const d = e.svc.speedup('u1', s.id, {}).donation;
+  const r = e.confirm(d);
+  assert.equal(r.outcome, 'applied');
+  assert.deepEqual(r.updates[0].update.reward, { congLuc: 5, tam: { cuong: 1, toc: 51, nhu: 51 } });
+  assert.equal(p.congLuc, 3000);
+  assert.deepEqual(e.db.martial.ledger['session:' + s.id].tam, { cuong: 1, toc: 51, nhu: 51 });
+  // phiên kế dùng phiếu khi đã đầy công lực: phiên vẫn xong, tâm đắc vẫn còn chỗ thì vẫn cộng
+  const s2 = e.svc.start('u1', 'vo-cuc-chan-kinh', '8h').session;
+  const v = e.svc.useVoucher('u1', 60, s2.id);
+  assert.equal(v.ok, true);
+  assert.deepEqual(v.updates.at(-1).reward, { congLuc: 0, tam: { cuong: 0, toc: 51, nhu: 51 } });
+  assert.equal(p.congLuc, 3000);
+  assert.deepEqual(p.tam, { cuong: 300, toc: 102, nhu: 102 });
+});
+
+test('tu offline nhiều ngày: sweep hoàn thành đúng một lần cho mỗi người', () => {
+  const e = env();
+  const a = e.svc.start('u1', 'tinh-tam-quyet', '4h').session;
+  const b = e.svc.start('u2', 'tinh-tam-quyet', '15m').session;
+  e.clock.t += 3 * DAY;
+  const out = e.svc.sweep();
+  assert.deepEqual(out.map(x => x.uid).sort(), ['u1', 'u2']);
+  for (let i = 0; i < 5; i++) assert.deepEqual(e.svc.sweep(), []);
+  assert.equal(e.svc.profile('u1').congLuc, 45);
+  assert.equal(e.svc.profile('u2').congLuc, 5);
+  const st = e.svc.state('u1');
+  assert.equal(st.recent[0].id, a.id);
+  assert.equal(st.recent[0].completedAt, e.clock.t, 'tính theo giờ phát hiện, không phải giờ hẹn');
+  assert.ok(b.id);
+});
+
+test('completeDue của người này không đụng phiên người khác', () => {
+  const e = env();
+  const a = e.svc.start('u1', 'tinh-tam-quyet', '15m').session;
+  e.svc.start('u2', 'tinh-tam-quyet', '15m');
+  e.clock.t = a.endsAt;
+  assert.equal(e.svc.completeDue('u2').length, 1);
+  assert.equal(e.svc.profile('u1').congLuc, 0);
+  assert.equal(e.db.martial.sessions[a.id].status, 'active');
+  assert.equal(e.svc.completeDue('u2').length, 0);
+});
+
+test('learn: phiên vừa tới giờ nâng cấp trước rồi mới xét điều kiện, và trả updates', () => {
+  const e = env();
+  const p = e.svc.profile('u1', true);
+  p.congLuc = 130; p.tam.cuong = 40;           // cấp 2: chưa đủ cấp 3 để học Kim Chung Tráo
+  const s = e.svc.start('u1', 'kim-cuong-tam-phap', '1h').session;       // +15 công lực: 145... chưa đủ 150
+  e.clock.t = s.endsAt;
+  assert.equal(e.svc.learn('u1', 'kim-chung-trao').ok, false);
+  const s2 = e.svc.start('u1', 'kim-cuong-tam-phap', '1h').session;       // 160, tâm đắc Cương 70
+  e.clock.t = s2.endsAt;
+  const r = e.svc.learn('u1', 'kim-chung-trao');
+  assert.equal(r.ok, true, 'cấp 3 nhờ phiên vừa xong');
+  assert.equal(r.updates.length, 1);
+  assert.equal(r.updates[0].kind, 'completed');
+  assert.equal(r.updates[0].levelUp, true);
+});
+
+/* ---------- bổ sung: hình dạng gói cập nhật, bản sao, kiểu lạ ---------- */
+
+test('gói cập nhật đúng hợp đồng: cancelled, speedup-late, speedup-rejected', () => {
+  const e = env();
+  const s = e.svc.start('u1', 'tinh-tam-quyet', '4h').session;
+  const d = e.svc.speedup('u1', s.id, {}).donation;
+  const c = e.svc.cancel('u1', s.id).updates[0];
+  assert.deepEqual(Object.keys(c).sort(), ['durationKey', 'kind', 'methodId', 'sessionId', 'text']);
+  assert.match(c.text, /Đã hủy phiên tu Tĩnh Tâm Quyết \(4 giờ\)/);
+  const late = e.confirm(d).updates[0].update;
+  assert.deepEqual(Object.keys(late).sort(), ['durationKey', 'kind', 'methodId', 'sessionId', 'text', 'voucher']);
+  assert.deepEqual(Object.keys(late.voucher).sort(), ['id', 'value']);
+  const s2 = e.svc.start('u1', 'tinh-tam-quyet', '4h').session;
+  const d2 = e.svc.speedup('u1', s2.id, {}).donation;
+  d2.status = 'cancelled';
+  const rej = e.svc.onDonationClosed(d2).updates[0].update;
+  assert.deepEqual(Object.keys(rej).sort(), ['durationKey', 'kind', 'methodId', 'sessionId', 'text']);
+  e.clock.t = s2.endsAt;
+  const done = e.svc.sweep()[0].update;
+  assert.deepEqual(Object.keys(done).sort(), ['durationKey', 'kind', 'levelUp', 'level', 'methodId', 'reward', 'sessionId', 'text', 'via'].sort());
+});
+
+test('view và state trả bản sao: sửa kết quả không đổi hồ sơ', () => {
+  const e = env();
+  e.svc.profile('u1', true).vouchers.push({ id: 5, value: 10000, code: 'C', createdAt: T0 });
+  const v = e.svc.view('u1');
+  v.learned.push('x'); v.loadout.push('y'); v.tam.cuong = 999; v.vouchers[0].value = 1;
+  const p = e.svc.profile('u1');
+  assert.equal(p.learned.length, 6);
+  assert.deepEqual(p.loadout, []);
+  assert.equal(p.tam.cuong, 0);
+  assert.equal(p.vouchers[0].value, 10000);
+  const s = e.svc.start('u1', 'tinh-tam-quyet', '15m').session;
+  s.endsAt = 0;
+  assert.equal(e.db.martial.sessions[s.id].endsAt, T0 + 15 * MIN, 'sửa phiên trả về không đổi dữ liệu');
+  e.clock.t = T0 + 15 * MIN;
+  const st = e.svc.state('u1');
+  st.recent[0].reward.congLuc = 9999;
+  assert.equal(e.db.martial.sessions[s.id].reward.congLuc, 5);
+});
+
+test('uid: dài quá 200 ký tự bị từ chối, đúng 200 thì dùng được; chuỗi lạ làm khóa vẫn an toàn', () => {
+  const e = env();
+  assert.equal(e.svc.start('x'.repeat(201), 'tinh-tam-quyet', '15m').ok, false);
+  assert.equal(e.svc.start('x'.repeat(200), 'tinh-tam-quyet', '15m').ok, true);
+  for (const uid of ['toString', 'hasOwnProperty', 'valueOf', '__defineGetter__', 'a.b', 'a b', '日本', ' ']) {
+    assert.equal(e.svc.start(uid, 'tinh-tam-quyet', '15m').ok, true, uid);
+    assert.equal(e.svc.profile(uid).uid, uid);
+  }
+  assert.equal(e.svc.profile('other'), null);
+  assert.equal(Object.getPrototypeOf(e.db.martial.profiles), Object.prototype);
+  assert.equal({}.congLuc, undefined);
+});
+
+test('setLoadout: mảng thưa, mảng có phần tử lạ, quá dài', () => {
+  const e = env();
+  assert.equal(e.svc.setLoadout('u1', new Array(4)).ok, false);
+  assert.equal(e.svc.setLoadout('u1', ['trong-quyen', 'thiet-bich', 'tat-phong-quyen', { toString: () => 'nhu-van-bo' }]).ok, false);
+  assert.equal(e.svc.setLoadout('u1', new Array(1e5).fill('trong-quyen')).ok, false);
+  assert.equal(e.svc.setLoadout('u1', { length: 4, 0: 'a' }).ok, false);
+  assert.deepEqual(e.svc.profile('u1', true).loadout, []);
+});
+
+test('cancelSpeedup: không động tới cúng dường thường hoặc yêu cầu của phiên người khác', () => {
+  const e = env();
+  e.db.donations.push({ code: 'CDNORMAL', uid: 'u1', status: 'pending', amount: 50000 });
+  assert.equal(e.svc.cancelSpeedup('u1', 'CDNORMAL').ok, false);
+  assert.equal(e.db.donations[0].status, 'pending');
+  const s = e.svc.start('u2', 'tinh-tam-quyet', '4h').session;
+  const d = e.svc.speedup('u2', s.id, {}).donation;
+  assert.equal(e.svc.cancelSpeedup('u1', d.code).ok, false);
+  assert.equal(d.status, 'pending');
+  assert.equal(e.db.martial.sessions[s.id].speedupCode, d.code);
+});
+
+test('onDonationConfirmed với cúng dường thường: trả null và không sửa gì', () => {
+  const e = env();
+  const d = { code: 'CDN', uid: 'u1', status: 'confirmed', amount: 50000, sessionId: 1 };
+  const before = JSON.stringify(d);
+  assert.equal(e.svc.onDonationConfirmed(d), null);
+  assert.equal(JSON.stringify(d), before);
+  assert.deepEqual(e.svc.onDonationClosed(d), { updates: [] });
+  assert.equal(JSON.stringify(d), before);
+  assert.deepEqual(e.db.martial.profiles, {});
+});
+
+/* ---------- bổ sung: các lệnh đến cùng lúc theo mọi thứ tự ---------- */
+
+function permutations(arr) {
+  if (arr.length <= 1) return [arr];
+  return arr.flatMap((x, i) => permutations([...arr.slice(0, i), ...arr.slice(i + 1)]).map(rest => [x, ...rest]));
+}
+
+test('lệnh đến cùng lúc theo mọi thứ tự (sweep, xác nhận, phiếu, hủy, state): phần thưởng không bao giờ cộng quá một lần', () => {
+  for (const offset of [-1, 0, 7]) {
+    for (const order of permutations(['sweep', 'confirm', 'voucher', 'cancel', 'state'])) {
+      const e = env();
+      e.svc.profile('u1', true).vouchers.push({ id: 70, value: 10000, code: 'CDV', createdAt: T0 });
+      const s = e.svc.start('u1', 'tinh-tam-quyet', '4h').session;
+      const d = e.svc.speedup('u1', s.id, {}).donation;
+      e.clock.t = s.endsAt + offset;
+      const ctx = `offset=${offset} thứ tự=${order.join('>')}`;
+      for (const op of order) {
+        if (op === 'sweep') e.svc.sweep();
+        else if (op === 'confirm') e.confirm(d);
+        else if (op === 'voucher') e.svc.useVoucher('u1', 70, s.id);
+        else if (op === 'cancel') e.svc.cancel('u1', s.id);
+        else e.svc.state('u1');
+      }
+      const p = e.svc.profile('u1'), rec = e.db.martial.sessions[s.id], keys = ledgerKeys(e);
+      assert.ok(keys.length <= 1, ctx);
+      assert.equal(p.congLuc, keys.length ? 45 : 0, ctx);
+      assert.equal(rec.status === 'completed', keys.length === 1, ctx);
+      assert.notEqual(rec.status, 'active', ctx);
+      assert.equal(p.activeSession, null, ctx);
+      assert.ok(['completed', 'cancelled'].includes(rec.status), ctx);
+      // tiền đã nhận thì hoặc hoàn thành phiên hoặc thành phiếu, không bao giờ cả hai, không bao giờ không có gì
+      if (order.indexOf('confirm') >= 0) {
+        assert.ok(d.outcome === 'applied' || d.outcome === 'late', ctx);
+        const extra = p.vouchers.filter(v => v.code === d.code).length;
+        assert.equal(extra, d.outcome === 'late' ? 1 : 0, ctx);
+        if (d.outcome === 'applied') assert.equal(rec.via, 'speedup', ctx);
+      }
+      const used = p.vouchers.find(v => v.id === 70);
+      if (used.usedAt) assert.equal(rec.via, 'voucher', ctx);
+      // chạy lại mọi đường một lần nữa: không có gì đổi
+      const snap = JSON.stringify([e.db.martial, d]);
+      e.svc.sweep(); e.confirm(d); e.svc.useVoucher('u1', 70, s.id); e.svc.cancel('u1', s.id);
+      assert.equal(JSON.stringify([e.db.martial, d]), snap, ctx);
+    }
+  }
+});
+
+test('phiếu tặng không bị nhân đôi dù dấu outcome của cúng dường bị mất', () => {
+  const e = env();
+  const s = e.svc.start('u1', 'tinh-tam-quyet', '4h').session;
+  const d = e.svc.speedup('u1', s.id, {}).donation;
+  e.svc.cancel('u1', s.id);
+  e.confirm(d);
+  delete d.outcome; delete d.voucherId;
+  const r = e.confirm(d);
+  assert.equal(r.outcome, 'late');
+  assert.equal(e.svc.profile('u1').vouchers.length, 1, 'tìm lại phiếu theo mã thay vì tặng thêm');
+  assert.equal(d.voucherId, e.svc.profile('u1').vouchers[0].id);
+});

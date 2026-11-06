@@ -1,0 +1,46 @@
+/* Đăng nhập Google: nút và thẻ phải nổi bật, vì đăng nhập là cách duy nhất để giữ công đức, tu luyện và luận võ. */
+.g-badge { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: #fff; flex: none; box-shadow: 0 1px 2px rgba(0, 0, 0, .3); }
+.g-badge svg { width: 14px; height: 14px; display: block; }
+
+/* nút trên thanh đầu trang */
+.login-cta, .btn.cta-login {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  border: 1px solid #f6dd96; color: #2a1806; font-weight: 700; cursor: pointer; white-space: nowrap;
+  background: linear-gradient(135deg, #f8dc8e 0%, #dcb054 52%, #bb8c30 100%);
+  animation: cta-pulse 2.6s ease-out infinite;
+}
+.login-cta { padding: 4px 13px 4px 5px; border-radius: 999px; font-size: 13px; line-height: 1.2; }
+.login-cta:hover, .btn.cta-login:hover { filter: brightness(1.07); border-color: #fff0bd; }
+.login-cta:disabled, .btn.cta-login:disabled { opacity: .65; animation: none; cursor: default; }
+.login-cta[hidden], .acct-chip[hidden], .login-card[hidden] { display: none; }
+@keyframes cta-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(246, 221, 150, .6); }
+  70% { box-shadow: 0 0 0 10px rgba(246, 221, 150, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(246, 221, 150, 0); }
+}
+
+/* huy hiệu khi đã đăng nhập */
+.acct-chip { display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px; border-radius: 999px; border: 1px solid var(--jade); background: rgba(134, 179, 138, .14); color: var(--jade); font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.acct-chip:hover { background: rgba(134, 179, 138, .24); }
+
+/* thẻ mời đăng nhập (hộp vào chùa, tab Công đức, hộp "Đăng nhập để tiếp tục") */
+.login-card { border: 1px solid var(--gold); background: linear-gradient(180deg, rgba(212, 171, 82, .18), rgba(212, 171, 82, .05)); border-radius: 14px; padding: 14px; display: grid; gap: 10px; }
+.login-card.plain { border-color: var(--line); background: var(--surface-2); }
+.lc-title { font-family: var(--font-display); font-size: 22px; font-weight: 700; line-height: 1.15; color: var(--gold-ink); }
+.lc-list { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 13.5px; }
+.btn.cta-login { min-height: 48px; width: 100%; padding: 10px 16px; border-radius: 12px; font-size: 16px; }
+.btn.cta-login .g-badge { width: 26px; height: 26px; }
+.btn.cta-login .g-badge svg { width: 16px; height: 16px; }
+
+/* màn "Tài khoản đã lưu" */
+.ac-list { margin: 0; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.ac-list > div { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 9px 12px; background: var(--surface-2); border-bottom: 1px solid var(--line); }
+.ac-list > div:last-child { border-bottom: 0; }
+.ac-list dt { color: var(--muted); font-size: 13px; flex: none; }
+.ac-list dd { margin: 0; text-align: right; font-weight: 600; font-size: 13.5px; font-variant-numeric: tabular-nums; min-width: 0; overflow-wrap: anywhere; }
+
+@media (max-width: 430px) {
+  .login-cta { padding: 3px 11px 3px 4px; font-size: 12.5px; }
+  .lc-title { font-size: 20px; }
+}
+@media (prefers-reduced-motion: reduce) { .login-cta, .btn.cta-login { animation: none; } }

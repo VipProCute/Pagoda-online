@@ -3,9 +3,9 @@
 const { io } = require('socket.io-client');
 
 /** Kết nối và ghi lại mọi sự kiện nhận được vào socket.log = [{ ev, payload, at }]. */
-function connect(port) {
+function connect(port, opts = {}) {
   return new Promise((resolve, reject) => {
-    const socket = io(`http://127.0.0.1:${port}`, { transports: ['websocket'], forceNew: true, reconnection: false });
+    const socket = io(`http://127.0.0.1:${port}`, { transports: ['websocket'], forceNew: true, reconnection: false, ...opts });
     socket.log = [];
     socket.onAny((ev, payload) => socket.log.push({ ev, payload, at: Date.now() }));
     socket.once('connect', () => resolve(socket));

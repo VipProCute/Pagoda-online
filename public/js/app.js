@@ -123,13 +123,49 @@
   /* ---------- tài khoản Google ---------- */
   function renderAuth(auth) {
     authKnown = true; authInfo = { enabled: !!auth.enabled, signedIn: !!auth.signedIn };
-    $$('[data-account]').forEach(el => { el.hidden = !auth.enabled; });
+    $$('[data-account]').forEach(el => { el.hidden = !auth.enabled || !auth.signedIn; });
     $$('[data-auth-status]').forEach(el => {
-      el.textContent = auth.signedIn ? 'Công đức được lưu vào tài khoản Google.' : 'Đăng nhập để giữ công đức khi đổi thiết bị.';
+      el.textContent = 'Công đức, tịnh tài đã cúng dường, hào quang và tiến độ tu luyện, luận võ đều được lưu vào tài khoản Google của bạn.';
     });
-    $$('[data-auth-login]').forEach(el => { el.hidden = auth.signedIn; });
+    // chưa đăng nhập: nút và thẻ mời đăng nhập hiện rõ; đã đăng nhập: hiện huy hiệu "Đã lưu"
+    const mustLogin = !!auth.enabled && !auth.signedIn;
+    $$('[data-auth-login]').forEach(el => { el.hidden = !mustLogin; });
+    $$('[data-login-card]').forEach(el => { el.hidden = !mustLogin; });
     $$('[data-auth-logout]').forEach(el => { el.hidden = !auth.signedIn; });
+    $$('[data-auth-signedin]').forEach(el => { el.hidden = !auth.signedIn; });
+    $('#btnAccount').hidden = !auth.signedIn;
   }
+  /** Chưa đăng nhập mà cần tài khoản (Võ Học Các, Sân đấu): mở hộp mời đăng nhập thay vì để người chơi bấm vào ngõ cụt. */
+  function needLogin(why) {
+    if (!authInfo.enabled || authInfo.signedIn) return false;
+    $('#loginWhy').textContent = why;
+    openDlg('login');
+    return true;
+  }
+  /** Những gì đã lưu theo tài khoản: công đức, tịnh tài, hào quang, nội công, võ công, thắng thua. */
+  function openAccount() {
+    const list = $('#acList'), note = $('#acNote');
+    list.textContent = ''; note.textContent = 'Đang tải…';
+    openDlg('account');
+    socket.emit('account:summary', {}, r => {
+      if (!r || !r.ok) { note.textContent = (r && r.reason) || 'Chưa tải được, bạn thử lại nhé.'; return; }
+      const row = (k, v) => { const d = document.createElement('div'), dt = document.createElement('dt'), dd = document.createElement('dd'); dt.textContent = k; dd.textContent = v; d.append(dt, dd); list.appendChild(d); };
+      row('Công đức', `${NUM(r.merit.total)} (hôm nay ${NUM(r.merit.today)})`);
+      row('Tịnh tài đã cúng dường', r.donated.count ? `${VND(r.donated.total)} · ${r.donated.count} lần` : 'Chưa có');
+      const a = r.aura, tier = a && a.t ? AURA.TIERS[a.t - 1] : null;
+      row('Hào quang', a && a.until > serverNow() ? `${tier ? tier.name : 'Đang tích tụ'} · còn ${Math.ceil((a.until - serverNow()) / 60000)} phút` : 'Không có (hào quang chỉ sáng vài phút sau mỗi lần cúng dường)');
+      if (r.martial) {
+        const m = r.martial;
+        row('Nội công', `Cấp ${m.level} · công lực ${NUM(m.congLuc)} · nội lực ${m.manaMax}`);
+        row('Võ công đã học', `${m.learned}/${m.totalSkills} chiêu`);
+        row('Tâm đắc', `Cương ${m.tam.cuong} · Tốc ${m.tam.toc} · Nhu ${m.tam.nhu}`);
+        row('Luận võ', `${m.wins} thắng · ${m.losses} thua · ${m.draws} hòa`);
+        if (m.vouchers) row('Phiếu hoàn thành ngay', `${m.vouchers} phiếu`);
+      }
+      note.textContent = r.auth.signedIn ? 'Đã lưu vào tài khoản Google. Đổi máy, đăng nhập lại là còn.' : 'Bạn đang chơi vãng lai: dữ liệu chỉ nằm trên trình duyệt này.';
+    });
+  }
+  document.addEventListener('click', e => { if (e.target.closest('[data-open="account"]') || e.target.closest('#btnAccount')) openAccount(); });
   function showAuthError(text) {
     if ($('#dlg-join').open) {
       $('#joinWarn').textContent = text;
@@ -217,7 +253,11 @@
     $('#donCard').hidden = !cfg.donation && !r.donations.length;
     $('#actVoice').hidden = !cfg.voice;
     closeDlg('join');
-    toast(`A Di Đà Phật. Chào ${myName}, mời bạn vào lễ Phật.`);
+    const authResult = new URLSearchParams(location.search).get('auth');
+    if (authResult) { try { history.replaceState(null, '', location.pathname); } catch (e) { /* bỏ qua */ } }
+    if (authResult === 'ok') toast('Đã đăng nhập. Công đức và tiến độ của bạn được lưu vào tài khoản Google.');
+    else if (authResult === 'error') toast('Chưa đăng nhập được Google. Bạn thử lại nhé.');
+    else toast(`A Di Đà Phật. Chào ${myName}, mời bạn vào lễ Phật.`);
     if (Voice.wanted && cfg.voice) startVoice(true);          // mất mạng rồi vào lại: nối lại tiếng
     if (Library.book) socket.emit('reading', { book: Library.book.id });
     previewCelebrate();
@@ -512,7 +552,12 @@
         else openDlg('chant');
         break;
       case 'donate': openDonate(); break;
-      case 'dojo': case 'arena': Places.go(name); break;
+      case 'dojo':
+        if (needLogin('Võ Học Các cần tài khoản để lưu công lực, cấp nội công và chiêu đã học.')) break;
+        Places.go('dojo'); break;
+      case 'arena':
+        if (needLogin('Sân đấu cần tài khoản để ghi thắng thua và giữ bộ chiêu của bạn.')) break;
+        Places.go('arena'); break;
     }
   }
   document.addEventListener('click', e => { const b = e.target.closest('[data-act]'); if (b) act(b.dataset.act, b); });
@@ -693,6 +738,10 @@
   Places.init({
     setPlace: (name, cb) => socket.emit('place:set', { place: name }, cb),
     toast,
+    denied(ack) {                                              // máy chủ từ chối vì chưa đăng nhập: mời đăng nhập thay vì chỉ báo lỗi
+      if (ack && ack.code === 'login') { needLogin(ack.reason || 'Bạn cần đăng nhập để vào nơi này.'); return true; }
+      return false;
+    },
     onChange(name) { Hall.pause(name !== 'hall'); Hall.setPlace(me, name); }
   });
   const martialHost = {
@@ -701,6 +750,7 @@
     cfg: () => cfg || { martial: { enabled: false } },
     auth: () => authInfo,
     login: () => changeAuth(true),
+    needLogin,
     me: () => ({ pid: me, name: myName, look }),
     meritTotal: () => myTotal,
     vnd: VND
