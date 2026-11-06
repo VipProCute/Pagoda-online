@@ -423,7 +423,7 @@ auth.mount(app, {
   }
 });
 
-const publicPlayer = p => ({ id: p.id, name: p.name, look: p.look, x: +p.x.toFixed(3), z: +p.z.toFixed(3), mod: p.mod, v: p.v || 0, rd: p.rd || '', au: auraOf(p.uid), mt: meritTotal(p.uid) });
+const publicPlayer = p => ({ id: p.id, name: p.name, look: p.look, x: +p.x.toFixed(3), z: +p.z.toFixed(3), mod: p.mod, scene: p.scene || 'hall', v: p.v || 0, rd: p.rd || '', au: auraOf(p.uid), mt: meritTotal(p.uid) });
 const voiceCount = () => { let n = 0; for (const p of players.values()) if (p.v) n++; return n; };
 function sys(text) {
   const m = { id: store.nextId(), pid: 0, name: '', c: 0, text, t: now(), sys: true };
@@ -500,6 +500,8 @@ io.use((socket, next) => {
   next();
 });
 
+const fortuneQueue = require('./lib/fortune-queue')({ broadcast: state => io.emit('fortune:queue', state) });
+
 io.on('connection', socket => {
   let p = null;
   const authKey = socket.data.authKey;
@@ -532,7 +534,7 @@ io.on('connection', socket => {
       id: nextPid++, uid, name: nm.name, mod: isMod, socket,
       look: { g: data.look && data.look.g === 'nam' ? 'nam' : 'nu', c: num(data.look && data.look.c, 0, 11, 0) | 0, h: num(data.look && data.look.h, 0, 3, 0) | 0 },
       x: 0.5 + rand(-0.28, 0.28), z: rand(0.68, 0.92), tx: 0, tz: 0, dirty: false, cd: {}, bk: {}, lastText: '', meritDirty: false,
-      v: 0, rd: '', voiceBanUntil: 0, milestone: null
+      scene: 'hall', v: 0, rd: '', voiceBanUntil: 0, milestone: null
     };
     p.tx = p.x; p.tz = p.z;
     p.mkey = MERITS.visualKey(meritTotal(uid));
@@ -549,11 +551,30 @@ io.on('connection', socket => {
       today: db.today, total: db.total, online: players.size,
       board: board(), merit: meritOf(uid), aura: myAura(uid),
       donations: db.donations.filter(d => d.status === 'confirmed').slice(-20).map(publicDonation),
-      funds: fundsSummary(), chant
+      funds: fundsSummary(), chant, fortuneQueue: fortuneQueue.snapshot()
     });
     socket.broadcast.emit('pj', publicPlayer(p));
     if (players.size <= 80) socket.broadcast.emit('ticker', { text: `${p.name} vừa vào chánh điện` });
   });
+
+  socket.on('scene', (scene, ack) => {
+    if (!p || !['hall', 'yard'].includes(scene)) return;
+    if (scene !== p.scene) {
+      if (scene !== 'hall') fortuneQueue.remove(p.id);
+      p.scene = scene; p.x = p.tx = 0.5; p.z = p.tz = 0.8; p.dirty = true;
+      io.emit('pscene', { id: p.id, scene, x: p.x, z: p.z });
+    }
+    if (typeof ack === 'function') ack({ ok: true });
+  });
+  socket.on('fortune:join', (_, ack) => {
+    if (!p || typeof ack !== 'function') return;
+    if (p.scene !== 'hall') return ack({ ok: false, reason: 'Mời bạn vào chánh điện để xin xăm.' });
+    const person = p;
+    const ok = fortuneQueue.join({ id: p.id, name: p.name, deliver: number => person.socket.emit('fortune:result', { number }) });
+    if (ok) { p.tx = 0.5; p.tz = 0.20; }
+    ack({ ok, reason: ok ? '' : 'Bạn đã có tên trong hàng chờ.' });
+  });
+  socket.on('fortune:leave', () => { if (p) fortuneQueue.remove(p.id); });
 
   socket.on('profile', (data, ack) => {
     if (!p || !data || typeof ack !== 'function') return;
@@ -775,7 +796,7 @@ io.on('connection', socket => {
   socket.on('disconnect', () => {
     const ip = socket.data.ip, n = (ipCount.get(ip) || 1) - 1;
     if (n <= 0) ipCount.delete(ip); else ipCount.set(ip, n);
-    if (p) { players.delete(p.id); io.emit('pl', { id: p.id }); p = null; }
+    if (p) { fortuneQueue.remove(p.id); players.delete(p.id); io.emit('pl', { id: p.id }); p = null; }
   });
 });
 
