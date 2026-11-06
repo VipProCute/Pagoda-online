@@ -152,6 +152,7 @@
   function welcome(r) {
     joined = true; editing = false; me = r.you; cfg = r.config;
     myAura = r.aura; renderAura();
+    if (window.Celebrate) Celebrate.configure(cfg, { toast });
     if (r.uid && r.uid !== uid) { uid = r.uid; store.set('ta-uid', uid); }
     if (!offset) { offset = r.serverTime - Date.now(); Hall.setOffset(offset); }
     $('#siteName').textContent = cfg.siteName; document.title = cfg.siteName + ' · Đi chùa online';
@@ -171,6 +172,21 @@
     toast(`A Di Đà Phật. Chào ${myName}, mời bạn vào lễ Phật.`);
     if (Voice.wanted && cfg.voice) startVoice(true);          // mất mạng rồi vào lại: nối lại tiếng
     if (Library.book) socket.emit('reading', { book: Library.book.id });
+    previewCelebrate();
+  }
+  // Xem thử hiệu ứng mốc công đức: mở trang với ?celebrate=100 (hoặc 300, 666, 999...). Chỉ chạy một lần mỗi lần mở trang.
+  let previewed = false;
+  function previewCelebrate() {
+    if (previewed || !window.Celebrate) return;
+    previewed = true;
+    const n = (new URLSearchParams(location.search).get('celebrate') || '').trim();
+    if (!/^\d{1,5}$/.test(n)) return;
+    // Liên kết ?celebrate=666 ai mở cũng chạy được nên không tự hù: hỏi trước, từ chối (hay trình duyệt không cho hỏi) thì chỉ hiện thẻ chúc mừng
+    setTimeout(() => {
+      let kind;
+      if (+n === 666) { let ok = false; try { ok = confirm('Xem thử mặt quỷ hù ở mốc 666? Có tiếng động mạnh và màn hình chớp đỏ.'); } catch (e) { /* bỏ qua */ } if (!ok) kind = 'bless'; }
+      Celebrate.test(+n, kind);
+    }, 900);
   }
 
   /* ---------- sự kiện từ máy chủ ---------- */
@@ -218,6 +234,7 @@
   socket.on('stats', d => setStats(d.today, d.online));
   socket.on('board', renderBoard);
   socket.on('merit', setMerit);
+  socket.on('milestone', d => { if (window.Celebrate) Celebrate.show(d); });
   socket.on('chant', setChant);
   socket.on('donation', d => { donations.unshift(d.d); renderDonations(null, d.funds); $('#donCard').hidden = false; });
   socket.on('donation:ok', d => {

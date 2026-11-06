@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><title>Gõ mõ đủ chỉ tiêu</title>
+<link rel="stylesheet" href="card.css"></head>
+<body><svg id="c" width="720" height="720" viewBox="0 0 720 720" xmlns="http://www.w3.org/2000/svg"></svg>
+<script src="lib.js"></script>
+<script>
+const R = rng(61);
+add(E('rect', { width: 720, height: 720, fill: rg([[0, '#fff9e6'], [0.5, '#ffe2b4'], [1, '#ffb88c']], { cx: 360, cy: 440, r: 560, u: true }) }));
+// tia nắng nhạt
+let rays = '';
+const rayG = rg([[0, '#fff', 0.5], [1, '#fff', 0]], { cx: 360, cy: 470, r: 520, u: true });
+for (let i = 0; i < 16; i++) {
+  const a0 = (i * 22.5) * Math.PI / 180, a1 = a0 + 0.17, L = 600;
+  rays += E('path', { d: `M360,470 L${360 + Math.cos(a0) * L},${470 + Math.sin(a0) * L} L${360 + Math.cos(a1) * L},${470 + Math.sin(a1) * L}Z`, fill: rayG });
+}
+add(rays);
+add(bokeh(R, 14, [0, 0, 720, 720], { colors: ['#fff', '#ffd0a0'], rmin: 10, rmax: 36, omin: 0.15, omax: 0.35 }));
+// đệm ngồi
+add(E('ellipse', { cx: 350, cy: 652, rx: 262, ry: 52, fill: '#7a1020', opacity: 0.35, filter: blur(6) }));
+add(E('ellipse', { cx: 350, cy: 638, rx: 252, ry: 54, fill: lg([[0, '#f04a5a'], [1, '#a8142c']]), stroke: '#ffd45a', stroke_width: 5 }));
+add(E('ellipse', { cx: 350, cy: 626, rx: 205, ry: 36, fill: '#ff6a78', opacity: 0.6 }));
+add(E('ellipse', { cx: 350, cy: 640, rx: 232, ry: 42, fill: 'none', stroke: '#ffd45a', stroke_opacity: 0.8, stroke_width: 2, stroke_dasharray: '3 9', stroke_linecap: 'round' }));
+// mõ (cá gỗ): thân tròn, đuôi cá xoè, vảy, khe mõ
+const cx = 345, cy = 482;
+let mo = '';
+mo += E('ellipse', { cx: 0, cy: 10, rx: 176, ry: 146, fill: '#6a3410', opacity: 0.25, filter: blur(4) });
+// đuôi cá hai thuỳ
+const tailG = lg([[0, '#f0a050'], [1, '#b8641f']], { x1: 1, y1: 0.5, x2: 0, y2: 0.5 });
+mo += E('path', { d: 'M-140,20 C-185,-14 -222,-30 -246,-84 C-214,-92 -196,-76 -176,-56 C-196,-36 -168,-8 -140,20Z', fill: tailG, stroke: '#6a3410', stroke_width: 4, stroke_linejoin: 'round' });
+mo += E('path', { d: 'M-140,40 C-188,40 -232,74 -250,140 C-212,148 -190,128 -168,104 C-180,84 -160,60 -140,40Z', fill: tailG, stroke: '#6a3410', stroke_width: 4, stroke_linejoin: 'round' });
+mo += E('path', { d: 'M-150,18 C-186,-4 -214,-34 -232,-70 M-150,50 C-190,72 -220,100 -236,130', fill: 'none', stroke: '#fff1c8', stroke_opacity: 0.55, stroke_width: 3, stroke_linecap: 'round' });
+// thân
+mo += E('ellipse', { cx: 0, cy: 0, rx: 172, ry: 142, fill: rg([[0, '#ffc882'], [0.55, '#e8913e'], [1, '#9c5220']], { cx: 0.38, cy: 0.28, r: 0.85 }), stroke: '#6a3410', stroke_width: 5 });
+// vảy ở nửa dưới
+for (let row = 0; row < 3; row++) {
+  for (let k = -3 + (row % 2) * 0.5; k <= 3; k++) {
+    const x = k * 46, y = 92 + row * 17 - Math.abs(k) * 4;
+    if (Math.abs(x) > 140) continue;
+    mo += E('path', { d: `M${x - 18},${y} Q${x},${y + 18} ${x + 18},${y}`, fill: 'none', stroke: '#7a3e12', stroke_opacity: 0.38, stroke_width: 3, stroke_linecap: 'round' });
+  }
+}
+// vân gỗ trên đầu
+[[-120, -70, 60, -108], [-100, -30, 90, -70]].forEach(([x1, y1, x2, y2]) => {
+  mo += E('path', { d: `M${x1},${y1} Q${(x1 + x2) / 2},${(y1 + y2) / 2 - 16} ${x2},${y2}`, fill: 'none', stroke: '#8a4a18', stroke_opacity: 0.35, stroke_width: 3, stroke_linecap: 'round' });
+});
+// khe mõ (một đường khe dài như cái miệng)
+mo += E('path', { d: 'M-122,34 Q0,88 122,34 Q0,60 -122,34Z', fill: '#3e1606', stroke: '#6a3410', stroke_width: 3.5, stroke_linejoin: 'round' });
+mo += E('path', { d: 'M-122,34 Q0,88 122,34', fill: 'none', stroke: '#ffe0a8', stroke_opacity: 0.8, stroke_width: 3, stroke_linecap: 'round', transform: 'translate(0 4)' });
+mo += E('path', { d: 'M-122,34 Q-132,30 -128,22 M122,34 Q132,30 128,22', fill: 'none', stroke: '#6a3410', stroke_width: 4, stroke_linecap: 'round' });
+// mắt
+[-1, 1].forEach((d) => {
+  mo += E('ellipse', { cx: d * 62, cy: -34, rx: 28, ry: 33, fill: '#fff', stroke: '#6a3410', stroke_width: 3 });
+  mo += E('ellipse', { cx: d * 62 + d * -2, cy: -30, rx: 19, ry: 24, fill: '#3a1a0c' });
+  mo += E('circle', { cx: d * 62 - 7, cy: -41, r: 8, fill: '#fff' }) + E('circle', { cx: d * 62 + 7, cy: -22, r: 4, fill: '#fff' });
+  mo += E('path', { d: `M${d * 62 - 28},-74 Q${d * 62},-92 ${d * 62 + 28},-74`, fill: 'none', stroke: '#6a3410', stroke_width: 5, stroke_linecap: 'round' });
+  mo += E('ellipse', { cx: d * 116, cy: 4, rx: 20, ry: 12, fill: '#ff7a96', opacity: 0.7 });
+});
+mo += E('ellipse', { cx: -84, cy: -92, rx: 40, ry: 14, fill: '#fff', opacity: 0.35, transform: 'rotate(-30 -84 -92)' });
+add(G({ transform: `translate(${cx} ${cy})` }, mo));
+// dùi mõ
+const mx = 478, my = 366;
+add(E('line', { x1: mx + 6, y1: my - 4, x2: 640, y2: 232, stroke: '#6a3410', stroke_width: 20, stroke_linecap: 'round' }));
+add(E('line', { x1: mx + 6, y1: my - 4, x2: 640, y2: 232, stroke: '#c9772f', stroke_width: 13, stroke_linecap: 'round' }));
+add(E('line', { x1: mx + 20, y1: my - 16, x2: 628, y2: 244, stroke: '#ffb870', stroke_width: 3, stroke_linecap: 'round', stroke_opacity: 0.7 }));
+add(E('circle', { cx: mx, cy: my, r: 32, fill: rg([[0, '#ff8a6a'], [1, '#c01f2a']], { cx: 0.35, cy: 0.3, r: 0.8 }), stroke: '#7a0e18', stroke_width: 3.5 }));
+add(E('ellipse', { cx: mx - 11, cy: my - 12, rx: 9, ry: 5, fill: '#fff', opacity: 0.6, transform: `rotate(-35 ${mx - 11} ${my - 12})` }));
+// vệt va chạm
+[[-1, -1.7], [-2.4, -0.9], [-2.6, 0.4]].forEach(([dx, dy]) => {
+  add(E('line', { x1: mx + dx * 28 - 20, y1: my + dy * 28 - 8, x2: mx + dx * 28 - 44, y2: my + dy * 28 - 8 + dy * 6, stroke: '#ffb000', stroke_width: 6, stroke_linecap: 'round' }));
+});
+add(fancy('cộc!', { x: 560, y: 356, size: 54, font: 'Baloo 2', weight: 800, fill: '#ff6a2a', out1: '#fff', w1: 6, shadow: '#7a3a10', sd: 4, sb: 3, so: 0.4, rot: 10, maxW: 140 }));
+// công đức +1 bay lên
+function plus1(x, y, r, rot) {
+  return G({ transform: `translate(${x} ${y}) rotate(${rot})` }, glow(0, 0, r * 1.8, '#ffe27a', 0.5),
+    E('circle', { r, fill: lg([[0, '#fff5b0'], [1, '#f3a812']]), stroke: '#c47a0c', stroke_width: 3 }),
+    E('circle', { r: r * 0.8, fill: 'none', stroke: '#fff', stroke_opacity: 0.6, stroke_width: 2 }));
+}
+add(plus1(92, 330, 40, -10) + plus1(640, 520, 34, 10) + plus1(78, 560, 30, 8));
+add(fancy('+1', { x: 92, y: 345, size: 40, font: 'Baloo 2', weight: 800, fill: '#8a3a08', out1: '#fff', w1: 3, maxW: 56 }));
+add(fancy('+1', { x: 640, y: 532, size: 34, font: 'Baloo 2', weight: 800, fill: '#8a3a08', out1: '#fff', w1: 3, maxW: 48 }));
+add(fancy('+1', { x: 78, y: 571, size: 30, font: 'Baloo 2', weight: 800, fill: '#8a3a08', out1: '#fff', w1: 3, maxW: 44 }));
+// tim, lấp lánh, cánh sen
+[[170, 250, 34, -12], [610, 250, 26, 12], [660, 380, 28, 14], [150, 640, 30, -8], [560, 668, 34, 8]].forEach(([x, y, s, r], i) => add(heart(x, y, s, '#ffc0d6', '#f0507e', r)));
+let pet = '';
+for (let i = 0; i < 8; i++) pet += E('path', { d: petalPath(22, 8), fill: R.pick(['#ffb7d0', '#ff94b8', '#ffd6e4']), opacity: 0.9, transform: `translate(${R.between(40, 680)} ${R.between(240, 600)}) rotate(${R.between(0, 360)})` });
+add(pet);
+add(glitter(R, 40, [20, 220, 700, 700], { stars: 0.5, smin: 6, smax: 14, colors: ['#fff', '#ffe27a'] }));
+add(fancy('Gõ mõ đủ chỉ tiêu,', { x: 360, y: 98, size: 82, font: 'Baloo 2', weight: 800, fill: '#7a2e0c', out1: '#fff', w1: 7, out2: '#ff9a3c', w2: 3.5, shadow: '#a04a10', sd: 6, sb: 4, so: 0.4, maxW: 640 }));
+add(fancy('chúc bạn bình an!', { x: 360, y: 178, size: 66, font: 'Pacifico', fill: lg([[0, '#ff7a9a'], [1, '#e0245e']]), out1: '#fff', w1: 6, shadow: '#a0305a', sd: 5, sb: 4, so: 0.35, maxW: 600, rot: -1.5 }));
+finish();
+</script></body></html>

@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><title>Chào buổi sáng</title>
+<link rel="stylesheet" href="card.css"></head>
+<body><svg id="c" width="720" height="720" viewBox="0 0 720 720" xmlns="http://www.w3.org/2000/svg"></svg>
+<script src="lib.js"></script>
+<script>
+const R = rng(151);
+add(E('rect', { width: 720, height: 720, fill: lg([[0, '#fff3dc'], [0.55, '#ffdcc0'], [1, '#f0b090']]) }));
+add(glow(120, 60, 420, '#fffbe0', 0.95, 0.2));
+// nắng qua cửa sổ
+let sh = '';
+[[70, 190], [250, 130], [430, 110], [600, 90]].forEach(([x, w]) => { sh += E('path', { d: `M${x},-10 L${x + w * 0.5},-10 L${x + w * 0.5 + 330},720 L${x + 160},720Z`, fill: '#fff', opacity: 0.18 }); });
+add(sh);
+add(bokeh(R, 20, [0, 0, 720, 600], { colors: ['#fff', '#ffe8b0', '#ffd0d8'], rmin: 10, rmax: 40, omin: 0.15, omax: 0.4 }));
+// bàn gỗ
+add(E('rect', { y: 590, width: 720, height: 140, fill: lg([[0, '#c88a58'], [1, '#7a4a2a']]) }));
+add(E('rect', { y: 590, width: 720, height: 6, fill: '#e8b080', opacity: 0.8 }));
+for (let i = 0; i < 8; i++) add(E('path', { d: `M0,${620 + i * 16} Q360,${616 + i * 16 + R.between(-4, 4)} 720,${622 + i * 16}`, fill: 'none', stroke: '#5a3216', stroke_opacity: 0.25, stroke_width: 2 }));
+// cành lá nhỏ bên trái
+add(leaf(70, 600, 130, -20, '#8be07a', '#2a8a4c') + leaf(70, 600, 110, 12, '#7ee078', '#1f7a42') + leaf(70, 600, 90, 40, '#7ee078', '#1f7a42'));
+// hoa sen nhỏ trên bàn
+add(E('ellipse', { cx: 600, cy: 650, rx: 76, ry: 14, fill: '#3a1c08', opacity: 0.3, filter: blur(4) }));
+add(lotus(600, 640, 0.62, LOTUS.pink));
+// đĩa lót
+add(E('ellipse', { cx: 360, cy: 604, rx: 238, ry: 22, fill: '#3a1c08', opacity: 0.3, filter: blur(5) }));
+add(E('ellipse', { cx: 360, cy: 588, rx: 214, ry: 40, fill: lg([[0, '#fff'], [1, '#f3d6e0']]), stroke: '#f0a8c0', stroke_width: 4 }));
+add(E('ellipse', { cx: 360, cy: 584, rx: 150, ry: 26, fill: 'none', stroke: '#f0a8c0', stroke_opacity: 0.7, stroke_width: 2 }));
+// quai tách
+add(E('path', { d: 'M486,432 C566,420 578,512 484,528', fill: 'none', stroke: '#e0a8c0', stroke_width: 30, stroke_linecap: 'round' }));
+add(E('path', { d: 'M486,432 C566,420 578,512 484,528', fill: 'none', stroke: '#fff', stroke_width: 22, stroke_linecap: 'round' }));
+// thân tách
+add(E('path', { d: 'M214,412 C214,520 268,586 360,586 C452,586 506,520 506,412Z', fill: lg([[0, '#ffffff'], [0.6, '#fdeef3'], [1, '#f3c9d8']], { x1: 0, y1: 0, x2: 1, y2: 0.4 }), stroke: '#e8a8c0', stroke_width: 4 }));
+add(E('path', { d: 'M236,440 C240,500 270,540 304,560', fill: 'none', stroke: '#fff', stroke_width: 9, stroke_linecap: 'round', opacity: 0.9 }));
+add(lotus(360, 548, 0.42, LOTUS.pink));
+add(E('path', { d: 'M262,520 Q360,560 458,520', fill: 'none', stroke: '#f0a8c0', stroke_width: 3, stroke_dasharray: '1 8', stroke_linecap: 'round' }));
+// miệng tách + trà
+add(E('ellipse', { cx: 360, cy: 412, rx: 146, ry: 36, fill: lg([[0, '#fff'], [1, '#f6dce6']]), stroke: '#e8a8c0', stroke_width: 4 }));
+add(E('ellipse', { cx: 360, cy: 416, rx: 128, ry: 28, fill: lg([[0, '#e8a040'], [1, '#b8661c']]) }));
+add(E('ellipse', { cx: 330, cy: 410, rx: 54, ry: 8, fill: '#ffe0a0', opacity: 0.6 }));
+// cánh sen nổi trong trà
+add(E('path', { d: petalPath(20, 9), fill: '#ffb7d0', transform: 'translate(392 424) rotate(70)' }) + E('path', { d: petalPath(18, 8), fill: '#ff94b8', transform: 'translate(334 426) rotate(-60)' }));
+// hơi nước hình tim
+const steam = (x, d) => E('path', { d: `M${x},388 C${x + d},350 ${x - d},320 ${x},290 S${x + d * 0.6},262 ${x},246`, fill: 'none', stroke: '#fff', stroke_width: 11, stroke_linecap: 'round', stroke_opacity: 0.8, filter: blur(2.5) });
+add(steam(300, 26) + steam(420, -26));
+add(glow(360, 250, 130, '#fff', 0.7, 0.2));
+add(heart(360, 246, 118, '#ffd0e0', '#f4528a', 0, 0.95));
+add(heart(250, 270, 30, '#ffd0e0', '#f4528a', -16, 0.9) + heart(478, 282, 26, '#ffd0e0', '#f4528a', 14, 0.9));
+add(glitter(R, 30, [30, 240, 690, 580], { stars: 0.5, smin: 6, smax: 14, colors: ['#fff', '#ffe9a8'] }));
+add(fancy('Chào buổi sáng', { x: 360, y: 122, size: 98, font: 'Pacifico', fill: '#e8456c', out1: '#fff', w1: 7, out2: '#ffc0d0', w2: 3, shadow: '#a0505a', sd: 6, sb: 4, so: 0.4, maxW: 620, rot: -2 }));
+add(fancy('Một tách trà, một ngày an yên', { x: 360, y: 184, size: 40, font: 'Dancing Script', weight: 700, fill: '#7a3e1a', out1: '#fff', w1: 5, shadow: '#a0505a', sd: 3, sb: 3, so: 0.3, maxW: 600, rot: -2 }));
+finish();
+</script></body></html>

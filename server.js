@@ -56,6 +56,9 @@ const FUNDS = (process.env.FUNDS || 'Tùy nhà chùa sử dụng').split(';').ma
   .map((s, i) => { const [name, goal] = s.split('|'); return { id: 'q' + i, name: clean(name, 60), goal: Math.max(0, parseInt(goal, 10) || 0) }; });
 
 const MERIT = MERITS.EARN;   // thắp nhang +10, dâng lễ +5, … ; cúng dường +1 cho mỗi 1.000đ
+// Mốc công đức trong ngày → hiệu ứng chúc mừng ở trình duyệt. Máy chủ quyết định, trình duyệt chỉ hiển thị.
+const MILESTONES = [[100, 'bless'], [300, 'bless'], [500, 'bless'], [666, 'scare'], [888, 'grand'], [999, 'grand']];
+const MILESTONE_EVERY = 1000;   // từ 1000 trở đi: cứ mỗi 1000 là một mốc 'grand'
 const ITEMS = { lotus: 'dâng một đóa sen', rose: 'dâng một bó hoa hồng', lamp: 'thắp một ngọn đèn', fruit: 'dâng một mâm ngũ quả' };
 const KINDS = ['Cầu an', 'Cầu siêu', 'Tạ ơn', 'Sám hối', 'Hồi hướng'];
 const PENALTY_RULES = rulesSummary();
@@ -119,18 +122,26 @@ function rollDay() {
 let statsDirty = true;
 function bump(key, n = 1) { rollDay(); db.today[key] += n; db.total[key] += n; statsDirty = true; store.save(); }
 function addMerit(p, n) { addMeritUid(p.uid, p.name, n); }
-/** Cộng (hoặc trừ, n < 0) công đức theo uid; người đang có mặt thì cập nhật hình ảnh cho cả chánh điện. */
-function addMeritUid(uid, name, n) {
+/**
+ * Cộng (hoặc trừ, n < 0) công đức theo uid; người đang có mặt thì cập nhật hình ảnh cho cả chánh điện.
+ * calm: lần cộng từ cúng dường (nhảy nhiều điểm một lúc) thì không hù ở mốc 666, chỉ chúc mừng.
+ */
+function addMeritUid(uid, name, n, calm) {
   const d = vnDay();
   let m = db.merit[uid];
   if (!m) m = db.merit[uid] = { name, total: 0, today: 0, day: d };
   if (m.day !== d) { m.day = d; m.today = 0; }
-  const before = m.total;
+  const before = m.total, beforeToday = m.today;
   m.name = name; m.total += n; m.today += n;
   store.save();
+  const hit = n > 0 ? crossed(beforeToday, m.today, calm) : null;
   for (const p of players.values()) {
     if (p.uid !== uid) continue;
     p.meritDirty = true;
+    // mốc công đức trong ngày: chờ tới nhịp 1 giây; mốc ưu tiên cao hơn không bị mất. Ghi luôn công đức lúc đó: nếu nhịp 1 giây
+    // rơi qua nửa đêm giờ Việt Nam thì meritOf() đã về 0, con số gửi kèm sẽ thấp hơn chính mốc.
+    if (hit && outranks(hit, p.milestone)) p.milestone = { ...hit, today: m.today };
+    // pháp tướng / quỷ theo công đức tổng: chỉ báo cả chánh điện khi hình ảnh đổi
     const key = MERITS.visualKey(m.total);
     if (key !== p.mkey) {
       p.mkey = key;
@@ -138,6 +149,20 @@ function addMeritUid(uid, name, n) {
       io.emit('pm', { id: p.id, mt: m.total, up });
     }
   }
+}
+// Mốc nào vừa bị bước qua khi công đức đi từ before lên after (mỗi lần cộng là 1..15 nên có thể nhảy qua đúng số).
+// Bước qua nhiều mốc cùng lúc thì chỉ giữ một: 'scare' thắng, còn lại lấy mốc cao nhất.
+function crossed(before, after, calm) {
+  let best = null;
+  const take = (at, kind) => { const c = { at, kind }; if (outranks(c, best)) best = c; };
+  for (const [at, kind] of MILESTONES) if (before < at && after >= at) take(at, calm && kind === 'scare' ? 'grand' : kind);
+  for (let k = Math.floor(Math.max(0, before) / MILESTONE_EVERY) + 1; k * MILESTONE_EVERY <= after && k <= 1000; k++) take(k * MILESTONE_EVERY, 'grand');
+  return best;
+}
+function outranks(a, b) {
+  if (!b) return true;
+  if ((a.kind === 'scare') !== (b.kind === 'scare')) return a.kind === 'scare';
+  return a.at > b.at;
 }
 const meritTotal = uid => (db.merit[uid] ? db.merit[uid].total : 0);
 // Tái phạm lời tục trong 10 phút (theo uid, giữ trong bộ nhớ)
@@ -205,10 +230,48 @@ app.get('/api/announce/:id', (req, res) => {
   res.set('Cache-Control', 'public, max-age=1800').type(c.type).send(c.buf);
 });
 
+/* ----- kho meme và lời chúc cho hiệu ứng mốc công đức (thả file vào thư mục là tự có) ----- */
+const MEME_DIR = path.join(__dirname, 'public', 'img', 'memes');
+const BLESS_DIR = path.join(__dirname, 'public', 'audio', 'blessings');
+const MEME_EXT = /\.(jpe?g|png|webp|gif|avif)$/i;
+const BLESS_FILE = /^[A-Za-z0-9][A-Za-z0-9._-]{0,80}\.(mp3|ogg|m4a|wav)$/i;   // chỉ tên file thường, không có dấu / hay ..
+const MAX_URL = 300;   // celebrate.js safeUrl() chỉ nhận địa chỉ ngắn hơn 300 ký tự
+let fxCache = { t: 0, memes: [], blessings: [] }, fxWarned = false;
+function fxAssets() {
+  const t = now();
+  if (fxCache.t && t - fxCache.t < 30e3) return fxCache;
+  let memes = [], blessings = [];
+  try {
+    // tên file có byte lỗi UTF-8 (U+FFFD) thì địa chỉ sẽ 404; tên quá dài thì trình duyệt (safeUrl < 300 ký tự) từ chối
+    memes = fs.readdirSync(MEME_DIR, { withFileTypes: true })
+      .filter(e => e.isFile() && !e.name.startsWith('.') && e.name.length <= 120 && MEME_EXT.test(e.name) && !e.name.includes('\uFFFD'))
+      .map(e => e.name).sort().map(n => '/img/memes/' + encodeURIComponent(n)).filter(u => u.length < MAX_URL).slice(0, 200);
+  } catch (e) { memes = []; }
+  try {
+    const raw = fs.readFileSync(path.join(BLESS_DIR, 'manifest.json'), 'utf8').replace(/^\uFEFF/, '');   // Notepad / PowerShell hay thêm BOM
+    const man = JSON.parse(raw);
+    const lines = Array.isArray(man && man.lines) ? man.lines : [];
+    for (const l of lines.slice(0, 40)) {
+      const file = l && typeof l.file === 'string' ? l.file : '', text = clean(l && l.text, 160);
+      if (!BLESS_FILE.test(file) || !text) continue;
+      try { if (!fs.statSync(path.join(BLESS_DIR, file)).isFile()) continue; } catch (e) { continue; }
+      blessings.push({ url: '/audio/blessings/' + encodeURIComponent(file), text });
+    }
+  } catch (e) {
+    blessings = [];
+    if (e.code !== 'ENOENT' && !fxWarned) { fxWarned = true; console.warn('[blessings] Không đọc được manifest.json, dùng giọng đọc của trình duyệt:', e.message); }
+  }
+  fxCache = { t, memes, blessings };
+  return fxCache;
+}
+
 function clientConfig() {
+  const fx = fxAssets();
   return {
     penaltyRules: PENALTY_RULES, meritPerVnd: MERITS.EARN.perVnd,
     siteName: SITE_NAME,
+    memes: fx.memes,
+    blessings: fx.blessings,
     incenseMinutes: INCENSE_MINUTES,
     donation: DONATION_ENABLED ? { bank: BANK.label, account: BANK.account, accountName: BANK.name, funds: FUNDS.map(f => ({ id: f.id, name: f.name })) } : null,
     tracks: TRACKS,
@@ -320,7 +383,7 @@ function confirmDonation(d, info) {
   const tierInfo = aura && aura.tier ? AURA.TIERS[aura.tier - 1] : null;
   // Công đức: mỗi 1.000đ đã xác nhận là 1 điểm
   const gain = Math.floor(d.amount / MERITS.EARN.perVnd);
-  if (gain > 0) { addMeritUid(d.uid, d.name, gain); d.merit = gain; }
+  if (gain > 0) { addMeritUid(d.uid, d.name, gain, true); d.merit = gain; }
   store.save();
   io.emit('donation', { d: publicDonation(d), funds: fundsSummary() });
   sys(`${d.anon ? 'Một Phật tử ẩn danh' : d.name} vừa cúng dường tịnh tài cho quỹ “${d.fundName}”. Tùy hỷ công đức.`);
@@ -379,12 +442,14 @@ io.on('connection', socket => {
     const isMod = !!(ADMIN_KEY && data.adminKey && safeEqual(String(data.adminKey), ADMIN_KEY));
     const nm = checkName(data.name, isMod);
     if (!nm.ok) return ack({ ok: false, reason: nm.reason });
-    const uid = /^[a-zA-Z0-9_-]{8,40}$/.test(String(data.uid || '')) ? String(data.uid) : crypto.randomUUID();
+    // uid là khóa của db.merit: loại tên trùng thuộc tính của Object ('__proto__', 'constructor', 'toString'...) kẻo ghi đè lên Object.prototype
+    const want = String(data.uid || '');
+    const uid = /^[a-zA-Z0-9_-]{8,40}$/.test(want) && !(want in Object.prototype) ? want : crypto.randomUUID();
     p = {
       id: nextPid++, uid, name: nm.name, mod: isMod, socket,
       look: { g: data.look && data.look.g === 'nam' ? 'nam' : 'nu', c: num(data.look && data.look.c, 0, 11, 0) | 0, h: num(data.look && data.look.h, 0, 3, 0) | 0 },
       x: 0.5 + rand(-0.28, 0.28), z: rand(0.68, 0.92), tx: 0, tz: 0, dirty: false, cd: {}, bk: {}, lastText: '', meritDirty: false,
-      v: 0, rd: '', voiceBanUntil: 0
+      v: 0, rd: '', voiceBanUntil: 0, milestone: null
     };
     p.tx = p.x; p.tz = p.z;
     p.mkey = MERITS.visualKey(meritTotal(uid));
@@ -649,7 +714,11 @@ setInterval(() => {
     if (arr.length) io.volatile.emit('p', arr);
   }
   if (tick % 20 === 0) {
-    for (const p of players.values()) if (p.meritDirty) { p.meritDirty = false; p.socket.emit('merit', meritOf(p.uid)); }
+    for (const p of players.values()) {
+      if (p.meritDirty) { p.meritDirty = false; p.socket.emit('merit', meritOf(p.uid)); }
+      // mốc công đức chỉ gửi riêng cho người đạt mốc, sau khi thẻ công đức đã cập nhật
+      if (p.milestone) { p.socket.emit('milestone', { at: p.milestone.at, kind: p.milestone.kind, today: Math.max(meritOf(p.uid).today, p.milestone.today) }); p.milestone = null; }
+    }
     if (statsDirty) { statsDirty = false; io.emit('stats', { today: db.today, online: players.size }); }
   }
   if (tick % 100 === 0) {

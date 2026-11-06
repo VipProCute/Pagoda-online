@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><title>Cỏ bốn lá may mắn</title>
+<link rel="stylesheet" href="card.css"></head>
+<body><svg id="c" width="720" height="720" viewBox="0 0 720 720" xmlns="http://www.w3.org/2000/svg"></svg>
+<script src="lib.js"></script>
+<script>
+const R = rng(113);
+add(E('rect', { width: 720, height: 720, fill: lg([[0, '#6fcaf0'], [0.45, '#c8f0e0'], [0.7, '#e8fbc0']]) }));
+// nắng góc phải
+add(glow(640, 60, 300, '#fffbd0', 0.9, 0.2));
+let rays = '';
+const rayG = rg([[0, '#fff', 0.5], [1, '#fff', 0]], { cx: 640, cy: 40, r: 700, u: true });
+for (let i = 0; i < 8; i++) {
+  const a0 = (95 + i * 11) * Math.PI / 180, a1 = a0 + 0.08, L = 900;
+  rays += E('path', { d: `M640,40 L${640 + Math.cos(a0) * L},${40 + Math.sin(a0) * L} L${640 + Math.cos(a1) * L},${40 + Math.sin(a1) * L}Z`, fill: rayG });
+}
+add(rays);
+add(cloud(120, 110, 1.0, '#fff', 0.9) + cloud(520, 180, 0.75, '#fff', 0.85));
+add(bokeh(R, 20, [0, 120, 720, 600], { colors: ['#fff', '#fffbc0', '#b8f0a0'], rmin: 10, rmax: 40, omin: 0.15, omax: 0.4 }));
+// đồi cỏ
+add(E('path', { d: 'M-10,520 C120,470 260,500 380,520 C500,540 620,480 730,510 L730,730 L-10,730Z', fill: lg([[0, '#8be07a'], [1, '#2a9a4c']]) }));
+add(E('path', { d: 'M-10,590 C150,550 280,590 420,574 C560,558 650,590 730,576 L730,730 L-10,730Z', fill: lg([[0, '#4cc060'], [1, '#17783c']]) }));
+// ngọn cỏ
+let grass = '';
+for (let i = 0; i < 60; i++) {
+  const x = R.between(0, 720), y = R.between(540, 640), h = R.between(14, 34);
+  grass += E('path', { d: `M${x},${y} q${R.between(-6, 6)},${-h * 0.6} ${R.between(-10, 10)},${-h}`, stroke: R.pick(['#52c864', '#2f9a4a', '#7ee078']), stroke_width: 3, fill: 'none', stroke_linecap: 'round' });
+}
+add(grass);
+// cỏ nhỏ xung quanh
+add(clover(110, 560, 0.48, 10) + clover(620, 548, 0.42, -12) + clover(240, 640, 0.36, 22) + clover(500, 626, 0.4, -6) + clover(48, 440, 0.3, 14) + clover(680, 430, 0.32, -16));
+// thân cỏ lớn
+add(E('path', { d: 'M360,350 C350,430 380,500 346,610', fill: 'none', stroke: '#1c8a40', stroke_width: 12, stroke_linecap: 'round' }));
+add(E('path', { d: 'M360,350 C350,430 380,500 346,610', fill: 'none', stroke: '#52c864', stroke_width: 5, stroke_linecap: 'round', transform: 'translate(-2 0)' }));
+add(glow(360, 280, 250, '#fffbc0', 0.6, 0.2));
+add(clover(360, 265, 1.95, 0));
+// giọt sương + bọ rùa
+add(E('ellipse', { cx: 296, cy: 190, rx: 9, ry: 12, fill: '#fff', fill_opacity: 0.55, stroke: '#fff', stroke_width: 2 }) + E('circle', { cx: 293, cy: 186, r: 3, fill: '#fff' }));
+add(E('ellipse', { cx: 428, cy: 330, rx: 7, ry: 9, fill: '#fff', fill_opacity: 0.55, stroke: '#fff', stroke_width: 2 }) + E('circle', { cx: 426, cy: 327, r: 2.4, fill: '#fff' }));
+function ladybug(x, y, s, rot) {
+  return G({ transform: `translate(${x} ${y}) rotate(${rot}) scale(${s})` },
+    E('ellipse', { cx: 0, cy: 3, rx: 22, ry: 24, fill: '#000', opacity: 0.15 }),
+    E('circle', { cx: 0, cy: -20, r: 11, fill: '#2a1a1a' }),
+    E('ellipse', { cx: 0, cy: 2, rx: 22, ry: 24, fill: lg([[0, '#ff6a5a'], [1, '#d41a22']]), stroke: '#2a1a1a', stroke_width: 2.4 }),
+    E('line', { x1: 0, y1: -22, x2: 0, y2: 26, stroke: '#2a1a1a', stroke_width: 2.4 }),
+    [[-10, -6], [10, -6], [-12, 10], [12, 10], [0, 18]].map(([a, b]) => E('circle', { cx: a, cy: b, r: 4, fill: '#2a1a1a' })).join(''),
+    E('circle', { cx: -4, cy: -22, r: 2.6, fill: '#fff' }) + E('circle', { cx: 4, cy: -22, r: 2.6, fill: '#fff' }));
+}
+add(ladybug(430, 235, 0.95, 28) + ladybug(250, 500, 0.7, -20));
+add(glitter(R, 40, [20, 120, 700, 560], { stars: 0.5, smin: 6, smax: 15, colors: ['#fff', '#fffbc0'] }));
+add(fancy('Cỏ bốn lá,', { x: 360, y: 584, size: 76, font: 'Baloo 2', weight: 800, fill: '#fff', out1: '#16783c', w1: 7, out2: '#fff3a0', w2: 3, shadow: '#0a3a1a', sd: 5, sb: 4, so: 0.5, maxW: 560 }));
+add(fancy('may mắn tới nhà!', { x: 360, y: 662, size: 62, font: 'Pacifico', fill: lg([[0, '#fff7b0'], [1, '#ffd23a']]), out1: '#16783c', w1: 6, out2: '#fff', w2: 2, shadow: '#0a3a1a', sd: 5, sb: 4, so: 0.5, maxW: 600, rot: -1.5 }));
+finish();
+</script></body></html>

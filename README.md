@@ -14,6 +14,7 @@ Chánh điện trực tuyến cho nhiều người cùng lúc. Mỗi người v�
 | Nói chuyện | Nói chuyện bằng giọng như đi chùa thật: đứng gần nghe rõ, xa nghe nhỏ dần, người bên trái nghe ở tai trái. Đang tụng kinh thì tiếng nói chuyện tự nhỏ lại. Tắt tiếng từng người; ban điều hành khóa mic 10 phút. |
 | Cộng đồng | Chat chung (bong bóng chat hiện trên đầu nhân vật), tường lời nguyện có nút “Tùy hỷ”, báo cáo tin nhắn. |
 | Công đức | Điểm công đức cá nhân (hôm nay / tất cả) và bảng công đức hôm nay. Tính từ nhang, hoa, mõ, tim, vái lạy, tụng kinh và cúng dường (1.000đ = 1 điểm). Nói tục trong chat bị trừ theo 5 mức. Công đức cao hiện **pháp tướng** sau lưng (6 mốc), công đức âm thì có **quỷ** theo sau (4 dạng). |
+| Hiệu ứng mốc | Đạt 100, 300, 500, 888, 999 rồi mỗi 1.000 công đức trong ngày thì hiện lời chúc bằng giọng nữ kèm meme chọn ngẫu nhiên và cánh sen rơi. Mốc 666 thì hù một cái bằng mặt quỷ rồi trấn an. Có công tắc tắt trong mục Công đức. |
 | Cúng dường | Tạo mã VietQR có sẵn số tiền và mã đối soát. Tiền vào thẳng tài khoản của chùa. Tự xác nhận qua webhook SePay, hoặc ban điều hành xác nhận tay. Xác nhận xong: chánh điện đọc thông báo bằng giọng nữ VieNeu, người cúng dường được **hào quang 9 cảnh giới** (cộng dồn). |
 | An toàn | Chặn tin có số tài khoản, số điện thoại, đường link (chống lừa đảo giả danh chùa). Che từ tục. Giới hạn tần suất. Tên “Ban điều hành / Admin / Trụ trì…” chỉ dành cho quản trị. |
 | Quản trị | `/admin.html`: xác nhận/hủy lượt cúng dường, xem ai đang có hào quang, ẩn tin nhắn và lời nguyện (thấy cả số công đức bị trừ), gửi thông báo vào chánh điện. |
@@ -137,6 +138,42 @@ Pháp tướng (vật sau lưng, lâu dài) và hào quang cúng dường (ánh 
 
 Máy chủ phát sự kiện `pm` (`{ id, mt, up }`) mỗi khi hình pháp tướng / quỷ của ai đó đổi; `up: true` nghĩa là vừa lên mốc pháp tướng, dùng được cho hiệu ứng chúc mừng.
 
+## Hiệu ứng mốc công đức
+
+Khi công đức **hôm nay** (số ở thẻ “Công đức” trên đầu trang) chạm các mốc dưới đây, trình duyệt của người đạt mốc hiện hiệu ứng chúc mừng. Không ai khác thấy.
+
+| Mốc | Hiệu ứng |
+|---|---|
+| 100, 300, 500 | Lời chúc bằng giọng nữ (“Chúc bạn một ngày bình an…”) kèm một meme ngẫu nhiên, cánh sen và hoa giấy rơi nhẹ. |
+| 666 | Hù: mặt quỷ phóng ra chiếm màn hình khoảng 1,4 giây (một lần chớp đỏ, rung màn hình, tiếng hù), rồi mờ đi và hiện thẻ trấn an “Hù bạn thôi! A Di Đà Phật, chúc bạn bình an 🙏”. |
+| 888, 999, 1.000, 2.000, 3.000… | Bản lớn: tiêu đề vàng to, nhiều hoa giấy hơn, cũng có giọng chúc và meme. |
+
+**Cách tính.** Máy chủ quyết định, không phải trình duyệt. Mốc tính khi một lần cộng đưa công đức hôm nay từ dưới mốc lên bằng hoặc quá mốc (mỗi lần cộng là 1 đến 15 điểm nên có thể nhảy qua đúng con số). Một lần cộng bước qua nhiều mốc thì chỉ hiện một: 666 được ưu tiên, còn lại lấy mốc cao nhất. Tải lại trang hay vào lại chùa khi đã có 700 công đức không chiếu lại mốc cũ. Công đức “hôm nay” tính lại mỗi ngày theo giờ Việt Nam, nên mốc cũng vậy. Đang có một hiệu ứng (hay tab đang ẩn) thì mốc mới xếp hàng chờ: tối đa một lượt, 666 được ưu tiên hơn mọi mốc khác. Lượt chờ quá 60 giây (tab bị ẩn lâu) thì không chiếu nữa, kể cả 666, chỉ hiện dòng báo nhỏ “Bạn đã đạt N công đức”.
+
+**Kho meme.** Thả ảnh `.jpg .jpeg .png .webp .gif .avif` vào `public/img/memes/` là tự có, không cần sửa mã (tối đa 200 ảnh, ảnh vuông khoảng 720px đẹp nhất). Máy chủ đọc lại thư mục sau tối đa 30 giây, người chơi nhận danh sách mới khi vào chùa hoặc tải lại trang. Mỗi lần chọn ngẫu nhiên và không lặp lại ảnh vừa hiện. Ảnh lỗi thì bỏ qua, hết ảnh thì thẻ chỉ còn chữ. Nên đặt tên file không dấu và ngắn: tên có byte lỗi mã hóa hay dài quá (địa chỉ từ 300 ký tự) sẽ bị bỏ qua. Mặt quỷ của mốc 666 là `public/img/devil.svg`.
+
+**Giọng chúc.** Bốn câu chúc giọng nữ (VieNeu-TTS v3 Turbo, giọng “Trúc Ly”) đã có sẵn trong `public/audio/blessings/`, kèm `manifest.json`; tạo lại bằng `tools/build_blessing_voice.py`. Muốn thêm câu hay đổi giọng thì sửa `manifest.json` (lưu UTF-8, có BOM cũng được; file lỗi thì máy chủ ghi một dòng cảnh báo vào log và trình duyệt đọc bằng giọng máy):
+
+```json
+{ "lines": [
+  { "file": "binh-an-1.mp3", "text": "Chúc bạn một ngày bình an." },
+  { "file": "binh-an-2.mp3", "text": "A Di Đà Phật. Chúc bạn một ngày mới an lành." }
+] }
+```
+
+Mỗi lần hiện, trình duyệt chọn ngẫu nhiên một dòng, phát file và hiện đúng câu `text` bên dưới meme. `file` chỉ là tên file thường (`.mp3 .ogg .m4a .wav`, chỉ gồm chữ không dấu, số, `.`, `-`, `_`, không có dấu `/`), máy chủ bỏ qua dòng sai hoặc file không tồn tại. Không có file giọng nào (hay file không tải được) thì trình duyệt tự đọc bằng `speechSynthesis` (tiếng Việt, chỉ nhận giọng nữ như HoaiMy, Linh, Google tiếng Việt; giọng nam như An, NamMinh bị loại); máy không có giọng nữ tiếng Việt hay giọng không lên tiếng thì chỉ còn tiếng chuông ting nhẹ. Nút tắt tiếng trên đầu trang tắt mọi âm thanh của hiệu ứng, kể cả giọng đọc.
+
+**Xem thử.** Mở `http://localhost:3000/?celebrate=100` (hoặc `300`, `999`, `2000`…): hiệu ứng chạy một lần sau khi vào chùa mà không cần đủ công đức. Riêng `?celebrate=666` có hộp hỏi xác nhận trước khi hù (từ chối thì chỉ hiện thẻ chúc mừng), để liên kết gửi cho người khác không tự hù họ. Hoặc gõ `Celebrate.test(666)` trong console của trình duyệt.
+
+**Tắt hiệu ứng.** Vào tab **Công đức**, thẻ **Hiệu ứng** có hai ô, lưu ngay trên máy (`localStorage`: `ta-fx`, `ta-scare`):
+
+- “Hiệu ứng chúc mừng ở các mốc công đức”: tắt thì chỉ còn dòng thông báo nhỏ “Bạn đạt N công đức”, kể cả mốc 666.
+- “Cho phép hù ở mốc 666”: tắt thì mốc 666 hiện lời chúc bình thường thay cho mặt quỷ.
+
+Người bật chế độ giảm chuyển động của hệ điều hành (`prefers-reduced-motion`) không bị rung, phóng to, chớp hay hạt bay: hình chỉ mờ hiện, mặt quỷ hiện mờ 0,2 giây không chớp đỏ. Chạm vào màn hình hoặc nhấn Esc để đóng sớm, nút × luôn đóng được. Chạm lên màn hình chỉ đóng khi trước đó đã ngừng chạm khoảng 0,9 giây (và sau 0,7 giây đầu), để người đang gõ mõ liên tục không lỡ tay tắt mất lời chúc; mỗi cú chạm bị bỏ qua làm đồng hồ này tính lại. Tab không lọt ra các nút phía sau lớp phủ. Điện thoại xoay ngang (màn thấp) thì thẻ xếp thành hàng, meme bên trái, chữ bên phải.
+
+Nguồn và giấy phép của ảnh, mặt quỷ, giọng đọc ghi trong `public/img/NOTICE.txt` và `public/audio/NOTICE.txt`.
+
 ## Chạy trên máy
 
 Cần Node.js 18 trở lên.
@@ -254,10 +291,15 @@ public/js/aura.js      9 cảnh giới hào quang cúng dường (dùng chung m�
 public/js/merit.js     6 pháp tướng công đức và 4 dạng quỷ (dùng chung)
 public/kinh/           kinh trong Tàng Kinh Các (Markdown + hình)
 tts/                   Dockerfile chạy máy chủ đọc VieNeu
-public/js/audio.js     phát bài tụng đồng bộ, chuông, mõ
+public/js/audio.js     phát bài tụng đồng bộ, chuông, mõ, clip lời chúc, tiếng hù (Web Audio)
+public/js/celebrate.js hiệu ứng chúc mừng ở mốc công đức (meme, giọng chúc, hù 666)
+public/css/celebrate.css giao diện của hiệu ứng trên
 public/js/chants.js    kinh văn các bài tụng (đầu vào của tools/build_chants.py)
-public/audio/          bài tụng dựng sẵn, tiếng chuông
+public/audio/          bài tụng dựng sẵn (chants/), tiếng chuông (bell.mp3)
+public/audio/blessings/ giọng chúc (4 file mp3 + manifest.json)
+public/img/memes/      kho meme (thả ảnh vào là tự có), public/img/devil.svg cho mốc 666
 tools/build_chants.py  dựng bài tụng bằng VieNeu-TTS
+tools/build_blessing_voice.py dựng giọng chúc (giọng nữ) bằng VieNeu-TTS
 public/js/lunar.js     lịch âm
 public/js/app.js       kết nối và giao diện
 public/admin.html      trang quản trị

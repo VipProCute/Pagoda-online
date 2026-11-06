@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><title>Vạn sự như ý</title>
+<link rel="stylesheet" href="card.css"></head>
+<body><svg id="c" width="720" height="720" viewBox="0 0 720 720" xmlns="http://www.w3.org/2000/svg"></svg>
+<script src="lib.js"></script>
+<script>
+const R = rng(47);
+add(E('rect', { width: 720, height: 720, fill: rg([[0, '#e3281f'], [0.55, '#b0121c'], [1, '#580610']], { cx: 360, cy: 300, r: 560, u: true }) }));
+// hoạ tiết mây vàng chìm
+let pat = '';
+for (let i = 0; i < 14; i++) {
+  const x = R.between(0, 720), y = R.between(380, 720), r = R.between(24, 54);
+  pat += E('circle', { cx: x, cy: y, r, fill: 'none', stroke: '#ffcf5a', stroke_opacity: 0.1, stroke_width: 3 });
+  pat += E('circle', { cx: x, cy: y, r: r * 0.6, fill: 'none', stroke: '#ffcf5a', stroke_opacity: 0.1, stroke_width: 3 });
+}
+add(pat);
+add(bokeh(R, 26, [0, 0, 720, 720], { colors: ['#ffd77a', '#ffb347', '#fff1b0'], rmin: 8, rmax: 34, omin: 0.1, omax: 0.3 }));
+add(glow(360, 250, 380, '#ff8a3c', 0.5, 0.1));
+// đèn lồng
+add(lantern(122, 188, 72, { rope: 300, rot: 4 }));
+add(lantern(598, 196, 72, { rope: 300, rot: -4 }));
+add(lantern(360, 150, 92, { rope: 300, rot: 0 }));
+add(lantern(240, 330, 46, { rope: 400, rot: -3 }));
+add(lantern(482, 336, 48, { rope: 400, rot: 3 }));
+add(lantern(38, 372, 28, { rope: 400, rot: 0 }));
+add(lantern(684, 380, 28, { rope: 400, rot: 0 }));
+// cành mai
+function branch(x0, y0, pts, s) {
+  let d = `M${x0},${y0}`;
+  pts.forEach(([cx1, cy1, x, y]) => { d += ` Q${x0 + cx1 * s},${y0 + cy1 * s} ${x0 + x * s},${y0 + y * s}`; });
+  return E('path', { d, fill: 'none', stroke: '#4a2210', stroke_width: 9 * s, stroke_linecap: 'round' }) + E('path', { d, fill: 'none', stroke: '#7a4220', stroke_width: 4 * s, stroke_linecap: 'round', transform: 'translate(-1.5 -1.5)' });
+}
+function maiSpray(x0, y0, s, flip) {
+  const f = flip ? -1 : 1;
+  let o = `<g transform="translate(${x0} ${y0}) scale(${f} 1)">`;
+  o += branch(0, 0, [[60, -50, 120, -90], [60, -40, 190, -100]], s);
+  o += branch(120 * s, -90 * s, [[20, -50, 50, -120]], 1) .replace(/stroke-width="[^"]+"/, 'stroke-width="5"');
+  o += branch(60 * s, -62 * s, [[10, 40, 40, 70]], 1).replace(/stroke-width="[^"]+"/, 'stroke-width="5"');
+  const fl = [[40, -34, 34], [118, -88, 40], [188, -100, 36], [168, -150, 28], [92, -150, 26], [60, -30, 18], [96, -52, 24], [86, 10, 30], [160, -60, 22], [128, -150, 22]];
+  fl.forEach(([x, y, r], i) => { o += flower5(x * s, y * s, r * s, '#ffec84', '#ffb20e', '#d8301c', i * 31); });
+  // nụ
+  [[200, -130], [75, -190], [14, -80]].forEach(([x, y]) => { o += E('circle', { cx: x * s, cy: y * s, r: 8 * s, fill: '#ffcf33', stroke: '#c98a08', stroke_width: 1 }); });
+  return o + '</g>';
+}
+add(maiSpray(2, 752, 1.3, false));
+add(maiSpray(718, 752, 1.3, true));
+add(glitter(R, 50, [10, 10, 710, 520], { stars: 0.35, smin: 5, smax: 13, colors: ['#ffe9a8', '#fff', '#ffd05a'] }));
+add(fancy('Vạn sự như ý', { x: 360, y: 508, size: 138, font: 'Lobster', fill: lg([[0, '#fffbd0'], [0.5, '#ffd43a'], [1, '#e8920c']]), out1: '#7c0a14', w1: 7, out2: '#ffe48a', w2: 2.2, shadow: '#2a0004', sd: 9, sb: 5, so: 0.7, maxW: 600 }));
+add(fancy('Bình an · May mắn · Hạnh phúc', { x: 360, y: 580, size: 31, font: 'Be Vietnam Pro', weight: 800, fill: '#fff4cf', out1: '#7c0a14', w1: 4.5, shadow: '#2a0004', sd: 4, sb: 3, so: 0.6, maxW: 560 }));
+finish();
+</script></body></html>
