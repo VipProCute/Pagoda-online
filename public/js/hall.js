@@ -148,7 +148,7 @@
   let cv, g, W = 0, H = 0, DPR = 1, bg = null, u = 1, au = 1;
   const G = {};
   const players = new Map();
-  let me = 0, offset = 0, last = 0;
+  let me = 0, offset = 0, last = 0, scene = 'hall';
   let incense = [];
   const parts = [], hearts = [], floaters = [], ripples = [];
   const altar = { lotus: 0, rose: 0, lamp: 0, fruit: 0 };
@@ -844,7 +844,7 @@
   }
   function drawPlayers(now, dt) {
     const k = 1 - Math.exp(-dt / 90);
-    const list = [...players.values()];
+    const list = [...players.values()].filter(p => (p.scene || 'hall') === scene);
     for (const p of list) {
       const ox = p.dx, oz = p.dz;
       p.dx += (p.x - p.dx) * k; p.dz += (p.z - p.dz) * k;
@@ -1000,10 +1000,45 @@
     }
   }
 
+  function drawYard() {
+    bg = document.createElement('canvas'); bg.width = cv.width; bg.height = cv.height;
+    const b = bg.getContext('2d'); b.setTransform(DPR, 0, 0, DPR, 0, 0);
+    const sky = b.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, '#192633'); sky.addColorStop(.5, '#967658'); sky.addColorStop(1, '#3a2720'); b.fillStyle = sky; b.fillRect(0, 0, W, H);
+    b.fillStyle = '#e4c589'; b.beginPath(); b.arc(W * .8, H * .13, 20 * u, 0, TAU); b.fill();
+    b.fillStyle = '#25372e'; b.fillRect(0, H * .35, W, H * .2);
+    for (let x = 0; x < W; x += 55 * u) { b.beginPath(); b.arc(x, H * .36, 42 * u, 0, TAU); b.fill(); }
+    b.fillStyle = '#6a5141'; b.fillRect(0, G.hb, W, H - G.hb);
+    b.strokeStyle = 'rgba(230,200,164,.17)'; b.lineWidth = 1; b.beginPath();
+    for (let i=0;i<14;i++) { const a=proj(i/13,0), z=proj(i/13,1); b.moveTo(a[0],a[1]); b.lineTo(z[0],z[1]); }
+    for(let j=0;j<7;j++) { const y=G.hb+(H-G.hb)*j/7; b.moveTo(0,y); b.lineTo(W,y); } b.stroke();
+    b.fillStyle='#44231a'; b.fillRect(W*.41,H*.24,W*.18,H*.27); b.fillStyle='#b8894b'; b.fillRect(W*.43,H*.26,W*.14,H*.24);
+    b.fillStyle='#321812'; b.beginPath(); b.moveTo(W*.37,H*.25); b.lineTo(W*.5,H*.14); b.lineTo(W*.63,H*.25); b.closePath(); b.fill();
+    b.font=`600 ${Math.max(10,14*u)}px sans-serif`; b.textAlign='center'; b.fillStyle='#f7dfab'; b.fillText('CHÁNH ĐIỆN',W*.5,H*.31);
+  }
+  function drawFortuneJar() {
+    const x=G.bowl.x+G.bowl.rx+25*u, y=G.ty-2*u;
+    g.save(); g.strokeStyle='#e9cf94'; g.lineWidth=2*u;
+    for(let i=-2;i<=2;i++){g.beginPath();g.moveTo(x+i*3*u,y-25*u);g.lineTo(x+i*4*u,y-46*u);g.stroke();}
+    g.fillStyle='#a32019';g.fillRect(x-12*u,y-27*u,24*u,27*u);g.strokeStyle='#e7bd68';g.strokeRect(x-12*u,y-27*u,24*u,27*u);
+    g.fillStyle='#ffe0a0';g.font=`bold ${Math.max(10,12*u)}px sans-serif`;g.textAlign='center';g.fillText('XĂM',x,y-9*u);g.restore();
+  }
+  function drawReaders(ts) {
+    for(const [i,label,col] of [[.2,'TỬ VI','#5c4176'],[.8,'TAROT','#7c364a']]) {
+      const x=W*i,y=H*.49,s=Math.max(.65,u);
+      g.save();g.translate(x,y);g.scale(s,s);
+      drawAvatar(g,{g:'nam',c: i<.5 ? 9 : 4,h:2},true,ts/1000,0,false);
+      g.fillStyle=col;g.fillRect(-48,-43,96,30);g.strokeStyle='#d9b879';g.strokeRect(-48,-43,96,30);
+      g.fillStyle='#f7e6be';g.textAlign='center';g.font='bold 14px sans-serif';g.fillText(label,0,-23);
+      g.fillStyle='#f6dc9e';g.font='11px sans-serif';g.fillText('Chạm để xem',0,10);g.restore();
+    }
+  }
+  const hitJar = (x,y) => Math.abs(x-(G.bowl.x+G.bowl.rx+25*u)) < 22*u && y>G.ty-55*u && y<G.ty+5*u;
+  const hitReader = (x,y) => y>H*.25 && y<H*.57 && (x<W*.35 || x>W*.65);
+
   function frame(ts) {
     const dt = Math.min(64, ts - (last || ts)); last = ts;
     if (W && H && !document.hidden) {
-      if (!bg) drawBg();
+      if (!bg) { if (scene === 'yard') drawYard(); else drawBg(); }
       g.setTransform(1, 0, 0, 1, 0, 0);
       g.drawImage(bg, 0, 0);
       g.setTransform(DPR, 0, 0, DPR, 0, 0);
@@ -1012,8 +1047,7 @@
         const L = G.lib, a = 0.35 + 0.2 * Math.sin(ts / 260);
         g.strokeStyle = `rgba(255,211,107,${a})`; g.lineWidth = 2; g.strokeRect(L.x - 6, L.y - 4, L.w + 12, L.h + 4);
       }
-      drawAltar(ts);
-      drawIncense(now, dt);
+      if (scene === 'hall') { drawAltar(ts); drawIncense(now, dt); drawFortuneJar(); } else drawReaders(ts);
       drawPlayers(ts, dt);
       drawFx(ts, dt);
     }
@@ -1035,6 +1069,9 @@
   function point(e) { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; }
   function onDown(e) {
     const [x, y] = point(e);
+    if (scene === 'hall' && hitJar(x, y)) { handlers.fortune && handlers.fortune(); return; }
+    if (scene === 'yard' && hitReader(x, y)) { handlers.reader && handlers.reader(x < W / 2 ? 'horoscope' : 'tarot'); return; }
+    if (scene === 'yard') { if (y > G.hb) { const [wx, wz] = unproj(x, y); handlers.floor && handlers.floor(clamp(wx, 0.03, 0.97), clamp(wz, 0.12, 0.97)); } return; }
     if (hitBowl(x, y)) { handlers.altar && handlers.altar(); return; }
     if (hitStatue(x, y)) { handlers.statue && handlers.statue(); return; }
     if (hitLib(x, y)) { handlers.library && handlers.library(); return; }
@@ -1046,11 +1083,11 @@
   }
   function onMove(e) {
     const [x, y] = point(e);
-    hoverLib = hitLib(x, y);
-    cv.style.cursor = hitBowl(x, y) || hitStatue(x, y) || hoverLib ? 'pointer' : (y > G.hb ? 'crosshair' : 'default');
+    hoverLib = scene === 'hall' && hitLib(x, y);
+    cv.style.cursor = (scene === 'hall' && (hitJar(x, y) || hitBowl(x, y) || hitStatue(x, y))) || (scene === 'yard' && hitReader(x, y)) || hoverLib ? 'pointer' : (y > G.hb ? 'crosshair' : 'default');
   }
 
-  function mk(p) { return { id: p.id, name: p.name, look: p.look, mod: !!p.mod, x: p.x, z: p.z, dx: p.x, dz: p.z, front: false, walking: false, bubble: null, bowAt: 0, v: p.v || 0, rd: p.rd || '', au: p.au || 0, talk: 0, burst: null, mt: p.mt || 0, pens: [], rburst: 0, dmp: null }; }
+  function mk(p) { return { scene: p.scene || 'hall', id: p.id, name: p.name, look: p.look, mod: !!p.mod, x: p.x, z: p.z, dx: p.x, dz: p.z, front: false, walking: false, bubble: null, bowAt: 0, v: p.v || 0, rd: p.rd || '', au: p.au || 0, talk: 0, burst: null, mt: p.mt || 0, pens: [], rburst: 0, dmp: null }; }
 
   root.Hall = {
     COLORS, HAIRS,
@@ -1064,6 +1101,8 @@
       requestAnimationFrame(frame);
     },
     setMe(id) { me = id; },
+    setScene(value) { scene = value; bg = null; },
+    playerScene(d) { const p = players.get(d.id); if (p) { p.scene = d.scene; p.x = p.dx = d.x; p.z = p.dz = d.z; } },
     setOffset(ms) { offset = ms; },
     setPlayers(list) { players.clear(); list.forEach(p => players.set(p.id, mk(p))); },
     addPlayer(p) { players.set(p.id, mk(p)); },

@@ -61,7 +61,9 @@
     floor(x, z) { if (joined) socket.emit('move', { x, z }); },
     altar() { act('incense'); },
     statue() { act('bow'); },
-    library() { act('library', null, true); }
+    library() { act('library', null, true); },
+    fortune() { fortune.open('lot'); },
+    reader(type) { fortune.open(type); }
   });
   const keys = new Set();
   addEventListener('keydown', e => {
@@ -166,6 +168,11 @@
 
   /* ---------- kết nối ---------- */
   const socket = io({ transports: ['websocket', 'polling'] });
+  const fortune = Fortune.init({ socket, getMe: () => me, getJoined: () => joined, setScene: scene => { Hall.setScene(scene); $('#open-lot').hidden = scene !== 'hall'; $('#open-horoscope').hidden = $('#open-tarot').hidden = scene !== 'yard'; }, toast });
+  $('#open-lot').addEventListener('click', () => fortune.open('lot'));
+  $('#open-horoscope').addEventListener('click', () => fortune.open('horoscope'));
+  $('#open-tarot').addEventListener('click', () => fortune.open('tarot'));
+  socket.on('pscene', d => Hall.playerScene(d));
   async function syncTime() {
     let best = null;
     for (let i = 0; i < 4; i++) {
@@ -204,7 +211,7 @@
     if (r.uid && r.uid !== uid) { uid = r.uid; store.set('ta-uid', uid); }
     if (!offset) { offset = r.serverTime - Date.now(); Hall.setOffset(offset); }
     $('#siteName').textContent = cfg.siteName; document.title = cfg.siteName + ' · Đi chùa online';
-    Hall.setMe(me); Hall.setPlayers(r.players); Hall.setIncense(r.incense);
+    Hall.setMe(me); Hall.setPlayers(r.players); Hall.setIncense(r.incense); fortune.reset(r.fortuneQueue);
     $('#feed').textContent = ''; r.chat.forEach(addMsg); scrollFeed(true);
     renderPrayers(r.prayers); renderBoard(r.board); renderDonations(r.donations, r.funds);
     setStats(r.today, r.online); setMerit(r.merit);

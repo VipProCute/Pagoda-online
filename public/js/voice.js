@@ -15,7 +15,7 @@
   const MAX_PEERS = 8, HARD_MAX = 12;
   const CONNECT_TIMEOUT = 20000;
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-  const dist = (a, b) => Math.hypot((a.x - b.x) * XW, a.z - b.z);
+  const dist = (a, b) => (a.scene || 'hall') !== (b.scene || 'hall') ? Infinity : Math.hypot((a.x - b.x) * XW, a.z - b.z);
 
   let sock = null, H = {};
   let active = false, joining = false, wanted = false;

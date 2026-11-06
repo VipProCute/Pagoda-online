@@ -37,6 +37,13 @@
 <main class="layout">
   <section class="stage" id="stage" aria-label="Chánh điện">
     <canvas id="hall" role="img" aria-label="Chánh điện: tượng Phật, bàn thờ, bát hương và những người đang lễ Phật"></canvas>
+    <nav class="scene-nav" aria-label="Di chuyển và xem bói">
+      <button type="button" class="btn small gold" id="go-yard">Ra sân chùa →</button>
+      <button type="button" class="btn small gold" id="go-hall" hidden>← Vào chánh điện</button>
+      <button type="button" class="btn small" id="open-lot">Xin xăm</button>
+      <button type="button" class="btn small" id="open-horoscope" hidden>Thầy tử vi</button>
+      <button type="button" class="btn small" id="open-tarot" hidden>Thầy Tarot</button>
+    </nav>
     <div class="conn" id="conn" hidden>Mất kết nối, đang thử lại…</div>
     <div class="chantbar" id="chantbar" hidden>
       <div class="cb-head"><span class="eyebrow">Đang tụng chung</span><b id="cbTitle"></b><span class="cb-time" id="cbTime"></span></div>
@@ -177,6 +184,31 @@
     <p class="hint">Giữ lời nói hiền hòa nơi cửa Phật. Tin nhắn có số tài khoản hoặc đường link sẽ bị chặn để tránh lừa đảo.</p>
     <div class="dlg-foot"><button type="submit" class="btn primary big" id="joinBtn">Vào chánh điện</button></div>
   </form>
+</dialog>
+
+<dialog class="dlg" id="dlg-fortune" aria-labelledby="fortune-title">
+  <div class="dlg-body fortune-body">
+    <div class="dlg-head"><div><h2 id="fortune-title">Xin xăm</h2><p>Một khoảng lặng để chiêm nghiệm, vui lòng xem như tham khảo.</p></div><button type="button" class="x" id="fortune-close" aria-label="Đóng">×</button></div>
+    <section id="fortune-lot">
+      <p>Hũ xăm ở cạnh bát hương. Mỗi lượt kéo dài 5 giây; mọi người lần lượt chờ nhau.</p>
+      <p class="fortune-status" id="fortune-status" role="status"></p><p id="fortune-wait"></p>
+      <button type="button" class="btn primary" id="fortune-join">Xin một quẻ</button>
+      <button type="button" class="btn" id="fortune-leave" hidden>Rời hàng chờ</button>
+      <p id="lot-result" class="fortune-result" hidden></p>
+    </section>
+    <section id="fortune-tarot" hidden>
+      <p>Hãy nghĩ về một câu hỏi, xáo bộ 78 lá và rút ba lá theo vị trí quá khứ · hiện tại · khả năng sắp tới.</p>
+      <form id="tarot-form"><label for="tarot-question">Câu hỏi của bạn (không bắt buộc)</label><input class="field" id="tarot-question" maxlength="180" placeholder="Điều gì tôi nên chú ý trong công việc?"><button class="btn primary" type="submit">Xáo và rút ba lá</button></form>
+      <div id="tarot-result" class="tarot-cards" aria-live="polite" hidden></div>
+      <p class="hint">Lá ngược được luận theo chiều ngược; tương lai là một khả năng, không phải dự đoán chắc chắn.</p>
+    </section>
+    <section id="fortune-horoscope" hidden>
+      <p>Xem xu hướng ba tháng âm lịch từ tuổi và địa chi năm sinh.</p>
+      <form id="horoscope-form"><label for="birthdate">Ngày sinh dương lịch</label><input class="field" id="birthdate" type="date" min="1900-01-01" required><button class="btn primary" type="submit">Xem ba tháng tới</button></form>
+      <p id="horoscope-result" class="fortune-result" aria-live="polite" hidden></p>
+      <p class="hint">Cách xem tuổi theo địa chi, không phải lá số Tử Vi Đẩu Số an sao. Ngày sinh chỉ được xử lý trên thiết bị của bạn.</p>
+    </section>
+  </div>
 </dialog>
 
 <!-- thắp nhang -->
@@ -384,6 +416,7 @@
 <script src="/js/merit.js"></script>
 <script src="/js/celebrate.js"></script>
 <script src="/js/hall.js"></script>
+<script src="/js/fortune.js"></script>
 <script src="/js/voice.js"></script>
 <script src="/js/library.js"></script>
 <script src="/js/app.js?v=google-auth"></script>
