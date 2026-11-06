@@ -79,7 +79,7 @@ Chỉ khi cả hai đồng ý. Buff được **chụp một lần lúc nhận l�
 - Pháp tướng công đức (cấp 0–6): giảm sát thương nhận (2% mỗi cấp, tối đa 12%) và cộng xác suất **né** (1 điểm % mỗi cấp, tối đa 6 điểm).
 - Quỷ ám (cấp 0–4, khi công đức âm): tăng sát thương gây ra (4% mỗi cấp, tối đa 16%).
 - Hào quang cúng dường (cảnh giới 0–9): tăng sát thương (2% mỗi cấp, tối đa 18%), giảm sát thương nhận (1%, tối đa 9%), cộng né (0,5 điểm, tối đa 4,5 điểm).
-- Các con số trên nhân với hệ số `BUFF_SCALE` (hiện 0,5, xem `lib/pk/rules.js`) rồi bị chặn bởi trần chung: tăng sát thương tối đa +50% (gồm cả nộ), giảm sát thương bị động tối đa 15%, cộng né tối đa 8 điểm %, xác suất né tối đa 90%. Không ai bất tử hay né 100%.
+- Các con số trên nhân với hệ số `PK_BUFF_SCALE` (**mặc định 0,15**; 0 = buff không có tác dụng, 1 = đủ số gốc) rồi bị chặn bởi trần chung: tăng sát thương tối đa +50% (gồm cả nộ), giảm sát thương bị động tối đa 15%, cộng né tối đa 8 điểm %, xác suất né tối đa 90%. Không ai bất tử hay né 100%.
 - Buff chỉ cộng cho **né**, không cộng cho **đỡ**.
 - Quỷ tăng sát thương, đúng ý chủ dự án. Cần biết rủi ro: công đức âm do nói tục khiến có quỷ, tức người chơi có thể cố ý bị trừ công đức để có buff. Hiện chỉ có hai biện pháp: cả hai bên thấy buff và phải đồng ý trước, và phòng cân bằng luôn có sẵn. Muốn chặt hơn thì đổi quỷ thành "tâm ma" (vừa tăng sát thương gây ra vừa tăng sát thương nhận) hoặc cấm người có quỷ vào phòng có buff.
 
@@ -133,6 +133,7 @@ Khi bật đăng nhập Google (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `AUT
 | `MARTIAL_ENABLED` | 1 | 0 = tắt cả Võ Học Các và Sân đấu |
 | `PK_ENABLED` | 1 | 0 = chỉ tắt Sân đấu |
 | `PK_MAX_MATCHES` | 20 | số trận cùng lúc tối đa |
+| `PK_BUFF_SCALE` | 0,15 | hệ số nhân buff ở phòng có buff, từ 0 đến 1. Mô phỏng cho thấy buff rất nhạy: ở 0,5 bên có buff thắng 79% trở lên cả trên bộ chiêu phối hợp, nên mặc định hạ xuống 0,15 (xem [VO-HOC-CAN-BANG.md](VO-HOC-CAN-BANG.md)); muốn buff mạnh hơn thì tăng biến này |
 | `SPEEDUP_ENABLED` | 1 | 0 = tắt hoàn thành tu luyện ngay (cần bật cúng dường tịnh tài) |
 | `SPEEDUP_PER_DAY` | 2 | số lần hoàn thành ngay đã xác nhận mỗi người mỗi ngày |
 | `CULTIVATION_TIME_SCALE`, `PK_TIME_SCALE`, `MARTIAL_SWEEP_MS` | 1, 1, 15000 | chỉ để thử: rút ngắn thời gian tu luyện / trong trận, nhịp quét phiên |

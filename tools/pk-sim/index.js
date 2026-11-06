@@ -19,11 +19,11 @@ const F = require('./format');
 const HELP = `Dùng: node tools/pk-sim <lệnh> [tùy chọn]
 
 Lệnh:
-  roundrobin   đấu vòng tròn   --sets presets|pure|all  --games 150
+  roundrobin   đấu vòng tròn   --sets presets|pure|all|random:N  --games 150
   grid         quét 1365 bộ    --opp 24 --games 5 --top 30 --sample 120 --opp2 12 --games2 3 --finalists 12 --finalOpp 20 --finalGames 6
-  buffs        buff theo Lc/Lq/Ld  --scales 0.25,0.5,1 --sets "Cương1|Tốc1|TQ TPQ KTB TLB" --games 120 --full
+  buffs        buff theo Lc/Lq/Ld  --scales 0.25,0.5,1 --sets "Cương1|Tốc1|TQ TPQ KTB TLB" --games 80 --full --only max
   levels       chênh cấp       --pairs 10:1,7:1,5:3 --sets Cương1|Tốc1 --games 200
-  param        quét hằng số    --key rules.REGEN --values 4,6,8 --games 100 --triGames 30
+  param        quét hằng số    --key rules.REGEN --values 4,6,8 --games 60 --triGames 20 --watch TQ,TL --watchSet Cương1,Nhu1
   progress     thời gian tu luyện học đủ chiêu
 
 Tùy chọn chung: --seed S --level L --mode eq|greedy|random --set khóa=số --json --fast --quiet

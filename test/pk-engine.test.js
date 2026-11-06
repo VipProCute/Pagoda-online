@@ -1295,3 +1295,95 @@ test('mô phỏng: cùng seed ra cùng kết quả, khác seed khác kết quả
   for (let i = 0; i < 20; i++) outs.add(JSON.stringify(playMatch({ seed: 'khac-' + i, bots: ['random', 'random'], loadouts: L, levels: [5, 5] })));
   assert.ok(outs.size > 5);
 });
+
+test('mô phỏng: nạp bản luật đổi hằng số / số liệu chiêu trong bộ nhớ, không đụng module thật', () => {
+  const { makeCtx, realCtx, parseSet } = require('../tools/pk-sim/ctx');
+  const cache0 = Object.keys(require.cache).filter(k => /lib\/pk\/|public\/js\/martial/.test(k)).sort();
+  const c = makeCtx(['rules.K=40', 'skill.trong-quyen.mana=1', 'skill.lien-hoan-cuoc.hits.0.base=30', 'mana.base=100']);
+  assert.equal(c.R.K, 40);
+  assert.ok(Math.abs(c.chance(95, 85) - (0.1 + 0.8 / (1 + Math.exp(-10 / 40)))) < 1e-12);
+  assert.equal(c.M.SKILLS[TQ].mana, 1);
+  assert.equal(c.M.SKILL_LIST.find(s => s.id === TQ).mana, 1);
+  assert.equal(c.M.SKILLS[LHC].hits[0].base, 30);
+  assert.equal(c.M.SKILLS[LHC].hits[1].base, 16);
+  assert.equal(c.M.manaMaxOf(3), 108);
+  const d = new c.Duel({ seed: 'v', a: { level: 1, loadout: [TQ] }, b: { level: 1, loadout: [] } });
+  assert.equal(d.f.a.mana, 100);
+  d.step(TQ, REST);
+  assert.equal(d.f.a.mana, 100, '100 - 1 + 6 bị chặn bởi manaMax mới');
+  assert.equal(R.K, 20);
+  assert.equal(chance(95, 85).toFixed(4), '0.5980');
+  assert.equal(M.SKILLS[TQ].mana, 14);
+  assert.equal(M.manaMaxOf(3), 88);
+  assert.equal(realCtx().Duel, Duel);
+  assert.equal(makeCtx([]), realCtx());
+  assert.deepEqual(Object.keys(require.cache).filter(k => /lib\/pk\/|public\/js\/martial/.test(k)).sort(), cache0);
+  assert.equal(require('../lib/pk/engine').Duel, Duel);
+  assert.throws(() => makeCtx(['rules.KHONG_CO=1']), /rules\.KHONG_CO/);
+  assert.throws(() => makeCtx(['skill.khong-co.mana=1']), /Không có chiêu/);
+  assert.throws(() => makeCtx(['skill.trong-quyen.khong=1']), /Không có trường/);
+  assert.throws(() => makeCtx(['rules.K=abc']), /không phải số/);
+  assert.throws(() => makeCtx(['xyz']), /Thiếu "="/);
+  assert.deepEqual(parseSet(['rules.K=1']).rules, { K: 1 });
+});
+
+test('mô phỏng: bộ giải trò chơi ma trận và bot chỉ chọn lựa chọn hợp lệ (kể cả khi bị ép tung)', () => {
+  const { solve, decide } = require('../tools/pk-sim/bots');
+  const [pa, pb] = solve([[1, -1], [-1, 1]]);
+  assert.ok(Math.abs(pa[0] - 0.5) < 0.03 && Math.abs(pb[0] - 0.5) < 0.03);
+  const rps = solve([[0, -1, 1], [1, 0, -1], [-1, 1, 0]]);
+  for (const p of rps) for (const x of p) assert.ok(Math.abs(x - 1 / 3) < 0.04, p.join());
+  const dom = solve([[3, 2], [1, 0]]);                              // hàng 1 và cột 2 trội hẳn
+  assert.ok(dom[0][0] > 0.97 && dom[1][1] > 0.97);
+  assert.deepEqual(solve([[5]]), [[1], [1]]);
+  const r = makeRng('bot-legal');
+  for (const kinds of [['eq', 'eq'], ['greedy', 'eq'], ['random', 'greedy'], ['random', 'random']]) {
+    for (let g = 0; g < 25; g++) {
+      const d = duel([TQ, TL, KTB, TKP], [LHC, DAP, NVB, TB], { rng: makeRng('g' + g) });
+      d.f.a.mana = 25 + Math.floor(r() * 80); d.f.b.mana = 12 + Math.floor(r() * 90);
+      while (!d.over) {
+        const [x, y] = decide(d, kinds, r, null, 'k', null, REST);
+        assert.ok(d.legal('a').picks.includes(x), `${kinds} a: ${x}`);
+        assert.ok(d.legal('b').picks.includes(y), `${kinds} b: ${y}`);
+        d.step(x, y);
+      }
+    }
+  }
+});
+
+test('mô phỏng: lệnh dòng lệnh chạy được, ra JSON đúng cấu trúc và tái lập theo seed', () => {
+  const { roundrobin, buffs, levels } = require('../tools/pk-sim/commands');
+  const o = { games: 6, seed: 'cli', sets: 'check', quiet: true, level: 5 };
+  const a = roundrobin(o), b = roundrobin(o);
+  a.meta.elapsedMs = b.meta.elapsedMs = 0;
+  assert.deepEqual(a, b);
+  assert.equal(a.sets.length, 5);
+  assert.equal(a.matrix[0][1] + a.matrix[1][0], 1);
+  const noAtk = a.scores.find(s => s.name === 'Toàn thủ');
+  assert.equal(noAtk.score, 0, 'bộ không có đòn tấn công luôn thua');
+  assert.equal(roundrobin({ ...o, seed: 'khac' }).meta.seed, 'khac');
+  const lv = levels({ games: 4, seed: 'cli', sets: 'Cương1', pairs: '10:1', quiet: true });
+  assert.equal(lv.rows.length, 1);
+  assert.equal(lv.rows[0].manaHi, 116);
+  const bf = buffs({ games: 4, seed: 'cli', sets: 'Cương1', scales: '0.5', quiet: true });
+  assert.equal(bf.sets[0].scales[0].lc[0][0], null);
+  assert.ok(bf.sets[0].scales[0].maxes['Lc6+Lq4+Ld9'].buff.defP > 0);
+  assert.throws(() => roundrobin({ ...o, mode: 'khac' }), /--mode/);
+});
+
+test('mô phỏng: grid và param chạy được ở cỡ nhỏ, tái lập theo seed, --set đổi kết quả đúng chiều', () => {
+  const { grid, param } = require('../tools/pk-sim/commands');
+  const { parse } = require('../tools/pk-sim');
+  const o = { seed: 'g', opp: 4, games: 1, top: 4, sample: 6, opp2: 3, games2: 1, finalists: 3, finalOpp: 3, finalGames: 1, quiet: true };
+  const a = grid(o), b = grid(o);
+  a.meta.elapsedMs = b.meta.elapsedMs = 0;
+  assert.deepEqual(a, b);
+  assert.equal(a.meta.sets, 1365);
+  assert.equal(a.finals.length, 3);
+  assert.equal(a.skills.length, 15);
+  assert.deepEqual(parse(['param', '--key', 'rules.K', '--set', 'a=1', '--set', 'b=2', '--json']).set, ['a=1', 'b=2']);
+  const p = param({ key: 'skill.tu-luc-pha-son.charge.release.spd', values: '20,80', games: 4, triGames: 2, seed: 'p', quiet: true, watch: 'TL', watchSet: 'Cương1' });
+  assert.equal(p.rows.length, 2);
+  assert.ok(p.rows.every(r => r.watch.TL >= 0 && r.watchSet['Cương1'] >= 0));
+  assert.throws(() => param({ values: '1' }), /--key/);
+});

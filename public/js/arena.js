@@ -23,7 +23,7 @@
   const CLOSED_IN = {
     cancelled: n => `${n} đã hủy lời mời.`,
     expired: n => `Lời mời của ${n} đã hết hạn.`,
-    busy: n => `${n} đã vào trận khác.`,
+    busy: n => `Lời mời của ${n} đã đóng vì có trận khác.`,
     left: n => `${n} đã rời sân.`
   };
   const DEF_LOOK = { c: 0, g: 'nu', h: 0 };
@@ -199,7 +199,7 @@
     S.last = ts;
     const still = reduced();
     for (const p of S.pt) {
-      if (p.fx && !still) paintPortrait(p, ts / 1000);
+      if (p.fx && !still) { if (ts - (p.at || 0) >= 66) { p.at = ts; paintPortrait(p, ts / 1000); } }   // chân dung hiệu ứng nặng: 15 hình/giây
       else if (!p.done) p.done = paintPortrait(p, 0);
     }
     if (S.screen === 'match') drawStage(ts);
@@ -231,7 +231,13 @@
     // đầu trang
     const head = h('header', 'ar-head'), back = btn('btn ar-back', '← Về chánh điện'), tt = h('div', 'ar-ttl');
     ui.sub = h('span', 'ar-sub', 'Luận võ 1 đấu 1');
-    add(tt, h('h2', null, 'Sân đấu'), ui.sub); add(head, back, tt);
+    add(tt, h('h2', null, 'Sân đấu'), ui.sub);
+    // trong trận: số lượt, giờ còn lại, thanh đếm giờ nằm ngay trên đầu trang (đỡ chỗ cho sân khấu)
+    ui.hturn = h('div', 'ar-hturn'); ui.hturn.hidden = true;
+    ui.turn = h('b', 'ar-turn'); ui.tsec = h('span', 'ar-tsec', null, { role: 'timer' });
+    add(ui.hturn, ui.turn, ui.tsec);
+    ui.hbar = h('div', 'ar-hbar'); ui.hfill = h('i'); ui.hbar.appendChild(ui.hfill); ui.hbar.hidden = true;
+    add(head, back, tt, ui.hturn, ui.hbar);
     back.addEventListener('click', onBack);
     ui.back = back;
     ui.off = h('p', 'ar-off', 'Mất kết nối. Các nút gửi tạm khóa, đang thử nối lại…', { role: 'status' }); ui.off.hidden = true;
@@ -320,9 +326,10 @@
     ui.roster.sec.hidden = screen !== 'roster'; ui.lobby.hidden = screen !== 'lobby'; ui.match.hidden = screen !== 'match'; ui.end.hidden = screen !== 'end';
     ui.sub.textContent = { roster: 'Luận võ 1 đấu 1', lobby: 'Sảnh chọn bộ chiêu', match: 'Đang đấu', end: 'Kết quả' }[screen];
     ui.invites.hidden = screen === 'lobby' || screen === 'match';
+    ui.hturn.hidden = ui.hbar.hidden = screen !== 'match';
     ui.root.dataset.screen = screen;
     if (screen === 'roster') renderRoster();
-    if (screen === 'lobby' || screen === 'match') startPaint();
+    if (screen === 'lobby' || screen === 'match') startPaint(); else stopPaint();
     const first = { roster: ui.roster.sec, lobby: ui.lobby, match: ui.match, end: ui.end }[screen];
     const hd = first && first.querySelector('[data-focus]');
     if (hd) { hd.tabIndex = -1; try { hd.focus({ preventScroll: true }); } catch (e) { /* bỏ qua */ } }
@@ -569,12 +576,13 @@
   function onInviteClosed(d) {
     if (!S.visible || !d) return;
     const inv = removeInvite(d.inviteId);
-    if (inv) { const f = CLOSED_IN[d.reason]; if (f) toast(f(inv.from.name || 'Đối phương')); return; }
+    // 'busy' thường đến ngay trước pk:lobby khi chính mình vừa nhận lời trận khác: chờ một chút, vào sảnh rồi thì khỏi báo
+    const note = (f, n, reason) => { if (!f) return; if (reason === 'busy') setTimeout(() => { if (!S.m) toast(f(n)); }, 300); else toast(f(n)); };
+    if (inv) { note(CLOSED_IN[d.reason], inv.from.name || 'Đối phương', d.reason); return; }
     const o = S.out;
     if (o && o.inviteId === d.inviteId) {
       S.out = null; renderOut(); renderRoster();
-      const f = CLOSED_OUT[d.reason];
-      if (f) toast(f(o.toName));
+      note(CLOSED_OUT[d.reason], o.toName, d.reason);
     }
   }
 
@@ -587,10 +595,10 @@
     const ck = h('span', 'ar-ck');
     if (br) ck.appendChild(h('em', null, br.name));
     ck.appendChild(document.createTextNode(kind));
+    ck.appendChild(h('span', 'ar-cx'));
     add(b, h('span', 'ar-cn', s.name), ck, h('span', 'ar-cs', s.mana > 0 || s.kind !== 'rest' ? M.statsLine(s) : s.short));
     if (o && o.short && s.short) b.appendChild(h('span', 'ar-cd', s.short));
     if (o && o.no) b.appendChild(h('i', 'ar-no'));
-    b.appendChild(h('span', 'ar-cx'));
     return b;
   }
   function buildLobby() {
@@ -673,7 +681,8 @@
     const lines = ws.map(w => w.text);
     if (m.msg) lines.unshift(m.msg);
     if (m.learned.length < 4) lines.unshift('Bạn mới học dưới 4 chiêu nên chưa khóa được bộ chiêu. Hãy vào Võ Học Các học thêm chiêu.');
-    L.warn.textContent = lines.join(' ');
+    clear(L.warn);
+    for (const t of lines) L.warn.appendChild(h('span', 'ar-wl', t));
     L.warn.hidden = !lines.length;
     L.lock.hidden = m.locked;
     L.lock.disabled = !edit || !full;
@@ -689,7 +698,7 @@
     if (!canEditLoadout() || m.sel.length !== 4) return;
     m.pending = true; m.msg = ''; renderLobby();
     S.sock.emit('pk:loadout', { matchId: m.id, skills: m.sel.slice() }, ack => {
-      if (S.m !== m) return;
+      if (S.m !== m || m.phase !== 'lobby') return;              // máy chủ gửi pk:turn trước ack khi hai bên đã khóa: sảnh đã đóng
       m.pending = false;
       if (ack && ack.ok) { m.locked = true; }
       else { m.msg = (ack && ack.reason) || 'Chưa khóa được bộ chiêu, thử lại nhé.'; if (ack && ack.code === 'login') setLogin(true); }
@@ -761,26 +770,24 @@
   /* ---------- trận ---------- */
   function buildMatch() {
     const m = S.m, sec = clear(S.ui.match);
-    dropPaint('lobby'); dropPaint('match');
+    clear(S.ui.lobby); dropPaint('lobby'); dropPaint('match');
     const U = m.ui = { fc: {}, cards: {} };
     m.legal = []; m.sel = null; m.forced = null; m.locked = false; m.pending = false; m.timeUp = false; m.opLocked = false;
     const wrap = h('div', 'ar-mwrap');
     U.fc.op = fighterCard('op', m.op, m.buffs && m.buffs.op); U.fc.you = fighterCard('you', m.you, m.buffs && m.buffs.you);
     U.fc.op.root.style.gridArea = 'opp'; U.fc.you.root.style.gridArea = 'me';
-    // sân khấu + thanh lượt
-    const box = h('div', 'ar-stagebox'), tb = h('div', 'ar-turnbar');
-    U.turn = h('b', 'ar-turn', null, { 'data-focus': '' }); U.clock = h('span', 'ar-tsec', null, { role: 'timer' });
-    const tbar = h('div', 'ar-tbar'); U.tfill = h('i'); tbar.appendChild(U.tfill);
+    // sân khấu (số lượt và đồng hồ nằm ở đầu trang)
+    const box = h('div', 'ar-stagebox');
+    U.turn = S.ui.turn; U.clock = S.ui.tsec; U.tfill = S.ui.hfill;
     U.logBtn = btn('ar-logbtn', 'Nhật ký', { 'aria-expanded': 'false' });
     U.logBtn.addEventListener('click', () => toggleLog());
-    add(tb, U.turn, tbar, U.clock, U.logBtn);
     const stage = h('div', 'ar-stage'), cv = h('canvas', null, null, { role: 'img', 'aria-label': 'Sân đấu: bạn ở bên trái, đối thủ ở bên phải' });
     U.float = h('div', 'ar-float', null, { 'aria-hidden': 'true' });
-    add(stage, cv, U.float);
     U.logPanel = h('div', 'ar-logpanel'); U.logPanel.hidden = true;
     const lh = h('h4', null, 'Nhật ký trận'); U.logList = h('ol', 'ar-logl');
     add(U.logPanel, lh, U.logList);
-    add(box, tb, stage, U.logPanel);
+    add(stage, cv, U.float, U.logPanel, U.logBtn);
+    box.appendChild(stage);
     S.stage = { cv, c: null, dirty: true };
     if (root.ResizeObserver) new ResizeObserver(dirtyStage).observe(stage);
     // bộ chiêu đối thủ (đã công bố)
@@ -798,7 +805,7 @@
     }
     const act = h('div', 'ar-act');
     U.rest = skillCard(M.REST_ID); U.rest.classList.add('ar-pk', 'ar-rest'); U.rest.addEventListener('click', () => choose(M.REST_ID));
-    U.lock = btn('btn primary ar-lockbtn', 'Chọn một chiêu'); U.lock.addEventListener('click', () => lockPick(false));
+    U.lock = btn('btn primary ar-lockbtn', 'Chọn một chiêu'); U.lock.addEventListener('click', lockPick);
     add(act, U.rest, U.lock);
     U.status = h('p', 'ar-status', null, { role: 'status' });
     add(ui_, grid, act, U.status);
@@ -869,7 +876,8 @@
       c.classList.toggle('off', choosing && !legal);
       c.classList.toggle('frozen', frozen && legal);
       const cx = c.querySelector('.ar-cx');
-      cx.textContent = choosing && !legal ? reasonOff(m, id) : (m.forced === id ? 'Đang tụ lực, lượt này tự tung' : (m.locked && on ? 'Đã khóa' : ''));
+      cx.textContent = m.forced === id ? 'Tự tung' : m.locked && on ? 'Đã khóa' : '';
+      c.title = choosing && !legal ? reasonOff(m, id) : '';
       c.setAttribute('aria-label', `${s.name}. ${(M.KIND_NAMES || {})[s.kind] || ''}. ${id === M.REST_ID ? s.short : M.statsLine(s)}.` + (choosing && !legal ? ` Không chọn được: ${reasonOff(m, id)}.` : '') + (m.forced === id ? ' Đang tụ lực, lượt này tự tung.' : '') + (on ? (m.locked ? ' Đã khóa.' : ' Đang chọn.') : ''));
     }
     U.lock.hidden = m.locked;
@@ -882,9 +890,8 @@
     if (!choosing) txt = '';
     else if (!canSend()) { txt = 'Mất kết nối. Đợi nối lại để tiếp tục.'; U.status.classList.add('warn'); }
     else if (m.msg) { txt = m.msg; U.status.classList.add('warn'); }
-    else if (m.locked) { U.status.appendChild(h('span', 'spin', null, { 'aria-hidden': 'true' })); txt = 'Đã khóa, chờ đối thủ…'; }
+    else if (m.locked) { U.status.appendChild(h('span', 'spin', null, { 'aria-hidden': 'true' })); txt = m.forced ? 'Đang tụ lực, lượt này tự tung. Chờ đối thủ…' : 'Đã khóa, chờ đối thủ…'; }
     else if (m.timeUp) txt = 'Hết giờ. Máy chủ sẽ cho bạn đứng yên lượt này.';
-    else if (m.forced) txt = 'Đang tụ lực, lượt này tự tung.';
     else txt = m.sel ? 'Bấm "Khóa" để chốt chiêu. Khóa rồi không đổi được.' : 'Chạm một chiêu để chọn, rồi bấm "Khóa".';
     U.status.appendChild(document.createTextNode(txt));
     const c = U.fc.op;
@@ -892,7 +899,7 @@
     c.lockT.textContent = m.opLocked ? 'Đối thủ đã khóa' : 'Đang chọn…';
     c.lock.setAttribute('aria-label', m.opLocked ? 'Đối thủ đã khóa' : 'Đối thủ đang chọn');
   }
-  function lockPick(auto) {
+  function lockPick() {
     const m = S.m;
     if (!m || m.phase !== 'choosing' || m.locked || m.pending || !m.sel) return;
     if (!canSend()) { renderPickCtl(); return; }
@@ -902,7 +909,7 @@
       if (S.m !== m || m.turn !== turn) return;
       m.pending = false;
       if (ack && ack.ok) m.locked = true;
-      else if (!auto) { m.msg = (ack && ack.reason) || 'Chưa khóa được, thử lại nhé.'; if (ack && ack.code === 'login') setLogin(true); }
+      else { m.msg = (ack && ack.reason) || 'Chưa khóa được, thử lại nhé.'; if (ack && ack.code === 'login') setLogin(true); }
       renderPickCtl();
     });
   }
@@ -920,11 +927,13 @@
     o = o || {};
     cancelReveal(true);
     U.rv.root.hidden = true; U.pickui.hidden = false;
-    clearTimeout(m.autoT);
+    clear(U.rv.lines); U.rv.label.textContent = ''; U.rv.label.classList.remove('on');
+    for (const f of [U.rv.flipYou, U.rv.flipOp]) { f.w.classList.remove('on'); f.nm.textContent = f.kd.textContent = f.sb.textContent = ''; f.front.setAttribute('aria-hidden', 'true'); f.w.setAttribute('aria-label', f.side === 'you' ? 'Chiêu của bạn' : 'Chiêu của đối thủ'); }
     m.phase = 'choosing'; m.turn = d.turn; m.deadline = num(d.deadlineAt); m.turnTotal = Math.max(5000, m.deadline - nowMs()); m.forced = d.forced || null;
     m.legal = Array.isArray(d.legal) ? d.legal : []; m.state = d.state;
     if (d.loadouts) { m.loadouts = d.loadouts; renderOpLoadout(); }
-    m.sel = o.myPick || m.forced || null; m.locked = !!o.myPick; m.pending = false; m.timeUp = false; m.msg = ''; m.opLocked = !!o.opLocked;
+    // đang tụ lực thì máy chủ tự khóa, không cần gửi gì
+    m.sel = o.myPick || m.forced || null; m.locked = !!(o.myPick || m.forced); m.pending = false; m.timeUp = false; m.msg = ''; m.opLocked = !!o.opLocked;
     S.hold = { you: d.state.you.charging ? 'charge' : null, op: d.state.op.charging ? 'charge' : null };
     S.fx.length = 0;
     setFighter('you', d.state.you); setFighter('op', d.state.op);
@@ -932,7 +941,6 @@
     updTurnClock(nowMs());
     renderPickCtl(); dirtyStage();
     say(`Lượt ${d.turn}. ${m.forced ? 'Bạn đang tụ lực, lượt này tự tung đòn.' : 'Chọn chiêu của bạn.'}`);
-    if (m.forced && !m.locked) { const t = d.turn; m.autoT = setTimeout(() => { if (S.m === m && m.turn === t && !m.locked && !m.pending) lockPick(true); }, 700); }
   }
   function toggleLog(force) {
     const U = S.m && S.m.ui;
@@ -1010,7 +1018,8 @@
     const U = S.m && S.m.ui;
     if (!U) return;
     const f = h('span', 'ar-fl ar-fl-' + (kind || 'dmg'), text), n = S.floats++;
-    f.style.left = (side === 'you' ? 27 : 73) + '%'; f.style.top = (side === 'you' ? 34 : 22) + '%';
+    const lab = kind === 'warn' || kind === 'gold';
+    f.style.left = (side === 'you' ? 27 : 73) + '%'; f.style.top = (side === 'you' ? (lab ? 12 : 34) : (lab ? 2 : 22)) + '%';
     f.style.marginLeft = ((n % 3) - 1) * 22 + 'px';
     U.float.appendChild(f);
     setTimeout(() => f.remove(), 1500);
@@ -1019,7 +1028,6 @@
     const m = S.m, U = m.ui, rv = U.rv;
     o = o || {};
     cancelReveal(true);
-    clearTimeout(m.autoT);
     m.phase = 'reveal'; m.msg = '';
     const picks = rev.picks || {}, steps = rev.steps = buildSteps(rev), label = pairLabel(picks);
     // trạng thái hiển thị bắt đầu từ HP trước lượt (dựng lại từ dmg nếu vào lại giữa lượt)
@@ -1163,9 +1171,9 @@
     go('end');
     say(`${info.title}. ${info.text}`);
   }
-  function stopLoopsForEnd() { clearTimeout(S.m && S.m.autoT); S.fx.length = 0; }
+  function stopLoopsForEnd() { S.fx.length = 0; }
   function backToRoster() {
-    if (S.m) { clearTimeout(S.m.autoT); clearTimeout(S.m.endT); }
+    if (S.m) clearTimeout(S.m.endT);
     S.m = null; S.stage = null; dropPaint('lobby'); dropPaint('match');
     go('roster');
   }
@@ -1216,7 +1224,7 @@
   function clearMatchTimers() {
     const m = S.m;
     if (!m) return;
-    clearTimeout(m.autoT); clearTimeout(m.endT);
+    clearTimeout(m.endT);
     if (m.rev) { m.rev.timers.forEach(clearTimeout); m.rev.timers = []; }
   }
 
@@ -1248,10 +1256,13 @@
     };
     if (snap.phase === 'lobby') {
       m.phase = 'lobby'; m.deadline = num(snap.deadlineAt); m.lobbyTotal = Math.max(5000, M.PK.LOADOUT_SECONDS * 1000);
-      m.learned = (snap.you.loadout || []).slice(); m.sel = (snap.you.loadout || []).slice(0, 4);
+      m.sel = (snap.you.loadout || []).slice(0, 4); m.locked = !!snap.myLocked;
+      if (snap.loadoutMs) m.lobbyTotal = Math.max(5000, num(snap.loadoutMs));
+      const haveLearned = Array.isArray(snap.you.learned);
+      m.learned = haveLearned ? snap.you.learned.slice() : m.sel.slice();
       buildLobby(); go('lobby'); updLobbyClock(nowMs());
-      // snapshot không có danh sách chiêu đã học: lấy từ hồ sơ để vẫn đổi được bộ chiêu
-      S.sock.emit('martial:state', {}, r => {
+      // máy chủ không gửi danh sách chiêu đã học: lấy từ hồ sơ để vẫn đổi được bộ chiêu
+      if (!haveLearned && !m.locked) S.sock.emit('martial:state', {}, r => {
         if (S.m !== m || !r || !r.ok || !r.profile || !Array.isArray(r.profile.learned) || m.locked) return;
         m.learned = r.profile.learned.slice(); m.sel = m.sel.filter(id => m.learned.includes(id)); buildLobby(); updLobbyClock(nowMs());
       });
@@ -1333,7 +1344,6 @@
     if (S.screen !== 'lobby' && S.screen !== 'match') go('roster'); else refreshCtl();
     S.ui.roster.resume.hidden = !a.hasMatch;
     clearInterval(S.tick); S.tick = setInterval(tick, 250);
-    startPaint();
     S.connected = S.sock.connected !== false;
     refreshCtl();
     if (S.loginNeeded) { S.ui.roster.resume.hidden = true; return; }

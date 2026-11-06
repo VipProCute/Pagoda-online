@@ -1,7 +1,7 @@
 /*
  * Trang thử Sân đấu: máy chủ giả (FakeSocket) chạy lại các trận mẫu sinh bằng engine thật (fixtures.json).
  * Mở: node tools/ui-harness/serve.js 4174  →  http://127.0.0.1:4174/harness/arena/
- * Tham số: ?players=crowded|few|empty  ?offset=ms (lệch giờ máy chủ)  ?nopanel=1  ?nostart=1  ?reduced đã có sẵn qua emulate của Playwright.
+ * Tham số: ?login=1 (bắt đăng nhập)  ?players=crowded|few|empty  ?offset=ms (lệch giờ máy chủ)  ?nopanel=1  ?nostart=1  ?reduced đã có sẵn qua emulate của Playwright.
  *          ?jump=A:choosing:3  (vào thẳng giữa trận: tên trận : pha lobby|choosing|reveal : số lượt)  &myPick=...  &opLocked=1  &buffs=mid
  * window.H là tay lái cho kiểm tra tự động và thử bằng tay.
  */
@@ -53,7 +53,8 @@
     later(m.lobbyDeadline - serverNow() + 300, () => { if (S.match === m && m.phase === 'lobby' && O.lobbyAuto) startTurn(m, 0); });
     return m;
   }
-  function maybeGo(m) { if (m.phase === 'lobby' && m.youLoad && m.opLocked) later(800, () => { if (S.match === m && m.phase === 'lobby') startTurn(m, 0); }); }
+  // như máy chủ thật: hai bên khóa xong là pk:turn đi ngay, TRƯỚC cả ack của pk:loadout
+  function maybeGo(m) { if (m.phase === 'lobby' && m.youLoad && m.opLocked) startTurn(m, 0); }
   function startTurn(m, idx) {
     const t = m.f.turns[idx];
     if (!t) return;
@@ -65,6 +66,7 @@
     const d = { matchId: m.id, turn: t.turn, deadlineAt: m.deadline, forced: t.forced, legal, state: t.state };
     if (idx === 0) d.loadouts = load;
     send('pk:turn', d);
+    if (t.forced && O.auto) later(O.opDelay * 2, () => { if (S.match === m && m.phase === 'choosing' && m.cur === t) { m.picked = t.forced; lockOp(); later(O.revealDelay, reveal); } });   // máy chủ tự khóa bên đang tụ lực
   }
   function lockOp() { const m = S.match; if (!m || m.phase !== 'choosing') return; m.opLocked = true; send('pk:locked', { matchId: m.id, turn: m.cur.turn }); }
   function reveal() {
@@ -81,10 +83,9 @@
     const m = S.match;
     if (!m || m.phase === 'ended') return null;
     const f = m.f, base = { matchId: m.id, mode: m.mode, you: { pid: f.you.pid, name: f.you.name, look: f.you.look, level: f.you.level, hpMax: 200, manaMax: f.you.manaMax, loadout: m.youLoad || f.you.loadout }, op: { pid: f.op.pid, name: f.op.name, look: f.op.look, level: f.op.level, hpMax: 200, manaMax: f.op.manaMax }, buffs: m.buffs };
-    if (m.phase === 'lobby') return Object.assign(base, { phase: 'lobby', turn: 0, deadlineAt: m.lobbyDeadline, state: null, loadouts: null, legal: [], forced: null, myPick: null, opLocked: m.opLocked, lastReveal: null });
-    const prev = m.idx > 0 ? Object.assign({ matchId: m.id, nextAt: null }, f.reveals[m.idx - 1]) : null;
+    if (m.phase === 'lobby') { base.you.learned = f.you.learned; base.you.warnings = []; return Object.assign(base, { phase: 'lobby', turn: 0, deadlineAt: m.lobbyDeadline, state: null, loadouts: null, legal: [], forced: null, myPick: null, opLocked: m.opLocked, lastReveal: null, loadoutMs: 30000, myLocked: !!m.myLocked }); }
     const loads = { you: m.youLoad, op: f.turns[0].loadouts.op };
-    if (m.phase === 'choosing') return Object.assign(base, { phase: 'choosing', turn: m.cur.turn, deadlineAt: m.deadline, state: m.cur.state, loadouts: loads, legal: m.curLegal, forced: m.cur.forced, myPick: m.picked, opLocked: m.opLocked, lastReveal: prev });
+    if (m.phase === 'choosing') return Object.assign(base, { phase: 'choosing', turn: m.cur.turn, deadlineAt: m.deadline, state: m.cur.state, loadouts: loads, legal: m.curLegal, forced: m.cur.forced, myPick: m.cur.forced || m.picked, opLocked: m.opLocked, lastReveal: null });   // như máy chủ thật: lastReveal chỉ có ở pha reveal
     const r = f.reveals[m.idx];
     return Object.assign(base, { phase: 'reveal', turn: r.turn, deadlineAt: m.nextAt, state: r.state, loadouts: loads, legal: [], forced: null, myPick: null, opLocked: true, lastReveal: Object.assign({ matchId: m.id, nextAt: m.nextAt }, JSON.parse(JSON.stringify(r))) });
   };
@@ -97,7 +98,7 @@
     m.idx = turnNo - 1; m.cur = m.f.turns[m.idx]; m.curLegal = m.idx === 0 ? m.f.turns[0].legal : m.cur.legal;
     if (phase === 'choosing') {
       m.phase = 'choosing'; m.deadline = serverNow() + (o.left || 14000); m.picked = o.myPick || null; m.opLocked = !!o.opLocked;
-      if (m.picked && O.auto) later(O.opDelay, lockOp), later(O.opDelay + O.revealDelay, reveal);
+      if ((m.picked || m.cur.forced) && O.auto) later(O.opDelay, lockOp), later(O.opDelay + O.revealDelay, reveal);
     } else {
       m.phase = 'reveal'; m.nextAt = m.f.reveals[m.idx].ended ? null : serverNow() + (o.left || 2500);
       if (O.auto) { if (m.f.reveals[m.idx].ended) later((o.left || 2500), () => end(Object.assign({ matchId: m.id }, m.f.end))); else later(o.left || 2500, () => startTurn(m, m.idx + 1)); }
@@ -143,7 +144,7 @@
       if (!m || d.matchId !== m.id || m.phase !== 'lobby') return { ok: false, reason: 'Sảnh đã đóng.' };
       const v = M.validateLoadout(d.skills, m.f.you.learned);
       if (!v.ok) return v;
-      m.youLoad = d.skills.slice(); maybeGo(m);
+      m.youLoad = d.skills.slice(); m.myLocked = true; maybeGo(m);
       return { ok: true, locked: true, warnings: M.loadoutWarnings(d.skills) };
     }),
     'pk:pick': d => failOr('pk:pick', () => {
@@ -173,7 +174,7 @@
       o = o || {};
       const id = 'in' + (++S.seq), from = Object.assign({ pid: 301, name: 'Thanh Vân', look: { c: 3, g: 'nu', h: 1 }, lv: 4, wins: 12, losses: 7 }, o.from || {});
       S.incoming = S.incoming || {}; S.incoming[id] = { mode: o.mode || 'balanced' };
-      const buffs = o.mode === 'buff' ? (o.noBuffs ? null : { you: fx.buff.mid.you, op: fx.buff[o.buffs || 'mid'].op }) : null;
+      const buffs = o.mode === 'buff' ? (o.noBuffs ? null : fx.buff[o.buffs || 'mid']) : null;
       send('pk:invited', { inviteId: id, mode: o.mode || 'balanced', expiresAt: serverNow() + (o.ms || 20000), from, buffs });
       return id;
     },
@@ -200,7 +201,7 @@
       end(Object.assign({ turns: (m && m.cur && m.cur.turn) || 5, state: { you: Object.assign({}, st.you, { hp: k.result === 'lose' ? 0 : 54 }), op: Object.assign({}, st.op, { hp: k.result === 'win' ? 0 : 88 }) }, record: rec }, k));
     }
   };
-  H.loginClicks = 0;
+  H.loginClicks = 0; H.loginRequired = !!q.get('login');
 
   /* ---------- khởi động ---------- */
   Places.init({ setPlace: (name, cb) => socket.emit('place:set', { place: name }, cb), toast: host.toast });

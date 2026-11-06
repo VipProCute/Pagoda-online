@@ -13,10 +13,10 @@ const lc = (L, s) => ({ def: Math.min(0.02 * L, 0.12) * s, dodge: Math.min(0.01 
 const lq = (L, s) => ({ off: Math.min(0.04 * L, 0.16) * s });
 const ld = (L, s) => ({ off: Math.min(0.02 * L, 0.18) * s, def: Math.min(0.01 * L, 0.09) * s, dodge: Math.min(0.005 * L, 0.045) * s });
 
-test('hệ số mặc định là RULES.BUFF_SCALE; mặc định 0,5', () => {
-  assert.equal(R.BUFF_SCALE, 0.5);
+test('hệ số mặc định là RULES.BUFF_SCALE; mặc định 0,15 (đổi bằng PK_BUFF_SCALE)', () => {
+  assert.equal(R.BUFF_SCALE, 0.15);
   assert.deepEqual(computeBuff({ Lc: 3, Lq: 2, Ld: 5 }), computeBuff({ Lc: 3, Lq: 2, Ld: 5 }, R.BUFF_SCALE));
-  assert.deepEqual(computeBuff({ Lc: 3 }, undefined), computeBuff({ Lc: 3 }, 0.5));
+  assert.deepEqual(computeBuff({ Lc: 3 }, undefined), computeBuff({ Lc: 3 }, R.BUFF_SCALE));
 });
 
 test('không buff: trả NONE (đóng băng), mọi số 0, không nhãn', () => {

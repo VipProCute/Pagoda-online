@@ -22,7 +22,9 @@ function skillName(ctx, id) { return ctx.M.SKILLS[id].name; }
 
 /* ---------- roundrobin ---------- */
 
-function pickSets(c, which) {
+function pickSets(c, which, seed) {
+  const m = /^random:(\d+)$/.exec(which || '');
+  if (m) return shuffle(L.allSets(c.ctx.M), makeRng(seed + ':sets')).slice(0, Number(m[1]));
   if (which === 'pure') return L.pureSets(c.ctx.M);
   if (which === 'all') return [...L.PRESETS, ...L.pureSets(c.ctx.M)];
   if (which === 'check') return [...L.PRESETS.slice(0, 4), L.NO_ATTACK];
@@ -32,7 +34,7 @@ function pickSets(c, which) {
 function roundrobin(o) {
   const c = common(o), t0 = Date.now();
   const games = Number(o.games || 150), which = o.sets || 'presets';
-  const sets = pickSets(c, which), n = sets.length;
+  const sets = pickSets(c, which, c.seed), n = sets.length;
   const matrix = Array.from({ length: n }, () => new Array(n).fill(null));
   const cell = Array.from({ length: n }, () => new Array(n).fill(null));
   const useUses = {}, useDec = {};
@@ -66,19 +68,23 @@ function roundrobin(o) {
     sets: sets.map(s => ({ name: s.name, ids: s.ids, branch: s.branch || null })), matrix, cell, scores, usage,
     totals: { drawRate: tot.draw / tot.n, suddenRate: tot.sudden / tot.n, medianOfPairMedians: medTurns, meanTurns: tot.turns.reduce((a, [, m, k]) => a + m * k, 0) / tot.n, reasons: tot.reasons }
   };
-  if (which === 'pure') res.branches = branchMatrix(c.ctx, sets, matrix);
+  if (which === 'pure') {
+    res.branches = branchMatrix(c.ctx, sets, matrix);
+    res.branchesAttack = branchMatrix(c.ctx, sets, matrix, st => st.ids.some(id => c.ctx.M.isAttacking(c.ctx.M.SKILLS[id])));
+  }
   return res;
 }
 
 /** Trung bình điểm theo nhánh: hàng thắng cột, gộp mọi cặp bộ thuần của hai nhánh. */
-function branchMatrix(ctx, sets, matrix) {
+function branchMatrix(ctx, sets, matrix, keep) {
   const B = ctx.M.BRANCH_ORDER, out = {};
+  const ok = s => !keep || keep(s);
   for (const x of B) {
     out[x] = {};
     for (const y of B) {
       if (x === y) { out[x][y] = null; continue; }
       const vals = [];
-      sets.forEach((s, i) => sets.forEach((t, j) => { if (s.branch === x && t.branch === y) vals.push(matrix[i][j]); }));
+      sets.forEach((s, i) => sets.forEach((t, j) => { if (ok(s) && ok(t) && s.branch === x && t.branch === y) vals.push(matrix[i][j]); }));
       const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
       const sd = Math.sqrt(vals.reduce((a, b) => a + (b - mean) ** 2, 0) / vals.length);
       out[x][y] = { score: mean, sd, min: Math.min(...vals), max: Math.max(...vals), pairs: vals.length };
@@ -87,10 +93,10 @@ function branchMatrix(ctx, sets, matrix) {
   return out;
 }
 
-function printBranches(ctx, bm) {
+function printBranches(ctx, bm, label) {
   const B = ctx.M.BRANCH_ORDER, name = b => ctx.M.BRANCHES[b].name;
   const rows = B.map(x => [name(x), ...B.map(y => (x === y ? '-' : F.pct(bm[x][y].score) + '%'))]);
-  let s = F.title('Quan hệ giữa các nhánh (điểm của hàng so với cột, trung bình mọi cặp bộ thuần)') + '\n' + F.table(['', ...B.map(name)], rows);
+  let s = F.title(`Quan hệ giữa các nhánh (điểm của hàng so với cột, trung bình mọi cặp bộ thuần${label || ''})`) + '\n' + F.table(['', ...B.map(name)], rows);
   s += '\nLàm tròn; khoảng dao động giữa các cặp bộ (thấp nhất - cao nhất):\n';
   for (const x of B) for (const y of B) if (x !== y && B.indexOf(x) < B.indexOf(y)) {
     const v = bm[x][y]; s += `  ${name(x)} vs ${name(y)}: ${F.pct(v.score)}% (từng cặp bộ từ ${F.pct(v.min)}% tới ${F.pct(v.max)}%)\n`;
@@ -107,7 +113,7 @@ function printRoundrobin(r, ctx) {
   s += F.title('Ma trận điểm (hàng so với cột, %)');
   const hdr = ['', ...r.sets.map((x, i) => String(i + 1))];
   s += '\n' + F.table(hdr, r.sets.map((x, i) => [`${i + 1} ${x.name}`, ...r.matrix[i].map((v, j) => (i === j ? '-' : F.pct(v)))]), ['l', ...r.sets.map(() => 'r')]);
-  if (r.branches) s += printBranches(ctx, r.branches);
+  if (r.branches) s += printBranches(ctx, r.branches) + printBranches(ctx, r.branchesAttack, ', chỉ bộ có đòn tấn công chủ động');
   s += F.title('Tỉ lệ chọn từng chiêu (trong các lần được chọn tự do khi chiêu có trong bộ; đều tay = 20%)');
   s += '\n' + F.table(['Chiêu', 'Tên', 'Chọn', 'Trong số bộ'], r.usage.map(u => [u.abbr, u.name, F.pct(u.share, 1) + '%', u.held]), ['l', 'l', 'r', 'r']);
   const t = r.totals;
@@ -147,11 +153,7 @@ function grid(o) {
   const rest = shuffle(byScreen.slice(top), makeRng(c.seed + ':grid2')).slice(0, extra);
   const opps2 = shuffle(all, makeRng(c.seed + ':opp2')).slice(0, K2);
   const eqScore = new Map();
-  const evalEq = (s, k, g, list, tag) => {
-    const res = scoreVs(c, s.ids, list.filter(x => x.name !== s.name), g, `${c.seed}:${tag}:${s.i}`, 'eq');
-    eqScore.set(s.i, res); return res;
-  };
-  [...head, ...rest].forEach(s => evalEq(s, 0, G2, opps2, 'g2'));
+  [...head, ...rest].forEach(s => eqScore.set(s.i, scoreVs(c, s.ids, opps2.filter(x => x.name !== s.name), G2, `${c.seed}:g2:${s.i}`, 'eq')));
   log(o, `[grid] bot eq xong ${head.length + rest.length} bộ (${((Date.now() - t0) / 1000).toFixed(1)}s)`);
   // 3) vòng chung kết: những bộ điểm eq cao nhất, nhiều trận hơn, đối thủ khác
   const fin = [...eqScore.entries()].map(([i, v]) => ({ i, v })).sort((a, b) => b.v.score - a.v.score).slice(0, finN);
@@ -216,10 +218,10 @@ function namedSets(names) {
 
 function buffs(o) {
   const c = common(o), t0 = Date.now();
-  const games = Number(o.games || 120);
+  const games = Number(o.games || 80);
   const scales = String(o.scales || '0.25,0.5,1').split(',').map(Number);
   const sets = namedSets(o.sets ? String(o.sets).split('|') : MIRRORS);
-  const full = !!o.full;
+  const full = !!o.full, onlyMax = o.only === 'max';
   const LC = full ? [0, 1, 2, 3, 4, 5, 6] : [0, 2, 4, 6], LQ = full ? [1, 2, 3, 4] : [1, 2, 3, 4], LD = full ? [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] : [0, 3, 6, 9];
   const out = { sets: [] };
   for (const st of sets) {
@@ -231,8 +233,10 @@ function buffs(o) {
         return { score: r.score, win: r.win, draw: r.draw, loss: r.loss, se: r.se, buff: { offExt: b.offExt, defP: b.defP, dodgeB: b.dodgeB } };
       };
       const gridLc = {}, gridLq = {};
-      for (const lc of LC) { gridLc[lc] = {}; for (const ld of LD) gridLc[lc][ld] = lc === 0 && ld === 0 ? null : run({ Lc: lc, Ld: ld }, `c${lc}d${ld}`); }
-      for (const lq of LQ) { gridLq[lq] = {}; for (const ld of LD) gridLq[lq][ld] = run({ Lq: lq, Ld: ld }, `q${lq}d${ld}`); }
+      if (!onlyMax) {
+        for (const lc of LC) { gridLc[lc] = {}; for (const ld of LD) gridLc[lc][ld] = lc === 0 && ld === 0 ? null : run({ Lc: lc, Ld: ld }, `c${lc}d${ld}`); }
+        for (const lq of LQ) { gridLq[lq] = {}; for (const ld of LD) gridLq[lq][ld] = run({ Lq: lq, Ld: ld }, `q${lq}d${ld}`); }
+      }
       const maxes = {
         'Lc6+Ld9': run({ Lc: 6, Ld: 9 }, 'm1'), 'Lq4+Ld9': run({ Lq: 4, Ld: 9 }, 'm2'), 'Lc6+Lq4+Ld9': run({ Lc: 6, Lq: 4, Ld: 9 }, 'm3'),
         'Lc6': run({ Lc: 6 }, 'm4'), 'Lq4': run({ Lq: 4 }, 'm5'), 'Ld9': run({ Ld: 9 }, 'm6')
@@ -242,7 +246,7 @@ function buffs(o) {
     out.sets.push(ent);
     log(o, `[buffs] xong ${st.name} (${((Date.now() - t0) / 1000).toFixed(1)}s)`);
   }
-  out.meta = metaOf('buffs', c, o, { games, scales, full, axesLc: LC, axesLq: LQ, axesLd: LD, elapsedMs: Date.now() - t0 });
+  out.meta = metaOf('buffs', c, o, { games, scales, full, onlyMax, axesLc: LC, axesLq: LQ, axesLd: LD, elapsedMs: Date.now() - t0 });
   return out;
 }
 
@@ -253,10 +257,12 @@ function printBuffs(r) {
   for (const st of r.sets) for (const sc of st.scales) {
     s += F.title(`Bộ ${st.name} (${st.ids.map(L.abbr).join(' ')}) · BUFF_SCALE ${sc.scale}`);
     const rows = [];
-    for (const lc of m.axesLc) rows.push(['Lc ' + lc, ...m.axesLd.map(ld => (sc.lc[lc][ld] ? F.pct(sc.lc[lc][ld].score) : '50'))]);
-    for (const lq of m.axesLq) rows.push(['Lq ' + lq, ...m.axesLd.map(ld => F.pct(sc.lq[lq][ld].score))]);
-    s += '\n' + F.table(['', ...m.axesLd.map(d => 'Ld' + d)], rows);
+    for (const lc of m.axesLc) if (sc.lc[lc]) rows.push(['Lc ' + lc, ...m.axesLd.map(ld => (sc.lc[lc][ld] ? F.pct(sc.lc[lc][ld].score) : '50'))]);
+    for (const lq of m.axesLq) if (sc.lq[lq]) rows.push(['Lq ' + lq, ...m.axesLd.map(ld => F.pct(sc.lq[lq][ld].score))]);
+    if (rows.length) s += '\n' + F.table(['', ...m.axesLd.map(d => 'Ld' + d)], rows);
     s += '\nTổ hợp mạnh nhất: ' + Object.entries(sc.maxes).map(([k, v]) => `${k} ${F.pct(v.score)}%`).join(' · ') + '\n';
+    const mx = sc.maxes['Lc6+Lq4+Ld9'].buff;
+    s += `Số buff của Lc6+Lq4+Ld9: tăng sát thương ${F.pct(mx.offExt, 1)}%, giảm sát thương nhận ${F.pct(mx.defP, 1)}%, cộng né ${F.pct(mx.dodgeB, 1)} điểm\n`;
   }
   return s;
 }
@@ -295,7 +301,7 @@ function param(o) {
   const c0 = common(o), t0 = Date.now();
   const key = o.key, values = String(o.values || '').split(',').filter(Boolean).map(Number);
   if (!key || !values.length) throw new Error('param cần --key (vd rules.REGEN, skill.tu-luc-pha-son.mana) và --values a,b,c');
-  const games = Number(o.games || 100), trGames = Number(o.triGames || 30);
+  const games = Number(o.games || 60), trGames = Number(o.triGames || 20);
   const rows = [];
   for (const v of values) {
     const set = [...(o.set || []), `${key}=${v}`];
@@ -303,6 +309,10 @@ function param(o) {
     const rr = roundrobin({ ...o, set, games, sets: 'presets', quiet: true });
     const tri = roundrobin({ ...o, set, games: trGames, sets: 'pure', quiet: true });
     const sc = rr.scores.map(x => x.score);
+    const watchSet = {};
+    for (const nm of String(o.watchSet || '').split(',').filter(Boolean)) { const f = rr.scores.find(x => x.name === nm); if (f) watchSet[nm] = f.score; }
+    const watch = {};
+    for (const ab of String(o.watch || '').split(',').filter(Boolean)) { const f = rr.usage.find(x => x.abbr === ab); if (f) watch[ab] = f.share; }
     const sd = Math.sqrt(sc.reduce((a, b) => a + (b - 0.5) ** 2, 0) / sc.length);
     const B = c.ctx.M.BRANCH_ORDER, bm = tri.branches;
     rows.push({
@@ -310,7 +320,7 @@ function param(o) {
       best: rr.scores.slice().sort((a, b) => b.score - a.score)[0].name, worst: rr.scores.slice().sort((a, b) => a.score - b.score)[0].name,
       triangle: { cuongVsToc: bm.cuong.toc.score, tocVsNhu: bm.toc.nhu.score, nhuVsCuong: bm.nhu.cuong.score },
       draw: rr.totals.drawRate, sudden: rr.totals.suddenRate, medTurns: rr.totals.medianOfPairMedians, meanTurns: rr.totals.meanTurns,
-      minUsage: Math.min(...rr.usage.map(u => u.share)), minUsageSkill: rr.usage[rr.usage.length - 1].abbr
+      minUsage: Math.min(...rr.usage.map(u => u.share)), minUsageSkill: rr.usage[rr.usage.length - 1].abbr, watch, watchSet
     });
     log(o, `[param] ${key}=${v} xong (${((Date.now() - t0) / 1000).toFixed(1)}s)`);
   }
@@ -321,10 +331,12 @@ function printParam(r) {
   const m = r.meta;
   let s = `Quét tham số ${m.key} · bot ${m.mode} · cấp ${m.level} · seed ${m.seed} · ${(m.elapsedMs / 1000).toFixed(1)}s`;
   s += `\n13 bộ tiêu biểu × ${m.games} trận mỗi cặp; tam giác nhánh từ 15 bộ thuần × ${m.triGames} trận mỗi cặp. Chiêu ít được chọn nhất ghi kèm.\n`;
-  s += F.table(['Giá trị', 'Cương>Tốc', 'Tốc>Nhu', 'Nhu>Cương', 'Bộ mạnh nhất', 'Bộ yếu nhất', 'Hòa', 'Suy kiệt', 'Lượt tb', 'Chiêu ít chọn'],
+  const wk = Object.keys(r.rows[0].watch), ws = Object.keys(r.rows[0].watchSet);
+  s += F.table(['Giá trị', 'Cương>Tốc', 'Tốc>Nhu', 'Nhu>Cương', 'Bộ mạnh nhất', 'Bộ yếu nhất', 'Hòa', 'Suy kiệt', 'Lượt tb', 'Chiêu ít chọn', ...wk.map(k => 'Chọn ' + k), ...ws.map(k => 'Điểm ' + k)],
     r.rows.map(x => [x.value, F.pct(x.triangle.cuongVsToc) + '%', F.pct(x.triangle.tocVsNhu) + '%', F.pct(x.triangle.nhuVsCuong) + '%',
-      `${x.best} ${F.pct(x.spread.best)}%`, `${x.worst} ${F.pct(x.spread.worst)}%`, F.pct(x.draw) + '%', F.pct(x.sudden) + '%', x.meanTurns.toFixed(1), `${x.minUsageSkill} ${F.pct(x.minUsage)}%`]),
-    ['r', 'r', 'r', 'r', 'l', 'l', 'r', 'r', 'r', 'l']);
+      `${x.best} ${F.pct(x.spread.best)}%`, `${x.worst} ${F.pct(x.spread.worst)}%`, F.pct(x.draw) + '%', F.pct(x.sudden) + '%', x.meanTurns.toFixed(1), `${x.minUsageSkill} ${F.pct(x.minUsage)}%`,
+      ...wk.map(k => F.pct(x.watch[k]) + '%'), ...ws.map(k => F.pct(x.watchSet[k]) + '%')]),
+    ['r', 'r', 'r', 'r', 'l', 'l', 'r', 'r', 'r', 'l', ...wk.map(() => 'r'), ...ws.map(() => 'r')]);
   return s + '\n';
 }
 

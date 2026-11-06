@@ -236,7 +236,7 @@ Mở http://localhost:3000. Muốn dùng file cấu hình: `cp .env.example .env
 | `DATA_FILE` | Nơi lưu dữ liệu, mặc định `data/db.json`. |
 | `TRUST_PROXY` | Đặt `0` nếu không chạy sau proxy (nginx, Render…). |
 | `DATABASE_URL` | Chuỗi kết nối PostgreSQL (Neon). Có thì lưu vào PostgreSQL thay cho file JSON. `PG_FLUSH_MS` (mặc định 10000) là nhịp ghi nền, `PG_SSL=0` tắt SSL khi chạy cục bộ, `PG_IMPORT_JSON=0` tắt tự nhập file JSON cũ. |
-| `MARTIAL_ENABLED`, `PK_ENABLED` | Đặt `0` để tắt cả Võ Học Các và Sân đấu, hoặc chỉ Sân đấu. `PK_MAX_MATCHES` (mặc định 20) là số trận cùng lúc tối đa. |
+| `MARTIAL_ENABLED`, `PK_ENABLED` | Đặt `0` để tắt cả Võ Học Các và Sân đấu, hoặc chỉ Sân đấu. `PK_MAX_MATCHES` (mặc định 20) là số trận cùng lúc tối đa; `PK_BUFF_SCALE` (mặc định 0,15) là hệ số buff của phòng có buff. |
 | `SPEEDUP_ENABLED`, `SPEEDUP_PER_DAY` | Cúng dường để hoàn thành tu luyện ngay (cần bật cúng dường tịnh tài). `0` để tắt; mỗi người tối đa 2 lần đã xác nhận mỗi ngày. |
 | `VOICE` | Đặt `0` để tắt nói chuyện bằng giọng. `VOICE_MAX`: số người tối đa bật nói chuyện cùng lúc (mặc định 150). |
 | `CF_TURN_KEY_ID`, `CF_TURN_API_TOKEN` | TURN của Cloudflare cho nói chuyện bằng giọng qua 4G / mạng công ty. |
