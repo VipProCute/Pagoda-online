@@ -1,14 +1,15 @@
-chants/*.mp3 — bài tụng dựng bằng tools/build_chants.py
-  Giọng tụng tổng hợp bằng VieNeu-TTS v3 Turbo
+chants/batnha, niemphat, quanam (.mp3 .json) — bài tụng dựng bằng tools/build_chants.py
+  Giọng tụng do máy tổng hợp bằng VieNeu-TTS v3 Turbo, nhân bản từ giọng đọc của một vị thầy, đã được thầy đồng ý.
+  Đây là giọng tổng hợp, không phải bản thu âm thật; có thể đọc sai hoặc thiếu rõ một số từ Hán Việt.
+  Bản ghi giọng mẫu không nằm trong dự án và không được đăng tải.
   Mô hình: https://huggingface.co/pnnbao-ump/VieNeu-TTS-v3-Turbo
   Mã nguồn: https://github.com/pnnbao97/VieNeu-TTS
   Tác giả: Phạm Nguyễn Ngọc Bảo · Giấy phép: Apache License 2.0
-  Giọng mẫu: Thiền Tâm Đức (preset voice phát hành cùng mô hình, Apache-2.0)
   Codec: MOSS-Audio-Tokenizer-Nano (OpenMOSS-Team), Apache-2.0
-  Âm thanh do máy tổng hợp và có watermark mặc định của VieNeu.
   Mốc chữ dò bằng faster-whisper (MIT) với mô hình Whisper "small" (MIT).
   Mõ: tiếng gõ tạo bằng toán.
   Kinh văn: Bát Nhã Ba La Mật Đa Tâm Kinh (bản Hán Việt phổ thông), các câu niệm danh hiệu.
+chants/thien.mp3 — chỉ có tiếng mõ và chuông, không có giọng.
 
 bell.mp3 — tiếng chuông
   File do chủ dự án cung cấp, tên gốc "universfield-church-bell-toll-156464.mp3"
@@ -22,4 +23,4 @@ blessings/*.mp3 (binh-an-1 ... binh-an-4) — lời chúc mốc công đức, d�
   Tác giả: Phạm Nguyễn Ngọc Bảo · Giấy phép: Apache License 2.0 · SDK: vieneu 3.8.3
   Giọng mẫu: Trúc Ly (preset voice nữ phát hành cùng mô hình, Apache-2.0)
   Codec: MOSS-Audio-Tokenizer-Nano (OpenMOSS-Team), Apache-2.0
-  Âm thanh do máy tổng hợp và có watermark mặc định của VieNeu.
+  Âm thanh do máy tổng hợp.

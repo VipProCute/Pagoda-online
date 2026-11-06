@@ -22,7 +22,7 @@ Chánh điện trực tuyến cho nhiều người cùng lúc. Mỗi người v�
 
 Mỗi bài tụng là một file MP3 dựng sẵn trong `public/audio/chants/` (giọng + mõ + chuông) kèm file JSON ghi mốc từng chữ. Khi có người khởi tụng, mọi trình duyệt phát cùng một file và tự chỉnh về đúng vị trí theo giờ máy chủ, nên cả chánh điện nghe cùng một chữ; chữ trên màn hình sáng theo tiếng.
 
-- **Giọng:** [VieNeu-TTS v3 Turbo](https://huggingface.co/pnnbao-ump/VieNeu-TTS-v3-Turbo) (Apache-2.0, tác giả Phạm Nguyễn Ngọc Bảo), giọng mẫu “Thiền Tâm Đức”, đọc **liền từng câu**. Đo bằng Whisper: đọc liền rõ chữ nhất (sai ~33% trên bản có mõ và chuông), cắt rời từng chữ sai trên 50%.
+- **Giọng:** do máy tổng hợp bằng [VieNeu-TTS v3 Turbo](https://huggingface.co/pnnbao-ump/VieNeu-TTS-v3-Turbo) (Apache-2.0, tác giả Phạm Nguyễn Ngọc Bảo), nhân bản từ giọng đọc của một vị thầy, đã được thầy đồng ý; đọc **liền từng câu**. Đây là giọng tổng hợp chứ không phải bản thu âm thật, có thể đọc sai hoặc thiếu rõ một số từ Hán Việt. Đo bằng Whisper, giọng nhân bản nhận ra chữ kém hơn giọng sẵn có “Thiền Tâm Đức” (sai khoảng một nửa số chữ, giọng sẵn có khoảng một phần ba), nên cần nghe lại và chỉnh khi cần.
 - **Mõ** (theo hướng dẫn sử dụng chuông mõ của các đạo tràng): mõ gõ đúng lúc từng chữ cất lên, nương theo người tụng. Vào mõ: chữ 1 chưa gõ, chữ 2 gõ, chữ 3 không gõ, từ chữ 4 gõ đều. Thần chú nhanh hơn; niệm danh hiệu nhanh dần đều. Kết thúc lơi dần, hai tiếng mõ áp chót dính liền, tiếng cuối rời ra.
 - **Chuông:** `public/audio/bell.mp3`. Một tiếng khai kinh, ba tiếng kết; cũng dùng cho nút “Thỉnh chuông”.
 
@@ -36,7 +36,15 @@ python -m venv .venv && . .venv/bin/activate && pip install vieneu librosa sound
 python tools/build_chants.py --voice "Thiền Tâm Đức"
 ```
 
-Giới hạn: VieNeu được huấn luyện để đọc, không phải để tụng, nên giọng nghe như đọc kinh chậm rãi hơn là xướng tụng. Muốn giọng tụng thật nhất, hãy thu âm chư tăng chùa đối tác (có sự đồng ý) rồi thay file MP3, giữ cùng định dạng JSON.
+Nhân bản giọng (chỉ làm khi người được nhân bản đồng ý):
+
+```bash
+python tools/build_chants.py --ref-audio /duong/dan/ngoai/repo/giong_mau.wav
+```
+
+Chỉ khoảng 8 giây đầu của file mẫu được dùng; nên chọn đoạn nói rõ, một người, ít ồn. File mẫu là dữ liệu cá nhân: để **ngoài** repo, không commit, không tải lên dịch vụ nào (công cụ từ chối đường dẫn nằm trong repo; trong MP3/JSON chỉ ghi nhãn “nhân bản từ giọng mẫu #xxxxxxxx”, không có tên hay đường dẫn). Mỗi lần dựng lại ra giọng hơi khác vì lấy mẫu ngẫu nhiên, nên nghe lại, nhất là các câu Hán Việt và chỗ vào mõ. Không có `--ref-audio` thì dùng giọng sẵn có “Thiền Tâm Đức”.
+
+Giới hạn: VieNeu được huấn luyện để đọc, không phải để tụng, nên giọng nghe như đọc kinh chậm rãi hơn là xướng tụng. Muốn giọng tụng thật nhất, hãy thu âm chư tăng chùa đối tác (có sự đồng ý) rồi thay file MP3, giữ cùng định dạng JSON. Giọng nhân bản nghe cao hơn giọng sẵn có (khoảng 205 Hz so với 107 Hz) vì file mẫu là giọng nói chuyện chứ không phải giọng tụng.
 
 ## Hiệu ứng mốc công đức
 
