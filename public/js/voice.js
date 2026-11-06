@@ -195,6 +195,7 @@
   }
   function levels() {
     if (!active || !AC) return;
+    let speech = false;
     const myId = H.myId(), meP = H.player(myId);
     for (const peer of peers.values()) {
       if (!peer.an) continue;
@@ -210,12 +211,17 @@
       }
       const lv = rms(peer.an, peer.buf);
       peer.level = Math.max(lv, peer.level * 0.82);
-      H.talk(peer.pid, peer.level > 0.018 && !blocked.has(peer.pid) ? Math.min(1, peer.level * 10) : 0);
+      const talking = peer.level > 0.018 && !blocked.has(peer.pid);
+      if (talking && peer.vol > 0 && volume > 0 && !muted) speech = true;
+      H.talk(peer.pid, talking ? Math.min(1, peer.level * 10) : 0);
     }
     if (selfAn && micOn && track && track.enabled) {
       selfLevel = Math.max(rms(selfAn, selfBuf), selfLevel * 0.82);
-      H.talk(myId, selfLevel > 0.018 ? Math.min(1, selfLevel * 10) : 0);
+      const talking = selfLevel > 0.018;
+      if (talking) speech = true;
+      H.talk(myId, talking ? Math.min(1, selfLevel * 10) : 0);
     } else H.talk(myId, 0);
+    if (speech && H.speech) H.speech();
   }
 
   /* ---------- micro ---------- */

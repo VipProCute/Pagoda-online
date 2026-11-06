@@ -595,6 +595,7 @@
     players: () => Hall.list(),
     talk: (id, lv) => Hall.setTalk(id, lv),
     audioContext: () => SFX.context(),
+    speech: () => SFX.duckAmbience(0.45),
     notice: t => toast(t),
     change: () => voiceUI()
   });
