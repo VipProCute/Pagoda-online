@@ -80,16 +80,18 @@ Khi nhà chùa **xác nhận đã nhận tiền** (admin bấm Xác nhận, ho�
 | Cảnh giới | Từ | Sáng | Hiệu ứng |
 |---|---|---|---|
 | 1. Luyện Khí | 20.000đ | 5 phút | Khí lành quấn quanh thân |
-| 2. Trúc Cơ | 50.000đ | 6 phút | Đài sáng dưới chân |
-| 3. Kim Đan | 100.000đ | 7 phút | Kim đan nơi đan điền, vầng sáng trên đầu |
+| 2. Trúc Cơ | 50.000đ | 6 phút | Đứng trên đài sen vàng |
+| 3. Kim Đan | 100.000đ | 7 phút | Kim đan nơi đan điền, vầng sáng viền cánh sen sau đầu |
 | 4. Nguyên Anh | 200.000đ | 8 phút | Nguyên anh bay vòng, tia sáng xoay |
-| 5. Hóa Thần | 500.000đ | 9 phút | Thần quang bốc lên như lửa |
-| 6. Luyện Hư | 1.000.000đ | 10 phút | Vòng hư không đầy sao |
+| 5. Hóa Thần | 500.000đ | 9 phút | Thần hỏa xanh bốc lên quanh thân |
+| 6. Luyện Hư | 1.000.000đ | 10 phút | Quang bối hư không đầy sao sau lưng |
 | 7. Hợp Thể | 2.000.000đ | 11 phút | Ngũ hành châu xoay quanh |
-| 8. Đại Thừa | 5.000.000đ | 12 phút | Cột sáng từ trời, hoa sen nở |
-| 9. Độ Kiếp | 10.000.000đ | 13 phút | Lôi kiếp giáng xuống, vòng ngũ sắc |
+| 8. Đại Thừa | 5.000.000đ | 12 phút | Cột sáng từ trời, quang bối kim quang, sen hồng nở, cánh sen rơi |
+| 9. Độ Kiếp | 10.000.000đ | 13 phút | Lôi kiếp giáng xuống, vòng ngũ sắc, sen pha lê ngũ sắc |
 
 Cộng dồn: còn hào quang thì số tiền mới cộng vào số cũ (3 lần 20.000đ = 60.000đ, lên Trúc Cơ). Mỗi lần cúng dường, hào quang sáng lại từ đầu theo thời gian của cảnh giới hiện tại; hết giờ thì tắt và cộng dồn về 0. Ẩn danh, hoặc bỏ chọn “Hiện hào quang”, thì không hiện. Sửa mốc trong `public/js/aura.js`.
+
+Đài sen (vàng, hồng, pha lê), vầng sáng sau đầu và quang bối (tím, vàng kim) là hình thiết kế trên Canva, nằm trong `public/img/fx/aura/`; dựng lại từ ảnh PNG xuất từ Canva bằng `python3 -I tools/fx/prepare_aura_assets.py lotus.png halo.png mandorla.png` (cần Pillow, numpy). Các hiệu ứng còn lại (sợi khí, tia sáng, thần hỏa, nguyên anh, ngũ hành châu, cánh sen rơi, lôi kiếp) vẽ bằng mã trong `public/js/hall.js`. Hình chưa tải xong thì trình duyệt tạm vẽ bằng mã.
 
 ## Thông báo cúng dường bằng giọng nữ VieNeu
 
