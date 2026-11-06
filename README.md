@@ -13,7 +13,7 @@ Chánh điện trực tuyến cho nhiều người cùng lúc. Mỗi người v�
 | Tàng Kinh Các | Kệ kinh: Dịch Cân Kinh (đủ 12 thức, 59 hình minh họa, lời thơ gốc kèm phiên âm Hán Việt), Cửu Âm Chân Kinh, Quỳ Hoa Bảo Điển, Bát Nhã Tâm Kinh. Đọc theo chương, mục lục, đổi cỡ chữ, nền giấy / nền tối, nhớ chỗ đọc dở. Ai đang đọc thì có biểu tượng sách cạnh tên. |
 | Nói chuyện | Nói chuyện bằng giọng như đi chùa thật: đứng gần nghe rõ, xa nghe nhỏ dần, người bên trái nghe ở tai trái. Đang tụng kinh thì tiếng nói chuyện tự nhỏ lại. Tắt tiếng từng người; ban điều hành khóa mic 10 phút. |
 | Cộng đồng | Chat chung (bong bóng chat hiện trên đầu nhân vật), tường lời nguyện có nút “Tùy hỷ”, báo cáo tin nhắn. |
-| Công đức | Điểm công đức cá nhân (hôm nay / tất cả) và bảng công đức hôm nay. Tính từ nhang, hoa, mõ, tim, vái lạy, tụng kinh và cúng dường (1.000đ = 1 điểm). Nói tục trong chat bị trừ theo 5 mức. Công đức cao hiện **pháp tướng** sau lưng (6 mốc), công đức âm thì có **quỷ** theo sau (4 dạng). |
+| Công đức | Điểm công đức cá nhân (hôm nay / tất cả) và bảng công đức hôm nay. Có thể đăng nhập Google để giữ điểm khi đổi thiết bị. Tính từ nhang, hoa, mõ, tim, vái lạy, tụng kinh và cúng dường (1.000đ = 1 điểm). Nói tục trong chat bị trừ theo 5 mức. Công đức cao hiện **pháp tướng** sau lưng (6 mốc), công đức âm thì có **quỷ** theo sau (4 dạng). |
 | Hiệu ứng mốc | Đạt 100, 300, 500, 888, 999 rồi mỗi 1.000 công đức trong ngày thì hiện lời chúc bằng giọng nữ kèm meme chọn ngẫu nhiên, hào quang vàng xoay quanh meme và cánh sen rơi. Mốc 666 thì hù một cái bằng mặt quỷ rồi hào quang hiện lên trấn an. Có công tắc tắt trong mục Công đức. |
 | Cúng dường | Tạo mã VietQR có sẵn số tiền và mã đối soát. Tiền vào thẳng tài khoản của chùa. Tự xác nhận qua webhook SePay, hoặc ban điều hành xác nhận tay. Xác nhận xong: chánh điện đọc thông báo bằng giọng nữ VieNeu, người cúng dường được **hào quang 9 cảnh giới** (cộng dồn). |
 | An toàn | Chặn tin có số tài khoản, số điện thoại, đường link (chống lừa đảo giả danh chùa). Che từ tục. Giới hạn tần suất. Tên “Ban điều hành / Admin / Trụ trì…” chỉ dành cho quản trị. |
@@ -219,6 +219,17 @@ Mở http://localhost:3000. Muốn dùng file cấu hình: `cp .env.example .env
 
 **Chỉ điền tài khoản ngân hàng đứng tên nhà chùa, khi đã có văn bản đồng ý của nhà chùa.**
 
+## Bật đăng nhập Google
+
+1. Trong [Google Cloud Console](https://console.cloud.google.com/auth/clients), cấu hình màn hình đồng ý và tạo OAuth Client ID loại **Web application**.
+2. Thêm **Authorized redirect URI** khớp chính xác với địa chỉ trang, ví dụ `https://chuataman.vn/api/auth/google/callback`. Khi chạy thử trên máy, đăng ký `http://localhost:3000/api/auth/google/callback`.
+3. Đặt `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` và `AUTH_ORIGIN` trong cấu hình máy chủ. `AUTH_ORIGIN` là địa chỉ gốc, ví dụ `https://chuataman.vn`, không có dấu `/` ở cuối. Khởi động lại máy chủ.
+4. Nếu ứng dụng Google ở chế độ **Testing**, thêm tài khoản dùng thử trong mục **Audience**.
+
+Khách vẫn vào chánh điện như trước. Khi đăng nhập, công đức khách còn gắn với trình duyệt đó được chuyển vào tài khoản một lần. Khoản cúng dường tạo trước khi đăng nhập vẫn cộng điểm vào tài khoản sau khi được xác nhận. Điểm hôm nay tính theo giờ Việt Nam. Tên hiển thị và trang phục vẫn do người dùng chọn trên mỗi thiết bị. Máy chủ chỉ lưu mã định danh tài khoản đã băm và phiên của ứng dụng.
+
+**Lưu trữ khi triển khai:** ứng dụng dùng file JSON trên một máy chủ. Đặt `DATA_FILE` trên ổ đĩa bền vững để giữ điểm qua các lần khởi động lại hoặc triển khai. Nếu đã có dữ liệu, sao lưu và chuyển file `db.json` hiện có sang ổ mới trước khi đổi `DATA_FILE`.
+
 ## Đưa lên mạng trong ngày
 
 ### Cách 1: Render (nhanh nhất, không cần máy chủ riêng)
@@ -322,6 +333,5 @@ public/admin.html      trang quản trị
 
 - Thu âm bài tụng thật của chư tăng chùa đối tác, thay giọng mô phỏng.
 - Chuyển dữ liệu sang PostgreSQL + Redis khi đông người (nhiều máy chủ).
-- Đăng nhập Google / Zalo để giữ công đức khi đổi máy.
 - Chia phòng “Chánh điện 1, 2…” khi quá 300 người.
 - Hỏi luật sư về giấy phép mạng xã hội (Nghị định 147/2024/NĐ-CP) và bảo vệ dữ liệu cá nhân trước khi mở rộng.
