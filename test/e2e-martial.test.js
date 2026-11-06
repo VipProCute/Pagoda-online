@@ -419,7 +419,9 @@ test('cúng dường hoàn thành tu luyện ngay: chỉ khi Ban điều hành x
 
   // --- 3) admin từ chối: phiên tiếp tục chạy ---
   const s4 = await call(c.socket, 'tu:start', { methodId: 'tinh-tam-quyet', duration: '4h' });
+  assert.ok(s4.ok, 'bắt đầu phiên 4: ' + s4.reason);
   const sp4 = await call(c.socket, 'tu:speedup', { sessionId: s4.session.id });
+  assert.ok(sp4.ok, 'yêu cầu hoàn thành ngay lần 3: ' + sp4.reason);
   const rej = waitFor(c.socket, 'tu:update', u => u.kind === 'speedup-rejected');
   assert.equal((await srv.admin(`/api/admin/donations/${sp4.code}/cancel`, 'POST')).status, 200);
   await rej;

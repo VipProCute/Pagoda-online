@@ -920,7 +920,7 @@ io.on('connection', socket => {
     if (!p || typeof ack !== 'function') return;
     if (!MARTIAL_ENABLED) return ack({ ok: false, reason: 'Võ Học Các chưa mở.' });
     if (!accountReady(p)) return ack({ ok: false, code: 'login', reason: LOGIN_MSG });
-    if (!bucket('martial', 3, 10)) return ack({ ok: false, reason: 'Bạn thao tác hơi nhanh, đợi một chút nhé.' });
+    if (!bucket('martial', 6, 20)) return ack({ ok: false, reason: 'Bạn thao tác hơi nhanh, đợi một chút nhé.' });
     // dịch vụ kèm `updates` (phiên vừa xong theo giờ, đã hủy…): đẩy thành tu:update cho mọi tab rồi mới trả ack
     const done = r => {
       if (r && Array.isArray(r.updates)) { const { updates, ...rest } = r; for (const u of updates) emitToUid(p.uid, 'tu:update', u.update || u); return ack(rest); }
@@ -931,7 +931,7 @@ io.on('connection', socket => {
   socket.on('martial:state', (d, ack) => {
     if (!p || typeof ack !== 'function') return;
     if (!MARTIAL_ENABLED) return ack({ ok: true, enabled: false });
-    if (!bucket('mstate', 2, 6)) return ack({ ok: false, reason: 'Bạn tải hơi nhanh, đợi một chút nhé.' });
+    if (!bucket('mstate', 5, 15)) return ack({ ok: false, reason: 'Bạn tải hơi nhanh, đợi một chút nhé.' });
     if (!accountReady(p)) return ack(guestMartialState());
     const st = martial.state(p.uid);
     ack({ ...st, login: { required: auth.enabled, signedIn: !!auth.sessionFor(p.socket.data.authKey) } });

@@ -22,7 +22,7 @@
   let confirmCancel = false, confirmSp = false, anon = false;
   let sp = null, spLoading = false, sessKey = '', endTries = 0, endT = 0, tickT = 0;
   let draft = [], draftBase = [], saveWarn = null;
-  let celeb = [];
+  let celeb = [], celebFresh = false;
   const seenSent = new Set(), upd = {}, timers = new Set();
 
   /* ---------- tiện ích ---------- */
@@ -162,6 +162,7 @@
       if (!u.kind && i === 0 && r.status === 'completed' && r.reward && p.level) {
         levelUp = M.levelOf(Math.max(0, (p.congLuc || 0) - (r.reward.congLuc || 0))) < p.level;
       }
+      celebFresh = true;
       celeb.push({ id: r.id, methodId: r.methodId, durationKey: r.durationKey, status: r.status, via: r.via, reward: r.reward, levelUp, level });
     });
     if (celeb.length > 3) celeb = celeb.slice(-3);
@@ -396,7 +397,7 @@
     box.classList.toggle('is-guest', needLogin());
     const max = p.levelTo == null;
     box.textContent = '';
-    box.append(
+    add(box, [
       h('div', { class: 'dj-prof-top' },
         h('div', { class: 'dj-seal', role: 'img', 'aria-label': `Nội công cấp ${p.level}` }, h('small', null, 'Cấp'), h('b', null, String(p.level))),
         h('div', { class: 'dj-cl' },
@@ -412,7 +413,7 @@
           h('b', null, `${v}/${M.TAM_MAX}`),
           bar(v / M.TAM_MAX, `Tâm đắc ${br.name} ${v} trên ${M.TAM_MAX}`, br.color));
       })),
-      h('p', { class: 'dj-line dj-rec' }, 'Thắng ', h('b', null, String(p.wins || 0)), ' · Thua ', h('b', null, String(p.losses || 0)), ' · Hòa ', h('b', null, String(p.draws || 0))));
+      h('p', { class: 'dj-line dj-rec' }, 'Thắng ', h('b', null, String(p.wins || 0)), ' · Thua ', h('b', null, String(p.losses || 0)), ' · Hòa ', h('b', null, String(p.draws || 0)))]);
   }
 
   function renderPanel() {
@@ -428,24 +429,24 @@
       kids = tab === 'tam' ? tamTab() : tab === 'vo' ? voTab() : boTab();
       if (loadErr) kids.unshift(staleNote());
     }
-    ui.panel.replaceChildren(...kids);
+    ui.panel.replaceChildren(...kids.flat(Infinity).filter(Boolean));
     if (fk) {
       const n = Array.from(ui.panel.querySelectorAll('[data-fk]')).find(x => x.dataset.fk === fk);
       if (n && !n.disabled) n.focus({ preventScroll: !explicit }); else if (inside) ui.panel.focus({ preventScroll: true });
     } else if (inside) ui.panel.focus({ preventScroll: true });
-    if (tab === 'tam' && st && !closed() && !needLogin()) flushSeen();
+    if (tab === 'tam' && st && !closed() && !needLogin()) { if (celebFresh && celeb.length) el.scrollTop = 0; celebFresh = false; flushSeen(); }
     updateClock();
   }
 
   function flushSeen() {
-    const ids = celeb.map(c => String(c.id)).filter(id => !seenSent.has(id));
+    const fresh = celeb.filter(c => !seenSent.has(String(c.id))), ids = fresh.map(c => c.id);
     if (!ids.length || !online()) return;
-    ids.forEach(id => seenSent.add(id));
-    ask('martial:seen', { ids }, a => { if (!a.ok) ids.forEach(id => seenSent.delete(id)); });
+    fresh.forEach(c => seenSent.add(String(c.id)));
+    ask('martial:seen', { ids }, a => { if (!a.ok) fresh.forEach(c => seenSent.delete(String(c.id))); });
   }
 
   /* ----- trạng thái chung ----- */
-  function loadingCard() { return h('div', { class: 'card dj-state', role: 'status' }, h('span', { class: 'spin', 'aria-hidden': 'true' }), h('span', null, 'Đang mở Võ Học Các…')); }
+  function loadingCard() { return h('div', { class: 'card dj-state dj-loading', role: 'status' }, h('span', { class: 'spin', 'aria-hidden': 'true' }), h('span', null, 'Đang mở Võ Học Các…')); }
   function errCard() {
     return h('div', { class: 'card dj-state dj-err' }, h('p', { class: 'warn' }, loadErr),
       h('button', { type: 'button', class: 'btn small', onclick: () => { loadErr = null; render(); refresh(); } }, 'Thử lại'));
@@ -592,16 +593,16 @@
     const m = M.METHODS[s.methodId], price = s.price || (m && m.price) || 0;
     const card = h('section', { class: 'card dj-sp', 'aria-label': 'Hoàn thành ngay' }, h('div', { class: 'eyebrow' }, 'Hoàn thành ngay'));
     ui.spCard = card;
-    if (s.speedup) card.append(pendingView(s));
+    if (s.speedup) add(card, pendingView(s));
     else {
       const left = Math.max(0, (sc.perDay || 0) - (sc.usedToday || 0)), used = left <= 0;
-      card.append(
+      add(card, [
         h('h3', { class: 'dj-h' }, `Cúng dường ${vnd(price)} để rút ngắn phiên này`),
         speedRules(vnd(price), `Mỗi ngày dùng tối đa ${sc.perDay || 0} lần, hôm nay bạn đã dùng ${sc.usedToday || 0}.`),
         used ? h('p', { class: 'warn' }, 'Hôm nay bạn đã dùng đủ lượt hoàn thành ngay. Mai thử lại, hoặc đợi phiên tự viên mãn.') : null,
         h('label', { class: 'dj-check' }, h('input', { type: 'checkbox', checked: anon ? '' : null, onchange: e => { anon = e.target.checked; } }), h('span', null, 'Ẩn danh (không hiện tên khi thông báo cúng dường)')),
         noteEl('speedup'),
-        sendBtn(`Cúng dường ${vnd(price)} để hoàn thành ngay`, 'btn gold dj-wide', requestSpeedup, { disabled: used || !online(), 'data-locked': used ? '' : null, 'data-fk': 'sp:go' }));
+        sendBtn(`Cúng dường ${vnd(price)} để hoàn thành ngay`, 'btn gold dj-wide', requestSpeedup, { disabled: used || !online(), 'data-locked': used ? '' : null, 'data-fk': 'sp:go' })]);
     }
     return card;
   }
@@ -715,13 +716,15 @@
         warns.length ? h('ul', { class: 'dj-warns' }, warns.map(w => h('li', { class: 'warn' }, ico('warn'), h('span', null, w.text)))) : null,
         noteEl('loadout'),
         h('div', { class: 'dj-acts wrap' },
-          sendBtn(same && draft.length === 4 ? 'Đã lưu bộ chiêu' : 'Lưu bộ chiêu', 'btn primary', saveLoadout, { disabled: draft.length !== 4 || same || !online(), 'data-locked': draft.length !== 4 || same ? '' : null, 'data-fk': 'save' }),
           h('button', { type: 'button', class: 'btn gold', 'data-fk': 'suggest', onclick: () => { draft = suggest(lib); saveWarn = null; delete notes.loadout; say('Đã gợi ý bộ chiêu. Bấm Lưu bộ chiêu nếu bạn đồng ý.'); focusNext = 'suggest'; render(); } }, 'Gợi ý'),
           draft.length ? h('button', { type: 'button', class: 'btn', 'data-fk': 'clear', onclick: () => { draft = []; saveWarn = null; delete notes.loadout; focusNext = 'clear'; render(); } }, 'Bỏ hết') : null),
         draft.length !== 4 ? h('p', { class: 'hint' }, draft.length ? `Chọn thêm ${4 - draft.length} chiêu nữa mới lưu được.` : 'Chọn 4 chiêu bên dưới, hoặc bấm Gợi ý.') : null),
       h('section', { class: 'dj-lib', 'aria-label': 'Kho chiêu đã học' },
         h('h3', { class: 'dj-h' }, `Kho chiêu đã học (${lib.length})`),
         h('div', { class: 'dj-libgrid' }, lib.map(id => libCard(id)))),
+      h('div', { class: 'dj-savebar' },
+        h('span', { class: 'dj-savebar-n' }, `Đã chọn ${draft.length}/4`, warns.length ? h('em', null, ' · có cảnh báo') : null),
+        sendBtn(same && draft.length === 4 ? 'Đã lưu bộ chiêu' : 'Lưu bộ chiêu', 'btn primary', saveLoadout, { disabled: draft.length !== 4 || same || !online(), 'data-locked': draft.length !== 4 || same ? '' : null, 'data-fk': 'save' }))
     ];
   }
   function libCard(id) {
@@ -776,7 +779,7 @@
     visible = true;
     stopTimers();
     if (!resume) {
-      notes = {}; celeb = []; confirmCancel = false; confirmSp = false; busy = ''; endTries = 0;
+      notes = {}; celeb = []; celebFresh = false; confirmCancel = false; confirmSp = false; busy = ''; endTries = 0;
       const saved = store.get();
       if (TABS.some(t => t.id === saved)) tab = saved;
     }

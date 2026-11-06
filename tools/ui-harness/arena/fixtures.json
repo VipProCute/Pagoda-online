@@ -1,0 +1,1939 @@
+{
+ "A": {
+  "seed": "A1",
+  "you": {
+   "pid": 101,
+   "name": "Diệu Liên",
+   "look": {
+    "c": 3,
+    "g": "nam",
+    "h": 2
+   },
+   "level": 7,
+   "hpMax": 200,
+   "manaMax": 104,
+   "learned": [
+    "trong-quyen",
+    "thiet-bich",
+    "kim-chung-trao",
+    "phan-chan",
+    "tu-luc-pha-son",
+    "anh-bo-ho-than",
+    "tat-phong-quyen",
+    "khinh-than-bo",
+    "nhu-van-bo",
+    "lieu-diep-chuong"
+   ],
+   "loadout": [
+    "trong-quyen",
+    "kim-chung-trao",
+    "nhu-van-bo",
+    "tu-luc-pha-son"
+   ],
+   "warnings": []
+  },
+  "op": {
+   "pid": 202,
+   "name": "Huyền Trang",
+   "look": {
+    "c": 0,
+    "g": "nu",
+    "h": 0
+   },
+   "level": 6,
+   "hpMax": 200,
+   "manaMax": 100
+  },
+  "turns": [
+   {
+    "turn": 1,
+    "forced": null,
+    "legal": [
+     "trong-quyen",
+     "kim-chung-trao",
+     "nhu-van-bo",
+     "tu-luc-pha-son",
+     "dieu-tuc"
+    ],
+    "state": {
+     "you": {
+      "level": 7,
+      "hp": 200,
+      "hpMax": 200,
+      "mana": 104,
+      "manaMax": 104,
+      "rage": 0,
+      "charging": null,
+      "kc": 0,
+      "exposed": 0,
+      "offExt": 0,
+      "defP": 0,
+      "dodgeB": 0
+     },
+     "op": {
+      "level": 6,
+      "hp": 200,
+      "hpMax": 200,
+      "mana": 100,
+      "manaMax": 100,
+      "rage": 0,
+      "charging": null,
+      "kc": 0,
+      "exposed": 0,
+      "offExt": 0,
+      "defP": 0,
+      "dodgeB": 0
+     }
+    },
+    "loadouts": {
+     "you": [
+      "trong-quyen",
+      "kim-chung-trao",
+      "nhu-van-bo",
+      "tu-luc-pha-son"
+     ],
+     "op": [
+      "lien-hoan-cuoc",
+      "doat-anh-phan-kich",
+      "tiep-kinh-phan-chuong",
+      "ta-luc-hoa-giai"
+     ]
+    }
+   },
+   {
+    "turn": 2,
+    "forced": null,
+    "legal": [
+     "trong-quyen",
+     "kim-chung-trao",
+     "nhu-van-bo",
+     "tu-luc-pha-son",
+     "dieu-tuc"
+    ],
+    "state": {
+     "you": {
+      "level": 7,
+      "hp": 174,
+      "hpMax": 200,
+      "mana": 96,
+      "manaMax": 104,
+      "rage": 21,
+      "charging": null,
+      "kc": 0,
+      "exposed": 1,
+      "offExt": 0,
+      "defP": 0,
+      "dodgeB": 0
+     },
+     "op": {
+      "level": 6,
+      "hp": 200,
+      "hpMax": 200,
+      "mana": 92,
+      "manaMax": 100,
+      "rage": 0,
+      "charging": null,
+      "kc": 0,
+      "exposed": 0,
+      "offExt": 0,
+      "defP": 0,
+      "dodgeB": 0
+     }
+    }
+   },
+   {
+    "turn": 3,
+    "forced": null,
+    "legal": [
+     "trong-quyen",
+     "kim-chung-trao",
+     "nhu-van-bo",
+     "tu-luc-pha-son",
+     "dieu-tuc"
+    ],
+    "state": {
+     "you": {
+      "level": 7,
+      "hp": 155,
+      "hpMax": 200,
+      "mana": 95,
+      "manaMax": 104,
+      "rage": 46,
+      "charging": null,
+      "kc": 0,
+      "exposed": 0,
+      "offExt": 0,
+      "defP": 0,
+      "dodgeB": 0
+     },
+     "op": {
+      "level": 6,
+      "hp": 200,
+      "hpMax": 200,
+      "mana": 76,
+      "manaMax": 100,
+      "rage": 0,
+      "charging": null,
+      "kc": 0,
+      "exposed": 0,
+      "offExt": 0,
+      "defP": 0,
+      "dodgeB": 0
+     }
+    }
+   },
+   {
+    "turn": 4,
+    "forced": "tu-luc-pha-son",
+    "legal": [
+     "tu-luc-pha-son"
+    ],
+    "state": {
+     "you": {
+      "level": 7,
+      "hp": 133,
+      "hpMax": 200,
+      "mana": 71,
+      "manaMax": 104,
+      "rage": 64,
+      "charging": "tu-luc-pha-son",
+      "kc": 0,
+      "exposed": 0,
+      "offExt": 0,
+      "defP": 0,
+      "dodgeB": 0
+     },
+     "op": {
+      "level": 6,
+      "hp": 200,
+      "hpMax": 200,
+      "mana": 60,
+      "manaMax": 100,
+      "rage": 0,
+      "charging": null,
+      "kc": 0,
+      "exposed": 0,
+      "offExt": 0,
+      "defP": 0,
+      "dodgeB": 0
+     }
+    }
+   },
+   {
+    "turn": 5,
+    "forced": null,
+    "legal": [
+     "trong-quyen",
+     "kim-chung-trao",
+     "nhu-van-bo",
+     "tu-luc-pha-son",
+     "dieu-tuc"
+    ],
+    "state": {
+     "you": {
+      "level": 7,
+      "hp": 133,
+      "hpMax": 200,
+      "mana": 77,
+      "manaMax": 104,
+      "rage": 0,
+      "charging": null,
+      "kc": 0,
+      "exposed": 0,
+      "offExt": 0,
+      "defP": 0,
+      "dodgeB": 0
+     },
+     "op": {
+      "level": 6,
+      "hp": 162,
+      "hpMax": 200,
+      "mana": 57,
+      "manaMax": 100,
+      "rage": 40,
+      "charging": null,
+      "kc": 0,
+      "exposed": 0,
+      "offExt": 0,
+      "defP": 0,
+      "dodgeB": 0
+     }
+    }
+   },
+   {
+    "turn": 6,
+    "forced": null,
+    "legal": [
+     "trong-quyen",
+     "kim-chung-trao",
+     "nhu-van-bo",
+     "tu-luc-pha-son",
+     "dieu-tuc"
+    ],
+    "state": {
+     "you": {
+      "level": 7,
+      "hp": 121,
+      "hpMax": 200,
+      "mana": 73,
+      "manaMax": 104,
+      "rage": 10,
+      "charging": null,
+      "kc": 2,
+      "exposed": 0,
+      "offExt": 0,
+      "defP": 0,
+      "dodgeB": 0
+     },
+     "op": {
+      "level": 6,
+      "hp": 30,
+      "hpMax": 200,
+      "mana": 41,
+      "manaMax": 100,
+      "rage": 0,
+      "charging": null,
+      "kc": 0,
+      "exposed": 0,
+      "offExt": 0,
+      "defP": 0,
+      "dodgeB": 0
+     }
+    }
+   }
+  ],
+  "reveals": [
+   {
+    "turn": 1,
+    "picks": {
+     "you": {
+      "skill": "trong-quyen",
+      "phase": null,
+      "auto": false,
+      "invalid": false,
+      "mana": 14
+     },
+     "op": {
+      "skill": "tiep-kinh-phan-chuong",
+      "phase": null,
+      "auto": false,
+      "invalid": false,
+      "mana": 14
+     }
+    },
+    "events": [
+     {
+      "k": "pick",
+      "side": "you",
+      "skill": "trong-quyen",
+      "phase": null,
+      "auto": false,
+      "invalid": false,
+      "mana": 14
+     },
+     {
+      "k": "pick",
+      "side": "op",
+      "skill": "tiep-kinh-phan-chuong",
+      "phase": null,
+      "auto": false,
+      "invalid": false,
+      "mana": 14
+     },
+     {
+      "k": "parry",
+      "atk": "you",
+      "def": "op",
+      "idx": 1,
+      "of": 1,
+      "p": 0.824,
+      "ok": true
+     },
+     {
+      "k": "counter",
+      "side": "op",
+      "target": "you",
+      "dmg": 26
+     },
+     {
+      "k": "exposed",
+      "side": "you"
+     },
+     {
+      "k": "rage",
+      "side": "you",
+      "delta": 21,
+      "value": 21
+     }
+    ],
+    "state": {
+     "you": {
+      "level": 7,
+      "hp": 174,
+      "hpMax": 200,
+      "mana": 96,
+      "manaMax": 104,
+      "rage": 21,
+      "charging": null,
+      "kc": 0,
+      "exposed": 1,
+      "offExt": 0,
+      "defP": 0,
+      "dodgeB": 0
+     },
+     "op": {
+      "level": 6,
+      "hp": 200,
+      "hpMax": 200,
+      "mana": 92,
+      "manaMax": 100,
+      "rage": 0,
+      "charging": null,
+      "kc": 0,
+      "exposed": 0,
+      "offExt": 0,
+      "defP": 0,
+      "dodgeB": 0
+     }
+    },
+    "ended": null
+   },
+   {
+    "turn": 2,
+    "picks": {
+     "you": {
+      "skill": "nhu-van-bo",
+      "phase": null,
+      "auto": false,
+      "invalid": false,
+      "mana": 7
+     },
+     "op": {
+      "skill": "lien-hoan-cuoc",
+      "phase": null,
+      "auto": false,
+      "invalid": false,
+      "mana": 22
+     }
+    },
+    "events": [
+     {
+      "k": "pick",
+      "side": "you",
+      "skill": "nhu-van-bo",
+      "phase": null,
+      "auto": false,
+      "invalid": false,
+      "mana": 7
+     },
+     {
+      "k": "pick",
+      "side": "op",
+      "skill": "lien-hoan-cuoc",
+      "phase": null,
+      "auto": false,
+      "invalid": false,
+      "mana": 22
+     },
+     {
+      "k": "dodge",
+      "atk": "op",
+      "def": "you",
+      "idx": 1,
+      "of": 2,
+      "p": 0.45,
+      "ok": true
+     },
+     {
+      "k": "dodge",
+      "atk": "op",
+      "def": "you",
+      "idx": 2,
+      "of": 2,
+      "p": 0.45,
+      "ok": false
+     },
+     {
+      "k": "hit",
+      "atk": "op",
+      "def": "you",
+      "idx": 2,
+      "of": 2,
+      "dmg": 19,
+      "red": 0
+     },
+     {
+      "k": "rage",
+      "side": "you",
+      "delta": 25,
+      "value": 46
+     }
+    ],
+    "state": {
+     "you": {
+      "level": 7,
+      "hp": 155,
+      "hpMax": 200,
+      "mana": 95,
+      "manaMax": 104,
+      "rage": 46,
+      "charging": null,
+      "kc": 0,
+      "exposed": 0,
+      "offExt": 0,
+      "defP": 0,
+      "dodgeB": 0
+     },
+     "op": {
+      "level": 6,
+      "hp": 200,
+      "hpMax": 200,
+      "mana": 76,
+      "manaMax": 100,
+      "rage": 0,
+      "charging": null,
+      "kc": 0,
+      "exposed": 0,
+      "offExt": 0,
+      "defP": 0,
+      "dodgeB": 0
+     }
+    },
+    "ended": null
+   },
+   {
+    "turn": 3,
+    "picks": {
+     "you": {
+      "skill": "tu-luc-pha-son",
+      "phase": "charge",
+      "auto": false,
+      "invalid": false,
+      "mana": 30
+     },
+     "op": {
+      "skill": "lien-hoan-cuoc",
+      "phase": null,
+      "auto": false,
+      "invalid": false,
+      "mana": 22
+     }
+    },
+    "events": [
+     {
+      "k": "pick",
+      "side": "you",
+      "skill": "tu-luc-pha-son",
+      "phase": "charge",
+      "auto": false,
+      "invalid": false,
+      "mana": 30
+     },
+     {
+      "k": "pick",
+      "side": "op",
+      "skill": "lien-hoan-cuoc",
+      "phase": null,
+      "auto": false,
+      "invalid": false,
+      "mana": 22
+     },
+     {
+      "k": "charge",
+      "side": "you"
+     },
+     {
+      "k": "hit",
+      "atk": "op",
+      "def": "you",
+      "idx": 1,
+      "of": 2,
+      "dmg": 11,
+      "red": 0.3
+     },
+     {
+      "k": "hit",
+      "atk": "op",
+      "def": "you",
+      "idx": 2,
+      "of": 2,
+      "dmg": 11,
+      "red": 0.3
+     },
+     {
+      "k": "rage",
+      "side": "you",
+      "delta": 18,
+      "value": 64
+     }
+    ],
+    "state": {
+     "you": {
+      "level": 7,
+      "hp": 133,
+      "hpMax": 200,
+      "mana": 71,
+      "manaMax": 104,
+      "rage": 64,
+      "charging": "tu-luc-pha-son",
+      "kc": 0,
+      "exposed": 0,
+      "offExt": 0,
+      "defP": 0,
+      "dodgeB": 0
+     },
+     "op": {
+      "level": 6,
+      "hp": 200,
+      "hpMax": 200,
+      "mana": 60,
+      "manaMax": 100,
+      "rage": 0,
+      "charging": null,
+      "kc": 0,
+      "exposed": 0,
+      "offExt": 0,
+      "defP": 0,
+      "dodgeB": 0
+     }
+    },
+    "ended": null
+   },
+   {
+    "turn": 4,
+    "picks": {
+     "you": {
+      "skill": "tu-luc-pha-son",
+      "phase": "release",
+      "auto": false,
+      "invalid": false,
+      "mana": 0
+     },
+     "op": {
+      "skill": "ta-luc-hoa-giai",
+      "phase": null,
+      "auto": false,
+      "invalid": false,
+      "mana": 9
+     }
+    },
+    "events": [
+     {
+      "k": "pick",
+      "side": "you",
+      "skill": "tu-luc-pha-son",
+      "phase": "release",
+      "auto": false,
+      "invalid": false,
+      "mana": 0
+     },
+     {
+      "k": "pick",
+      "side": "op",
+      "skill": "ta-luc-hoa-giai",
+      "phase": null,
+      "auto": false,
+      "invalid": false,
+      "mana": 9
+     },
+     {
+      "k": "release",
+      "side": "you"
+     },
+     {
+      "k": "guard",
+      "side": "op",
+      "red": 0.55
+     },
+     {
+      "k": "hit",
+      "atk": "you",
+      "def": "op",
+      "idx": 1,
+      "of": 1,
+      "dmg": 38,
+      "red": 0.55
+     },
+     {
+      "k": "rage",
+      "side": "you",
+      "delta": -64,
+      "value": 0
+     },
+     {
+      "k": "rage",
+      "side": "op",
+      "delta": 40,
+      "value": 40
+     }
+    ],
+    "state": {
+     "you": {
+      "level": 7,
+      "hp": 133,
+      "hpMax": 200,
+      "mana": 77,
+      "manaMax": 104,
+      "rage": 0,
+      "charging": null,
+      "kc": 0,
+      "exposed": 0,
+      "offExt": 0,
+      "defP": 0,
+      "dodgeB": 0
+     },
+     "op": {
+      "level": 6,
+      "hp": 162,
+      "hpMax": 200,
+      "mana": 57,
+      "manaMax": 100,
+      "rage": 40,
+      "charging": null,
+      "kc": 0,
+      "exposed": 0,
+      "offExt": 0,
+      "defP": 0,
+      "dodgeB": 0
+     }
+    },
+    "ended": null
+   },
+   {
+    "turn": 5,
+    "picks": {
+     "you": {
+      "skill": "kim-chung-trao",
+      "phase": null,
+      "auto": false,
+      "invalid": false,
+      "mana": 10
+     },
+     "op": {
+      "skill": "doat-anh-phan-kich",
+      "phase": null,
+      "auto": false,
+      "invalid": false,
+      "mana": 22
+     }
+    },
+    "events": [
+     {
+      "k": "pick",
+      "side": "you",
+      "skill": "kim-chung-trao",
+      "phase": null,
+      "auto": false,
+      "invalid": false,
+      "mana": 10
+     },
+     {
+      "k": "pick",
+      "side": "op",
+      "skill": "doat-anh-phan-kich",
+      "phase": null,
+      "auto": false,
+      "invalid": false,
+      "mana": 22
+     },
+     {
+      "k": "guard",
+      "side": "you",
+      "red": 0.45
+     },
+     {
+      "k": "hit",
+      "atk": "op",
+      "def": "you",
+      "idx": 1,
+      "of": 1,
+      "dmg": 12,
+      "red": 0.45
+     },
+     {
+      "k": "kc",
+      "side": "you"
+     },
+     {
+      "k": "rage",
+      "side": "you",
+      "delta": 10,
+      "value": 10
+     },
+     {
+      "k": "rage",
+      "side": "op",
+      "delta": -40,
+      "value": 0
+     }
+    ],
+    "state": {
+     "you": {
+      "level": 7,
+      "hp": 121,
+      "hpMax": 200,
+      "mana": 73,
+      "manaMax": 104,
+      "rage": 10,
+      "charging": null,
+      "kc": 2,
+      "exposed": 0,
+      "offExt": 0,
+      "defP": 0,
+      "dodgeB": 0
+     },
+     "op": {
+      "level": 6,
+      "hp": 162,
+      "hpMax": 200,
+      "mana": 41,
+      "manaMax": 100,
+      "rage": 0,
+      "charging": null,
+      "kc": 0,
+      "exposed": 0,
+      "offExt": 0,
+      "defP": 0,
+      "dodgeB": 0
+     }
+    },
+    "ended": null
+   },
+   {
+    "turn": 6,
+    "picks": {
+     "you": {
+      "skill": "trong-quyen",
+      "phase": null,
+      "auto": false,
+      "invalid": false,
+      "mana": 14
+     },
+     "op": {
+      "skill": "lien-hoan-cuoc",
+      "phase": null,
+      "auto": false,
+      "invalid": false,
+      "mana": 22
+     }
+    },
+    "events": [
+     {
+      "k": "pick",
+      "side": "you",
+      "skill": "trong-quyen",
+      "phase": null,
+      "auto": false,
+      "invalid": false,
+      "mana": 14
+     },
+     {
+      "k": "pick",
+      "side": "op",
+      "skill": "lien-hoan-cuoc",
+      "phase": null,
+      "auto": false,
+      "invalid": false,
+      "mana": 22
+     },
+     {
+      "k": "hit",
+      "atk": "you",
+      "def": "op",
+      "idx": 1,
+      "of": 1,
+      "dmg": 52,
+      "red": 0
+     },
+     {
+      "k": "hit",
+      "atk": "op",
+      "def": "you",
+      "idx": 1,
+      "of": 2,
+      "dmg": 16,
+      "red": 0
+     },
+     {
+      "k": "hit",
+      "atk": "op",
+      "def": "you",
+      "idx": 2,
+      "of": 2,
+      "dmg": 15,
+      "red": 0
+     },
+     {
+      "k": "rage",
+      "side": "you",
+      "delta": 15,
+      "value": 25
+     },
+     {
+      "k": "rage",
+      "side": "op",
+      "delta": 42,
+      "value": 42
+     },
+     {
+      "k": "end",
+      "result": "you",
+      "reason": "ko"
+     }
+    ],
+    "state": {
+     "you": {
+      "level": 7,
+      "hp": 90,
+      "hpMax": 200,
+      "mana": 65,
+      "manaMax": 104,
+      "rage": 25,
+      "charging": null,
+      "kc": 0,
+      "exposed": 0,
+      "offExt": 0,
+      "defP": 0,
+      "dodgeB": 0
+     },
+     "op": {
+      "level": 6,
+      "hp": 0,
+      "hpMax": 200,
+      "mana": 25,
+      "manaMax": 100,
+      "rage": 42,
+      "charging": null,
+      "kc": 0,
+      "exposed": 0,
+      "offExt": 0,
+      "defP": 0,
+      "dodgeB": 0
+     }
+    },
+    "ended": {
+     "result": "win",
+     "reason": "ko"
+    }
+   }
+  ],
+  "end": {
+   "result": "win",
+   "reason": "ko",
+   "turns": 6,
+   "state": {
+    "you": {
+     "level": 7,
+     "hp": 90,
+     "hpMax": 200,
+     "mana": 65,
+     "manaMax": 104,
+     "rage": 25,
+     "charging": null,
+     "kc": 0,
+     "exposed": 0,
+     "offExt": 0,
+     "defP": 0,
+     "dodgeB": 0
+    },
+    "op": {
+     "level": 6,
+     "hp": 0,
+     "hpMax": 200,
+     "mana": 25,
+     "manaMax": 100,
+     "rage": 42,
+     "charging": null,
+     "kc": 0,
+     "exposed": 0,
+     "offExt": 0,
+     "defP": 0,
+     "dodgeB": 0
+    }
+   },
+   "record": {
+    "wins": 13,
+    "losses": 8,
+    "draws": 1
+   }
+  }
+ },
+ "B": {
+  "seed": "B1",
+  "you": {
+   "pid": 101,
+   "name": "Diệu Liên",
+   "look": {
+    "c": 3,
+    "g": "nam",
+    "h": 2
+   },
+   "level": 4,
+   "hpMax": 200,
+   "manaMax": 92,
+   "learned": [
+    "trong-quyen",
+    "thiet-bich",
+    "kim-chung-trao",
+    "phan-chan",
+    "tu-luc-pha-son",
+    "anh-bo-ho-than",
+    "tat-phong-quyen",
+    "khinh-than-bo",
+    "nhu-van-bo",
+    "lieu-diep-chuong"
+   ],
+   "loadout": [
+    "thiet-bich",
+    "anh-bo-ho-than",
+    "trong-quyen",
+    "nhu-van-bo"
+   ],
+   "warnings": []
+  },
+  "op": {
+   "pid": 202,
+   "name": "Huyền Trang",
+   "look": {
+    "c": 0,
+    "g": "nu",
+    "h": 0
+   },
+   "level": 4,
+   "hpMax": 200,
+   "manaMax": 92
+  },
+  "turns": [
+   {
+    "turn": 1,
+    "forced": null,
+    "legal": [
+     "thiet-bich",
+     "anh-bo-ho-than",
+     "trong-quyen",
+     "nhu-van-bo",
+     "dieu-tuc"
+    ],
+    "state": {
+     "you": {
+      "level": 4,
+      "hp": 200,
+      "hpMax": 200,
+      "mana": 92,
+      "manaMax": 92,
+      "rage": 0,
+      "charging": null,
+      "kc": 0,
+      "exposed": 0,
+      "offExt": 0,
+      "defP": 0,
+      "dodgeB": 0
+     },
+     "op": {
+      "level": 4,
+      "hp": 200,
+      "hpMax": 200,
+      "mana": 92,
+      "manaMax": 92,
+      "rage": 0,
+      "charging": null,
+      "kc": 0,
+      "exposed": 0,
+      "offExt": 0,
+      "defP": 0,
+      "dodgeB": 0
+     }
+    },
+    "loadouts": {
+     "you": [
+      "thiet-bich",
+      "anh-bo-ho-than",
+      "trong-quyen",
+      "nhu-van-bo"
+     ],
+     "op": [
+      "ta-luc-hoa-giai",
+      "thiet-bich",
+      "tat-phong-quyen",
+      "khinh-than-bo"
+     ]
+    }
+   },
+   {
+    "turn": 2,
+    "forced": null,
+    "legal": [
+     "thiet-bich",
+     "anh-bo-ho-than",
+     "trong-quyen",
+     "nhu-van-bo",
+     "dieu-tuc"
+    ],
+    "state": {
+     "you": {
+      "level": 4,
+      "hp": 200,
+      "hpMax": 200,
+      "mana": 86,
+      "manaMax": 92,
+      "rage": 0,
+      "charging": null,
+      "kc": 0,
+      "exposed": 0,
+      "offExt": 0,
+      "defP": 0,
+      "dodgeB": 0
+     },
+     "op": {
+      "level": 4,
+      "hp": 200,
+      "hpMax": 200,
+      "mana": 89,
+      "manaMax": 92,
+      "rage": 0,
+      "charging": null,
+      "kc": 0,
+      "exposed": 0,
+      "offExt": 0,
+      "defP": 0,
+      "dodgeB": 0
+     }
+    }
+   },
+   {
+    "turn": 3,
+    "forced": null,
+    "legal": [
+     "thiet-bich",
+     "anh-bo-ho-than",
+     "trong-quyen",
+     "nhu-van-bo",
+     "dieu-tuc"
+    ],
+    "state": {
+     "you": {
+      "level": 4,
+      "hp": 200,
+      "hpMax": 200,
+      "mana": 86,
+      "manaMax": 92,
+      "rage": 0,
+      "charging": null,
+      "kc": 0,
+      "exposed": 0,
+      "offExt": 0,
+      "defP": 0,
+      "dodgeB": 0
+     },
+     "op": {
+      "level": 4,
+      "hp": 200,
+      "hpMax": 200,
+      "mana": 83,
+      "manaMax": 92,
+      "rage": 0,
+      "charging": null,
+      "kc": 0,
+      "exposed": 0,
+      "offExt": 0,
+      "defP": 0,
+      "dodgeB": 0
+     }
+    }
+   },
+   {
+    "turn": 4,
+    "forced": null,
+    "legal": [
+     "thiet-bich",
+     "anh-bo-ho-than",
+     "trong-quyen",
+     "nhu-van-bo",
+     "dieu-tuc"
+    ],
+    "state": {
+     "you": {
+      "level": 4,
+      "hp": 200,
+      "hpMax": 200,
+      "mana": 80,
+      "manaMax": 92,
+      "rage": 0,
+      "charging": null,
+      "kc": 0,
+      "exposed": 0,
+      "offExt": 0,
+      "defP": 0,
+      "dodgeB": 0
+     },
+     "op": {
+      "level": 4,
+      "hp": 200,
+      "hpMax": 200,
+      "mana": 80,
+      "manaMax": 92,
+      "rage": 0,
+      "charging": null,
+      "kc": 0,
+      "exposed": 0,
+      "offExt": 0,
+      "defP": 0,
+      "dodgeB": 0
+     }
+    }
+   }
+  ],
+  "reveals": [
+   {
+    "turn": 1,
+    "picks": {
+     "you": {
+      "skill": "thiet-bich",
+      "phase": null,
+      "auto": false,
+      "invalid": false,
+      "mana": 12
+     },
+     "op": {
+      "skill": "ta-luc-hoa-giai",
+      "phase": null,
+      "auto": false,
+      "invalid": false,
+      "mana": 9
+     }
+    },
+    "events": [
+     {
+      "k": "pick",
+      "side": "you",
+      "skill": "thiet-bich",
+      "phase": null,
+      "auto": false,
+      "invalid": false,
+      "mana": 12
+     },
+     {
+      "k": "pick",
+      "side": "op",
+      "skill": "ta-luc-hoa-giai",
+      "phase": null,
+      "auto": false,
+      "invalid": false,
+      "mana": 9
+     },
+     {
+      "k": "guard",
+      "side": "you",
+      "red": 0.65
+     },
+     {
+      "k": "guard",
+      "side": "op",
+      "red": 0.55
+     }
+    ],
+    "state": {
+     "you": {
+      "level": 4,
+      "hp": 200,
+      "hpMax": 200,
+      "mana": 86,
+      "manaMax": 92,
+      "rage": 0,
+      "charging": null,
+      "kc": 0,
+      "exposed": 0,
+      "offExt": 0,
+      "defP": 0,
+      "dodgeB": 0
+     },
+     "op": {
+      "level": 4,
+      "hp": 200,
+      "hpMax": 200,
+      "mana": 89,
+      "manaMax": 92,
+      "rage": 0,
+      "charging": null,
+      "kc": 0,
+      "exposed": 0,
+      "offExt": 0,
+      "defP": 0,
+      "dodgeB": 0
+     }
+    },
+    "ended": null
+   },
+   {
+    "turn": 2,
+    "picks": {
+     "you": {
+      "skill": "anh-bo-ho-than",
+      "phase": null,
+      "auto": false,
+      "invalid": false,
+      "mana": 6
+     },
+     "op": {
+      "skill": "thiet-bich",
+      "phase": null,
+      "auto": false,
+      "invalid": false,
+      "mana": 12
+     }
+    },
+    "events": [
+     {
+      "k": "pick",
+      "side": "you",
+      "skill": "anh-bo-ho-than",
+      "phase": null,
+      "auto": false,
+      "invalid": false,
+      "mana": 6
+     },
+     {
+      "k": "pick",
+      "side": "op",
+      "skill": "thiet-bich",
+      "phase": null,
+      "auto": false,
+      "invalid": false,
+      "mana": 12
+     },
+     {
+      "k": "guard",
+      "side": "you",
+      "red": 0.4
+     },
+     {
+      "k": "guard",
+      "side": "op",
+      "red": 0.65
+     }
+    ],
+    "state": {
+     "you": {
+      "level": 4,
+      "hp": 200,
+      "hpMax": 200,
+      "mana": 86,
+      "manaMax": 92,
+      "rage": 0,
+      "charging": null,
+      "kc": 0,
+      "exposed": 0,
+      "offExt": 0,
+      "defP": 0,
+      "dodgeB": 0
+     },
+     "op": {
+      "level": 4,
+      "hp": 200,
+      "hpMax": 200,
+      "mana": 83,
+      "manaMax": 92,
+      "rage": 0,
+      "charging": null,
+      "kc": 0,
+      "exposed": 0,
+      "offExt": 0,
+      "defP": 0,
+      "dodgeB": 0
+     }
+    },
+    "ended": null
+   },
+   {
+    "turn": 3,
+    "picks": {
+     "you": {
+      "skill": "thiet-bich",
+      "phase": null,
+      "auto": false,
+      "invalid": false,
+      "mana": 12
+     },
+     "op": {
+      "skill": "ta-luc-hoa-giai",
+      "phase": null,
+      "auto": false,
+      "invalid": false,
+      "mana": 9
+     }
+    },
+    "events": [
+     {
+      "k": "pick",
+      "side": "you",
+      "skill": "thiet-bich",
+      "phase": null,
+      "auto": false,
+      "invalid": false,
+      "mana": 12
+     },
+     {
+      "k": "pick",
+      "side": "op",
+      "skill": "ta-luc-hoa-giai",
+      "phase": null,
+      "auto": false,
+      "invalid": false,
+      "mana": 9
+     },
+     {
+      "k": "guard",
+      "side": "you",
+      "red": 0.65
+     },
+     {
+      "k": "guard",
+      "side": "op",
+      "red": 0.55
+     }
+    ],
+    "state": {
+     "you": {
+      "level": 4,
+      "hp": 200,
+      "hpMax": 200,
+      "mana": 80,
+      "manaMax": 92,
+      "rage": 0,
+      "charging": null,
+      "kc": 0,
+      "exposed": 0,
+      "offExt": 0,
+      "defP": 0,
+      "dodgeB": 0
+     },
+     "op": {
+      "level": 4,
+      "hp": 200,
+      "hpMax": 200,
+      "mana": 80,
+      "manaMax": 92,
+      "rage": 0,
+      "charging": null,
+      "kc": 0,
+      "exposed": 0,
+      "offExt": 0,
+      "defP": 0,
+      "dodgeB": 0
+     }
+    },
+    "ended": null
+   },
+   {
+    "turn": 4,
+    "picks": {
+     "you": {
+      "skill": "anh-bo-ho-than",
+      "phase": null,
+      "auto": false,
+      "invalid": false,
+      "mana": 6
+     },
+     "op": {
+      "skill": "thiet-bich",
+      "phase": null,
+      "auto": false,
+      "invalid": false,
+      "mana": 12
+     }
+    },
+    "events": [
+     {
+      "k": "pick",
+      "side": "you",
+      "skill": "anh-bo-ho-than",
+      "phase": null,
+      "auto": false,
+      "invalid": false,
+      "mana": 6
+     },
+     {
+      "k": "pick",
+      "side": "op",
+      "skill": "thiet-bich",
+      "phase": null,
+      "auto": false,
+      "invalid": false,
+      "mana": 12
+     },
+     {
+      "k": "guard",
+      "side": "you",
+      "red": 0.4
+     },
+     {
+      "k": "guard",
+      "side": "op",
+      "red": 0.65
+     },
+     {
+      "k": "sudden",
+      "dmg": 5,
+      "streak": 4
+     }
+    ],
+    "state": {
+     "you": {
+      "level": 4,
+      "hp": 195,
+      "hpMax": 200,
+      "mana": 80,
+      "manaMax": 92,
+      "rage": 0,
+      "charging": null,
+      "kc": 0,
+      "exposed": 0,
+      "offExt": 0,
+      "defP": 0,
+      "dodgeB": 0
+     },
+     "op": {
+      "level": 4,
+      "hp": 195,
+      "hpMax": 200,
+      "mana": 74,
+      "manaMax": 92,
+      "rage": 0,
+      "charging": null,
+      "kc": 0,
+      "exposed": 0,
+      "offExt": 0,
+      "defP": 0,
+      "dodgeB": 0
+     }
+    },
+    "ended": null
+   }
+  ],
+  "end": null
+ },
+ "C": {
+  "seed": "C1",
+  "you": {
+   "pid": 101,
+   "name": "Diệu Liên",
+   "look": {
+    "c": 3,
+    "g": "nam",
+    "h": 2
+   },
+   "level": 3,
+   "hpMax": 200,
+   "manaMax": 88,
+   "learned": [
+    "trong-quyen",
+    "thiet-bich",
+    "kim-chung-trao",
+    "phan-chan",
+    "tu-luc-pha-son",
+    "anh-bo-ho-than",
+    "tat-phong-quyen",
+    "khinh-than-bo",
+    "nhu-van-bo",
+    "lieu-diep-chuong"
+   ],
+   "loadout": [
+    "trong-quyen",
+    "thiet-bich",
+    "nhu-van-bo",
+    "tat-phong-quyen"
+   ],
+   "warnings": []
+  },
+  "op": {
+   "pid": 202,
+   "name": "Huyền Trang",
+   "look": {
+    "c": 0,
+    "g": "nu",
+    "h": 0
+   },
+   "level": 3,
+   "hpMax": 200,
+   "manaMax": 88
+  },
+  "turns": [
+   {
+    "turn": 1,
+    "forced": null,
+    "legal": [
+     "trong-quyen",
+     "thiet-bich",
+     "nhu-van-bo",
+     "tat-phong-quyen",
+     "dieu-tuc"
+    ],
+    "state": {
+     "you": {
+      "level": 3,
+      "hp": 200,
+      "hpMax": 200,
+      "mana": 88,
+      "manaMax": 88,
+      "rage": 0,
+      "charging": null,
+      "kc": 0,
+      "exposed": 0,
+      "offExt": 0,
+      "defP": 0,
+      "dodgeB": 0
+     },
+     "op": {
+      "level": 3,
+      "hp": 200,
+      "hpMax": 200,
+      "mana": 88,
+      "manaMax": 88,
+      "rage": 0,
+      "charging": null,
+      "kc": 0,
+      "exposed": 0,
+      "offExt": 0,
+      "defP": 0,
+      "dodgeB": 0
+     }
+    },
+    "loadouts": {
+     "you": [
+      "trong-quyen",
+      "thiet-bich",
+      "nhu-van-bo",
+      "tat-phong-quyen"
+     ],
+     "op": [
+      "tat-phong-quyen",
+      "thiet-bich",
+      "nhu-van-bo",
+      "lieu-diep-chuong"
+     ]
+    }
+   },
+   {
+    "turn": 2,
+    "forced": null,
+    "legal": [
+     "trong-quyen",
+     "thiet-bich",
+     "nhu-van-bo",
+     "tat-phong-quyen",
+     "dieu-tuc"
+    ],
+    "state": {
+     "you": {
+      "level": 3,
+      "hp": 174,
+      "hpMax": 200,
+      "mana": 88,
+      "manaMax": 88,
+      "rage": 21,
+      "charging": null,
+      "kc": 0,
+      "exposed": 0,
+      "offExt": 0,
+      "defP": 0,
+      "dodgeB": 0
+     },
+     "op": {
+      "level": 3,
+      "hp": 200,
+      "hpMax": 200,
+      "mana": 82,
+      "manaMax": 88,
+      "rage": 0,
+      "charging": null,
+      "kc": 0,
+      "exposed": 0,
+      "offExt": 0,
+      "defP": 0,
+      "dodgeB": 0
+     }
+    }
+   }
+  ],
+  "reveals": [
+   {
+    "turn": 1,
+    "picks": {
+     "you": {
+      "skill": "dung-yen",
+      "phase": null,
+      "auto": true,
+      "invalid": false,
+      "mana": 0
+     },
+     "op": {
+      "skill": "tat-phong-quyen",
+      "phase": null,
+      "auto": false,
+      "invalid": false,
+      "mana": 12
+     }
+    },
+    "events": [
+     {
+      "k": "pick",
+      "side": "you",
+      "skill": "dung-yen",
+      "phase": null,
+      "auto": true,
+      "invalid": false,
+      "mana": 0
+     },
+     {
+      "k": "pick",
+      "side": "op",
+      "skill": "tat-phong-quyen",
+      "phase": null,
+      "auto": false,
+      "invalid": false,
+      "mana": 12
+     },
+     {
+      "k": "idle",
+      "side": "you"
+     },
+     {
+      "k": "hit",
+      "atk": "op",
+      "def": "you",
+      "idx": 1,
+      "of": 1,
+      "dmg": 26,
+      "red": 0
+     },
+     {
+      "k": "rage",
+      "side": "you",
+      "delta": 21,
+      "value": 21
+     }
+    ],
+    "state": {
+     "you": {
+      "level": 3,
+      "hp": 174,
+      "hpMax": 200,
+      "mana": 88,
+      "manaMax": 88,
+      "rage": 21,
+      "charging": null,
+      "kc": 0,
+      "exposed": 0,
+      "offExt": 0,
+      "defP": 0,
+      "dodgeB": 0
+     },
+     "op": {
+      "level": 3,
+      "hp": 200,
+      "hpMax": 200,
+      "mana": 82,
+      "manaMax": 88,
+      "rage": 0,
+      "charging": null,
+      "kc": 0,
+      "exposed": 0,
+      "offExt": 0,
+      "defP": 0,
+      "dodgeB": 0
+     }
+    },
+    "ended": null
+   },
+   {
+    "turn": 2,
+    "picks": {
+     "you": {
+      "skill": "dieu-tuc",
+      "phase": null,
+      "auto": false,
+      "invalid": false,
+      "mana": 0
+     },
+     "op": {
+      "skill": "lieu-diep-chuong",
+      "phase": null,
+      "auto": false,
+      "invalid": false,
+      "mana": 9
+     }
+    },
+    "events": [
+     {
+      "k": "pick",
+      "side": "you",
+      "skill": "dieu-tuc",
+      "phase": null,
+      "auto": false,
+      "invalid": false,
+      "mana": 0
+     },
+     {
+      "k": "pick",
+      "side": "op",
+      "skill": "lieu-diep-chuong",
+      "phase": null,
+      "auto": false,
+      "invalid": false,
+      "mana": 9
+     },
+     {
+      "k": "rest",
+      "side": "you"
+     },
+     {
+      "k": "hit",
+      "atk": "op",
+      "def": "you",
+      "idx": 1,
+      "of": 1,
+      "dmg": 21,
+      "red": 0
+     },
+     {
+      "k": "rage",
+      "side": "you",
+      "delta": 17,
+      "value": 38
+     }
+    ],
+    "state": {
+     "you": {
+      "level": 3,
+      "hp": 153,
+      "hpMax": 200,
+      "mana": 88,
+      "manaMax": 88,
+      "rage": 38,
+      "charging": null,
+      "kc": 0,
+      "exposed": 0,
+      "offExt": 0,
+      "defP": 0,
+      "dodgeB": 0
+     },
+     "op": {
+      "level": 3,
+      "hp": 200,
+      "hpMax": 200,
+      "mana": 79,
+      "manaMax": 88,
+      "rage": 0,
+      "charging": null,
+      "kc": 0,
+      "exposed": 0,
+      "offExt": 0,
+      "defP": 0,
+      "dodgeB": 0
+     }
+    },
+    "ended": null
+   }
+  ],
+  "end": null
+ },
+ "buff": {
+  "mid": {
+   "you": {
+    "Lc": 3,
+    "Lq": 0,
+    "Ld": 4,
+    "offExt": 0.04,
+    "defP": 0.05,
+    "dodgeB": 0.025,
+    "labels": [
+     "Pháp tướng cấp 3: giảm 3% sát thương nhận, cộng 1,5 điểm né",
+     "Hào quang cảnh giới 4: tăng 4% sát thương, giảm 2% sát thương nhận, cộng 1 điểm né"
+    ]
+   },
+   "op": {
+    "Lc": 0,
+    "Lq": 2,
+    "Ld": 0,
+    "offExt": 0.04,
+    "defP": 0,
+    "dodgeB": 0,
+    "labels": [
+     "Quỷ ám cấp 2: tăng 4% sát thương gây ra"
+    ]
+   }
+  },
+  "heavy": {
+   "you": {
+    "Lc": 5,
+    "Lq": 0,
+    "Ld": 7,
+    "offExt": 0.07,
+    "defP": 0.085,
+    "dodgeB": 0.0425,
+    "labels": [
+     "Pháp tướng cấp 5: giảm 5% sát thương nhận, cộng 2,5 điểm né",
+     "Hào quang cảnh giới 7: tăng 7% sát thương, giảm 3,5% sát thương nhận, cộng 1,8 điểm né"
+    ]
+   },
+   "op": {
+    "Lc": 0,
+    "Lq": 3,
+    "Ld": 0,
+    "offExt": 0.06,
+    "defP": 0,
+    "dodgeB": 0,
+    "labels": [
+     "Quỷ ám cấp 3: tăng 6% sát thương gây ra"
+    ]
+   }
+  },
+  "aura": {
+   "you": {
+    "Lc": 0,
+    "Lq": 0,
+    "Ld": 5,
+    "offExt": 0.05,
+    "defP": 0.025,
+    "dodgeB": 0.0125,
+    "labels": [
+     "Hào quang cảnh giới 5: tăng 5% sát thương, giảm 2,5% sát thương nhận, cộng 1,3 điểm né"
+    ]
+   },
+   "op": {
+    "Lc": 2,
+    "Lq": 0,
+    "Ld": 0,
+    "offExt": 0,
+    "defP": 0.02,
+    "dodgeB": 0.01,
+    "labels": [
+     "Pháp tướng cấp 2: giảm 2% sát thương nhận, cộng 1 điểm né"
+    ]
+   }
+  },
+  "oneSide": {
+   "you": {
+    "Lc": 0,
+    "Lq": 0,
+    "Ld": 0,
+    "offExt": 0,
+    "defP": 0,
+    "dodgeB": 0,
+    "labels": []
+   },
+   "op": {
+    "Lc": 1,
+    "Lq": 0,
+    "Ld": 3,
+    "offExt": 0.03,
+    "defP": 0.025,
+    "dodgeB": 0.0125,
+    "labels": [
+     "Pháp tướng cấp 1: giảm 1% sát thương nhận, cộng 0,5 điểm né",
+     "Hào quang cảnh giới 3: tăng 3% sát thương, giảm 1,5% sát thương nhận, cộng 0,8 điểm né"
+    ]
+   }
+  }
+ }
+}
