@@ -4,7 +4,6 @@
  * Express phục vụ trang web, Socket.IO lo mọi thứ thời gian thực:
  * người đang có mặt, đi lại, chat, thắp nhang, dâng hoa, thả tim, vái lạy, thỉnh chuông, tụng kinh chung, cúng dường.
  */
-const fs = require('fs');
 const path = require('path');
 const http = require('http');
 const crypto = require('crypto');
@@ -12,7 +11,17 @@ const express = require('express');
 const { Server } = require('socket.io');
 const store = require('./lib/store');
 const { clean, checkMessage, checkName } = require('./lib/moderation');
-const CHANTS = require('./public/js/chants.js');
+const fs = require('fs');
+
+// Bài tụng dựng sẵn (tools/build_chants.py): tên, file và thời lượng thật của từng bài
+const TRACKS = (() => {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(__dirname, 'public', 'audio', 'chants', 'manifest.json'), 'utf8')).tracks;
+  } catch (e) {
+    console.error('Không đọc được public/audio/chants/manifest.json — chạy tools/build_chants.py để dựng bài tụng.', e.message);
+    return {};
+  }
+})();
 
 /* ---------------- cấu hình (biến môi trường) ---------------- */
 const PORT = Number(process.env.PORT) || 3000;
@@ -172,7 +181,7 @@ function clientConfig() {
     blessings: fx.blessings,
     incenseMinutes: INCENSE_MINUTES,
     donation: DONATION_ENABLED ? { bank: BANK.label, account: BANK.account, accountName: BANK.name, funds: FUNDS.map(f => ({ id: f.id, name: f.name })) } : null,
-    tracks: Object.fromEntries(Object.entries(CHANTS.TRACKS).map(([k, v]) => [k, v.title])),
+    tracks: TRACKS,
     kinds: KINDS
   };
 }
@@ -472,14 +481,14 @@ io.on('connection', socket => {
     if (chant) return reply({ ok: false, reason: 'Đang có khóa tụng. Bạn bật tiếng để tụng cùng mọi người nhé.' });
     if (now() - lastChantEnd < 10000 && !p.mod) return reply({ ok: false, reason: 'Vừa xong một khóa tụng. Đợi ít giây rồi khởi tụng tiếp nhé.' });
     if (!allow('chant', 30000)) return reply({ ok: false, reason: 'Bạn vừa khởi tụng. Đợi một chút nhé.' });
-    const b = CHANTS.build(String(d.track));
-    if (!b) return reply({ ok: false, reason: 'Không có bài này.' });
+    const id = String(d.track), tk = TRACKS[id];
+    if (!tk) return reply({ ok: false, reason: 'Không có bài này.' });
     const startedAt = now() + 3500;
-    chant = { track: b.id, title: b.tr.title, startedAt, endsAt: startedAt + Math.round(b.duration * 1000), by: p.name };
+    chant = { track: id, title: tk.title, startedAt, endsAt: startedAt + Math.round(tk.duration * 1000), by: p.name };
     chantTimer = setTimeout(() => endChant(true), chant.endsAt - now());
     addMerit(p, MERIT.chantStart);
     io.emit('chant', chant);
-    sys(`${p.name} khởi tụng “${b.tr.title}”. Mời đại chúng bật tiếng tụng cùng.`);
+    sys(`${p.name} khởi tụng “${tk.title}”. Mời đại chúng bật tiếng tụng cùng.`);
     reply({ ok: true });
   });
   socket.on('chant:stop', () => { if (p && p.mod) endChant(false); });

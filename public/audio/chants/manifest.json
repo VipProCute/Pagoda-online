@@ -1,0 +1,28 @@
+{
+ "tracks": {
+  "batnha": {
+   "title": "Bát Nhã Tâm Kinh",
+   "file": "batnha.mp3",
+   "json": "batnha.json",
+   "duration": 117.57
+  },
+  "niemphat": {
+   "title": "Niệm Phật A Di Đà",
+   "file": "niemphat.mp3",
+   "json": "niemphat.json",
+   "duration": 37.09
+  },
+  "quanam": {
+   "title": "Niệm Quán Thế Âm Bồ Tát",
+   "file": "quanam.mp3",
+   "json": "quanam.json",
+   "duration": 53.77
+  },
+  "thien": {
+   "title": "Chuông mõ ngồi thiền",
+   "file": "thien.mp3",
+   "json": "thien.json",
+   "duration": 117.1
+  }
+ }
+}

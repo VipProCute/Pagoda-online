@@ -1,14 +1,15 @@
 /*
- * Âm thanh chánh điện (Web Audio).
- * - Giọng tụng: từng chữ do VieNeu-TTS v3 Turbo đọc (public/audio/chant-voice.mp3 + .json),
- *   được đặt đúng vào nhịp mõ. Tạo lại bằng tools/build_chant_voice.py.
- * - Mõ, chuông: tiếng gõ tạo bằng toán (có thể thay bằng bản thu thật).
+ * Âm thanh chánh điện.
+ * - Bài tụng: file MP3 dựng sẵn (giọng VieNeu-TTS đọc liền câu + mõ theo quy tắc + chuông),
+ *   phát bằng thẻ <audio> và luôn chỉnh về đúng vị trí theo giờ máy chủ để mọi người nghe cùng một chữ.
+ *   Dựng lại bằng tools/build_chants.py.
+ * - Chuông: bản thu public/audio/bell.mp3. Mõ và tiếng "pop" khi thả tim: tạo bằng Web Audio.
  * - Hiệu ứng mốc công đức: playClip (lời chúc), chime (chuông ting), scare (tiếng hù), xem celebrate.js.
  */
 (function (root) {
   'use strict';
-  let AC = null, OUT, BUS, REV, NOISE;
-  let volume = 0.8, muted = false, voiceOn = true;
+  let AC = null, OUT, BUS, REV, NOISE, BELL = null, bellLoading = null;
+  let volume = 0.8, muted = false;
 
   function ctx() {
     if (!AC) {
@@ -19,10 +20,10 @@
       OUT = AC.createGain(); OUT.gain.value = muted ? 0 : volume; OUT.connect(comp);
       BUS = AC.createGain(); BUS.connect(OUT);
       const conv = AC.createConvolver(); conv.buffer = impulse(2.8);
-      REV = AC.createGain(); REV.gain.value = 0.34; REV.connect(conv); conv.connect(OUT);
+      REV = AC.createGain(); REV.gain.value = 0.3; REV.connect(conv); conv.connect(OUT);
       const len = AC.sampleRate; NOISE = AC.createBuffer(1, len, AC.sampleRate);
       const d = NOISE.getChannelData(0); for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
-      loadVoice();
+      loadBell();
     }
     if (AC.state === 'suspended') AC.resume();
     return AC;
@@ -53,17 +54,30 @@
     env(g2, t, 0.16 * v, 0.002, 0.06); o2.connect(g2); out(g2, 0.3); o2.start(t); o2.stop(t + 0.08);
     noiseBurst(t, 1900, 1.2, 0.22 * v, 0.03, 0.2);
   }
-  function bell(t, v = 1, base = 174, decay = 1) {
-    if (!live()) return; t = at(t);
-    const P = [[0.5, .34, 9], [1, .55, 7], [1.19, .26, 5.5], [1.5, .17, 4.5], [2, .3, 4], [2.52, .11, 3], [2.66, .1, 2.6], [3.01, .11, 2.2], [4.07, .06, 1.6]];
-    for (const [r, a, d] of P) for (const det of [-0.7, 0.7]) {
-      const o = AC.createOscillator(), g = AC.createGain();
-      o.type = 'sine'; o.frequency.value = base * r + det;
-      env(g, t, a * v * 0.28, 0.006, d * decay); o.connect(g); out(g, 0.6); o.start(t); o.stop(t + d * decay + 0.05);
-    }
-    noiseBurst(t, 3200, 1, 0.12 * v, 0.05, 0.4);
+
+  /* Chuông: bản thu thật */
+  function decode(buf) { return new Promise((res, rej) => { const p = AC.decodeAudioData(buf, res, rej); if (p && p.catch) p.catch(rej); }); }
+  function loadBell() {
+    if (bellLoading || !root.fetch) return bellLoading;
+    bellLoading = fetch('/audio/bell.mp3').then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.arrayBuffer(); })
+      .then(decode).then(b => { BELL = b; })
+      .catch(e => { bellLoading = null; if (root.console) console.warn('Không tải được tiếng chuông:', e); });
+    return bellLoading;
   }
-  const ting = t => bell(t, 0.5, 523, 0.35);
+  function playBell(t, v, rate, maxDur) {
+    if (!live() || !BELL) return;
+    t = at(t);
+    const src = AC.createBufferSource(), g = AC.createGain();
+    src.buffer = BELL; src.playbackRate.value = rate;
+    const len = Math.min(maxDur, BELL.duration / rate);
+    g.gain.setValueAtTime(v, t);
+    g.gain.setValueAtTime(v, t + Math.max(0, len - 0.4));
+    g.gain.linearRampToValueAtTime(0.0001, t + len);
+    src.connect(g); out(g, 0.25);
+    src.start(t); src.stop(t + len + 0.05);
+  }
+  const bell = (v = 1) => playBell(null, 0.9 * v, 1, 6);
+  const ting = () => playBell(null, 0.3, 1.6, 2.2);      // chuông nhỏ khi thắp nhang, vái lạy
   function pop(t) {
     if (!live()) return; t = at(t);
     const o = AC.createOscillator(), g = AC.createGain();
@@ -85,9 +99,10 @@
   }
 
   /* Tiếng hù cho mốc 666: cú "bùm" trầm + tiếng rít răng cưa tụt xuống + chút nhiễu. Tổng ~1.4 giây, không đuôi vang.
-   * Đo bằng ebur128 thì với mức 0.8 cũ nó to hơn tiếng chuông 3 LU và hơn tiếng mõ 15 LU; mức 0.5 (-4 dB) đưa nó về gần tiếng chuông:
-   * vẫn đủ giật mình mà không làm người đang nghe tiếng mõ nhỏ bị đau tai. */
-  const SCARE_GAIN = 0.5;
+   * Mức hù đặt theo tiếng chuông, không to hơn nó. Đo bằng ebur128 qua cùng chuỗi âm thanh chính (đỉnh ngắn hạn, LUFS):
+   * chuông bản thu bell.mp3 -11.9, hù mức 0.9 -12.7, mõ -28.7. (Với chuông tạo bằng toán cũ là -16.7 thì mức tương ứng là 0.5.)
+   * Đổi tiếng chuông thì đo lại và chỉnh hằng số này: 0.5 → -17.5, 0.7 → -14.7, 0.9 → -12.7, 1.0 → -11.9. */
+  const SCARE_GAIN = 0.9;
   function scare(t) {
     if (!live()) return; t = at(t);
     const D = 1.35, master = AC.createGain();
@@ -147,73 +162,47 @@
     });
   }
 
-  /* Giọng tụng VieNeu: một file MP3 chứa mọi chữ, bảng JSON cho biết vị trí từng chữ */
-  let VOICE = null, VMAP = null, VPAD = 0.05, voiceLoading = null, voiceGain = 1.0;
-  const vkey = s => s.toLowerCase().normalize('NFC').replace(/[^\p{L}]/gu, '');
-  function decode(buf) { return new Promise((res, rej) => { const p = AC.decodeAudioData(buf, res, rej); if (p && p.catch) p.catch(rej); }); }
-  function loadVoice() {
-    if (voiceLoading || !root.fetch) return voiceLoading;
-    voiceLoading = fetch('/audio/chant-voice.json')
-      .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-      .then(m => fetch('/audio/' + m.file).then(r => r.arrayBuffer()).then(decode).then(b => { VOICE = b; VMAP = m.items; VPAD = m.pad || 0.05; }))
-      .catch(e => { voiceLoading = null; if (root.console) console.warn('Không tải được giọng tụng:', e); });
-    return voiceLoading;
+  /* Bài tụng chung: thẻ <audio> bám theo giờ máy chủ */
+  let chEl = null, ch = null, blocked = false;
+  function startChant(track, startedAt, file) {
+    stopChant();
+    ch = { track, startedAt };
+    chEl = new Audio('/audio/chants/' + file);
+    chEl.preload = 'auto';
+    chEl.volume = volume;
+    blocked = false;
   }
-  function voice(t, syl, maxDur) {
-    if (!VOICE || !VMAP) return;
-    const it = VMAP[vkey(syl)];
-    if (!it) return;
-    const [start, dur] = it;
-    const off = Math.max(0, start - VPAD), lead = start - off;
-    const len = Math.min(dur + lead + VPAD, maxDur + lead);
-    const at = Math.max(AC.currentTime, t - lead);
-    const src = AC.createBufferSource(), g = AC.createGain();
-    src.buffer = VOICE;
-    g.gain.setValueAtTime(voiceGain, at);
-    g.gain.setValueAtTime(voiceGain, at + Math.max(0, len - 0.05));
-    g.gain.linearRampToValueAtTime(0.0001, at + len);
-    src.connect(g); out(g, 0.5);
-    src.start(at, off, len); src.stop(at + len + 0.02);
+  function stopChant() {
+    if (chEl) { chEl.pause(); chEl.removeAttribute('src'); chEl.load(); }
+    chEl = null; ch = null;
   }
-
-  /* Tụng chung: mọi người tính vị trí theo giờ máy chủ nên nghe cùng một chữ */
-  let ch = null;
-  function startChant(track, startedAt) {
-    const b = root.CHANTS.build(track);
-    ch = b ? { b, startedAt, last: -1, eb: [] } : null;
-  }
-  function stopChant() { ch = null; }
-  function tickChant(serverNow) {
-    if (!ch || !live()) return;
-    const elapsed = (serverNow - ch.startedAt) / 1000, horizon = elapsed + 0.15, tr = ch.b.tr, beats = ch.b.beats;
-    for (let i = ch.last + 1; i < beats.length; i++) {
-      const bt = i * tr.beat;
-      if (bt > horizon) break;
-      ch.last = i;
-      if (bt < elapsed - 0.05) continue;           // vào muộn: bỏ qua phần đã tụng
-      const t = AC.currentTime + Math.max(0, bt - elapsed), b = beats[i];
-      if (!tr.moFirstOnly || b.first) mo(t, b.first ? 1 : 0.8);
-      if (b.bell) bell(t, i === 0 ? 0.9 : 0.6);
-      if (b.syl && tr.voice && voiceOn) voice(t + 0.01, b.syl, tr.beat * 0.98);
+  function syncChant(serverNow) {
+    if (!ch || !chEl) return;
+    const pos = (serverNow - ch.startedAt) / 1000;
+    const end = isFinite(chEl.duration) ? chEl.duration : Infinity;
+    if (muted || !AC || pos < 0 || pos >= end) { if (!chEl.paused) chEl.pause(); return; }
+    if (chEl.paused) {
+      try { chEl.currentTime = pos; } catch (e) { /* chưa tải đủ, thử lại lần sau */ }
+      const p = chEl.play();
+      if (p && p.then) p.then(() => { blocked = false; }, () => { blocked = true; });
+    } else if (Math.abs(chEl.currentTime - pos) > 0.35) {
+      chEl.currentTime = pos;                                  // lệch quá 0,35 giây thì kéo lại
     }
-    ch.b.endBells.forEach((bt, k) => {
-      if (ch.eb[k] || bt > horizon) return;
-      ch.eb[k] = true;
-      if (bt >= elapsed - 0.05) bell(AC.currentTime + Math.max(0, bt - elapsed), 0.8);
-    });
   }
 
   root.SFX = {
-    unlock() { return !!ctx(); },
+    unlock() { const ok = !!ctx(); blocked = false; return ok; },
     get ready() { return live(); },
     get muted() { return muted; },
-    setMuted(m) { muted = !!m; if (OUT) OUT.gain.setTargetAtTime(muted ? 0 : volume, AC.currentTime, 0.05); },
-    setVolume(v) { volume = v; if (OUT && !muted) OUT.gain.setTargetAtTime(volume, AC.currentTime, 0.05); },
-    setVoice(v) { voiceOn = !!v; },
-    get voiceReady() { return !!VOICE; },
-    loadVoice,
-    mo: () => mo(), bell: (v) => bell(null, v), ting: () => ting(), pop: () => pop(),
+    get chantBlocked() { return blocked; },
+    setMuted(m) {
+      muted = !!m;
+      if (OUT) OUT.gain.setTargetAtTime(muted ? 0 : volume, AC.currentTime, 0.05);
+      if (muted && chEl && !chEl.paused) chEl.pause();
+    },
+    setVolume(v) { volume = v; if (OUT && !muted) OUT.gain.setTargetAtTime(volume, AC.currentTime, 0.05); if (chEl) chEl.volume = v; },
+    mo: () => mo(), bell, ting, pop,
     chime: () => chime(), scare: () => scare(), playClip, preloadClip, stopClip,
-    startChant, stopChant, tickChant
+    startChant, stopChant, syncChant
   };
 })(this);

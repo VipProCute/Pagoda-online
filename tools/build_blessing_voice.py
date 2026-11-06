@@ -23,7 +23,7 @@ Chạy:
 Ghi chú:
   * onnxruntime >= 1.23 từ chối đọc mô hình qua bộ nhớ đệm Hugging Face; nếu gặp lỗi
     "External data path escapes model directory", ghim 1.22.1 như trên hoặc tải sẵn bằng
-    huggingface_hub.snapshot_download(..., local_dir=...) rồi dùng --onnx-dir (xem build_chant_voice.py).
+    huggingface_hub.snapshot_download(..., local_dir=...) rồi dùng --onnx-dir (xem tools/build_chants.py).
   * Cần `ffmpeg` trong PATH (cân âm lượng loudnorm hai lượt + mã hóa MP3).
   * Câu chữ phải khớp với BLESSINGS trong public/js/celebrate.js (trình duyệt dùng cùng các câu này
     để đọc bằng speechSynthesis khi không có file MP3).

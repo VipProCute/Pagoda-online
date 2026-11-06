@@ -9,7 +9,7 @@ Chánh điện trực tuyến cho nhiều người cùng lúc. Mỗi người v�
 | Chánh điện | Ba tôn tượng, bàn thờ, bát hương, nến, đèn lồng. Chạm sàn (hoặc phím mũi tên / WASD) để đi lại. Chạm bát hương để thắp nhang, chạm tượng để vái lạy. |
 | Nhân vật | Tên hoặc pháp danh, giới tính, 4 kiểu tóc (có khăn vấn), 12 màu áo dài (có áo tràng lam, áo tràng nâu). |
 | Lễ Phật | Thắp 1 hoặc 3 nén nhang kèm lời nguyện (nhang cháy 30 phút, khói bay, ai cũng thấy). Dâng hoa sen, hoa hồng, đèn dầu, mâm ngũ quả (hiện lên bàn thờ). Thả tim. Vái lạy (nhân vật cúi người). Gõ mõ. Thỉnh chuông (cả chánh điện cùng nghe). |
-| Tụng kinh chung | Bát Nhã Tâm Kinh, Niệm Phật A Di Đà, Niệm Quán Thế Âm, Chuông mõ ngồi thiền. Giọng tụng do VieNeu-TTS v3 Turbo đọc, mỗi tiếng mõ một chữ. Mọi người nghe cùng một chữ (đồng bộ theo giờ máy chủ), chữ sáng lên theo tiếng mõ. Người vào muộn nghe đúng đoạn đang tụng. |
+| Tụng kinh chung | Bát Nhã Tâm Kinh, Niệm Phật A Di Đà, Niệm Quán Thế Âm, Chuông mõ ngồi thiền. Giọng VieNeu-TTS v3 Turbo đọc liền câu, mõ và chuông theo nghi thức (vào mõ, kết mõ). Mọi người nghe cùng một chữ (đồng bộ theo giờ máy chủ), chữ sáng lên theo tiếng mõ. Người vào muộn nghe đúng đoạn đang tụng. |
 | Cộng đồng | Chat chung (bong bóng chat hiện trên đầu nhân vật), tường lời nguyện có nút “Tùy hỷ”, báo cáo tin nhắn. |
 | Công đức | Điểm công đức cá nhân (hôm nay / tất cả) và bảng công đức hôm nay. Tính từ nhang, hoa, mõ, tim, vái lạy, tụng kinh. Không tính theo tiền. |
 | Hiệu ứng mốc | Đạt 100, 300, 500, 888, 999 rồi mỗi 1.000 công đức trong ngày thì hiện lời chúc bằng giọng nữ kèm meme chọn ngẫu nhiên và cánh sen rơi. Mốc 666 thì hù một cái bằng mặt quỷ rồi trấn an. Có công tắc tắt trong mục Công đức. |
@@ -18,21 +18,25 @@ Chánh điện trực tuyến cho nhiều người cùng lúc. Mỗi người v�
 | Quản trị | `/admin.html`: xác nhận/hủy lượt cúng dường, ẩn tin nhắn và lời nguyện, gửi thông báo vào chánh điện. |
 | Khác | Lịch âm và đếm ngược đến Rằm / Mùng Một, cài lên màn hình điện thoại (PWA). |
 
-## Giọng tụng kinh (VieNeu-TTS)
+## Bài tụng: giọng, mõ và chuông
 
-Giọng tụng được tạo bằng [VieNeu-TTS v3 Turbo](https://huggingface.co/pnnbao-ump/VieNeu-TTS-v3-Turbo) (Apache-2.0, tác giả Phạm Nguyễn Ngọc Bảo), giọng mẫu “Thiền Tâm Đức”. Tụng kinh là mỗi tiếng mõ một chữ, nên `tools/build_chant_voice.py` cho mô hình đọc riêng từng chữ có trong các bài tụng (124 chữ), cắt khoảng lặng, cân âm lượng rồi ghép thành `public/audio/chant-voice.mp3` (430 KB) kèm bảng vị trí `chant-voice.json`. Trình duyệt đặt từng chữ đúng vào nhịp mõ. Mõ và chuông vẫn là tiếng gõ tạo bằng toán.
+Mỗi bài tụng là một file MP3 dựng sẵn trong `public/audio/chants/` (giọng + mõ + chuông) kèm file JSON ghi mốc từng chữ. Khi có người khởi tụng, mọi trình duyệt phát cùng một file và tự chỉnh về đúng vị trí theo giờ máy chủ, nên cả chánh điện nghe cùng một chữ; chữ trên màn hình sáng theo tiếng.
 
-Tạo lại (đổi giọng, thêm bài mới trong `public/js/chants.js`), chạy được trên CPU:
+- **Giọng:** [VieNeu-TTS v3 Turbo](https://huggingface.co/pnnbao-ump/VieNeu-TTS-v3-Turbo) (Apache-2.0, tác giả Phạm Nguyễn Ngọc Bảo), giọng mẫu “Thiền Tâm Đức”, đọc **liền từng câu**. Đo bằng Whisper: đọc liền rõ chữ nhất (sai ~33% trên bản có mõ và chuông), cắt rời từng chữ sai trên 50%.
+- **Mõ** (theo hướng dẫn sử dụng chuông mõ của các đạo tràng): mõ gõ đúng lúc từng chữ cất lên, nương theo người tụng. Vào mõ: chữ 1 chưa gõ, chữ 2 gõ, chữ 3 không gõ, từ chữ 4 gõ đều. Thần chú nhanh hơn; niệm danh hiệu nhanh dần đều. Kết thúc lơi dần, hai tiếng mõ áp chót dính liền, tiếng cuối rời ra.
+- **Chuông:** `public/audio/bell.mp3`. Một tiếng khai kinh, ba tiếng kết; cũng dùng cho nút “Thỉnh chuông”.
+
+Dựng lại (đổi giọng, sửa kinh văn trong `public/js/chants.js`), chạy được trên CPU:
 
 ```bash
-python -m venv .venv && . .venv/bin/activate && pip install vieneu librosa soundfile "onnxruntime==1.22.1"
+python -m venv .venv && . .venv/bin/activate && pip install vieneu librosa soundfile audiotsm faster-whisper "onnxruntime==1.22.1"
 ```
 
 ```bash
-python tools/build_chant_voice.py --voice "Thiền Tâm Đức" --demo nghe-thu.mp3
+python tools/build_chants.py --voice "Thiền Tâm Đức"
 ```
 
-Giới hạn: VieNeu được huấn luyện để đọc, không phải để tụng. Đọc riêng từng chữ thì chữ cuối hơi hạ giọng, nên vài chữ thanh ngang nghe gần thanh huyền. Muốn giọng tụng thật nhất, hãy thu âm chư tăng chùa đối tác rồi thay file MP3 (giữ cùng định dạng JSON).
+Giới hạn: VieNeu được huấn luyện để đọc, không phải để tụng, nên giọng nghe như đọc kinh chậm rãi hơn là xướng tụng. Muốn giọng tụng thật nhất, hãy thu âm chư tăng chùa đối tác (có sự đồng ý) rồi thay file MP3, giữ cùng định dạng JSON.
 
 ## Hiệu ứng mốc công đức
 
@@ -175,12 +179,15 @@ lib/moderation.js      lọc tin nhắn, tên, từ tục, số tài khoản, li
 lib/store.js           lưu dữ liệu ra file JSON
 public/index.html      trang chánh điện
 public/js/hall.js      vẽ chánh điện và nhân vật (Canvas 2D)
-public/js/audio.js     mõ, chuông, giọng tụng, clip lời chúc, tiếng hù (Web Audio)
+public/js/audio.js     phát bài tụng đồng bộ, chuông, mõ, clip lời chúc, tiếng hù (Web Audio)
 public/js/celebrate.js hiệu ứng chúc mừng ở mốc công đức (meme, giọng chúc, hù 666)
 public/css/celebrate.css giao diện của hiệu ứng trên
-public/img/memes/      kho meme (thả ảnh vào là tự có), public/img/devil.svg cho mốc 666
+public/js/chants.js    kinh văn các bài tụng (đầu vào của tools/build_chants.py)
+public/audio/          bài tụng dựng sẵn (chants/), tiếng chuông (bell.mp3)
 public/audio/blessings/ giọng chúc (4 file mp3 + manifest.json)
-public/js/chants.js    bài tụng (dùng chung cho máy chủ và trình duyệt)
+public/img/memes/      kho meme (thả ảnh vào là tự có), public/img/devil.svg cho mốc 666
+tools/build_chants.py  dựng bài tụng bằng VieNeu-TTS
+tools/build_blessing_voice.py dựng giọng chúc (giọng nữ) bằng VieNeu-TTS
 public/js/lunar.js     lịch âm
 public/js/app.js       kết nối và giao diện
 public/admin.html      trang quản trị

@@ -37,7 +37,7 @@
     batnha: { title: 'Bát Nhã Tâm Kinh', beat: 0.6, f0: 130, voice: true, lines: BATNHA, restMode: 'stop', bellAfterStop: true, endBells: 3 },
     niemphat: { title: 'Niệm Phật A Di Đà', beat: 0.82, f0: 122, voice: true, lines: Array(12).fill('Nam Mô A Di Đà Phật'), restN: 2, bellEvery: 4, endBells: 2 },
     quanam: { title: 'Niệm Quán Thế Âm Bồ Tát', beat: 0.66, f0: 126, voice: true, lines: Array(9).fill('Nam Mô Đại Từ Đại Bi Cứu Khổ Cứu Nạn Quán Thế Âm Bồ Tát'), restN: 1, bellEvery: 3, endBells: 2 },
-    thien: { title: 'Chuông mõ ngồi thiền', beat: 1.3, f0: 0, voice: false, lines: Array.from({ length: 20 }, (_, i) => (i % 2 ? 'Thở ra' : 'Thở vào')), restN: 2, moFirstOnly: true, bellEvery: 4, endBells: 3 }
+    thien: { title: 'Chuông mõ ngồi thiền', beat: 1.3, f0: 0, voice: false, lines: Array.from({ length: 20 }, (_, i) => (i % 2 ? 'Thở ra' : 'Hít vào')), restN: 2, moFirstOnly: true, bellEvery: 4, endBells: 3 }
   };
 
   const END_BELL_GAP = 2.6;
