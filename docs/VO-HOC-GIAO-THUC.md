@@ -78,7 +78,7 @@ Gửi cho mọi tab của người chơi (kể cả khi đang ở chánh điện
 `place:set {place:'arena'}` ack: `{ ok, place, arena:{ players:[Row], dnd:boolean, hasMatch:boolean, enabled:boolean } }`.
 `Row = { pid, name, look, lv, wins, losses, st }` với `st` là `free` | `busy` (đang đấu) | `dnd` (không nhận lời mời).
 Phát cho những ai đang ở sân: `arena:add Row` · `arena:del {pid}` · `arena:upd {pid, …trường đổi}`.
-`arena:dnd {on}` → ack `{ok}`. `arena:blocks` → ack `{ok, list:[{uid,name}]}`; `pk:block {pid}` → ack; `pk:unblock {uid}` → ack.
+`arena:dnd {on}` → ack `{ok}`. `arena:blocks` → ack `{ok, list:[{uid,name}]}`; `pk:block {pid}` → ack (chỉ chặn được người đang ở sân); `pk:unblock {uid}` → ack. **`uid` trong danh sách chặn là mã mờ (HMAC), không phải uid thật**: uid của khách gắn với công đức của họ nên không bao giờ gửi cho client khác. Mã mờ chỉ có giá trị trong một lần chạy của máy chủ; lấy lại danh sách mỗi lần mở.
 
 ### Mời và nhận lời
 | Sự kiện | Tham số | Ack |

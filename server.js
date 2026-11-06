@@ -367,8 +367,10 @@ function donationAck(don) {
 /* ----- webhook SePay: tự xác nhận khi tài khoản chùa nhận tiền ----- */
 app.post('/api/webhooks/sepay', (req, res) => {
   if (!SEPAY_API_KEY) return res.status(404).json({ success: false });
+  const lock = 'sepay:' + req.ip;
+  if (failLock(lock)) return res.status(429).json({ success: false });
   const key = String(req.get('authorization') || '').replace(/^Apikey\s+/i, '').trim();
-  if (!safeEqual(key, SEPAY_API_KEY)) return res.status(401).json({ success: false });
+  if (!safeEqual(key, SEPAY_API_KEY)) { failHit(lock); return res.status(401).json({ success: false }); }
   const b = req.body || {};
   if (b.transferType && b.transferType !== 'in') return res.json({ success: true });
   const content = String(b.content || '') + ' ' + String(b.description || '') + ' ' + String(b.code || '');
@@ -387,17 +389,17 @@ app.post('/api/webhooks/sepay', (req, res) => {
 });
 
 /* ----- quản trị ----- */
-const adminFails = new Map();     // ip -> { n, until } đếm lần nhập sai mã quản trị
+// Đếm lần nhập sai mã (quản trị, webhook SePay) theo IP, dùng chung cho HTTP và socket: 10 lần sai thì khóa 10 phút.
+const authFails = new Map();      // khóa -> { n, until }
+const adminFails = authFails;
+const failLock = key => { const f = authFails.get(key); return f && f.n >= 10 && f.until > now() ? Math.ceil((f.until - now()) / 1000) : 0; };
+function failHit(key) { const f = authFails.get(key), g = f && f.until > now() ? f : { n: 0, until: 0 }; g.n += 1; g.until = now() + 10 * 60e3; authFails.set(key, g); }
 function admin(req, res, next) {
   if (!ADMIN_KEY) return res.status(503).json({ error: 'Chưa đặt ADMIN_KEY trên máy chủ.' });
-  const f = adminFails.get(req.ip);
-  if (f && f.n >= 10 && f.until > now()) return res.status(429).set('Retry-After', String(Math.ceil((f.until - now()) / 1000))).json({ error: 'Nhập sai mã quá nhiều lần. Đợi vài phút rồi thử lại.' });
-  if (!safeEqual(req.get('x-admin-key') || '', ADMIN_KEY)) {
-    const g = f && f.until > now() ? f : { n: 0, until: 0 };
-    g.n += 1; g.until = now() + 10 * 60e3; adminFails.set(req.ip, g);
-    return res.status(401).json({ error: 'Sai mã quản trị.' });
-  }
-  adminFails.delete(req.ip);
+  const key = 'ip:' + req.ip, wait = failLock(key);
+  if (wait) return res.status(429).set('Retry-After', String(wait)).json({ error: 'Nhập sai mã quản trị quá nhiều lần. Đợi vài phút rồi thử lại.' });
+  if (!safeEqual(req.get('x-admin-key') || '', ADMIN_KEY)) { failHit(key); return res.status(401).json({ error: 'Sai mã quản trị.' }); }
+  authFails.delete(key);
   next();
 }
 /** Nhật ký thao tác quản trị (chỉ thêm; giữ 500 dòng gần nhất). Không ghi mã quản trị; IP chỉ ghi dạng băm ngắn. */
@@ -572,6 +574,8 @@ function endChant(completed) {
 /* ---------------- Võ Học Các và Sân đấu: hàm hỗ trợ ---------------- */
 const LOGIN_MSG = 'Cần đăng nhập Google để tu luyện và luận võ, vì tiến độ gắn với tài khoản của bạn.';
 const accountReady = p => !auth.enabled || !!auth.sessionFor(p.socket.data.authKey);
+const BLOCK_SECRET = crypto.randomBytes(24);     // chỉ sống trong tiến trình: mã mờ chỉ dùng trong một phiên làm việc
+const blockHandle = uid => crypto.createHmac('sha256', BLOCK_SECRET).update(String(uid)).digest('base64url').slice(0, 16);
 function emitToUid(uid, ev, payload) { for (const q of players.values()) if (q.uid === uid) q.socket.emit(ev, payload); }
 function deliverUpdates(r) { if (r && r.updates) for (const u of r.updates) emitToUid(u.uid, 'tu:update', u.update); }
 /** Cấp pháp tướng (Lc), quỷ (Lq), hào quang (Ld) ngay lúc này; lấy từ đúng dữ liệu công đức / cúng dường đang chạy. */
@@ -627,7 +631,11 @@ io.on('connection', socket => {
     if (p) return ack({ ok: false, reason: 'Bạn đã ở trong chánh điện.' });
     if (players.size >= MAX_PLAYERS) return ack({ ok: false, reason: 'Chánh điện đang quá đông. Bạn đợi ít phút rồi vào lại nhé.' });
     data = data || {};
-    const isMod = !!(ADMIN_KEY && data.adminKey && safeEqual(String(data.adminKey), ADMIN_KEY));
+    // mã quản trị gửi kèm khi vào chùa: dùng chung bộ đếm sai với trang quản trị, để không thử mã vô hạn qua socket
+    const modKey = 'ip:' + socket.data.ip;
+    const modTry = !!(ADMIN_KEY && data.adminKey) && !failLock(modKey);
+    const isMod = modTry && safeEqual(String(data.adminKey), ADMIN_KEY);
+    if (modTry) { if (isMod) authFails.delete(modKey); else failHit(modKey); }
     const nm = checkName(data.name, isMod);
     if (!nm.ok) return ack({ ok: false, reason: nm.reason });
     const session = auth.sessionFor(authKey);
@@ -941,13 +949,10 @@ io.on('connection', socket => {
   });
   socket.on('tu:start', martialOnly(async (d, ack) => {
     const r = martial.start(p.uid, String(d.methodId || ''), String(d.duration || ''));
-    if (r.ok) await store.flush();
-    ack(r);
+    ack(r);                       // ghi nền (không flush ngay): phiên chạy theo giờ máy chủ nên mất vài giây thay đổi không làm mất thưởng
   }));
   socket.on('tu:cancel', martialOnly(async (d, ack) => {
-    const r = martial.cancel(p.uid, String(d.sessionId || ''));
-    if (r.ok) await store.flush();
-    ack(r);
+    ack(martial.cancel(p.uid, String(d.sessionId || '')));
   }));
   socket.on('tu:speedup', martialOnly(async (d, ack) => {
     const r = martial.speedup(p.uid, String(d.sessionId || ''), { anon: !!d.anon, name: p.name });
@@ -957,14 +962,10 @@ io.on('connection', socket => {
     ack({ ...donationAck(r.donation), existing: !!r.existing, methodName: (MARTIAL.METHODS[r.donation.methodId] || {}).name || '', durationKey: r.donation.durationKey, endsAt: sess.endsAt || null, updates: r.updates });
   }));
   socket.on('tu:speedup:cancel', martialOnly(async (d, ack) => {
-    const r = martial.cancelSpeedup(p.uid, String(d.code || ''));
-    if (r.ok) await store.flush();
-    ack(r);
+    ack(martial.cancelSpeedup(p.uid, String(d.code || '')));
   }));
   socket.on('tu:voucher', martialOnly(async (d, ack) => {
-    const r = martial.useVoucher(p.uid, String(d.voucherId || ''), String(d.sessionId || ''));
-    if (r.ok) await store.flush();
-    ack(r);
+    ack(martial.useVoucher(p.uid, String(d.voucherId || ''), String(d.sessionId || '')));
   }));
   socket.on('martial:seen', martialOnly((d, ack) => { martial.markSeen(p.uid, Array.isArray(d.ids) ? d.ids.slice(0, 20).map(String) : []); ack({ ok: true }); }));
   socket.on('vo:learn', martialOnly((d, ack) => { const r = martial.learn(p.uid, String(d.skillId || '')); if (r.ok) store.save(); ack(r); }));
@@ -986,17 +987,18 @@ io.on('connection', socket => {
     arena.setDnd(p.uid, on);
     ack({ ok: true, dnd: on });
   }));
-  socket.on('arena:blocks', inArena((d, ack) => ack({ ok: true, list: martial.profile(p.uid, true).blocked.map(b => ({ uid: b.uid, name: b.name })) })));
+  // Danh sách chặn gửi cho client là MÃ MỜ (HMAC), không bao giờ là uid thật: uid của khách là thứ gắn với công đức của họ.
+  socket.on('arena:blocks', inArena((d, ack) => ack({ ok: true, list: martial.profile(p.uid, true).blocked.map(b => ({ uid: blockHandle(b.uid), name: b.name })) })));
   socket.on('pk:block', inArena((d, ack) => {
     const t = players.get(Number(d.pid));
-    if (!t || t.uid === p.uid) return ack({ ok: false, reason: 'Không thấy người này.' });
+    if (!t || t.uid === p.uid || t.place !== 'arena') return ack({ ok: false, reason: 'Không thấy người này ở sân.' });
     const prof = martial.profile(p.uid, true);
     if (!prof.blocked.some(b => b.uid === t.uid)) { prof.blocked.push({ uid: t.uid, name: t.name }); if (prof.blocked.length > 200) prof.blocked.shift(); store.save(); }
     ack({ ok: true });
   }));
   socket.on('pk:unblock', inArena((d, ack) => {
     const prof = martial.profile(p.uid, true), before = prof.blocked.length;
-    prof.blocked = prof.blocked.filter(b => b.uid !== String(d.uid || ''));
+    prof.blocked = prof.blocked.filter(b => blockHandle(b.uid) !== String(d.uid || ''));
     if (prof.blocked.length !== before) store.save();
     ack({ ok: true });
   }));
@@ -1065,6 +1067,7 @@ setInterval(() => {
       }
     }
     if (martial) martial.prune();
+    for (const [k, f] of authFails) if (f.until <= t) authFails.delete(k);
     store.save();
   }
 }, 50);
@@ -1101,7 +1104,8 @@ async function main() {
   });
   arena = createArenaManager({
     now, setTimer: (fn, ms) => setTimeout(fn, ms), clearTimer: h => clearTimeout(h),
-    emit: emitToUid,
+    // gói pk:* chỉ gửi cho tab đang ở Sân đấu (tab chánh điện của cùng tài khoản không nhận)
+    emit: (uid, ev, payload) => { for (const q of players.values()) if (q.uid === uid && q.place === 'arena') q.socket.emit(ev, payload); },
     emitRoom: (ev, payload) => io.to('arena').emit(ev, payload),
     isOnline: uid => { for (const q of players.values()) if (q.uid === uid) return true; return false; },
     fighterOf: uid => martial.pkIdentity(uid),
@@ -1109,7 +1113,7 @@ async function main() {
     recordResult: (uid, r) => martial.recordResult(uid, r),
     setActiveMatch: (uid, id) => { martial.profile(uid, true).activeMatch = id; store.save(); },
     getActiveMatch: uid => { const pr = martial.profile(uid, false); return pr ? pr.activeMatch || null : null; },
-    saveMatch: rec => { db.martial.matches.push(rec); if (db.martial.matches.length > 300) db.martial.matches.splice(0, db.martial.matches.length - 300); store.save(); },
+    saveMatch: rec => { db.martial.matches.push(rec); if (db.martial.matches.length > 150) db.martial.matches.splice(0, db.martial.matches.length - 150); store.save(); },
     isBlocked: (by, other) => { const pr = martial.profile(by, false); return !!(pr && pr.blocked.some(b => b.uid === other)); },
     newId: () => store.nextId(),
     log: (...a) => console.error('[arena]', ...a),
