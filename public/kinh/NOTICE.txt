@@ -15,3 +15,15 @@ cuu-am-chan-kinh.md, quy-hoa-bao-dien.md
 
 bat-nha-tam-kinh.md
   Bản phiên âm Hán Việt phổ thông của Bát Nhã Ba La Mật Đa Tâm Kinh (bản Hán của ngài Huyền Trang).
+
+chu-dai-bi.md
+  Bản âm tụng truyền thống của Đại Bi Tâm Đà La Ni, chia 84 câu.
+  Đối chiếu bản phiên âm tại Cổng thông tin Phật giáo Việt Nam:
+  https://phatgiao.org.vn/chu-dai-bi-la-gi-chu-dai-bi-3-bien-5-bien-7-bien-21-bien-d70699.html
+
+kinh-duoc-su.md
+  Dược Sư Lưu Ly Quang Như Lai Bổn Nguyện Công Đức Kinh (Đại Chính Tạng T14, số 450).
+  Hán dịch: Tam tạng Pháp sư Huyền Trang đời Đường. Dịch nghĩa tiếng Việt: cộng đồng Wikisource.
+  Nguồn và lịch sử đóng góp: https://vi.wikisource.org/wiki/Special:PermanentLink/206411
+  Giấy phép bản dịch và định dạng lại: CC BY-SA 4.0, https://creativecommons.org/licenses/by-sa/4.0/
+  Thay đổi: chia mục đọc, thêm tiêu đề và định dạng Markdown.
