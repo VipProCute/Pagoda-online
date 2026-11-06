@@ -595,9 +595,11 @@
     players: () => Hall.list(),
     talk: (id, lv) => Hall.setTalk(id, lv),
     audioContext: () => SFX.context(),
-    speech: () => SFX.duckAmbience(0.45),
     notice: t => toast(t),
-    change: () => voiceUI()
+    change: () => {
+      SFX.setAmbienceDuck('voice', Voice.active);
+      voiceUI();
+    }
   });
   async function startVoice(silent) {
     if (Voice.joining) return;
@@ -769,7 +771,7 @@
   /* ---------- đọc thông báo cúng dường ---------- */
   // Giọng VieNeu do máy chủ đọc sẵn; chưa có thì trình duyệt tự đọc bằng giọng tiếng Việt có sẵn.
   const annQ = [];
-  let annBusy = false, annEl = null;
+  let annBusy = false;
   function announceQ(d) { annQ.push(d); if (annQ.length > 6) annQ.shift(); if (!annBusy) nextAnnounce(); }
   function viVoice() {
     if (!window.speechSynthesis) return null;
@@ -784,27 +786,48 @@
     $('#announceText').textContent = d.text;
     box.classList.toggle('up', !!d.tier);
     box.hidden = false; box.classList.remove('show'); void box.offsetWidth; box.classList.add('show');
-    let done = false;
-    const finish = () => { if (done) return; done = true; setTimeout(nextAnnounce, 1200); };
-    const fallbackT = setTimeout(finish, 16000);
-    const end = () => { clearTimeout(fallbackT); finish(); };
+    let done = false, audio = null, utterance = null;
+    const end = () => {
+      if (done) return;
+      done = true;
+      clearTimeout(fallbackT);
+      if (audio) audio.pause();
+      if (utterance) speechSynthesis.cancel();
+      SFX.setAmbienceDuck('announce', false);
+      setTimeout(nextAnnounce, 1200);
+    };
+    const fallbackT = setTimeout(end, 16000);
     if (muted || !SFX.ready) { setTimeout(end, 7000); return; }
+    const duck = () => { if (!done) SFX.setAmbienceDuck('announce', true); };
+    const speak = () => {
+      if (done) return;
+      const v = viVoice();
+      if (!v || muted) { setTimeout(end, 6000); return; }
+      const u = new SpeechSynthesisUtterance(d.speak || d.text);
+      u.voice = v; u.lang = v.lang; u.rate = 0.95; u.pitch = 1.05;
+      u.onstart = duck;
+      u.onend = u.onerror = () => { utterance = null; end(); };
+      speechSynthesis.cancel();
+      utterance = u;
+      speechSynthesis.speak(u);
+    };
     SFX.bell(0.5);
     setTimeout(() => {
-      if (d.audio) {
-        annEl = new Audio(d.audio); annEl.volume = 1;
-        annEl.onended = end; annEl.onerror = () => speakFallback(d, end);
-        const p = annEl.play(); if (p && p.catch) p.catch(() => speakFallback(d, end));
-      } else speakFallback(d, end);
+      if (done || muted) { end(); return; }
+      if (!d.audio) { speak(); return; }
+      const clip = audio = new Audio(d.audio);
+      clip.onplaying = duck;
+      clip.onended = end;
+      const fallback = () => {
+        if (done || audio !== clip) return;
+        clip.pause();
+        audio = null;
+        SFX.setAmbienceDuck('announce', false);
+        speak();
+      };
+      clip.onerror = fallback;
+      clip.play().catch(fallback);
     }, 1500);
-  }
-  function speakFallback(d, end) {
-    const v = viVoice();
-    if (!v || !window.speechSynthesis) { setTimeout(end, 6000); return; }
-    const u = new SpeechSynthesisUtterance(d.speak || d.text);
-    u.voice = v; u.lang = v.lang; u.rate = 0.95; u.pitch = 1.05;
-    u.onend = end; u.onerror = end;
-    speechSynthesis.cancel(); speechSynthesis.speak(u);
   }
   if (window.speechSynthesis) speechSynthesis.getVoices();
 

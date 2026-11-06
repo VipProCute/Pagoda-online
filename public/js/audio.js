@@ -27,18 +27,19 @@
       loadBell();
     }
     if (AC.state === 'suspended') AC.resume();
-    startAmbience();
     return AC;
   }
   const live = () => !!(AC && AC.state === 'running' && !muted);
   const AMBIENCE_GAIN = 0.22;
-  const AMBIENCE_DUCK = 0.05;
-  let ambienceLoad = null, ambienceGain = null, ambienceLevel = null;
+  const AMBIENCE_DUCK = 0.10;
+  const ambienceReasons = new Set();
+  let ambience = null, ambienceGain = null, ambienceLevel = null;
   let duckUntil = 0, duckTimer = null;
 
   function updateAmbience() {
     if (!ambienceGain) return;
-    const level = AMBIENCE_GAIN * (ch || clipSrc || performance.now() < duckUntil ? AMBIENCE_DUCK : 1);
+    const ducked = ambienceReasons.size || clipSrc || (chEl && !chEl.paused && !chEl.ended) || performance.now() < duckUntil;
+    const level = AMBIENCE_GAIN * (ducked ? AMBIENCE_DUCK : 1);
     if (level === ambienceLevel) return;
     ambienceLevel = level;
     ambienceGain.gain.setTargetAtTime(level, AC.currentTime, level < AMBIENCE_GAIN ? 0.025 : 0.28);
@@ -53,26 +54,31 @@
     updateAmbience();
   }
 
+  function setAmbienceDuck(reason, active) {
+    if (active) ambienceReasons.add(reason);
+    else ambienceReasons.delete(reason);
+    updateAmbience();
+  }
+
   function startAmbience() {
-    if (muted || ambienceLoad || !root.fetch) return;
-    ambienceLoad = fetch('/audio/ambience.mp3')
-      .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.arrayBuffer(); })
-      .then(decode)
-      .then(buffer => {
-        const src = AC.createBufferSource();
-        src.buffer = buffer;
-        src.loop = true;
-        ambienceGain = AC.createGain();
-        ambienceGain.gain.value = 0;
-        src.connect(ambienceGain);
-        ambienceGain.connect(OUT);
-        updateAmbience();
-        src.start();
-      })
-      .catch(e => {
-        ambienceLoad = null;
-        if (root.console) console.warn('Không tải được nhạc nền:', e);
+    if (muted) return;
+    if (!ambience) {
+      ambience = new Audio('/audio/ambience-thien-am.mp3');
+      ambience.loop = true;
+      ambience.preload = 'none';
+      ambienceGain = AC.createGain();
+      ambienceGain.gain.value = 0;
+      AC.createMediaElementSource(ambience).connect(ambienceGain);
+      ambienceGain.connect(OUT);
+      updateAmbience();
+    }
+    if (ambience.paused) {
+      ambience.play().catch(e => {
+        if (e.name !== 'NotAllowedError' && e.name !== 'AbortError' && root.console) {
+          console.warn('Không phát được nhạc nền:', e);
+        }
       });
+    }
   }
 
   function impulse(sec) {
@@ -232,6 +238,7 @@
     ch = { track, startedAt };
     chEl = new Audio('/audio/chants/' + file);
     chEl.preload = 'auto';
+    for (const event of ['playing', 'pause', 'ended', 'error']) chEl.addEventListener(event, updateAmbience);
     chEl.volume = volume;
     blocked = false;
     updateAmbience();
@@ -256,7 +263,7 @@
   }
 
   root.SFX = {
-    unlock() { const ok = !!ctx(); blocked = false; return ok; },
+    unlock() { const ok = !!ctx(); if (ok) startAmbience(); blocked = false; return ok; },
     context() { return ctx(); },
     get ready() { return live(); },
     get muted() { return muted; },
@@ -268,7 +275,7 @@
       if (!muted && AC) startAmbience();
     },
     setVolume(v) { volume = v; if (OUT && !muted) OUT.gain.setTargetAtTime(volume, AC.currentTime, 0.05); if (chEl) chEl.volume = v; },
-    mo: () => mo(), bell, ting, pop, duckAmbience,
+    mo: () => mo(), bell, ting, pop, setAmbienceDuck,
     chime: () => chime(), scare: () => scare(), playClip, preloadClip, stopClip,
     startChant, stopChant, syncChant
   };

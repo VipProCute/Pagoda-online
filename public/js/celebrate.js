@@ -314,11 +314,12 @@
         u.rate = 0.95; u.pitch = 1.12; u.volume = 1;
         let started = false, rang = false;
         const ring = () => { if (!rang && cur === c) { rang = true; SFX.chime(); } };   // chỉ rung chuông một lần
-        u.onstart = () => { started = true; };
-        u.onerror = e => { if (e && e.error !== 'canceled' && e.error !== 'interrupted') ring(); };
+        const release = () => SFX.setAmbienceDuck(u, false);
+        u.onstart = () => { if (cur === c && !c.leaving) { started = true; SFX.setAmbienceDuck(u, true); } };
+        u.onend = release;
+        u.onerror = e => { release(); if (e && e.error !== 'canceled' && e.error !== 'interrupted') ring(); };
         ss.cancel(); ss.speak(u);
-        if (SFX.duckAmbience) SFX.duckAmbience(Math.min(9, text.length * 0.085 + 0.6));   // giọng máy đọc: nhạc nền nhỏ lại như khi phát file giọng
-        c.speech = true;
+        c.speech = release;
         holdUntil(Math.min(9000, Math.max(5000, text.length * 85 + 1500)));
         later(() => { if (!started && !rang) { try { ss.cancel(); } catch (e) { /* bỏ qua */ } c.speech = false; ring(); } }, 1600);   // im lặng quá lâu: bật chuông ting thay
         return;
@@ -463,7 +464,7 @@
     if (!c || c.leaving) return;
     c.leaving = true;
     c.timers.forEach(clearTimeout); clearTimeout(c.hold); cancelAnimationFrame(c.raf);
-    if (c.speech) { try { root.speechSynthesis.cancel(); } catch (e) { /* bỏ qua */ } }
+    if (c.speech) { c.speech(); try { root.speechSynthesis.cancel(); } catch (e) { /* bỏ qua */ } }
     if (root.SFX && SFX.stopClip) SFX.stopClip();
     el.root.classList.add('is-leave');
     setTimeout(() => finish(c), immediate ? 0 : 240);
