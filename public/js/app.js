@@ -51,7 +51,7 @@
   function renderSound() {
     $('#icoSoundOn').hidden = muted; $('#icoSoundOff').hidden = !muted;
     $('#btnSound').setAttribute('aria-label', muted ? 'Bật tiếng' : 'Tắt tiếng');
-    SFX.setMuted(muted); updateChantJoin();
+    SFX.setMuted(muted); Voice.setMuted(muted); updateChantJoin();
   }
   $('#btnSound').addEventListener('click', () => { muted = !muted; store.set('ta-muted', muted ? '1' : '0'); SFX.unlock(); renderSound(); });
   document.addEventListener('pointerdown', () => SFX.unlock(), { once: true });
@@ -60,7 +60,8 @@
   Hall.init($('#hall'), {
     floor(x, z) { if (joined) socket.emit('move', { x, z }); },
     altar() { act('incense'); },
-    statue() { act('bow'); }
+    statue() { act('bow'); },
+    library() { act('library', null, true); }
   });
   const keys = new Set();
   addEventListener('keydown', e => {
@@ -150,6 +151,7 @@
 
   function welcome(r) {
     joined = true; editing = false; me = r.you; cfg = r.config;
+    myAura = r.aura; renderAura();
     if (window.Celebrate) Celebrate.configure(cfg, { toast });
     if (r.uid && r.uid !== uid) { uid = r.uid; store.set('ta-uid', uid); }
     if (!offset) { offset = r.serverTime - Date.now(); Hall.setOffset(offset); }
@@ -165,8 +167,11 @@
       return `<button type="button" class="track" data-track="${id}"><b>${t.title}</b><small>khoảng ${m} phút</small></button>`;
     }).join('');
     $('#donCard').hidden = !cfg.donation && !r.donations.length;
+    $('#actVoice').hidden = !cfg.voice;
     closeDlg('join');
     toast(`A Di Đà Phật. Chào ${myName}, mời bạn vào lễ Phật.`);
+    if (Voice.wanted && cfg.voice) startVoice(true);          // mất mạng rồi vào lại: nối lại tiếng
+    if (Library.book) socket.emit('reading', { book: Library.book.id });
     previewCelebrate();
   }
   // Xem thử hiệu ứng mốc công đức: mở trang với ?celebrate=100 (hoặc 300, 666, 999...). Chỉ chạy một lần mỗi lần mở trang.
@@ -186,7 +191,22 @@
 
   /* ---------- sự kiện từ máy chủ ---------- */
   socket.on('pj', p => { Hall.addPlayer(p); $('#online').textContent = NUM(Hall.count()); });
-  socket.on('pl', d => { Hall.removePlayer(d.id); $('#online').textContent = NUM(Hall.count()); });
+  socket.on('pl', d => { Voice.drop(d.id); Hall.removePlayer(d.id); $('#online').textContent = NUM(Hall.count()); voiceUI(); });
+  socket.on('pv', d => { Hall.setVoice(d.id, d.v); voiceUI(); });
+  socket.on('prd', d => Hall.setReading(d.id, d.rd));
+  socket.on('pm', d => { Hall.setMerit(d.id, d.mt, d.up); if (d.id === me) renderRank(); });
+  socket.on('penalty', d => Hall.penalty(d.pid, d.n));
+  socket.on('penalty:me', d => {
+    const extra = (d.shout ? ' · gào thét ×1,5' : '') + (d.mult > 1 ? ` · tái phạm ×${String(d.mult).replace('.', ',')}` : '');
+    const dm = MERIT.demonOf(d.total);
+    toast(`${d.name}: −${NUM(d.n)} công đức${extra}.` + (dm ? ` Công đức còn ${NUM(d.total)}, ${MERIT.DEMONS[dm.n - 1].name} đang theo sau bạn.` : ''));
+  });
+  socket.on('aura', d => {
+    Hall.setAura(d.pid, d.au, d.up);
+    if (d.up && d.au && d.au.t && d.pid !== me) { const p = Hall.player(d.pid); if (p) ticker(`${p.name} đột phá cảnh giới ${AURA.TIERS[d.au.t - 1].name}`); }
+  });
+  socket.on('announce', d => announceQ(d));
+  socket.on('voice:kicked', d => { Voice.leave(); voiceUI(); toast(d.text); });
   socket.on('pu', d => Hall.updatePlayer(d));
   socket.on('p', arr => Hall.positions(arr));
   socket.on('chat', m => { addMsg(m); scrollFeed(); if (!m.sys && m.pid) Hall.bubble(m.pid, m.text); });
@@ -218,6 +238,11 @@
   socket.on('chant', setChant);
   socket.on('donation', d => { donations.unshift(d.d); renderDonations(null, d.funds); $('#donCard').hidden = false; });
   socket.on('donation:ok', d => {
+    if (d.merit) setTimeout(() => toast(`Cúng dường ${VND(d.amount)}: +${NUM(d.merit)} công đức.`), 1600);
+    if (d.aura) {
+      myAura = d.aura; renderAura();
+      if (d.aura.up && d.aura.t) setTimeout(() => toast(`Hào quang bừng sáng: bạn đã đột phá cảnh giới ${AURA.TIERS[d.aura.t - 1].name}!`), 3200);
+    }
     if (pendingCode === d.code) {
       $('#dnQr').hidden = true; $('#dnDone').hidden = false;
       $('#dnDoneText').textContent = `Nhà chùa đã nhận ${VND(d.amount)} cho quỹ “${d.fund}”. Cảm ơn tấm lòng của bạn.`;
@@ -305,6 +330,7 @@
 
   /* ---------- công đức & thống kê ---------- */
   function setMerit(m) {
+    myTotal = m.total; renderRank();
     const old = +($('#meritToday').dataset.v || 0);
     $('#meritToday').textContent = NUM(m.today); $('#meritToday').dataset.v = m.today;
     $('#mtToday').textContent = NUM(m.today); $('#mtTotal').textContent = NUM(m.total);
@@ -369,6 +395,7 @@
         meta = m; SFX.startChant(c.track, c.startedAt, m.file);
       }).catch(() => { $('#cbCur').textContent = 'Không tải được bài tụng. Tải lại trang giúp mình nhé.'; });
     } else SFX.stopChant();
+    Voice.setDuck(c ? 0.3 : 1);                                   // đang tụng kinh thì tiếng nói chuyện nhỏ lại
     $('#cbStop').hidden = !(c && isMod());
     updateChantJoin();
   }
@@ -410,10 +437,17 @@
   let moCount = 0;
   setInterval(() => { if (moCount && joined) { socket.emit('mo', { n: Math.min(5, moCount) }); moCount = 0; } }, 1000);
   function pulse(btn) { if (!btn) return; btn.classList.remove('hit'); void btn.offsetWidth; btn.classList.add('hit'); setTimeout(() => btn.classList.remove('hit'), 160); }
-  function act(name, btn) {
+  function act(name, btn, walk) {
     if (!joined) { openDlg('join'); return; }
     SFX.unlock();
     switch (name) {
+      case 'voice':
+        if (!Voice.active) startVoice(false);
+        else Voice.toggleMic().then(r => { if (typeof r === 'string') toast(MIC_ERR[r]); voiceUI(); });
+        pulse(btn); break;
+      case 'library':
+        if (walk) { const pos = Hall.libraryPos(); if (pos) socket.emit('move', { x: pos[0], z: pos[1] }); }
+        Library.open(); break;
       case 'incense': $('#incWarn').hidden = true; openDlg('incense'); break;
       case 'flower': closeDlg('donate'); openDlg('flower'); break;
       case 'heart': socket.emit('emote', { type: 'heart' }); SFX.pop(); pulse(btn); break;
@@ -480,7 +514,7 @@
     if (!amount || amount < 10000) { w.textContent = 'Số tiền tối thiểu là 10.000đ.'; w.hidden = false; return; }
     socket.emit('donate', {
       amount, fund: ($('#dnForm [name=fund]:checked') || {}).value, name: $('#dnName').value,
-      anon: $('#dnAnon').checked, hide: $('#dnHide').checked, note: $('#dnNote').value
+      anon: $('#dnAnon').checked, hide: $('#dnHide').checked, aura: $('#dnAura').checked, note: $('#dnNote').value
     }, r => {
       if (!r || !r.ok) { w.textContent = (r && r.reason) || 'Chưa tạo được mã.'; w.hidden = false; return; }
       pendingCode = r.code;
@@ -497,6 +531,232 @@
     const fallback = () => { const r = document.createRange(); r.selectNodeContents($('#qrCode')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast('Đã chọn nội dung, bấm sao chép trên máy của bạn.'); };
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(() => toast('Đã chép nội dung chuyển khoản.'), fallback); else fallback();
   });
+
+  $('#dnAnon').addEventListener('change', e => { $('#dnAura').disabled = e.target.checked; if (e.target.checked) $('#dnAura').checked = false; });
+
+  /* ---------- nói chuyện bằng giọng ---------- */
+  const MIC_ERR = {
+    denied: 'Bạn chưa cho phép dùng micro nên đang chỉ nghe. Muốn nói, cho phép micro trong cài đặt trình duyệt rồi bấm lại.',
+    insecure: 'Trang cần mở bằng https mới dùng được micro. Bạn vẫn nghe được mọi người.',
+    nomic: 'Không tìm thấy micro trên máy này. Bạn vẫn nghe được mọi người.'
+  };
+  Voice.init(socket, {
+    myId: () => me,
+    player: id => Hall.player(id),
+    players: () => Hall.list(),
+    talk: (id, lv) => Hall.setTalk(id, lv),
+    audioContext: () => SFX.context(),
+    notice: t => toast(t),
+    change: () => voiceUI()
+  });
+  async function startVoice(silent) {
+    if (Voice.joining) return;
+    voiceUI(true);
+    const r = await Voice.join();
+    if (!r.ok) { if (!silent) toast(r.reason); voiceUI(); return; }
+    Voice.setMuted(muted); Voice.setDuck(chant ? 0.3 : 1);
+    if (!silent) {
+      if (r.listenOnly) toast(MIC_ERR[r.why] || MIC_ERR.nomic);
+      else if (store.get('ta-voice-tip') !== '1') { store.set('ta-voice-tip', '1'); toast('Đã bật micro. Đứng gần ai thì nghe người đó rõ. Đeo tai nghe để không bị vọng tiếng.'); }
+      else toast('Đã bật micro. Mời bạn trò chuyện.');
+    }
+    voiceUI();
+  }
+  let vuiT = 0;
+  function voiceUI(joining) {
+    if (vuiT && !joining) return;
+    vuiT = requestAnimationFrame(() => { vuiT = 0; renderVoice(joining); });
+  }
+  const pdist = (a, b) => Math.hypot((a.x - b.x) * 1.6, a.z - b.z);
+  function renderVoice(joining) {
+    const on = Voice.active, b = $('#actVoice');
+    b.classList.toggle('on', on && Voice.mic); b.classList.toggle('off', on && !Voice.mic);
+    b.setAttribute('aria-pressed', String(on && Voice.mic));
+    $('#actVoiceLbl').textContent = joining || Voice.joining ? 'Đang bật…' : !on ? 'Nói chuyện' : Voice.mic ? 'Mic đang bật' : 'Mic đang tắt';
+    $('#voicebar').hidden = !on;
+    $('#stage').classList.toggle('voice-on', on);
+    if (!on) return;
+    const st = Voice.stats();
+    $('#vbMic').setAttribute('aria-pressed', String(Voice.mic));
+    $('#vbMic').classList.toggle('off', !Voice.mic);
+    $('#vbTitle').textContent = !Voice.hasMic ? 'Đang nghe' : Voice.mic ? 'Đang nói chuyện' : 'Đã tắt micro';
+    $('#vbSub').textContent = st.connected ? `${st.connected} người ở gần nghe được nhau`
+      : st.peers ? 'Đang nối tiếng với người ở gần…' : 'Chưa có ai ở gần bật nói chuyện. Đi lại gần đạo hữu khác nhé.';
+    if ($('#dlg-voice').open) renderVoiceList();
+  }
+  function renderVoiceList() {
+    const box = $('#vcList'), mine = Hall.player(me), conn = new Map(Voice.peers().map(p => [p.pid, p]));
+    const list = Hall.list().filter(p => p.id !== me && p.v).map(p => ({ p, d: mine ? pdist(mine, p) : 9 })).sort((a, b) => a.d - b.d);
+    box.textContent = '';
+    if (!list.length) { box.innerHTML = '<p class="empty">Chưa có ai khác bật nói chuyện.</p>'; return; }
+    list.slice(0, 40).forEach(({ p, d }) => {
+      const c = conn.get(p.id), row = document.createElement('div'); row.className = 'vc-row';
+      const dot = document.createElement('span'); dot.className = 'dot'; dot.style.background = (Hall.COLORS[p.look.c] || Hall.COLORS[0]).c;
+      const info = document.createElement('div'); info.className = 'vc-info';
+      const n = document.createElement('b'); n.textContent = p.name;
+      const sub = document.createElement('small');
+      sub.textContent = (p.v === 2 ? 'Mic bật' : 'Đang nghe') + ' · ' + (c ? (c.state === 'connected' ? (c.vol > 0.6 ? 'gần, nghe rõ' : c.vol > 0.05 ? 'hơi xa, nghe nhỏ' : 'xa, gần như không nghe') : 'đang nối…') : d > 0.66 ? 'ở xa, lại gần để nghe' : 'chưa nối');
+      info.append(n, sub);
+      const meter = document.createElement('span'); meter.className = 'vc-meter'; meter.style.setProperty('--lv', c ? Math.min(1, c.level * 10).toFixed(2) : 0);
+      const mute = document.createElement('button'); mute.type = 'button'; mute.className = 'btn small';
+      mute.textContent = Voice.isMuted(p.id) ? 'Bật tiếng' : 'Tắt tiếng';
+      mute.addEventListener('click', () => { Voice.mute(p.id, !Voice.isMuted(p.id)); renderVoiceList(); });
+      row.append(dot, info, meter, mute);
+      if (isMod() && !p.mod) {
+        const lock = document.createElement('button'); lock.type = 'button'; lock.className = 'btn small'; lock.textContent = 'Khóa mic 10 phút';
+        lock.addEventListener('click', () => { socket.emit('mod:voice', { pid: p.id }); lock.disabled = true; });
+        row.appendChild(lock);
+      }
+      box.appendChild(row);
+    });
+  }
+  $('#vbMic').addEventListener('click', () => Voice.toggleMic().then(r => { if (typeof r === 'string') toast(MIC_ERR[r]); voiceUI(); }));
+  $('#vbLeave').addEventListener('click', () => { Voice.leave(); voiceUI(); toast('Đã rời phần nói chuyện.'); });
+  $('#vbList').addEventListener('click', () => { renderVoiceList(); openDlg('voice'); });
+  $('#vcVol').value = Math.round(Number(store.get('ta-voice-vol') || 1) * 100);
+  Voice.setVolume($('#vcVol').value / 100);
+  $('#vcVol').addEventListener('input', e => { Voice.setVolume(e.target.value / 100); store.set('ta-voice-vol', String(e.target.value / 100)); });
+  setInterval(() => { if (Voice.active) voiceUI(); }, 1000);
+
+  /* ---------- Tàng Kinh Các ---------- */
+  Library.init({
+    reading(book) { if (joined) { socket.emit('reading', { book }); Hall.setReading(me, book); } },
+    chant(track) {
+      if (!joined) return;
+      if (chant) { closeDlg('library'); act('chant'); return; }
+      socket.emit('chant:start', { track }, r => {
+        if (r && !r.ok) { toast(r.reason); return; }
+        closeDlg('library');
+        if (muted) { muted = false; store.set('ta-muted', '0'); renderSound(); }
+      });
+    }
+  });
+
+  /* ---------- hào quang cúng dường ---------- */
+  let myAura = null;
+  const mmss2 = ms => { const s = Math.max(0, Math.ceil(ms / 1000)); return Math.floor(s / 60) + ':' + pad(s % 60); };
+  function renderAura() {
+    const a = myAura, t = serverNow(), card = $('#auraCard');
+    if (!a || a.until <= t) { card.hidden = true; return; }
+    card.hidden = false;
+    const tier = a.t ? AURA.TIERS[a.t - 1] : null, next = AURA.toNext(a.amount);
+    $('#auraName').textContent = tier ? `Cảnh giới ${tier.name}` : 'Đang tích tụ linh khí';
+    $('#auraName').style.color = tier ? tier.color : '';
+    $('#auraLeft').textContent = `còn ${mmss2(a.until - t)}`;
+    $('#auraNext').textContent = `Đang cộng dồn ${VND(a.amount)}.` + (next ? ` Thêm ${VND(next.need)} trong lúc hào quang còn sáng để lên ${next.tier.name}.` : ' Đã đạt cảnh giới cao nhất.');
+  }
+  setInterval(renderAura, 1000);
+  (function buildAuraGrid() {
+    const grid = $('#auraGrid');
+    AURA.TIERS.forEach(t => {
+      const it = document.createElement('div'); it.className = 'aura-item';
+      const cv = document.createElement('canvas'); cv.width = 150; cv.height = 190; cv.setAttribute('aria-hidden', 'true');
+      const b = document.createElement('b'); b.textContent = `${t.n}. ${t.name}`; b.style.color = t.color;
+      const m = document.createElement('span'); m.className = 'aura-min'; m.textContent = `từ ${VND(t.min)} · sáng ${Math.round(t.ms / 60000)} phút`;
+      const d = document.createElement('small'); d.textContent = t.desc;
+      it.append(cv, b, m, d); grid.appendChild(it);
+    });
+  })();
+  function auraLoop(ts) {
+    if (!$('#dlg-aura').open) return;
+    $$('#auraGrid canvas').forEach((cv, i) => Hall.auraPreview(cv, look, i + 1, ts / 1000));
+    requestAnimationFrame(auraLoop);
+  }
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-open="aura"]'); if (!b) return;
+    e.preventDefault(); openDlg('aura'); requestAnimationFrame(auraLoop);
+  });
+
+  /* ---------- pháp tướng công đức & quỷ ---------- */
+  let myTotal = 0;
+  function renderRank() {
+    const box = $('#rankNow'); if (!box) return;
+    const mt = myTotal, rk = MERIT.rankOf(mt), dm = MERIT.demonOf(mt), nx = MERIT.nextRank(mt);
+    box.className = 'rank-now' + (dm ? ' bad' : '');
+    if (dm) box.textContent = `${MERIT.DEMONS[dm.n - 1].name} đang theo sau bạn (công đức ${NUM(mt)}). Làm việc thiện để công đức về trên 0 thì quỷ tan.`;
+    else box.textContent = (rk ? `Pháp tướng: ${MERIT.RANKS[rk - 1].name}.` : 'Chưa có pháp tướng.') + (nx ? ` Thêm ${NUM(nx.need)} công đức để mở ${nx.rank.name}.` : ' Đã đạt pháp tướng cao nhất.');
+  }
+  (function buildRules() {
+    const E = MERIT.EARN, earn = [['Thắp nhang', E.incense], ['Cùng tụng kinh đến hết bài', E.chantJoin], ['Dâng hoa, đèn, mâm quả', E.offer], ['Khởi tụng một khóa kinh', E.chantStart], ['Thỉnh chuông', E.bell], ['Vái lạy', E.bow], ['Gõ mõ, thả tim, tùy hỷ lời nguyện', 1]];
+    $('#ruEarn').innerHTML = earn.map(([k, v]) => `<li><span>${k}</span><b>+${v}</b></li>`).join('') + `<li><span>Cúng dường tịnh tài (khi nhà chùa xác nhận)</span><b>+1 / ${NUM(E.perVnd)}đ</b></li>`;
+    const mk = (box, items, draw) => items.forEach(x => {
+      const it = document.createElement('div'); it.className = 'aura-item';
+      const cv = document.createElement('canvas'); cv.width = 150; cv.height = 190; cv.setAttribute('aria-hidden', 'true'); cv.dataset.draw = draw(x);
+      const b = document.createElement('b'); b.textContent = `${x.n}. ${x.name}`; if (x.color) b.style.color = x.color;
+      const m = document.createElement('span'); m.className = 'aura-min'; m.textContent = x.min ? `từ ${NUM(x.min)} công đức${x.spin ? ' · xoay' : ''}` : x.n === 1 ? 'công đức dưới 0' : `từ ${NUM(x.at)}`;
+      const d = document.createElement('small'); d.textContent = x.desc;
+      it.append(cv, b, m, d); box.appendChild(it);
+    });
+    mk($('#ruRanks'), MERIT.RANKS, x => 'r' + x.n);
+    mk($('#ruDemons'), MERIT.DEMONS, x => 'd' + x.n);
+  })();
+  function rulesLoop(ts) {
+    if (!$('#dlg-rules').open) return;
+    $$('#dlg-rules canvas').forEach(cv => {
+      const r = cv.getBoundingClientRect();
+      if (r.bottom < 0 || r.top > innerHeight) return;            // chỉ vẽ hình đang thấy
+      const k = cv.dataset.draw;
+      Hall.meritPreview(cv, look, k[0] === 'r' ? +k.slice(1) : 0, k[0] === 'd' ? +k.slice(1) : 0, ts / 1000);
+    });
+    requestAnimationFrame(rulesLoop);
+  }
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-open="rules"]'); if (!b) return;
+    e.preventDefault();
+    if (cfg && cfg.penaltyRules) {
+      const box = $('#ruPen'); box.textContent = '';
+      cfg.penaltyRules.forEach(r => {
+        const row = document.createElement('div'); row.className = 'pen-row lv' + r.lv;
+        const n = document.createElement('b'); n.textContent = `Mức ${r.lv} · ${r.name}`;
+        const v = document.createElement('span'); v.className = 'pen-pts'; v.textContent = `−${r.pts}`;
+        const d = document.createElement('small'); d.textContent = `${r.note}. Ví dụ: ${r.ex.join(', ')}…`;
+        row.append(n, v, d); box.appendChild(row);
+      });
+    }
+    openDlg('rules'); requestAnimationFrame(rulesLoop);
+  });
+
+  /* ---------- đọc thông báo cúng dường ---------- */
+  // Giọng VieNeu do máy chủ đọc sẵn; chưa có thì trình duyệt tự đọc bằng giọng tiếng Việt có sẵn.
+  const annQ = [];
+  let annBusy = false, annEl = null;
+  function announceQ(d) { annQ.push(d); if (annQ.length > 6) annQ.shift(); if (!annBusy) nextAnnounce(); }
+  function viVoice() {
+    if (!window.speechSynthesis) return null;
+    const vs = speechSynthesis.getVoices().filter(v => /^vi/i.test(v.lang));
+    return vs.find(v => /hoaimy|hoài my|linh|female|nữ|google/i.test(v.name)) || vs[0] || null;
+  }
+  function nextAnnounce() {
+    const d = annQ.shift();
+    if (!d) { annBusy = false; $('#announce').hidden = true; return; }
+    annBusy = true;
+    const box = $('#announce');
+    $('#announceText').textContent = d.text;
+    box.classList.toggle('up', !!d.tier);
+    box.hidden = false; box.classList.remove('show'); void box.offsetWidth; box.classList.add('show');
+    let done = false;
+    const finish = () => { if (done) return; done = true; setTimeout(nextAnnounce, 1200); };
+    const fallbackT = setTimeout(finish, 16000);
+    const end = () => { clearTimeout(fallbackT); finish(); };
+    if (muted || !SFX.ready) { setTimeout(end, 7000); return; }
+    SFX.bell(0.5);
+    setTimeout(() => {
+      if (d.audio) {
+        annEl = new Audio(d.audio); annEl.volume = 1;
+        annEl.onended = end; annEl.onerror = () => speakFallback(d, end);
+        const p = annEl.play(); if (p && p.catch) p.catch(() => speakFallback(d, end));
+      } else speakFallback(d, end);
+    }, 1500);
+  }
+  function speakFallback(d, end) {
+    const v = viVoice();
+    if (!v || !window.speechSynthesis) { setTimeout(end, 6000); return; }
+    const u = new SpeechSynthesisUtterance(d.speak || d.text);
+    u.voice = v; u.lang = v.lang; u.rate = 0.95; u.pitch = 1.05;
+    u.onend = end; u.onerror = end;
+    speechSynthesis.cancel(); speechSynthesis.speak(u);
+  }
+  if (window.speechSynthesis) speechSynthesis.getVoices();
 
   /* ---------- khởi động ---------- */
   renderSound();

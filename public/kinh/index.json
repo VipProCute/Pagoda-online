@@ -1,0 +1,41 @@
+{
+  "books": [
+    {
+      "id": "dich-can-kinh",
+      "title": "Dịch Cân Kinh",
+      "han": "易筋經",
+      "sub": "12 thức dưỡng sinh · Trần Đại Sỹ",
+      "desc": "Mười hai thức luyện gân cốt, hơi thở, có hình minh họa từng động tác và hình khắc gỗ nguyên bản.",
+      "file": "dich-can-kinh.md",
+      "cover": "nghe"
+    },
+    {
+      "id": "cuu-am-chan-kinh",
+      "title": "Cửu Âm Chân Kinh",
+      "han": "九陰真經",
+      "sub": "Võ kinh trong truyện Xạ Điêu · Kim Dung",
+      "desc": "Lai lịch bộ kinh, các môn võ trong kinh, và chương 77 Đạo Đức Kinh: nguồn gốc thật của câu tổng cương.",
+      "file": "cuu-am-chan-kinh.md",
+      "cover": "huyen"
+    },
+    {
+      "id": "quy-hoa-bao-dien",
+      "title": "Quỳ Hoa Bảo Điển",
+      "han": "葵花寶典",
+      "sub": "Bí kíp trong Tiếu Ngạo Giang Hồ · Kim Dung",
+      "desc": "Lai lịch bộ điển từ cung cấm tới Hoa Sơn, Tịch Tà Kiếm Pháp, câu khẩu quyết, và lời bàn nơi cửa Phật.",
+      "file": "quy-hoa-bao-dien.md",
+      "cover": "son"
+    },
+    {
+      "id": "bat-nha-tam-kinh",
+      "title": "Bát Nhã Tâm Kinh",
+      "han": "般若心經",
+      "sub": "Kinh tụng hằng ngày · Huyền Trang dịch",
+      "desc": "Bản phiên âm Hán Việt quen tụng ở chùa. Có thể khởi tụng chung với cả chánh điện.",
+      "file": "bat-nha-tam-kinh.md",
+      "cover": "lam",
+      "chant": "batnha"
+    }
+  ]
+}

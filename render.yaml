@@ -26,3 +26,13 @@ services:
         value: Vietcombank
       - key: SEPAY_API_KEY
         sync: false
+      - key: TTS_URL            # máy chủ đọc VieNeu (để trống: trình duyệt tự đọc)
+        sync: false
+      - key: TTS_VOICE
+        value: Mai Anh
+      - key: TTS_API_KEY
+        sync: false
+      - key: CF_TURN_KEY_ID     # TURN Cloudflare cho nói chuyện qua 4G
+        sync: false
+      - key: CF_TURN_API_TOKEN
+        sync: false
