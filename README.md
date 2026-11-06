@@ -44,7 +44,13 @@ Nhân bản giọng (chỉ làm khi người được nhân bản đồng ý):
 python tools/build_chants.py --ref-audio /duong/dan/ngoai/repo/giong_mau.wav
 ```
 
-Chỉ khoảng 8 giây đầu của file mẫu được dùng; nên chọn đoạn nói rõ, một người, ít ồn. File mẫu là dữ liệu cá nhân: để **ngoài** repo, không commit, không tải lên dịch vụ nào (công cụ từ chối đường dẫn nằm trong repo; trong MP3/JSON chỉ ghi nhãn “nhân bản từ giọng mẫu #xxxxxxxx”, không có tên hay đường dẫn). Mỗi lần dựng lại ra giọng hơi khác vì lấy mẫu ngẫu nhiên, nên nghe lại, nhất là các câu Hán Việt và chỗ vào mõ. Không có `--ref-audio` thì dùng giọng sẵn có “Thiền Tâm Đức”.
+Cắt 60 giây đầu của một bản ghi dài (MP3 hay WAV đều được) và để công cụ tự chọn đoạn 8 giây nói rõ nhất trong đó; muốn chọn tay thì dùng `--ref-start` (giây bắt đầu):
+
+```bash
+python tools/build_chants.py --ref-audio /duong/dan/ngoai/repo/audio.mp3 --ref-seconds 60
+```
+
+Chỉ khoảng 8 giây của file mẫu được dùng (VieNeu v3 Turbo nghe tối đa 8 giây); nên chọn đoạn nói rõ, một người, ít ồn. Dựng xong, công cụ in giọng của từng bài và cảnh báo nếu có bài chưa cùng giọng; chạy không có `--tracks` để dựng lại đủ mọi bài. File mẫu là dữ liệu cá nhân: để **ngoài** repo, không commit, không tải lên dịch vụ nào (công cụ từ chối đường dẫn nằm trong repo; trong MP3/JSON chỉ ghi nhãn “nhân bản từ giọng mẫu #xxxxxxxx”, không có tên hay đường dẫn). Mỗi lần dựng lại ra giọng hơi khác vì lấy mẫu ngẫu nhiên, nên nghe lại, nhất là các câu Hán Việt và chỗ vào mõ. Không có `--ref-audio` thì dùng giọng sẵn có “Thiền Tâm Đức”.
 
 Giới hạn: VieNeu được huấn luyện để đọc, không phải để tụng, nên giọng nghe như đọc kinh chậm rãi hơn là xướng tụng. Muốn giọng tụng thật nhất, hãy thu âm chư tăng chùa đối tác (có sự đồng ý) rồi thay file MP3, giữ cùng định dạng JSON. Giọng nhân bản nghe cao hơn giọng sẵn có (khoảng 205 Hz so với 107 Hz) vì file mẫu là giọng nói chuyện chứ không phải giọng tụng.
 

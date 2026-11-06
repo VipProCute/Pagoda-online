@@ -34,6 +34,8 @@ sự đồng ý của chính người đó. VieNeu-TTS v3 Turbo không cần l�
   --ref-mode full     (mặc định) lấy cả âm sắc lẫn cách nhả chữ từ ~8 giây đầu của file mẫu.
   --ref-mode speaker  chỉ lấy âm sắc người nói, cách đọc theo mô hình (đôi khi rõ chữ hơn).
   Chỉ ~8 giây đầu của file mẫu được dùng; nên cắt đoạn 8–20 giây nói rõ, một người, ít ồn.
+    python tools/build_chants.py --ref-audio audio.mp3 --ref-seconds 60     # tự chọn 8 giây tốt nhất trong 60 giây đầu
+    python tools/build_chants.py --ref-audio audio.mp3 --ref-start 12.5     # dùng đúng đoạn 12,5–20,5 giây
 LƯU Ý RIÊNG TƯ: file giọng mẫu là dữ liệu cá nhân, phải để NGOÀI repo (công cụ từ chối đường dẫn
 nằm trong repo), không commit, không tải lên dịch vụ nào. Mọi bước chạy ngay trên máy này.
 Trong MP3/JSON và cache chỉ ghi nhãn "nhân bản từ giọng mẫu #xxxxxxxx" (8 ký tự đầu của sha256
@@ -41,11 +43,13 @@ nội dung file) — không có tên người, không có đường dẫn. File 
 đã tổng hợp, không chứa bản ghi mẫu.
 """
 import argparse
+import atexit
 import difflib
 import hashlib
 import importlib.metadata
 import json
 import math
+import shutil
 import subprocess
 import tempfile
 import time
@@ -303,6 +307,56 @@ class CloneVoice:
                               use_ref_codes=not self.speaker_only, **kw)
 
 
+REF_WINDOW = 8.0     # VieNeu v3 Turbo chỉ nghe 8 giây đầu của file mẫu (_MAX_REF_SECONDS)
+
+
+def cut_reference(src, seconds, start, workdir):
+    """Cắt `seconds` giây đầu của file mẫu (MP3/WAV/...), rồi lấy đoạn 8 giây đưa cho VieNeu.
+    Mô hình chỉ nghe 8 giây đầu, mà đầu bản ghi hay là nhạc dạo hoặc khoảng lặng, nên khi không
+    chỉ định `start` thì tự chọn đoạn 8 giây có nhiều tiếng nói nhất trong phần đã cắt.
+    File tạm nằm trong `workdir` (ngoài repo) và bị xóa khi chạy xong."""
+    y, sr = librosa.load(str(src), sr=44100, mono=True, duration=seconds)
+    win, hop = int(REF_WINDOW * sr), int(0.01 * sr)
+    if start is None:
+        start = 0
+        if len(y) > win:
+            r = librosa.feature.rms(y=y, frame_length=hop * 4, hop_length=hop)[0]
+            voiced = (r > np.percentile(r, 95) * 0.1).astype(np.float64)
+            wf = int(REF_WINDOW / 0.01)
+            cs = np.concatenate([[0.0], np.cumsum(voiced)])
+            cands = range(0, max(1, len(voiced) - wf + 1), 25)            # thử từng bước 0,25 giây
+            best = max(cands, key=lambda i: (cs[min(i + wf, len(voiced))] - cs[i], -i))
+            lo, hi = max(0, best - 30), min(len(r), best + 31)              # dời mép về chỗ lặng gần nhất
+            best = lo + int(np.argmin(r[lo:hi]))
+            start = min(best * hop, len(y) - win) / sr
+    i0 = int(max(0.0, start) * sr)
+    clip = y[i0:i0 + win]
+    if not len(clip):
+        raise SystemExit(f'file giọng mẫu ngắn hơn {start:.1f} giây')
+    fade = min(len(clip) // 4, int(0.02 * sr))                              # tránh tiếng tách ở hai mép
+    clip[:fade] *= np.linspace(0, 1, fade); clip[len(clip) - fade:] *= np.linspace(1, 0, fade)
+    out = Path(workdir) / 'mau.wav'
+    sf.write(out, clip, sr)
+    return out, i0 / sr, len(clip) / sr, len(y) / sr
+
+
+def report_voices(data, out):
+    """In giọng của từng bài có giọng; cảnh báo nếu các bài chưa cùng một giọng."""
+    labels = {}
+    for t, d in data.items():
+        if not d['voice']:
+            continue
+        j = out / f'{t}.json'
+        labels[t] = json.loads(j.read_text(encoding='utf-8')).get('voice') if j.exists() else None
+    print('Giọng các bài tụng:')
+    for t, v in labels.items():
+        print(f'   {data[t]["title"]}: {v or "CHƯA DỰNG"}')
+    if None in labels.values() or len(set(labels.values())) > 1:
+        print('CẢNH BÁO: các bài chưa cùng một giọng. Chạy lại không có --tracks để dựng đủ mọi bài.')
+        return False
+    return True
+
+
 def clone_label(ref_audio, denoise, speaker_only):
     """Nhãn giọng nhân bản: không chứa tên người hay đường dẫn, chỉ 8 ký tự đầu sha256 nội dung file mẫu."""
     h = hashlib.sha256(Path(ref_audio).read_bytes()).hexdigest()[:8]
@@ -325,6 +379,10 @@ def main():
                     help='Khử nhiễu file mẫu trước khi nhân bản (mặc định: có)')
     ap.add_argument('--ref-mode', choices=['full', 'speaker'], default='full',
                     help='full: âm sắc + cách nhả chữ của mẫu; speaker: chỉ âm sắc')
+    ap.add_argument('--ref-seconds', type=float, default=None,
+                    help='Chỉ dùng N giây đầu của file mẫu (ví dụ 60), tự chọn trong đó đoạn 8 giây nói rõ nhất')
+    ap.add_argument('--ref-start', type=float, default=None,
+                    help='Dùng đoạn 8 giây bắt đầu từ giây này của file mẫu (thay cho tự chọn)')
     args = ap.parse_args()
     if args.ref_audio:
         ref = Path(args.ref_audio).expanduser().resolve()
@@ -332,6 +390,11 @@ def main():
             ap.error(f'không thấy file giọng mẫu: {args.ref_audio}')
         if ROOT in ref.parents:
             ap.error('file giọng mẫu là dữ liệu cá nhân, phải để NGOÀI thư mục dự án; hãy chuyển nó ra ngoài rồi chạy lại')
+        if args.ref_seconds or args.ref_start is not None:
+            work = tempfile.mkdtemp(prefix='giong-mau-')
+            atexit.register(shutil.rmtree, work, True)
+            ref, a, n, total = cut_reference(ref, args.ref_seconds, args.ref_start, work)
+            print(f'File mẫu: cắt {total:.0f} giây đầu, dùng đoạn {a:.2f}–{a + n:.2f} giây')
         args.voice = clone_label(ref, args.denoise_ref, args.ref_mode == 'speaker')
         print(f'Nhân bản giọng: {args.voice}')
 
@@ -377,6 +440,7 @@ def main():
     order = list(data) + [k for k in manifest['tracks'] if k not in data]   # theo thứ tự trong chants.js
     manifest['tracks'] = {k: manifest['tracks'][k] for k in order if k in manifest['tracks']}
     man_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=1), encoding='utf-8')
+    report_voices(data, out)
 
 
 if __name__ == '__main__':
