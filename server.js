@@ -43,6 +43,9 @@ const FUNDS = (process.env.FUNDS || 'Tùy nhà chùa sử dụng').split(';').ma
   .map((s, i) => { const [name, goal] = s.split('|'); return { id: 'q' + i, name: clean(name, 60), goal: Math.max(0, parseInt(goal, 10) || 0) }; });
 
 const MERIT = { heart: 1, mo: 1, bow: 2, bell: 3, offer: 5, incense: 10, chantStart: 5, chantJoin: 15 };
+// Mốc công đức trong ngày → hiệu ứng chúc mừng ở trình duyệt. Máy chủ quyết định, trình duyệt chỉ hiển thị.
+const MILESTONES = [[100, 'bless'], [300, 'bless'], [500, 'bless'], [666, 'scare'], [888, 'grand'], [999, 'grand']];
+const MILESTONE_EVERY = 1000;   // từ 1000 trở đi: cứ mỗi 1000 là một mốc 'grand'
 const ITEMS = { lotus: 'dâng một đóa sen', rose: 'dâng một bó hoa hồng', lamp: 'thắp một ngọn đèn', fruit: 'dâng một mâm ngũ quả' };
 const KINDS = ['Cầu an', 'Cầu siêu', 'Tạ ơn', 'Sám hối', 'Hồi hướng'];
 const SPEED = 0.24;          // tốc độ đi (đơn vị sàn / giây)
@@ -73,8 +76,27 @@ function addMerit(p, n) {
   let m = db.merit[p.uid];
   if (!m) m = db.merit[p.uid] = { name: p.name, total: 0, today: 0, day: d };
   if (m.day !== d) { m.day = d; m.today = 0; }
+  const before = m.today;
   m.name = p.name; m.total += n; m.today += n;
   p.meritDirty = true; store.save();
+  const hit = crossed(before, m.today);
+  // chờ tới nhịp 1 giây; mốc ưu tiên cao hơn không bị mất. Ghi luôn công đức lúc đó: nếu nhịp 1 giây rơi qua nửa đêm
+  // giờ Việt Nam thì meritOf() đã về 0, con số gửi kèm sẽ thấp hơn chính mốc (bình thường lấy số mới nhất để khớp với thẻ công đức).
+  if (hit && outranks(hit, p.milestone)) p.milestone = { ...hit, today: m.today };
+}
+// Mốc nào vừa bị bước qua khi công đức đi từ before lên after (mỗi lần cộng là 1..15 nên có thể nhảy qua đúng số).
+// Bước qua nhiều mốc cùng lúc thì chỉ giữ một: 'scare' thắng, còn lại lấy mốc cao nhất.
+function crossed(before, after) {
+  let best = null;
+  const take = (at, kind) => { const c = { at, kind }; if (outranks(c, best)) best = c; };
+  for (const [at, kind] of MILESTONES) if (before < at && after >= at) take(at, kind);
+  for (let k = Math.floor(before / MILESTONE_EVERY) + 1; k * MILESTONE_EVERY <= after && k <= 1000; k++) take(k * MILESTONE_EVERY, 'grand');
+  return best;
+}
+function outranks(a, b) {
+  if (!b) return true;
+  if ((a.kind === 'scare') !== (b.kind === 'scare')) return a.kind === 'scare';
+  return a.at > b.at;
 }
 function meritOf(uid) {
   const m = db.merit[uid];
@@ -116,9 +138,47 @@ app.use(express.static(path.join(__dirname, 'public'), {
 app.get('/healthz', (req, res) => res.json({ ok: true, online: players.size }));
 app.get('/api/config', (req, res) => res.json(clientConfig()));
 
+/* ----- kho meme và lời chúc cho hiệu ứng mốc công đức (thả file vào thư mục là tự có) ----- */
+const MEME_DIR = path.join(__dirname, 'public', 'img', 'memes');
+const BLESS_DIR = path.join(__dirname, 'public', 'audio', 'blessings');
+const MEME_EXT = /\.(jpe?g|png|webp|gif|avif)$/i;
+const BLESS_FILE = /^[A-Za-z0-9][A-Za-z0-9._-]{0,80}\.(mp3|ogg|m4a|wav)$/i;   // chỉ tên file thường, không có dấu / hay ..
+const MAX_URL = 300;   // celebrate.js safeUrl() chỉ nhận địa chỉ ngắn hơn 300 ký tự
+let fxCache = { t: 0, memes: [], blessings: [] }, fxWarned = false;
+function fxAssets() {
+  const t = now();
+  if (fxCache.t && t - fxCache.t < 30e3) return fxCache;
+  let memes = [], blessings = [];
+  try {
+    // tên file có byte lỗi UTF-8 (U+FFFD) thì địa chỉ sẽ 404; tên quá dài thì trình duyệt (safeUrl < 300 ký tự) từ chối
+    memes = fs.readdirSync(MEME_DIR, { withFileTypes: true })
+      .filter(e => e.isFile() && !e.name.startsWith('.') && e.name.length <= 120 && MEME_EXT.test(e.name) && !e.name.includes('\uFFFD'))
+      .map(e => e.name).sort().map(n => '/img/memes/' + encodeURIComponent(n)).filter(u => u.length < MAX_URL).slice(0, 200);
+  } catch (e) { memes = []; }
+  try {
+    const raw = fs.readFileSync(path.join(BLESS_DIR, 'manifest.json'), 'utf8').replace(/^\uFEFF/, '');   // Notepad / PowerShell hay thêm BOM
+    const man = JSON.parse(raw);
+    const lines = Array.isArray(man && man.lines) ? man.lines : [];
+    for (const l of lines.slice(0, 40)) {
+      const file = l && typeof l.file === 'string' ? l.file : '', text = clean(l && l.text, 160);
+      if (!BLESS_FILE.test(file) || !text) continue;
+      try { if (!fs.statSync(path.join(BLESS_DIR, file)).isFile()) continue; } catch (e) { continue; }
+      blessings.push({ url: '/audio/blessings/' + encodeURIComponent(file), text });
+    }
+  } catch (e) {
+    blessings = [];
+    if (e.code !== 'ENOENT' && !fxWarned) { fxWarned = true; console.warn('[blessings] Không đọc được manifest.json, dùng giọng đọc của trình duyệt:', e.message); }
+  }
+  fxCache = { t, memes, blessings };
+  return fxCache;
+}
+
 function clientConfig() {
+  const fx = fxAssets();
   return {
     siteName: SITE_NAME,
+    memes: fx.memes,
+    blessings: fx.blessings,
     incenseMinutes: INCENSE_MINUTES,
     donation: DONATION_ENABLED ? { bank: BANK.label, account: BANK.account, accountName: BANK.name, funds: FUNDS.map(f => ({ id: f.id, name: f.name })) } : null,
     tracks: TRACKS,
@@ -262,11 +322,13 @@ io.on('connection', socket => {
     const isMod = !!(ADMIN_KEY && data.adminKey && safeEqual(String(data.adminKey), ADMIN_KEY));
     const nm = checkName(data.name, isMod);
     if (!nm.ok) return ack({ ok: false, reason: nm.reason });
-    const uid = /^[a-zA-Z0-9_-]{8,40}$/.test(String(data.uid || '')) ? String(data.uid) : crypto.randomUUID();
+    // uid là khóa của db.merit: loại tên trùng thuộc tính của Object ('__proto__', 'constructor', 'toString'...) kẻo ghi đè lên Object.prototype
+    const want = String(data.uid || '');
+    const uid = /^[a-zA-Z0-9_-]{8,40}$/.test(want) && !(want in Object.prototype) ? want : crypto.randomUUID();
     p = {
       id: nextPid++, uid, name: nm.name, mod: isMod, socket,
       look: { g: data.look && data.look.g === 'nam' ? 'nam' : 'nu', c: num(data.look && data.look.c, 0, 11, 0) | 0, h: num(data.look && data.look.h, 0, 3, 0) | 0 },
-      x: 0.5 + rand(-0.28, 0.28), z: rand(0.68, 0.92), tx: 0, tz: 0, dirty: false, cd: {}, bk: {}, lastText: '', meritDirty: false
+      x: 0.5 + rand(-0.28, 0.28), z: rand(0.68, 0.92), tx: 0, tz: 0, dirty: false, cd: {}, bk: {}, lastText: '', meritDirty: false, milestone: null
     };
     p.tx = p.x; p.tz = p.z;
     players.set(p.id, p);
@@ -478,7 +540,11 @@ setInterval(() => {
     if (arr.length) io.volatile.emit('p', arr);
   }
   if (tick % 20 === 0) {
-    for (const p of players.values()) if (p.meritDirty) { p.meritDirty = false; p.socket.emit('merit', meritOf(p.uid)); }
+    for (const p of players.values()) {
+      if (p.meritDirty) { p.meritDirty = false; p.socket.emit('merit', meritOf(p.uid)); }
+      // mốc công đức chỉ gửi riêng cho người đạt mốc, sau khi thẻ công đức đã cập nhật
+      if (p.milestone) { p.socket.emit('milestone', { at: p.milestone.at, kind: p.milestone.kind, today: Math.max(meritOf(p.uid).today, p.milestone.today) }); p.milestone = null; }
+    }
     if (statsDirty) { statsDirty = false; io.emit('stats', { today: db.today, online: players.size }); }
   }
   if (tick % 100 === 0) {

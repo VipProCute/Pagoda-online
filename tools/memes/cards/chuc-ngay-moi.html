@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><title>Chúc Ngày Mới</title>
+<link rel="stylesheet" href="card.css"></head>
+<body><svg id="c" width="720" height="720" viewBox="0 0 720 720" xmlns="http://www.w3.org/2000/svg"></svg>
+<script src="lib.js"></script>
+<script>
+const R = rng(11);
+const HZ = 392; // đường chân trời
+// trời bình minh
+add(E('rect', { width: 720, height: HZ + 4, fill: lg([[0, '#3e4aa3'], [0.22, '#8c58b4'], [0.42, '#e47fa6'], [0.62, '#ffa67c'], [0.86, '#ffd98b'], [1, '#fff0b8']]) }));
+add(glow(360, HZ, 420, '#ffd27a', 0.75, 0.1));
+// tia nắng
+let rays = '';
+const rayG = rg([[0, '#fff6c0', 0.55], [1, '#fff6c0', 0]], { cx: 360, cy: HZ, r: 520, u: true });
+for (let i = 0; i < 13; i++) {
+  const a0 = (-178 + i * 14.2) * Math.PI / 180, a1 = a0 + 0.12;
+  const L = 560;
+  rays += E('path', { d: `M360,${HZ} L${360 + Math.cos(a0) * L},${HZ + Math.sin(a0) * L} L${360 + Math.cos(a1) * L},${HZ + Math.sin(a1) * L}Z`, fill: rayG });
+}
+add(rays);
+// mây vệt hồng cam
+const cl = (x, y, w, h, c, o, b) => E('ellipse', { cx: x, cy: y, rx: w, ry: h, fill: c, opacity: o, filter: blur(b) });
+add(cl(130, 300, 190, 16, '#ff8fb0', 0.8, 6) + cl(600, 330, 200, 14, '#ffa88a', 0.85, 6) + cl(520, 255, 130, 11, '#ffc4b0', 0.7, 5)
+  + cl(180, 352, 150, 10, '#ffd0a0', 0.8, 5) + cl(80, 220, 120, 10, '#c78ad0', 0.6, 5) + cl(640, 190, 110, 9, '#d79ae0', 0.55, 5));
+add(cloud(120, 190, 0.9, '#ffd6e6', 0.55) + cloud(610, 120, 0.8, '#ffe3ef', 0.5));
+// mặt trời
+add(glow(360, HZ, 150, '#fff4b0', 0.95, 0.3));
+add(E('circle', { cx: 360, cy: HZ, r: 62, fill: rg([[0, '#fffef0'], [0.7, '#fff2a8'], [1, '#ffd36b']]) }));
+// biển
+add(E('rect', { y: HZ, width: 720, height: 720 - HZ, fill: lg([[0, '#ffd88c'], [0.1, '#f8a880'], [0.35, '#bd6aa0'], [0.7, '#6a4a9a'], [1, '#3a3585']]) }));
+// vệt sáng trên biển
+let refl = '';
+for (let i = 0; i < 16; i++) {
+  const y = HZ + 6 + i * 11 + R() * 3, w = 170 * (1 - i / 22) * (0.8 + R() * 0.4);
+  refl += E('ellipse', { cx: 360 + R.between(-12, 12), cy: y, rx: w, ry: 3 + i * 0.25, fill: '#fff3b8', opacity: 0.62 - i * 0.028 });
+}
+add(refl);
+add(glow(360, HZ + 40, 200, '#ffe9a0', 0.4));
+// sóng lăn tăn
+let waves = '';
+for (let i = 0; i < 26; i++) {
+  const y = HZ + 14 + R() * 150, x = R.between(10, 700), w = R.between(20, 70) * (0.6 + (y - HZ) / 200);
+  waves += E('path', { d: `M${x},${y} q${w / 4},-4 ${w / 2},0 t${w / 2},0`, stroke: '#ffe8c0', stroke_opacity: R.between(0.25, 0.6), stroke_width: 2, fill: 'none', stroke_linecap: 'round' });
+}
+add(waves);
+add(glitter(R, 34, [60, HZ + 10, 660, HZ + 150], { stars: 0.35, smin: 5, smax: 11, colors: ['#fff', '#fff3b8'] }));
+// chim hải âu
+add(bird(545, 275, 1.9, '#35204f', -8) + bird(630, 330, 1.0, '#35204f', 6) + bird(470, 345, 0.7, '#35204f', -4) + bird(172, 300, 0.6, '#35204f', 0, 0.85) + bird(230, 345, 0.4, '#35204f', 0, 0.8));
+// hoa hồng tiền cảnh
+add(roseBunch(R, 92, 640, 1.3, ROSES.pink, { pal2: ROSES.hot, bud: [-30, -110, -25] }));
+add(roseBunch(R, 650, 654, 1.2, ROSES.hot, { pal2: ROSES.pink, bud: [26, -104, 22], spots: [[0, 0, 70], [-82, 22, 52], [-24, -76, 44], [70, -50, 42]] }));
+// cánh hoa rơi
+let pet = '';
+for (let i = 0; i < 9; i++) {
+  pet += E('ellipse', { cx: 0, cy: 0, rx: 9, ry: 5.5, fill: R.pick(['#ffc0d6', '#ff93bb', '#ffd6e4']), opacity: 0.9, transform: `translate(${R.between(160, 560)} ${R.between(430, 600)}) rotate(${R.between(0, 180)})` });
+}
+add(pet);
+// chữ
+add(fancy('Chúc Ngày Mới', { x: 360, y: 150, size: 108, font: 'Pacifico', fill: lg([[0, '#ffffff'], [1, '#ffeaa0']]), out1: '#d8337a', w1: 7, out2: '#ffffff', w2: 3, shadow: '#4a1560', sd: 8, sb: 5, so: 0.6, maxW: 640, rot: -3 }));
+add(fancy('Chúc bạn tràn đầy năng lượng nhé!', { x: 360, y: 222, size: 38, font: 'Dancing Script', weight: 700, fill: '#fff', out1: '#b0286e', w1: 4.5, shadow: '#3a1050', sd: 4, sb: 3, so: 0.55, maxW: 600, rot: -3 }));
+finish();
+</script></body></html>

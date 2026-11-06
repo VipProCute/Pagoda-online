@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><title>Sau cơn mưa trời lại sáng</title>
+<link rel="stylesheet" href="card.css"></head>
+<body><svg id="c" width="720" height="720" viewBox="0 0 720 720" xmlns="http://www.w3.org/2000/svg"></svg>
+<script src="lib.js"></script>
+<script>
+const R = rng(139);
+add(E('rect', { width: 720, height: 720, fill: lg([[0, '#6ec2f5'], [0.55, '#bfe6fb'], [1, '#fff4dc']]) }));
+add(glow(360, 520, 420, '#fff', 0.6, 0.1));
+add(bokeh(R, 12, [0, 200, 720, 640], { colors: ['#fff', '#ffe9f4'], rmin: 10, rmax: 36, omin: 0.15, omax: 0.35 }));
+// cầu vồng
+const cols = ['#ff5a62', '#ff9a3c', '#ffd83c', '#5ccf6a', '#38b6f0', '#5a6ee8', '#a85ae0'];
+const RC = 338, RY = 596;
+let rb = '';
+cols.forEach((c, i) => {
+  const r = RC - i * 25;
+  rb += E('path', { d: `M${360 - r},${RY} A${r},${r} 0 0 1 ${360 + r},${RY}`, fill: 'none', stroke: c, stroke_width: 26, opacity: 0.95 });
+});
+add(E('path', { d: `M${360 - RC - 14},${RY} A${RC + 14},${RC + 14} 0 0 1 ${360 + RC + 14},${RY}`, fill: 'none', stroke: '#fff', stroke_width: 6, opacity: 0.55, filter: blur(3) }));
+add(rb);
+add(E('path', { d: `M${360 - RC + 150},${RY} A${RC - 150},${RC - 150} 0 0 1 ${360 + RC - 150},${RY}`, fill: 'none', stroke: '#fff', stroke_width: 18, opacity: 0.35, filter: blur(6) }));
+add(cloud(250, 300, 0.7, '#fff', 0.9) + cloud(500, 250, 0.6, '#fff', 0.85));
+// đồi + hoa cúc
+add(E('path', { d: 'M-10,650 C130,610 270,650 400,636 C540,622 640,650 730,630 L730,730 L-10,730Z', fill: lg([[0, '#7ee078'], [1, '#2a9a4c']]) }));
+add(cuteCloud(104, 588, 1.75) + cuteCloud(620, 596, 1.85));
+function daisy(x, y, r, c = '#fff') {
+  let o = '';
+  for (let i = 0; i < 8; i++) o += E('ellipse', { cx: 0, cy: -r * 0.72, rx: r * 0.3, ry: r * 0.5, fill: c, stroke: '#e8e0f0', stroke_width: 1, transform: `rotate(${i * 45})` });
+  return G({ transform: `translate(${x} ${y})` }, o, E('circle', { r: r * 0.36, fill: '#ffcf33', stroke: '#e8a418', stroke_width: 1.2 }));
+}
+[[60, 690, 20], [150, 700, 15], [250, 696, 18], [340, 708, 14], [450, 700, 20], [560, 704, 16], [650, 690, 22], [700, 712, 14], [20, 650, 14], [400, 670, 12]].forEach(([x, y, r], i) => add(daisy(x, y, r, i % 3 === 0 ? '#ffd6ea' : '#fff')));
+// chim
+add(bird(560, 190, 0.9, '#3a5a8a') + bird(615, 225, 0.55, '#3a5a8a') + bird(150, 260, 0.6, '#3a5a8a', -6));
+add(glitter(R, 36, [20, 200, 700, 620], { stars: 0.5, smin: 6, smax: 15, colors: ['#fff', '#fff6b0'] }));
+add(fancy('Sau cơn mưa,', { x: 360, y: 100, size: 92, font: 'Baloo 2', weight: 800, fill: '#fff', out1: '#2a7ac8', w1: 7, out2: '#ffe27a', w2: 3.5, shadow: '#14407a', sd: 6, sb: 4, so: 0.5, maxW: 600 }));
+add(fancy('trời lại sáng!', { x: 360, y: 180, size: 76, font: 'Pacifico', fill: lg([[0, '#fff7b0'], [1, '#ffcf3a']]), out1: '#d8408a', w1: 6.5, out2: '#fff', w2: 2, shadow: '#14407a', sd: 5, sb: 4, so: 0.5, maxW: 560, rot: -1.5 }));
+add(fancy('Mọi điều tốt lành đang tới', { x: 360, y: 692, size: 32, font: 'Be Vietnam Pro', weight: 800, fill: '#fff', out1: '#1d7a42', w1: 4.5, shadow: '#0a3a1a', sd: 3, sb: 3, so: 0.5, maxW: 540 }));
+finish();
+</script></body></html>

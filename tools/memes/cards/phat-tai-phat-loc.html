@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><title>Phát Tài Phát Lộc</title>
+<link rel="stylesheet" href="card.css"></head>
+<body><svg id="c" width="720" height="720" viewBox="0 0 720 720" xmlns="http://www.w3.org/2000/svg"></svg>
+<script src="lib.js"></script>
+<script>
+const R = rng(101);
+add(E('rect', { width: 720, height: 720, fill: rg([[0, '#ff3a2c'], [0.55, '#b3101c'], [1, '#580610']], { cx: 360, cy: 340, r: 560, u: true }) }));
+// chùm sáng vàng từ trên xuống
+let beams = '';
+const bgrad = rg([[0, '#ffe08a', 0.5], [1, '#ffe08a', 0]], { cx: 360, cy: -20, r: 760, u: true });
+for (let i = 0; i < 9; i++) {
+  const a0 = (30 + i * 15) * Math.PI / 180, a1 = a0 + 0.12, L = 900;
+  beams += E('path', { d: `M360,-20 L${360 + Math.cos(a0) * L},${-20 + Math.sin(a0) * L} L${360 + Math.cos(a1) * L},${-20 + Math.sin(a1) * L}Z`, fill: bgrad });
+}
+add(beams);
+add(glow(360, 330, 360, '#ff8a3a', 0.45, 0.1));
+add(bokeh(R, 20, [0, 0, 720, 720], { colors: ['#ffd77a', '#ffb347', '#fff1b0'], rmin: 8, rmax: 30, omin: 0.1, omax: 0.28 }));
+// bao lì xì
+function envelope(x, y, w, h, rot) {
+  const g = lg([[0, '#ff4a3a'], [1, '#c4101e']]);
+  return G({ transform: `translate(${x} ${y}) rotate(${rot})` },
+    E('rect', { x: -w / 2, y: -h / 2, width: w, height: h, rx: 8, fill: g, stroke: '#ffd45a', stroke_width: 3 }),
+    E('path', { d: `M${-w / 2},${-h / 2 + 4} L0,${-h * 0.08} L${w / 2},${-h / 2 + 4}`, fill: '#e02a2a', stroke: '#ffd45a', stroke_width: 2.4, stroke_linejoin: 'round' }),
+    E('circle', { cx: 0, cy: h * 0.14, r: w * 0.2, fill: lg([[0, '#fff4b0'], [1, '#e8a418']]), stroke: '#9a620a', stroke_width: 2 }),
+    E('rect', { x: -w * 0.07, y: h * 0.14 - w * 0.07, width: w * 0.14, height: w * 0.14, fill: '#b3101c' }));
+}
+add(envelope(80, 180, 78, 110, -16) + envelope(642, 150, 70, 100, 14) + envelope(56, 452, 60, 86, 12) + envelope(668, 470, 62, 90, -12));
+// mưa tiền
+const spots = [[60, 80, 30, 20], [190, 60, 38, -10], [320, 40, 26, 30], [470, 70, 34, 5], [590, 40, 30, -25], [690, 110, 28, 15], [40, 300, 34, -8], [695, 300, 36, 10], [260, 130, 24, 40], [530, 150, 26, -30], [160, 270, 28, 18], [560, 290, 30, -20], [65, 600, 40, 20], [655, 590, 42, -15], [200, 580, 30, 5], [500, 600, 32, -10]];
+spots.forEach(([x, y, r, rot], i) => add(coin(x, y, r, { rot, sx: i % 3 === 0 ? 0.55 : 1 })));
+// đống tiền ở đáy
+let pile = '';
+for (let row = 0; row < 3; row++) {
+  const n = 12 - row * 2;
+  for (let i = 0; i < n; i++) {
+    const x = 30 + row * 40 + i * (660 - row * 80) / (n - 1) + R.between(-8, 8), y = 712 - row * 30 + R.between(-6, 6);
+    pile += coin(x, y, 36 + R.between(-4, 5), { rot: R.between(0, 360) });
+  }
+}
+add(pile);
+add(glow(360, 700, 320, '#ffd24a', 0.4));
+add(glitter(R, 70, [10, 10, 710, 700], { stars: 0.5, smin: 6, smax: 17, colors: ['#fff', '#ffe27a', '#ffd24a'] }));
+const gold = lg([[0, '#fffbd0'], [0.5, '#ffd43a'], [1, '#e8920c']]);
+add(fancy('Phát Tài', { x: 360, y: 290, size: 164, font: 'Lobster', fill: gold, out1: '#7c0a14', w1: 8, out2: '#ffe48a', w2: 2.5, shadow: '#2a0004', sd: 10, sb: 6, so: 0.7, maxW: 520, rot: -3 }));
+add(fancy('Phát Lộc', { x: 360, y: 452, size: 164, font: 'Lobster', fill: gold, out1: '#7c0a14', w1: 8, out2: '#ffe48a', w2: 2.5, shadow: '#2a0004', sd: 10, sb: 6, so: 0.7, maxW: 520, rot: 3 }));
+add(fancy('Tiền vào như nước, lộc đến đầy nhà', { x: 360, y: 556, size: 30, font: 'Be Vietnam Pro', weight: 800, fill: '#fff4cf', out1: '#7c0a14', w1: 4.5, shadow: '#2a0004', sd: 4, sb: 3, so: 0.6, maxW: 580 }));
+finish();
+</script></body></html>

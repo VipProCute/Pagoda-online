@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><title>Sen mỉm cười</title>
+<link rel="stylesheet" href="card.css"></head>
+<body><svg id="c" width="720" height="720" viewBox="0 0 720 720" xmlns="http://www.w3.org/2000/svg"></svg>
+<script src="lib.js"></script>
+<script>
+const R = rng(97);
+add(E('rect', { width: 720, height: 720, fill: lg([[0, '#c9f4ec'], [0.55, '#f4fbe6'], [1, '#ffe4ee']]) }));
+add(glow(360, 480, 360, '#fff', 0.9, 0.2));
+// bong bóng
+let bub = '';
+for (let i = 0; i < 26; i++) {
+  const x = R.between(10, 710), y = R.between(210, 700), r = R.between(6, 26);
+  bub += E('circle', { cx: x, cy: y, r, fill: '#fff', fill_opacity: 0.25, stroke: '#fff', stroke_opacity: 0.8, stroke_width: 2 });
+  bub += E('circle', { cx: x - r * 0.35, cy: y - r * 0.35, r: r * 0.2, fill: '#fff', opacity: 0.9 });
+}
+add(bub);
+// nước
+add(E('ellipse', { cx: 360, cy: 700, rx: 480, ry: 120, fill: lg([[0, '#9fe0d8'], [1, '#58bdb8']]) }));
+for (let i = 0; i < 6; i++) add(E('ellipse', { cx: 360, cy: 662 + i * 6, rx: 330 - i * 28, ry: 18 + i * 2, fill: 'none', stroke: '#fff', stroke_opacity: 0.45 - i * 0.05, stroke_width: 2 }));
+// lá sen
+add(lilypad(110, 668, 100, 28, '#6ad088', '#2a8a58') + lilypad(630, 676, 104, 28, '#6ad088', '#2a8a58') + lilypad(470, 712, 80, 20, '#58bd78', '#1d7a4c'));
+// hoa sen đáng yêu
+const BX = 360, BY = 628;
+const pg = lg([[0, '#fff4f8'], [0.5, '#ffb6d2'], [1, '#f2639e']]);
+const pgb = lg([[0, '#ffd6e6'], [1, '#e8508f']]);
+const pet = (ang, len, wid, grad) => E('path', { d: petalPath(len, wid), fill: grad, stroke: '#c13a80', stroke_opacity: 0.55, stroke_width: 2.5, stroke_linejoin: 'round', transform: `translate(${BX} ${BY}) rotate(${ang})` });
+let lot = '';
+lot += pet(-88, 250, 78, pgb) + pet(88, 250, 78, pgb);
+lot += pet(-62, 300, 92, pg) + pet(62, 300, 92, pg);
+lot += pet(-34, 340, 104, pg) + pet(34, 340, 104, pg);
+lot += pet(0, 372, 128, lg([[0, '#fff8fb'], [0.45, '#ffcbe0'], [1, '#f57ab0']]));
+// gân cánh giữa
+lot += E('path', { d: `M${BX},${BY - 20} Q${BX + 8},${BY - 200} ${BX},${BY - 330}`, fill: 'none', stroke: '#fff', stroke_opacity: 0.35, stroke_width: 3 });
+add(lot);
+// mặt
+add(face(BX, 452, 2.9, { eyes: 'dot', mouth: 'open', blush: '#ff7aa0', sep: 24 }));
+add(heart(BX - 120, 236, 40, '#ffd0e4', '#f0508a', -14) + heart(BX + 168, 250, 34, '#ffd0e4', '#f0508a', 12) + heart(BX + 90, 215, 22, '#ffd0e4', '#f0508a', 8));
+add(butterfly(130, 300, 0.9, -18, '#ffb0d0', '#e8508f') + butterfly(610, 330, 0.75, 16, '#ffd86a', '#f09a2a') + butterfly(560, 190, 0.5, -10, '#b8a0ff', '#7a5ae0'));
+add(sparkle(160, 360, 22, '#fff', 1) + sparkle(600, 400, 18, '#fff', 1) + sparkle(520, 560, 14, '#fff', 1) + sparkle(210, 560, 14, '#fff', 1));
+add(glitter(R, 30, [20, 200, 700, 640], { stars: 0.4, smin: 5, smax: 11, colors: ['#fff', '#ffe9a8'] }));
+add(fancy('Mỉm cười nào,', { x: 360, y: 96, size: 86, font: 'Baloo 2', weight: 800, fill: '#e0407f', out1: '#fff', w1: 7, out2: '#ffb0cc', w2: 3, shadow: '#a02a5a', sd: 5, sb: 4, so: 0.35, maxW: 620 }));
+add(fancy('bình an đến rồi!', { x: 360, y: 172, size: 66, font: 'Pacifico', fill: lg([[0, '#3ac8b4'], [1, '#16978c']]), out1: '#fff', w1: 6.5, shadow: '#106a64', sd: 5, sb: 4, so: 0.35, maxW: 580, rot: -1.5 }));
+finish();
+</script></body></html>

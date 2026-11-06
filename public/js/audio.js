@@ -4,6 +4,7 @@
  *   phát bằng thẻ <audio> và luôn chỉnh về đúng vị trí theo giờ máy chủ để mọi người nghe cùng một chữ.
  *   Dựng lại bằng tools/build_chants.py.
  * - Chuông: bản thu public/audio/bell.mp3. Mõ và tiếng "pop" khi thả tim: tạo bằng Web Audio.
+ * - Hiệu ứng mốc công đức: playClip (lời chúc), chime (chuông ting), scare (tiếng hù), xem celebrate.js.
  */
 (function (root) {
   'use strict';
@@ -84,6 +85,83 @@
     env(g, t, 0.12, 0.004, 0.12); o.connect(g); out(g, 0.2); o.start(t); o.stop(t + 0.14);
   }
 
+  /* Chuông ting nhẹ: bốn nốt ngũ cung đi lên, dùng khi chúc mừng mà không có giọng đọc */
+  function chime(t) {
+    if (!live()) return; t = at(t);
+    [1047, 1319, 1568, 2093].forEach((f, i) => {
+      const s = t + i * 0.11, o = AC.createOscillator(), g = AC.createGain();
+      o.type = 'sine'; o.frequency.value = f;
+      env(g, s, 0.2, 0.004, 1.0); o.connect(g); out(g, 0.5); o.start(s); o.stop(s + 1.05);
+      const o2 = AC.createOscillator(), g2 = AC.createGain();           // âm bội lệch hài tạo cảm giác kim loại
+      o2.type = 'sine'; o2.frequency.value = f * 2.76;
+      env(g2, s, 0.045, 0.003, 0.35); o2.connect(g2); out(g2, 0.4); o2.start(s); o2.stop(s + 0.4);
+    });
+  }
+
+  /* Tiếng hù cho mốc 666: cú "bùm" trầm + tiếng rít răng cưa tụt xuống + chút nhiễu. Tổng ~1.4 giây, không đuôi vang.
+   * Mức hù đặt theo tiếng chuông, không to hơn nó. Đo bằng ebur128 qua cùng chuỗi âm thanh chính (đỉnh ngắn hạn, LUFS):
+   * chuông bản thu bell.mp3 -11.9, hù mức 0.9 -12.7, mõ -28.7. (Với chuông tạo bằng toán cũ là -16.7 thì mức tương ứng là 0.5.)
+   * Đổi tiếng chuông thì đo lại và chỉnh hằng số này: 0.5 → -17.5, 0.7 → -14.7, 0.9 → -12.7, 1.0 → -11.9. */
+  const SCARE_GAIN = 0.9;
+  function scare(t) {
+    if (!live()) return; t = at(t);
+    const D = 1.35, master = AC.createGain();
+    master.gain.setValueAtTime(0.0001, t); master.gain.exponentialRampToValueAtTime(SCARE_GAIN, t + 0.012);
+    master.gain.setValueAtTime(SCARE_GAIN, t + 0.75); master.gain.exponentialRampToValueAtTime(0.0001, t + D);
+    master.connect(BUS);
+    const boom = AC.createOscillator(), bg = AC.createGain();
+    boom.type = 'sine'; boom.frequency.setValueAtTime(110, t); boom.frequency.exponentialRampToValueAtTime(32, t + 0.9);
+    bg.gain.setValueAtTime(0.0001, t); bg.gain.exponentialRampToValueAtTime(0.85, t + 0.01); bg.gain.exponentialRampToValueAtTime(0.0001, t + 1.0);
+    boom.connect(bg); bg.connect(master); boom.start(t); boom.stop(t + 1.05);
+    const lp = AC.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 1.4;
+    lp.frequency.setValueAtTime(6000, t); lp.frequency.exponentialRampToValueAtTime(900, t + D);
+    const sg = AC.createGain(); sg.gain.value = 0.2; lp.connect(sg); sg.connect(master);
+    [-23, 0, 19].forEach((det, i) => {                                   // ba răng cưa lệch pha nghe như tiếng la
+      const o = AC.createOscillator();
+      o.type = 'sawtooth'; o.detune.value = det;
+      o.frequency.setValueAtTime(1750 - i * 90, t); o.frequency.exponentialRampToValueAtTime(330 + i * 30, t + D - 0.1);
+      o.connect(lp); o.start(t); o.stop(t + D);
+    });
+    const n = AC.createBufferSource(); n.buffer = NOISE;
+    const nf = AC.createBiquadFilter(); nf.type = 'bandpass'; nf.frequency.value = 2600; nf.Q.value = 0.7;
+    const ng = AC.createGain(); ng.gain.setValueAtTime(0.0001, t); ng.gain.exponentialRampToValueAtTime(0.32, t + 0.01); ng.gain.exponentialRampToValueAtTime(0.0001, t + 0.55);
+    n.connect(nf); nf.connect(ng); ng.connect(master); n.start(t, Math.random() * 0.5); n.stop(t + 0.6);
+  }
+
+  /* Clip ngắn (lời chúc mừng): tải và giải mã một lần rồi nhớ lại; phát qua đúng chuỗi âm thanh chính
+   * nên nút tắt tiếng và âm lượng đều có tác dụng. Trả về {duration, played}. */
+  const CLIPS = new Map();       // url -> Promise<AudioBuffer>
+  let clipSrc = null;
+  function loadClip(url) {
+    if (!root.fetch || !ctx()) return Promise.reject(new Error('Không có Web Audio'));
+    let p = CLIPS.get(url);
+    if (!p) {
+      p = fetch(url).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.arrayBuffer(); }).then(decode);
+      CLIPS.set(url, p);
+      p.catch(() => CLIPS.delete(url));
+    }
+    return p;
+  }
+  function preloadClip(url) { try { loadClip(url).catch(() => {}); } catch (e) { /* bỏ qua */ } }
+  function stopClip() { if (clipSrc) { try { clipSrc.stop(); } catch (e) { /* đã dừng */ } clipSrc = null; } }
+  // opts.cancelled(): hàm kiểm tra ngay trước khi phát, để lời chúc đến muộn (người dùng đã đóng) không bật lên
+  function playClip(url, opts) {
+    return loadClip(url).then(buf => {
+      const duration = buf.duration;
+      if (muted || (opts && opts.cancelled && opts.cancelled())) return { duration, played: false };
+      const running = AC.state === 'running' ? null : Promise.race([AC.resume().catch(() => {}), new Promise(r => setTimeout(r, 400))]);
+      return Promise.resolve(running).then(() => {
+        if (AC.state !== 'running' || muted || (opts && opts.cancelled && opts.cancelled())) return { duration, played: false };
+        stopClip();
+        const src = AC.createBufferSource(), g = AC.createGain();
+        src.buffer = buf; src.connect(g); out(g, 0.12);
+        src.onended = () => { if (clipSrc === src) clipSrc = null; };
+        src.start(); clipSrc = src;
+        return { duration, played: true };
+      });
+    });
+  }
+
   /* Bài tụng chung: thẻ <audio> bám theo giờ máy chủ */
   let chEl = null, ch = null, blocked = false;
   function startChant(track, startedAt, file) {
@@ -124,6 +202,7 @@
     },
     setVolume(v) { volume = v; if (OUT && !muted) OUT.gain.setTargetAtTime(volume, AC.currentTime, 0.05); if (chEl) chEl.volume = v; },
     mo: () => mo(), bell, ting, pop,
+    chime: () => chime(), scare: () => scare(), playClip, preloadClip, stopClip,
     startChant, stopChant, syncChant
   };
 })(this);

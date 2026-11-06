@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><title>Mèo thắp nhang cầu bình an</title>
+<link rel="stylesheet" href="card.css"></head>
+<body><svg id="c" width="720" height="720" viewBox="0 0 720 720" xmlns="http://www.w3.org/2000/svg"></svg>
+<script src="lib.js"></script>
+<script>
+const R = rng(71);
+add(E('rect', { width: 720, height: 720, fill: lg([[0, '#4a3996'], [0.5, '#9d63bd'], [0.85, '#f4a0a6'], [1, '#ffc7a0']]) }));
+add(glow(340, 360, 360, '#ffe9b0', 0.55, 0.1));
+add(bokeh(R, 14, [0, 120, 720, 720], { colors: ['#fff', '#ffd9f0', '#ffe9a8'], rmin: 10, rmax: 34, omin: 0.1, omax: 0.28 }));
+add(glitter(R, 50, [10, 10, 710, 560], { stars: 0.4, smin: 4, smax: 11, colors: ['#fff', '#ffe9a8', '#ffd1ea'] }));
+// sàn / gò mềm
+add(E('ellipse', { cx: 360, cy: 760, rx: 520, ry: 150, fill: lg([[0, '#c88ad0'], [1, '#8a50b0']]) }));
+add(E('ellipse', { cx: 340, cy: 690, rx: 210, ry: 26, fill: '#3a1850', opacity: 0.35, filter: blur(5) }));
+const OR1 = '#ffc27a', OR2 = '#ee9440', OREDGE = '#a85a1c', CREAM = '#fff3df';
+const og = lg([[0, OR1], [1, OR2]], { x1: 0.2, y1: 0, x2: 0.7, y2: 1 });
+let c = '';
+// đuôi
+c += E('path', { d: 'M225,628 C120,640 70,560 120,490 C140,462 170,470 160,498', fill: 'none', stroke: OREDGE, stroke_width: 48, stroke_linecap: 'round' });
+c += E('path', { d: 'M225,628 C120,640 70,560 120,490 C140,462 170,470 160,498', fill: 'none', stroke: OR2, stroke_width: 40, stroke_linecap: 'round' });
+[[96, 590], [92, 548], [108, 510]].forEach(([x, y]) => { c += E('path', { d: `M${x - 24},${y} L${x - 4},${y + 3}`, stroke: '#c46a20', stroke_width: 7, stroke_linecap: 'round', opacity: 0.8 }); });
+// thân
+c += E('ellipse', { cx: 340, cy: 560, rx: 156, ry: 128, fill: og, stroke: OREDGE, stroke_width: 5 });
+c += E('ellipse', { cx: 340, cy: 590, rx: 98, ry: 86, fill: CREAM });
+// chân
+[[268, 668], [412, 668]].forEach(([x, y]) => {
+  c += E('ellipse', { cx: x, cy: y, rx: 54, ry: 30, fill: CREAM, stroke: OREDGE, stroke_width: 4 });
+  [-14, 0, 14].forEach((d) => { c += E('path', { d: `M${x + d},${y + 4} l0,16`, stroke: '#e6b88a', stroke_width: 3, stroke_linecap: 'round' }); });
+});
+// tai
+const ear = (sx) => G({ transform: `translate(${sx > 0 ? 340 : 340} 0) scale(${sx} 1)` },
+  E('path', { d: 'M92,300 C110,230 150,196 188,214 C205,236 205,282 195,316Z', fill: og, stroke: OREDGE, stroke_width: 5, stroke_linejoin: 'round' }),
+  E('path', { d: 'M118,286 C128,246 150,226 172,234 C180,254 180,284 174,304Z', fill: '#ffa7b4' }));
+c += ear(1) + ear(-1);
+// đầu
+c += E('ellipse', { cx: 340, cy: 352, rx: 160, ry: 122, fill: og, stroke: OREDGE, stroke_width: 5 });
+// vằn trán
+[[340, 258, 0], [306, 262, -18], [374, 262, 18]].forEach(([x, y, r]) => { c += E('path', { d: `M${x},${y} q0,24 0,34`, stroke: '#c46a20', stroke_width: 8, stroke_linecap: 'round', transform: `rotate(${r} ${x} ${y})` }); });
+[[196, 340], [190, 366]].forEach(([x, y]) => { c += E('path', { d: `M${x},${y} l22,0`, stroke: '#c46a20', stroke_width: 7, stroke_linecap: 'round' }); });
+[[484, 340], [490, 366]].forEach(([x, y]) => { c += E('path', { d: `M${x},${y} l-22,0`, stroke: '#c46a20', stroke_width: 7, stroke_linecap: 'round' }); });
+// mõm
+c += E('ellipse', { cx: 310, cy: 398, rx: 52, ry: 38, fill: CREAM }) + E('ellipse', { cx: 370, cy: 398, rx: 52, ry: 38, fill: CREAM });
+c += E('path', { d: 'M328,380 L352,380 L340,394Z', fill: '#f0708a', stroke: '#c83a5a', stroke_width: 2, stroke_linejoin: 'round' });
+c += E('path', { d: 'M340,394 L340,404 M340,404 Q328,420 314,408 M340,404 Q352,420 366,408', fill: 'none', stroke: '#6a3010', stroke_width: 3.6, stroke_linecap: 'round' });
+// mắt nhắm bình thản
+[-1, 1].forEach((d) => { c += E('path', { d: `M${340 + d * 82 - 26},346 Q${340 + d * 82},366 ${340 + d * 82 + 26},346`, fill: 'none', stroke: '#4a2008', stroke_width: 6, stroke_linecap: 'round' }); });
+// má hồng + râu
+[-1, 1].forEach((d) => {
+  c += E('ellipse', { cx: 340 + d * 124, cy: 394, rx: 28, ry: 16, fill: '#ff7a9a', opacity: 0.6 });
+  [[0, -10], [3, 4], [-3, 18]].forEach(([dy, ang]) => { c += E('path', { d: `M${340 + d * 150},${398 + dy} l${d * 46},${ang}`, stroke: '#7a4a2a', stroke_width: 3, stroke_linecap: 'round', opacity: 0.7 }); });
+});
+add(G({}, c));
+// hào quang trên đầu
+add(E('ellipse', { cx: 340, cy: 222, rx: 120, ry: 20, fill: 'none', stroke: '#fff1b0', stroke_width: 7, opacity: 0.85 }));
+add(glow(340, 222, 130, '#ffe88a', 0.35));
+// nhang
+const sx = [560, 574, 588], tipY = 322;
+sx.forEach((x, i) => {
+  const tx = x + (i - 1) * 9;
+  add(E('line', { x1: x, y1: 470, x2: tx, y2: tipY, stroke: '#8a4020', stroke_width: 5.5, stroke_linecap: 'round' }));
+  add(E('line', { x1: x - 1, y1: 470, x2: tx - 1, y2: tipY + 8, stroke: '#c4703a', stroke_width: 2, stroke_linecap: 'round', opacity: 0.8 }));
+  add(glow(tx, tipY, 22, '#ff6a3a', 0.8, 0.2) + E('circle', { cx: tx, cy: tipY, r: 5, fill: '#ff4a2a' }) + E('circle', { cx: tx, cy: tipY, r: 2.4, fill: '#ffe08a' }));
+  const p = `M${tx},${tipY - 6} C${tx - 22},${tipY - 36} ${tx + 22},${tipY - 56} ${tx - 4},${tipY - 84} C${tx - 20},${tipY - 104} ${tx + 8},${tipY - 118} ${tx},${tipY - 130}`;
+  add(E('path', { d: p, fill: 'none', stroke: '#fff', stroke_opacity: 0.55, stroke_width: 6, stroke_linecap: 'round', filter: blur(1.5) }));
+});
+// tay mèo cầm nhang
+const paw = (x, y, rot) => G({ transform: `translate(${x} ${y}) rotate(${rot})` },
+  E('path', { d: 'M-60,38 C-44,28 -22,12 18,2', fill: 'none', stroke: OREDGE, stroke_width: 58, stroke_linecap: 'round' }),
+  E('path', { d: 'M-60,38 C-44,28 -22,12 18,2', fill: 'none', stroke: OR2, stroke_width: 50, stroke_linecap: 'round' }),
+  E('ellipse', { cx: 18, cy: 0, rx: 30, ry: 27, fill: CREAM, stroke: OREDGE, stroke_width: 4 }),
+  [-9, 4, 17].map((d) => E('path', { d: `M${14 + d * 0.3},${d - 6} l8,0`, stroke: '#e0b080', stroke_width: 2.6, stroke_linecap: 'round', opacity: 0 })).join(''));
+add(paw(542, 476, 0) + paw(556, 506, 0));
+// khói hình tim
+add(heart(590, 180, 36, '#fff', '#ffd1ea', -10, 0.85) + heart(634, 226, 22, '#fff', '#ffd1ea', 12, 0.75));
+// chữ
+add(fancy('Mèo thắp nhang', { x: 360, y: 92, size: 86, font: 'Baloo 2', weight: 800, fill: '#fff', out1: '#7a3aa8', w1: 7, out2: '#ffe08a', w2: 3, shadow: '#2a0a4a', sd: 6, sb: 4, so: 0.55, maxW: 600 }));
+add(fancy('cầu bình an', { x: 360, y: 168, size: 66, font: 'Pacifico', fill: lg([[0, '#fff7c0'], [1, '#ffcf3a']]), out1: '#a0307a', w1: 6, out2: '#fff', w2: 2, shadow: '#2a0a4a', sd: 5, sb: 4, so: 0.55, maxW: 520, rot: -2 }));
+finish();
+</script></body></html>

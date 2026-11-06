@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><title>Nắng lên rồi, cười lên nào</title>
+<link rel="stylesheet" href="card.css"></head>
+<body><svg id="c" width="720" height="720" viewBox="0 0 720 720" xmlns="http://www.w3.org/2000/svg"></svg>
+<script src="lib.js"></script>
+<script>
+const R = rng(131);
+add(E('rect', { width: 720, height: 720, fill: lg([[0, '#3aa6ee'], [0.5, '#9ad8f8'], [0.78, '#d8f3ff'], [1, '#f2fbff']]) }));
+// mặt trời + tia nắng
+add(glow(640, 70, 320, '#fff6b0', 0.9, 0.2));
+let rays = '';
+const rayG = rg([[0, '#fff', 0.55], [1, '#fff', 0]], { cx: 650, cy: 40, r: 760, u: true });
+for (let i = 0; i < 9; i++) {
+  const a0 = (92 + i * 11) * Math.PI / 180, a1 = a0 + 0.08, L = 900;
+  rays += E('path', { d: `M650,40 L${650 + Math.cos(a0) * L},${40 + Math.sin(a0) * L} L${650 + Math.cos(a1) * L},${40 + Math.sin(a1) * L}Z`, fill: rayG });
+}
+add(rays);
+add(cloud(110, 250, 1.1, '#fff', 0.95) + cloud(600, 300, 0.9, '#fff', 0.9) + cloud(380, 220, 0.6, '#fff', 0.8));
+// đồi xa
+add(E('path', { d: 'M-10,470 C100,430 230,450 340,472 C470,494 600,440 730,462 L730,730 L-10,730Z', fill: lg([[0, '#9ae08a'], [1, '#4cb060']]) }));
+add(E('path', { d: 'M-10,560 C140,520 260,556 400,544 C540,530 650,560 730,540 L730,730 L-10,730Z', fill: lg([[0, '#5cc86a'], [1, '#1f8a46']]) }));
+// hoa xa
+function stemTo(x, y, bend) { return E('path', { d: `M${x},${y} C${x + bend},${y + 100} ${x - bend * 0.6},${y + 200} ${x + bend * 0.3},740`, fill: 'none', stroke: '#2a8a3e', stroke_width: 12, stroke_linecap: 'round' }); }
+add(stemTo(62, 450, 12) + sunflower(62, 450, 60, 8));
+add(stemTo(676, 462, -12) + sunflower(676, 462, 64, -10));
+// thân + lá
+add(stemTo(150, 540, 14) + stemTo(588, 548, -14) + stemTo(360, 470, 8));
+add(leaf(360, 640, 130, -62, '#7ee078', '#1f8a46') + leaf(360, 610, 120, 60, '#7ee078', '#1f8a46'));
+add(leaf(150, 650, 100, -58, '#7ee078', '#1f8a46') + leaf(588, 656, 100, 56, '#7ee078', '#1f8a46'));
+add(sunflower(150, 540, 104, 6));
+add(sunflower(588, 548, 108, -8));
+add(sunflower(360, 470, 156, 4));
+// bướm
+add(butterfly(230, 330, 1.0, -20, '#ff9ac4', '#e0408a') + butterfly(500, 380, 0.85, 18, '#c4a0ff', '#7a4ae0') + butterfly(660, 570, 0.6, -10, '#ffc86a', '#f0801c'));
+add(glitter(R, 40, [20, 220, 700, 620], { stars: 0.5, smin: 6, smax: 14, colors: ['#fff', '#fff6b0'] }));
+add(fancy('Nắng lên rồi,', { x: 360, y: 110, size: 88, font: 'Baloo 2', weight: 800, fill: '#ffd02a', out1: '#a8560a', w1: 7, out2: '#fff', w2: 3.5, shadow: '#0a4a8a', sd: 6, sb: 4, so: 0.5, maxW: 600 }));
+add(fancy('cười lên nào!', { x: 360, y: 186, size: 68, font: 'Pacifico', fill: '#fff', out1: '#e0407a', w1: 6.5, shadow: '#0a4a8a', sd: 5, sb: 4, so: 0.5, maxW: 520, rot: -1.5 }));
+finish();
+</script></body></html>
