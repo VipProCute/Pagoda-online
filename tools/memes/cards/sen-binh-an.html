@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><title>Một ngày bình an</title>
+<link rel="stylesheet" href="card.css"></head>
+<body><svg id="c" width="720" height="720" viewBox="0 0 720 720" xmlns="http://www.w3.org/2000/svg"></svg>
+<script src="lib.js"></script>
+<script>
+const R = rng(5);
+const HZ = 350;
+add(E('rect', { width: 720, height: HZ + 2, fill: lg([[0, '#3a86b4'], [0.35, '#86c4d2'], [0.7, '#ffd9b8'], [1, '#fff1cc']]) }));
+add(glow(470, HZ - 10, 300, '#fff0b8', 0.8, 0.1));
+add(E('circle', { cx: 470, cy: HZ - 20, r: 44, fill: rg([[0, '#fffef2'], [1, '#ffe9a0']]) }));
+add(cloud(130, 230, 1.1, '#fff', 0.55) + cloud(600, 170, 0.9, '#fff', 0.5) + cloud(300, 300, 0.7, '#ffe6d8', 0.6));
+// núi xa
+const mount = (pts, fill, op, y0) => {
+  let d = `M-10,${HZ + 4} L-10,${pts[0][1]}`;
+  for (let i = 0; i < pts.length - 1; i++) {
+    const [x1, y1] = pts[i], [x2, y2] = pts[i + 1], mx = (x1 + x2) / 2;
+    d += ` C${mx},${y1} ${mx},${y2} ${x2},${y2}`;
+  }
+  d += ` L730,${HZ + 4}Z`;
+  return E('path', { d, fill, opacity: op });
+};
+add(mount([[-10, 300], [90, 262], [210, 308], [330, 268], [450, 314], [590, 270], [730, 310]], lg([[0, '#9ab8d4'], [1, '#dcd9ea']]), 0.85));
+add(mount([[-10, 330], [120, 296], [250, 334], [400, 300], [530, 336], [660, 304], [730, 330]], lg([[0, '#7a9cc8'], [1, '#d0cde6']]), 0.9));
+// sương
+add(E('ellipse', { cx: 360, cy: HZ - 6, rx: 420, ry: 26, fill: '#fff8ee', opacity: 0.75, filter: blur(10) }));
+// hồ nước
+add(E('rect', { y: HZ, width: 720, height: 720 - HZ, fill: lg([[0, '#ffe3bc'], [0.18, '#a8d6c8'], [0.55, '#3f9a92'], [1, '#175c60']]) }));
+let refl = '';
+for (let i = 0; i < 12; i++) refl += E('ellipse', { cx: 470 + R.between(-8, 8), cy: HZ + 10 + i * 12, rx: 70 * (1 - i / 16), ry: 2.6, fill: '#fff4c8', opacity: 0.6 - i * 0.04 });
+add(refl);
+let rip = '';
+for (let i = 0; i < 30; i++) {
+  const y = HZ + 20 + Math.pow(R(), 0.8) * 340, w = R.between(24, 90) * (0.5 + (y - HZ) / 300), x = R.between(0, 720);
+  rip += E('ellipse', { cx: x, cy: y, rx: w, ry: w * 0.1, fill: 'none', stroke: '#fff', stroke_opacity: R.between(0.12, 0.35), stroke_width: 1.6 });
+}
+add(rip);
+// lá sen
+const pads = [[80, 420, 70, 18], [250, 450, 56, 15], [600, 440, 66, 17], [430, 470, 50, 13], [40, 560, 100, 28], [620, 600, 112, 30], [300, 600, 96, 26], [470, 690, 120, 30], [130, 690, 110, 28], [690, 500, 60, 16], [180, 505, 60, 16]];
+pads.forEach(([x, y, rx, ry]) => add(lilypad(x, y, rx, ry, R.pick(['#58bd6c', '#4aa862', '#68c878']), '#1d7a4c')));
+// cuống sen
+const stem = (x0, y0, x1, y1) => E('path', { d: `M${x0},${y0} C${x0 + 10},${(y0 + y1) / 2} ${x1 - 8},${(y0 + y1) / 2 + 20} ${x1},${y1}`, fill: 'none', stroke: '#2f8a4c', stroke_width: 6, stroke_linecap: 'round' });
+const fl = [[170, 500, 1.0, LOTUS.pink, -6], [545, 540, 1.12, LOTUS.pink, 5], [360, 610, 0.9, LOTUS.white, 0], [650, 420, 0.5, LOTUS.pink, 10], [58, 440, 0.55, LOTUS.white, -8], [300, 440, 0.42, LOTUS.pink, 4]];
+fl.forEach(([x, y, s]) => add(stem(x, y, x + (x > 360 ? 14 : -14), 730)));
+// nụ sen
+const bud = (x, y, s) => G({ transform: `translate(${x} ${y}) scale(${s})` }, E('path', { d: petalPath(70, 22), fill: lg([[0, '#ffe3ee'], [1, '#f070a8']]), stroke: '#c13a80', stroke_opacity: 0.5, stroke_width: 1.2 }),
+  E('path', { d: 'M0,0 C-30,-14 -26,-48 0,-70 C-12,-40 -8,-16 0,0Z', fill: '#ff9cc4', opacity: 0.8 }));
+add(stem(440, 400, 440, 730) + bud(440, 400, 0.75) + stem(110, 380, 110, 730) + bud(110, 380, 0.6));
+fl.forEach(([x, y, s, pal, rot]) => add(lotus(x, y, s, pal, { rot })));
+// chuồn chuồn
+const dragonfly = (x, y, s, rot) => G({ transform: `translate(${x} ${y}) rotate(${rot}) scale(${s})` },
+  [[-1, -10], [1, -10], [-1, 4], [1, 4]].map(([d, dy]) => E('ellipse', { cx: d * 22, cy: dy, rx: 22, ry: 6, fill: '#e8f6ff', opacity: 0.65, stroke: '#9ad0e8', stroke_width: 1, transform: `rotate(${d * (dy < 0 ? -10 : 10)} ${d * 4} ${dy})` })).join(''),
+  E('path', { d: 'M0,-14 L0,38', stroke: '#e0457f', stroke_width: 5, stroke_linecap: 'round' }), E('circle', { cx: 0, cy: -15, r: 6, fill: '#c13a80' }));
+add(dragonfly(330, 395, 0.9, 20) + dragonfly(600, 355, 0.6, -25));
+add(glitter(R, 26, [30, HZ + 20, 690, 600], { stars: 0.4, smin: 5, smax: 10, colors: ['#fff', '#fff6c8'] }));
+add(fancy('Một ngày bình an', { x: 360, y: 130, size: 104, font: 'Lobster', fill: '#fff', out1: '#1b8a98', w1: 6, out2: '#fff', w2: 2.5, shadow: '#0c4a62', sd: 7, sb: 5, so: 0.55, maxW: 620, rot: -2 }));
+add(fancy('Sen nở trong lòng, tâm an tự tại', { x: 360, y: 196, size: 36, font: 'Dancing Script', weight: 700, fill: '#fff', out1: '#127a8e', w1: 4.5, shadow: '#0c4a62', sd: 4, sb: 3, so: 0.55, maxW: 600, rot: -2 }));
+finish();
+</script></body></html>

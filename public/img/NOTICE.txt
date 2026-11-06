@@ -1,0 +1,35 @@
+HÌNH ẢNH TRONG THƯ MỤC NÀY — NGUỒN GỐC VÀ GIẤY PHÉP
+======================================================
+
+1) Bộ meme chúc mừng (public/img/memes/*.jpg) và hình mặt quỷ (public/img/devil.svg)
+   Tất cả là tác phẩm gốc do dự án Chùa Tâm An tạo ra bằng mã lệnh (SVG, HTML, CSS, gradient;
+   dựng thành ảnh bằng trình duyệt Chromium). Không dùng ảnh mạng, clipart, ảnh người thật,
+   logo hay nhân vật có bản quyền; không có hình tượng thờ cúng nào (chỉ có hoa sen, đèn lồng,
+   hương, mõ, mái chùa, mèo, bông hoa, đồng xu...).
+
+   Giấy phép: CC0 1.0 (Public Domain Dedication) — bạn được tự do sao chép, sửa, dùng cho mọi mục đích,
+   kể cả thương mại, không cần xin phép hay ghi công.
+   https://creativecommons.org/publicdomain/zero/1.0/deed.vi
+
+   Mã nguồn từng thẻ meme: tools/memes/cards/*.html (+ lib.js, card.css).
+   Dựng lại toàn bộ ảnh:   node tools/memes/render.mjs        (xem hướng dẫn ở đầu file render.mjs;
+   cần Playwright + Chromium, chỉ là công cụ phát triển, không phải dependency của dự án)
+
+2) Phông chữ dùng khi dựng meme
+   Chữ đã được "nướng" thẳng vào ảnh JPEG. Các file phông (tools/memes/fonts/*.woff2) chỉ phục vụ
+   việc dựng lại ảnh, không được phục vụ ra web. Tất cả đều theo SIL Open Font License 1.1
+   (https://openfontlicense.org), lấy từ các gói npm @fontsource (v5.3.0), có đủ tập ký tự
+   latin + vietnamese. Bản quyền và nguyên văn giấy phép nằm trong tools/memes/fonts/OFL-*.txt.
+
+   - Pacifico            — gói @fontsource/pacifico            — https://github.com/googlefonts/Pacifico
+   - Lobster             — gói @fontsource/lobster             — https://github.com/impallari/The-Lobster-Font
+   - Dancing Script      — gói @fontsource/dancing-script      — https://github.com/googlefonts/DancingScript
+   - Baloo 2             — gói @fontsource/baloo-2             — https://github.com/EkType/Baloo2
+   - Be Vietnam Pro      — gói @fontsource/be-vietnam-pro      — https://github.com/bettergui/BeVietnamPro
+
+   Phông chữ giữ nguyên, không sửa đổi; chỉ trích tập con ký tự (do gói @fontsource thực hiện).
+
+3) Thêm meme của riêng bạn
+   Chỉ cần thả ảnh (jpg, jpeg, png, webp, gif, avif) vào public/img/memes/ — máy chủ tự liệt kê và
+   hiệu ứng chúc mừng sẽ bốc ngẫu nhiên cả ảnh mới. Nên dùng ảnh vuông ~720 px, dưới ~110 KB, và chỉ
+   dùng ảnh bạn có quyền sử dụng (tự làm, CC0, hoặc được cho phép).

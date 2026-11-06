@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><title>Phúc lành đong đầy</title>
+<link rel="stylesheet" href="card.css"></head>
+<body><svg id="c" width="720" height="720" viewBox="0 0 720 720" xmlns="http://www.w3.org/2000/svg"></svg>
+<script src="lib.js"></script>
+<script>
+const R = rng(31);
+add(E('rect', { width: 720, height: 720, fill: lg([[0, '#150f4a'], [0.4, '#40237a'], [0.7, '#b8527e'], [0.88, '#ff9a60'], [1, '#ffc27a']]) }));
+// sao
+add(glitter(R, 80, [10, 10, 710, 470], { stars: 0.3, smin: 4, smax: 11, rmin: 0.8, rmax: 2.2, colors: ['#fff', '#ffe9a8', '#cfd8ff'] }));
+// trăng
+add(moon(360, 335, 138));
+// đèn trời
+function skyLantern(x, y, s) {
+  return G({ transform: `translate(${x} ${y}) scale(${s})` }, glow(0, 0, 40, '#ffb347', 0.7, 0.2),
+    E('path', { d: 'M-13,10 L-16,-14 Q0,-26 16,-14 L13,10Z', fill: lg([[0, '#ffe38a'], [1, '#ff8a30']]), stroke: '#c8501c', stroke_width: 1 }),
+    E('ellipse', { cx: 0, cy: 12, rx: 7, ry: 3, fill: '#ffd46a' }));
+}
+[[110, 300, 1.1], [210, 200, 0.7], [600, 270, 1.0], [520, 190, 0.6], [655, 400, 0.7], [70, 430, 0.8], [165, 380, 0.5], [575, 360, 0.5]].forEach(([x, y, s]) => add(skyLantern(x, y, s)));
+// núi xa + đồi
+const ink = lg([[0, '#2a1350'], [1, '#150a30']]);
+add(E('path', { d: 'M-10,560 C80,500 150,520 230,560 C300,520 400,500 480,552 C560,510 650,520 730,556 L730,730 L-10,730Z', fill: '#4a2468', opacity: 0.75 }));
+add(E('path', { d: 'M-10,590 C100,540 190,560 280,596 C380,570 470,560 560,590 C640,556 700,566 730,586 L730,730 L-10,730Z', fill: '#2a1250' }));
+// chùa
+function roof(cx, y0, w, h, fill) {
+  const p = `M${cx - 0.28 * w},${y0} L${cx + 0.28 * w},${y0} Q${cx + 0.55 * w},${y0 + 0.5 * h} ${cx + 0.84 * w},${y0 + 0.76 * h} Q${cx + 0.96 * w},${y0 + 0.9 * h} ${cx + w},${y0 + 0.62 * h} Q${cx + 0.99 * w},${y0 + 1.0 * h} ${cx + 0.8 * w},${y0 + h} L${cx - 0.8 * w},${y0 + h} Q${cx - 0.99 * w},${y0 + 1.0 * h} ${cx - w},${y0 + 0.62 * h} Q${cx - 0.96 * w},${y0 + 0.9 * h} ${cx - 0.84 * w},${y0 + 0.76 * h} Q${cx - 0.55 * w},${y0 + 0.5 * h} ${cx - 0.28 * w},${y0}Z`;
+  return E('path', { d: p, fill }) +
+    // đầu đao uốn
+    E('path', { d: `M${cx - 0.28 * w},${y0 + 2} q-6,-12 2,-18 q-2,8 10,10Z`, fill }) + E('path', { d: `M${cx + 0.28 * w},${y0 + 2} q6,-12 -2,-18 q2,8 -10,10Z`, fill });
+}
+let pg = '';
+const F = '#150a30';
+// bậc thềm + thân
+pg += E('rect', { x: 150, y: 578, width: 420, height: 22, fill: F });
+pg += E('rect', { x: 170, y: 520, width: 380, height: 62, fill: F });
+// cửa sổ sáng
+for (let i = 0; i < 5; i++) {
+  const x = 196 + i * 70;
+  pg += E('rect', { x, y: 532, width: 28, height: 44, rx: 12, fill: '#ffcf6a' }) + glow(x + 14, 554, 40, '#ffb347', 0.45);
+}
+pg += roof(360, 456, 235, 72, F);
+pg += E('rect', { x: 240, y: 410, width: 240, height: 52, fill: F });
+for (let i = 0; i < 3; i++) pg += E('rect', { x: 275 + i * 70, y: 424, width: 22, height: 34, rx: 10, fill: '#ffcf6a' });
+pg += roof(360, 358, 160, 62, F);
+pg += E('rect', { x: 342, y: 312, width: 36, height: 50, fill: F });
+pg += roof(360, 276, 92, 44, F);
+pg += E('rect', { x: 357, y: 232, width: 6, height: 46, fill: F }) + E('circle', { cx: 360, cy: 228, r: 8, fill: F });
+// hai gian phụ
+pg += roof(120, 538, 90, 42, F) + E('rect', { x: 78, y: 574, width: 84, height: 30, fill: F });
+pg += roof(600, 538, 90, 42, F) + E('rect', { x: 558, y: 574, width: 84, height: 30, fill: F });
+add(pg);
+add(glow(360, 560, 260, '#ffb066', 0.3));
+// cây
+const tree = (x, y, s) => E('path', { d: `M${x},${y} L${x - 22 * s},${y} L${x - 8 * s},${y - 40 * s} L${x - 18 * s},${y - 40 * s} L${x},${y - 85 * s} L${x + 18 * s},${y - 40 * s} L${x + 8 * s},${y - 40 * s} L${x + 22 * s},${y}Z`, fill: F });
+add(tree(40, 610, 1.1) + tree(75, 618, 0.8) + tree(670, 612, 1.1) + tree(640, 620, 0.7) + tree(14, 640, 0.9) + tree(706, 640, 0.9));
+add(E('path', { d: 'M-10,640 C120,615 260,640 360,630 C470,620 600,642 730,624 L730,730 L-10,730Z', fill: '#0f0722' }));
+add(glitter(R, 22, [20, 560, 700, 700], { stars: 0.5, smin: 4, smax: 9, colors: ['#ffe9a8', '#fff'] }));
+add(fancy('Phúc lành', { x: 360, y: 114, size: 92, font: 'Pacifico', fill: lg([[0, '#fffbd6'], [0.5, '#ffe070'], [1, '#f2a92a']]), out1: '#7a2a6a', w1: 6, out2: '#fff3c0', w2: 1.8, shadow: '#08032a', sd: 7, sb: 5, so: 0.7, maxW: 560 }));
+add(fancy('đong đầy', { x: 360, y: 190, size: 70, font: 'Pacifico', fill: lg([[0, '#fffbd6'], [0.5, '#ffe070'], [1, '#f2a92a']]), out1: '#7a2a6a', w1: 5.5, out2: '#fff3c0', w2: 1.8, shadow: '#08032a', sd: 6, sb: 5, so: 0.7, maxW: 460 }));
+add(fancy('Đêm an lành, tâm an yên', { x: 360, y: 686, size: 30, font: 'Be Vietnam Pro', weight: 700, style: 'italic', fill: '#ffe9b0', out1: '#2a1050', w1: 4, maxW: 560 }));
+finish();
+</script></body></html>

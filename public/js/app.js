@@ -150,6 +150,7 @@
 
   function welcome(r) {
     joined = true; editing = false; me = r.you; cfg = r.config;
+    if (window.Celebrate) Celebrate.configure(cfg, { toast });
     if (r.uid && r.uid !== uid) { uid = r.uid; store.set('ta-uid', uid); }
     if (!offset) { offset = r.serverTime - Date.now(); Hall.setOffset(offset); }
     $('#siteName').textContent = cfg.siteName; document.title = cfg.siteName + ' · Đi chùa online';
@@ -166,6 +167,15 @@
     $('#donCard').hidden = !cfg.donation && !r.donations.length;
     closeDlg('join');
     toast(`A Di Đà Phật. Chào ${myName}, mời bạn vào lễ Phật.`);
+    previewCelebrate();
+  }
+  // Xem thử hiệu ứng mốc công đức: mở trang với ?celebrate=100 (hoặc 300, 666, 999...). Chỉ chạy một lần mỗi lần mở trang.
+  let previewed = false;
+  function previewCelebrate() {
+    if (previewed || !window.Celebrate) return;
+    previewed = true;
+    const n = (new URLSearchParams(location.search).get('celebrate') || '').trim();
+    if (/^\d{1,5}$/.test(n)) setTimeout(() => Celebrate.test(+n), 900);
   }
 
   /* ---------- sự kiện từ máy chủ ---------- */
@@ -198,6 +208,7 @@
   socket.on('stats', d => setStats(d.today, d.online));
   socket.on('board', renderBoard);
   socket.on('merit', setMerit);
+  socket.on('milestone', d => { if (window.Celebrate) Celebrate.show(d); });
   socket.on('chant', setChant);
   socket.on('donation', d => { donations.unshift(d.d); renderDonations(null, d.funds); $('#donCard').hidden = false; });
   socket.on('donation:ok', d => {

@@ -1,0 +1,4 @@
+@import url('../fonts/fonts.css');
+html, body { margin: 0; padding: 0; background: #000; }
+body { width: 720px; height: 720px; overflow: hidden; }
+svg#c { display: block; width: 720px; height: 720px; }
