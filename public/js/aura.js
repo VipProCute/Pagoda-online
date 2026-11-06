@@ -19,10 +19,10 @@
     { n: 3, min: 100000, name: 'Kim Đan', desc: 'Kim đan sáng nơi đan điền, vầng sáng trên đầu', color: '#ffc94d' },
     { n: 4, min: 200000, name: 'Nguyên Anh', desc: 'Nguyên anh bay vòng quanh, tia sáng tỏa ra', color: '#f2a6ff' },
     { n: 5, min: 500000, name: 'Hóa Thần', desc: 'Thần quang xanh bốc lên như lửa', color: '#8fd3ff' },
-    { n: 6, min: 1000000, name: 'Luyện Hư', desc: 'Vòng hư không đầy sao bao quanh', color: '#b39cff' },
+    { n: 6, min: 1000000, name: 'Luyện Hư', desc: 'Quang bối hư không đầy sao sau lưng', color: '#b39cff' },
     { n: 7, min: 2000000, name: 'Hợp Thể', desc: 'Ngũ hành châu xoay quanh thân', color: '#7fe3b4' },
-    { n: 8, min: 5000000, name: 'Đại Thừa', desc: 'Kim quang rực rỡ, cột sáng, hoa sen nở', color: '#ffd36b' },
-    { n: 9, min: 10000000, name: 'Độ Kiếp', desc: 'Lôi kiếp giáng xuống, hào quang ngũ sắc', color: '#ffffff' }
+    { n: 8, min: 5000000, name: 'Đại Thừa', desc: 'Kim quang, cột sáng, sen hồng nở, cánh sen rơi', color: '#ffd36b' },
+    { n: 9, min: 10000000, name: 'Độ Kiếp', desc: 'Lôi kiếp giáng xuống, sen pha lê ngũ sắc', color: '#ffffff' }
   ].map(t => Object.assign(t, { ms: (4 + t.n) * MIN }));
 
   /** Cảnh giới ứng với tổng tiền đang cộng dồn (0 = chưa tới mốc). */

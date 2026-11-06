@@ -697,10 +697,10 @@
   }
   setInterval(renderAura, 1000);
   (function buildAuraGrid() {
-    const grid = $('#auraGrid');
+    const grid = $('#auraGrid'), dpr = Math.min(2, window.devicePixelRatio || 1);   // vẽ theo độ nét màn hình
     AURA.TIERS.forEach(t => {
       const it = document.createElement('div'); it.className = 'aura-item';
-      const cv = document.createElement('canvas'); cv.width = 150; cv.height = 190; cv.setAttribute('aria-hidden', 'true');
+      const cv = document.createElement('canvas'); cv.width = Math.round(150 * dpr); cv.height = Math.round(190 * dpr); cv.setAttribute('aria-hidden', 'true');
       const b = document.createElement('b'); b.textContent = `${t.n}. ${t.name}`; b.style.color = t.color;
       const m = document.createElement('span'); m.className = 'aura-min'; m.textContent = `từ ${VND(t.min)} · sáng ${Math.round(t.ms / 60000)} phút`;
       const d = document.createElement('small'); d.textContent = t.desc;
