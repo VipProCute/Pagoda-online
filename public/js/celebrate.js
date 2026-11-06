@@ -317,6 +317,7 @@
         u.onstart = () => { started = true; };
         u.onerror = e => { if (e && e.error !== 'canceled' && e.error !== 'interrupted') ring(); };
         ss.cancel(); ss.speak(u);
+        if (SFX.duckAmbience) SFX.duckAmbience(Math.min(9, text.length * 0.085 + 0.6));   // giọng máy đọc: nhạc nền nhỏ lại như khi phát file giọng
         c.speech = true;
         holdUntil(Math.min(9000, Math.max(5000, text.length * 85 + 1500)));
         later(() => { if (!started && !rang) { try { ss.cancel(); } catch (e) { /* bỏ qua */ } c.speech = false; ring(); } }, 1600);   // im lặng quá lâu: bật chuông ting thay
