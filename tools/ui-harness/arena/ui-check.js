@@ -3,7 +3,7 @@
  * Kiểm tra tự động giao diện Sân đấu bằng trình duyệt thật (Playwright), dùng máy chủ giả trong harness.js.
  *   node tools/ui-harness/serve.js 4174 &        (chạy máy chủ tĩnh)
  *   node tools/ui-harness/arena/gen-fixtures.js  (một lần, sinh fixtures.json từ engine thật)
- *   node tools/ui-harness/arena/test.js          (ảnh chụp lưu ở $SHOTS, mặc định thư mục tạm)
+ *   node tools/ui-harness/arena/ui-check.js      (ảnh chụp lưu ở $SHOTS, mặc định thư mục tạm)
  * Mỗi kiểm tra mở trang mới, và cuối kiểm tra bắt buộc không có lỗi hay cảnh báo trong console.
  */
 const { chromium } = require('playwright');
@@ -54,6 +54,7 @@ async function open(kind, qs) {
   return pg;
 }
 async function t(name, kind, fn, qs) {
+  if (process.env.ONLY && !name.includes(process.env.ONLY)) return;   // ONLY="pk:turn TRƯỚC" để chạy riêng một kiểm tra
   const t0 = Date.now();
   let pg;
   try {
@@ -308,7 +309,7 @@ const waitReveal = pg => pg.waitForFunction(() => { const r = document.querySele
   await t('Luồng chính: mời → sảnh → khóa → 6 lượt (né, đỡ, phản đòn, tụ lực, sơ hở, Kim Chung) → thắng → về sân', 'mobile', async pg => {
     const A = FX.A;
     await pg.waitForSelector('.ar-row');
-    await pg.evaluate(() => { H.opts.revealMs = 2600; H.opts.inviteDelay = 500; H.opts.revealDelay = 900; });
+    await pg.evaluate(() => { H.opts.revealMs = 2600; H.opts.inviteDelay = 500; H.opts.revealDelay = 900; H.opts.opLockMs = 600000; H.opts.startDelay = 900; });
     await pg.locator('.ar-row:has(.ar-st-free) .ar-inv').first().click();
     await pg.click('dialog[open] .opt >> nth=1'); await pg.click('dialog[open] button[type=submit]');
     await pg.waitForSelector('.ar-lobby:not([hidden])', { timeout: 6000 });
@@ -340,8 +341,13 @@ const waitReveal = pg => pg.waitForFunction(() => { const r = document.querySele
     await pg.waitForSelector('.ar-wait:not([hidden])');
     assert.deepEqual((await sent(pg, 'pk:loadout')).pop().skills, A.you.loadout);
     assert.ok(await pg.$eval('.ar-picker .ar-card', b => b.disabled), 'khóa rồi thì không sửa được');
-    await pg.waitForSelector('.ar-ready:not([hidden])', { timeout: 4000 });
+    assert.match(await text(pg, '.ar-wait'), /Đang chờ đối thủ/);
+    assert.ok(!(await vis(pg, '.ar-ready')));
     await shot(pg, 'lobby-locked');
+    await pg.evaluate(() => H.opReady());
+    await pg.waitForSelector('.ar-ready:not([hidden])', { timeout: 2000 });
+    assert.match(await text(pg, '.ar-wait'), /hai bên đã sẵn sàng/i);
+    await shot(pg, 'lobby-ready');
     // trận
     const seen = new Set();
     for (let i = 0; i < A.reveals.length; i++) {
@@ -583,7 +589,7 @@ const waitReveal = pg => pg.waitForFunction(() => { const r = document.querySele
     await waitTurn(pg, 2);
     await pg.click('.ar-back');
     await pg.waitForSelector('dialog[open]');
-    assert.match(await text(pg, 'dialog[open]'), /Rời trận là bỏ cuộc/);
+    assert.match(await text(pg, 'dialog[open]'), /Rời trận nghĩa là bỏ cuộc/);
     await noOverflow(pg, 'hộp rời trận'); await shot(pg, 'dlg-leave');
     await pg.click('dialog[open] .btn.primary');
     await pg.waitForSelector('dialog[open]', { state: 'detached' });
@@ -689,6 +695,18 @@ const waitReveal = pg => pg.waitForFunction(() => { const r = document.querySele
     await pg.waitForFunction(() => /Hết giờ/.test((document.querySelector('.ar-wait') || {}).textContent || ''), null, { timeout: 4000 });
     assert.ok(await pg.$eval('.ar-lb-act .btn', b => b.disabled || b.hidden));
     await waitTurn(pg, 1);
+  });
+  await t('Máy chủ gửi pk:turn TRƯỚC ack của pk:loadout: lượt 1 không bị dính trạng thái "đã khóa"', 'mobile', async pg => {
+    await pg.evaluate(() => H.startLobby({ opReady: 100 }));
+    await pg.waitForSelector('.ar-lobby:not([hidden])');
+    await pg.waitForFunction(() => H.state.match.opLocked);
+    await pg.click('.ar-lb-act .btn');
+    await waitTurn(pg, 1);
+    await pg.waitForTimeout(400);                                  // đủ để ack muộn đến nơi
+    assert.match(await text(pg, '.ar-status'), /Chạm một chiêu để chọn/);
+    await pg.click('.ar-pk[data-skill="trong-quyen"]');
+    assert.equal(await pg.getAttribute('.ar-pk[data-skill="trong-quyen"]', 'aria-pressed'), 'true');
+    assert.ok(!(await pg.$eval('.ar-lockbtn', b => b.hidden || b.disabled)), 'nút Khóa phải dùng được');
   });
   await t('Chỉ khóa được khi đủ 4 chiêu; lỗi pk:loadout hiện tại chỗ', 'mobile', async pg => {
     await pg.evaluate(() => H.startLobby({ opReady: 60000 }));

@@ -148,7 +148,16 @@ Sau `REVEAL_MS` (4 giây) máy chủ gửi `pk:turn` của lượt kế tiếp. 
 Snapshot = { matchId, phase:'lobby'|'choosing'|'reveal', turn, deadlineAt, mode,
              you:{pid,name,look,level,hpMax,manaMax,loadout}, op:{…}, buffs, state:{you,op},
              loadouts:{you,op}|null, legal, forced, myPick:null|id, opLocked:boolean, lastReveal:null|Reveal }
+Ở pha 'lobby' còn có: loadoutMs, myLocked (mình đã khóa bộ chiêu chưa), you.learned, you.warnings.
 ```
+Ghi chú về thứ tự gói tin (giao diện phải chịu được):
+- Người khóa chiêu SAU CÙNG nhận `pk:reveal` TRƯỚC ack của `pk:pick` (máy chủ giải đồng bộ). Tương tự, khi hai bên khóa bộ chiêu xong, `pk:turn` lượt 1 có thể tới trước ack của `pk:loadout`.
+- Hết trận: `pk:end` được gửi ngay sau `pk:reveal` cuối (reveal có `nextAt:null` và `ended`); giao diện nên chờ hết hoạt ảnh lật rồi mới hiện bảng kết quả.
+- Khi cả hai cùng bị ép tụ lực, `pk:reveal` tới ngay sau `pk:turn` của lượt đó.
+- Bên bị ép tụ lực được khóa tự động và không gửi `pk:locked` cho đối thủ; gửi `pk:pick` đúng chiêu đang tụ vẫn trả `{ok:true, locked:true}`.
+- Cả hai bên cùng quá giờ 3 lượt liền: trận hủy `void` (không tính thắng thua, `pk:end` có `result:'draw'`, `reason:'void'`).
+- Mọi sự kiện "không tham số" (`martial:state`, `account:summary`, `pk:resume`, `arena:blocks`) nên gửi kèm một object rỗng (`socket.emit('pk:resume', {}, cb)`); máy chủ cũng chấp nhận chỉ truyền callback.
+- `arena.list()` của máy chủ gồm cả hàng của chính mình; giao diện lọc theo pid.
 `pk:forfeit {matchId}` → ack `{ok}` (thua ngay).
 
 Quá giờ chọn 20 giây: tự "Đứng yên". 3 lượt quá giờ liên tiếp: xử thua (`idle-forfeit`). Cả hai vắng quá 60 giây: hủy trận (`both-away`).

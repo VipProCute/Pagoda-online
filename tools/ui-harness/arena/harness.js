@@ -21,7 +21,7 @@
     return NAMES.map((n, i) => mkRow(i, ['free', 'free', 'busy', 'free', 'dnd'][i % 5]));
   };
   const S = { players: rosterOf(q.get('players') || 'crowded'), dnd: false, blocks: [{ uid: 'u9', name: 'Tâm Bình' }, { uid: 'u8', name: 'Quảng Hải' }], place: 'hall', match: null, seq: 0 };
-  const O = { auto: true, opDelay: 500, revealDelay: 250, revealMs: 4000, endDelay: 700, opLockMs: 1500, inviteOutcome: 'accept', inviteDelay: 1000, lobbyAuto: true, fail: {} };
+  const O = { startDelay: 0, auto: true, opDelay: 500, revealDelay: 250, revealMs: 4000, endDelay: 700, opLockMs: 1500, inviteOutcome: 'accept', inviteDelay: 1000, lobbyAuto: true, fail: {} };
   const timers = [];
   const later = (ms, fn) => { const t = setTimeout(fn, ms); timers.push(t); return t; };
   const failOr = (ev, fn) => { if (O.fail[ev]) { const a = O.fail[ev]; delete O.fail[ev]; return a; } return fn(); };
@@ -54,7 +54,11 @@
     return m;
   }
   // như máy chủ thật: hai bên khóa xong là pk:turn đi ngay, TRƯỚC cả ack của pk:loadout
-  function maybeGo(m) { if (m.phase === 'lobby' && m.youLoad && m.opLocked) startTurn(m, 0); }
+  function maybeGo(m) {
+    if (!(m.phase === 'lobby' && m.youLoad && m.opLocked)) return;
+    if (O.startDelay > 0) later(O.startDelay, () => { if (S.match === m && m.phase === 'lobby') startTurn(m, 0); });   // chỉ để chụp được màn "hai bên đã sẵn sàng"
+    else startTurn(m, 0);
+  }
   function startTurn(m, idx) {
     const t = m.f.turns[idx];
     if (!t) return;
@@ -183,6 +187,7 @@
     del(pid) { S.players = S.players.filter(p => p.pid !== pid); send('arena:del', { pid }); },
     upd(pid, f) { const p = rowOf(pid); if (p) Object.assign(p, f); send('arena:upd', Object.assign({ pid }, f)); },
     row: mkRow,
+    opReady() { const m = S.match; if (m && m.phase === 'lobby') { m.opLocked = true; send('pk:lobby:status', { matchId: m.id, opLocked: true }); maybeGo(m); } },
     open: () => Places.go('arena'),
     disconnect() { socket.connected = false; socket.receive('disconnect', 'transport close'); Places.setConnected(false); },
     reconnect() { socket.connected = true; socket.receive('connect'); Places.setConnected(true); return Places.resume(); },

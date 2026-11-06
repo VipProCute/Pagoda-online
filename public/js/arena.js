@@ -311,7 +311,7 @@
     d3.list = h('ul', 'ar-bl'); d3.state = h('p', 'hint', null, { role: 'status' });
     add(d3.body, d3.state, d3.list, d3.warn);
     // rời trận
-    const d4 = ui.dLeave = mkDlg('Rời trận là bỏ cuộc', 'Nếu rời sân bây giờ, bạn sẽ bị xử thua trận này.'); ui.dlgs.push(d4.dlg);
+    const d4 = ui.dLeave = mkDlg('Rời trận nghĩa là bỏ cuộc', 'Nếu rời sân bây giờ, bạn sẽ bị xử thua trận này.'); ui.dlgs.push(d4.dlg);
     const stay = btn('btn primary', 'Ở lại đấu'), quit = btn('btn', 'Bỏ cuộc, về chánh điện');
     stay.addEventListener('click', () => d4.dlg.close()); quit.addEventListener('click', doLeave);
     add(d4.foot, quit, stay); add(d4.body, d4.warn, d4.foot);
@@ -335,7 +335,8 @@
     if (hd) { hd.tabIndex = -1; try { hd.focus({ preventScroll: true }); } catch (e) { /* bỏ qua */ } }
     refreshCtl();
   }
-  const inMatch = () => !!S.m && (S.screen === 'lobby' || S.screen === 'match');
+  /** Đang ở sảnh / trận, hoặc đang chờ máy chủ cho biết có trận dở không (rời sân lúc đó cũng là bỏ cuộc). */
+  const inMatch = () => S.resuming || (!!S.m && (S.screen === 'lobby' || S.screen === 'match'));
 
   function onBack() {
     if (inMatch()) { S.ui.dLeave.warn.hidden = true; openDlg(S.ui.dLeave.dlg); return; }
@@ -1234,6 +1235,7 @@
     S.sock.emit('pk:resume', {}, ack => { applyResume(ack); if (cb) cb(ack); });
   }
   function applyResume(ack) {
+    S.resuming = false;
     if (!S.mounted || !S.visible) return;
     S.ui.roster.resume.hidden = true;
     if (!ack || !ack.ok) {
@@ -1342,15 +1344,14 @@
     else { S.ui.roster.emptyT.textContent = 'Sân đang vắng.'; S.ui.roster.emptyS.textContent = 'Chưa có đạo hữu nào ra luận võ. Bạn cứ chờ một lát, hoặc rủ bạn bè cùng ra sân. Có người vào là thấy ngay ở đây.'; }
     if (S.screen === 'end') { S.m = null; S.stage = null; dropPaint('lobby'); dropPaint('match'); }
     if (S.screen !== 'lobby' && S.screen !== 'match') go('roster'); else refreshCtl();
-    S.ui.roster.resume.hidden = !a.hasMatch;
+    S.ui.roster.resume.hidden = !a.hasMatch; S.resuming = !!a.hasMatch;
     clearInterval(S.tick); S.tick = setInterval(tick, 250);
     S.connected = S.sock.connected !== false;
     refreshCtl();
-    if (S.loginNeeded) { S.ui.roster.resume.hidden = true; return; }
-    resumeMatch(() => { S.ui.roster.resume.hidden = true; });
+    resumeMatch(() => { S.ui.roster.resume.hidden = true; S.resuming = false; });
   }
   function hide() {
-    S.visible = false;
+    S.visible = false; S.resuming = false;
     clearInterval(S.tick); S.tick = 0; stopPaint();
     clearMatchTimers();
     if (S.mounted) {
