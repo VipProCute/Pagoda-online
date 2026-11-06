@@ -43,7 +43,6 @@
       <p class="cb-next" id="cbNext"></p>
       <div class="cb-ctrl">
         <button type="button" class="btn small gold" id="cbJoin" hidden>Bật tiếng để tụng cùng</button>
-        <label class="tog"><input type="checkbox" id="cbVoice" checked> Giọng tụng</label>
         <button type="button" class="btn small" id="cbStop" hidden>Dừng khóa tụng</button>
       </div>
     </div>
@@ -190,7 +189,7 @@
       <button type="button" class="x" data-close aria-label="Đóng">×</button>
     </div>
     <div class="track-list" id="trackList"></div>
-    <p class="hint">Giọng tụng đọc bằng mô hình mã nguồn mở <a href="https://huggingface.co/pnnbao-ump/VieNeu-TTS-v3-Turbo" target="_blank" rel="noopener">VieNeu-TTS v3 Turbo</a> (giọng Thiền Tâm Đức), mỗi tiếng mõ một chữ. Bản thu của chư tăng chùa đối tác có thể thay vào sau.</p>
+    <p class="hint">Giọng tụng đọc liền câu bằng mô hình mã nguồn mở <a href="https://huggingface.co/pnnbao-ump/VieNeu-TTS-v3-Turbo" target="_blank" rel="noopener">VieNeu-TTS v3 Turbo</a>. Mõ gõ theo người tụng: vào mõ ở chữ thứ hai, gõ đều từ chữ thứ tư; niệm danh hiệu nhanh dần; cuối bài lơi dần, hai tiếng áp chót dính liền, tiếng cuối rời ra, rồi thỉnh chuông.</p>
   </div>
 </dialog>
 
@@ -254,7 +253,6 @@
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script src="/socket.io/socket.io.js"></script>
-<script src="/js/chants.js"></script>
 <script src="/js/lunar.js"></script>
 <script src="/js/audio.js"></script>
 <script src="/js/hall.js"></script>

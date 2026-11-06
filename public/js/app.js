@@ -21,7 +21,7 @@
   try { look = JSON.parse(store.get('ta-look') || 'null'); } catch (e) { look = null; }
   if (!look || typeof look.c !== 'number') look = { g: 'nu', c: Math.floor(Math.random() * 8), h: Math.floor(Math.random() * 2) };
   let myName = store.get('ta-name') || '';
-  let me = 0, joined = false, cfg = null, offset = 0, today = {}, chant = null, chantB = null, editing = false;
+  let me = 0, joined = false, cfg = null, offset = 0, today = {}, chant = null, editing = false;
   const serverNow = () => Date.now() + offset;
 
   /* ---------- tiện ích giao diện ---------- */
@@ -159,9 +159,9 @@
     setStats(r.today, r.online); setMerit(r.merit);
     setChant(r.chant);
     $('#incKinds').innerHTML = cfg.kinds.map((k, i) => `<label class="chipr"><input type="radio" name="kind" value="${k}"${i === 0 ? ' checked' : ''}><span>${k}</span></label>`).join('');
-    $('#trackList').innerHTML = Object.entries(cfg.tracks).map(([id, title]) => {
-      const b = CHANTS.build(id); const m = Math.round(b.duration / 60);
-      return `<button type="button" class="track" data-track="${id}"><b>${title}</b><small>khoảng ${m < 1 ? 1 : m} phút</small></button>`;
+    $('#trackList').innerHTML = Object.entries(cfg.tracks).map(([id, t]) => {
+      const m = Math.max(1, Math.round(t.duration / 60));
+      return `<button type="button" class="track" data-track="${id}"><b>${t.title}</b><small>khoảng ${m} phút</small></button>`;
     }).join('');
     $('#donCard').hidden = !cfg.donation && !r.donations.length;
     closeDlg('join');
@@ -329,40 +329,60 @@
   }
 
   /* ---------- tụng kinh chung ---------- */
+  // Bài tụng là file MP3 dựng sẵn; JSON đi kèm cho biết mốc từng chữ để chữ chạy theo tiếng.
+  const chantMeta = {};
+  function loadChantMeta(track) {
+    if (!chantMeta[track]) {
+      const info = cfg && cfg.tracks[track];
+      chantMeta[track] = fetch('/audio/chants/' + (info ? info.json : track + '.json'))
+        .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+        .catch(e => { delete chantMeta[track]; throw e; });
+    }
+    return chantMeta[track];
+  }
+  let meta = null;
   function setChant(c) {
-    chant = c; chantB = c ? CHANTS.build(c.track) : null;
+    chant = c; meta = null; lastKey = '';
     $('#chantbar').hidden = !c;
     if (c) {
       $('#cbTitle').textContent = c.title;
-      SFX.startChant(c.track, c.startedAt);
-      lastLine = -1;
+      $('#cbCur').textContent = 'Đang tải bài tụng…'; $('#cbNext').textContent = '';
+      loadChantMeta(c.track).then(m => {
+        if (!chant || chant.track !== c.track) return;
+        meta = m; SFX.startChant(c.track, c.startedAt, m.file);
+      }).catch(() => { $('#cbCur').textContent = 'Không tải được bài tụng. Tải lại trang giúp mình nhé.'; });
     } else SFX.stopChant();
     $('#cbStop').hidden = !(c && isMod());
     updateChantJoin();
   }
-  function updateChantJoin() { $('#cbJoin').hidden = !chant || (SFX.ready && !muted); }
-  $('#cbJoin').addEventListener('click', () => { SFX.unlock(); if (muted) { muted = false; store.set('ta-muted', '0'); } renderSound(); setTimeout(updateChantJoin, 300); });
-  $('#cbVoice').addEventListener('change', e => SFX.setVoice(e.target.checked));
+  function updateChantJoin() { $('#cbJoin').hidden = !chant || (SFX.ready && !muted && !SFX.chantBlocked); }
+  $('#cbJoin').addEventListener('click', () => {
+    SFX.unlock(); if (muted) { muted = false; store.set('ta-muted', '0'); }
+    renderSound(); if (chant) SFX.syncChant(serverNow()); setTimeout(updateChantJoin, 400);
+  });
   $('#cbStop').addEventListener('click', () => socket.emit('chant:stop'));
-  let lastLine = -1;
-  setInterval(() => { if (chant) SFX.tickChant(serverNow()); }, 25);
+  setInterval(() => { if (chant && meta) { SFX.syncChant(serverNow()); updateChantJoin(); } }, 250);
+  let lastKey = '';
+  const mmss = s => Math.floor(s / 60) + ':' + pad(Math.floor(s % 60));
   function chantUI() {
-    if (chant && chantB) {
-      const el = (serverNow() - chant.startedAt) / 1000, tr = chantB.tr;
-      const mmss = s => Math.floor(s / 60) + ':' + pad(Math.floor(s % 60));
-      if (el < 0) {
-        if (lastLine !== -2) { $('#cbCur').textContent = 'Chuẩn bị…'; $('#cbNext').textContent = tr.lines[0]; lastLine = -2; }
-        $('#cbTime').textContent = `bắt đầu sau ${Math.ceil(-el)} giây`;
+    if (chant && meta) {
+      const el = (serverNow() - chant.startedAt) / 1000, ev = meta.events, first = ev.length ? ev[0][0] : 0;
+      const lastSyl = ev.length ? ev[ev.length - 1][0] : 0;
+      if (el < first) {
+        if (lastKey !== 'wait') { $('#cbCur').textContent = el < 0 ? 'Chuẩn bị…' : 'Thỉnh chuông khai kinh…'; $('#cbNext').textContent = meta.lines[0]; lastKey = 'wait'; }
+        $('#cbTime').textContent = el < 0 ? `bắt đầu sau ${Math.ceil(-el)} giây` : mmss(el) + ' / ' + mmss(meta.duration);
       } else {
-        const i = Math.min(chantB.beats.length - 1, Math.floor(el / tr.beat)), b = chantB.beats[i], ended = el >= chantB.endAt;
-        if (b.li !== lastLine) {
-          lastLine = b.li;
+        let lo = 0, hi = ev.length - 1;                       // tìm chữ đang tụng
+        while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (ev[mid][0] <= el) lo = mid; else hi = mid - 1; }
+        const [, li, si] = ev[lo], ended = el > lastSyl + 1.2;
+        if (String(li) !== lastKey) {
+          lastKey = String(li);
           const cur = $('#cbCur'); cur.textContent = '';
-          tr.lines[b.li].split(/\s+/).filter(Boolean).forEach(w => { const s = document.createElement('span'); s.className = 'sy'; s.textContent = w; cur.append(s, ' '); });
-          $('#cbNext').textContent = tr.lines[b.li + 1] || '';
+          meta.lines[li].split(/\s+/).filter(Boolean).forEach(w => { const sp = document.createElement('span'); sp.className = 'sy'; sp.textContent = w; cur.append(sp, ' '); });
+          $('#cbNext').textContent = meta.lines[li + 1] || '';
         }
-        $$('#cbCur .sy').forEach((s, k) => { s.classList.toggle('on', !ended && k === b.si); s.classList.toggle('past', ended || b.si === -1 || k < b.si); });
-        $('#cbTime').textContent = ended ? 'Hồi hướng' : `${mmss(el)} / ${mmss(chantB.endAt)}`;
+        $$('#cbCur .sy').forEach((sp, k) => { sp.classList.toggle('on', !ended && k === si); sp.classList.toggle('past', ended || si === -1 || k < si); });
+        $('#cbTime').textContent = ended ? 'Hồi hướng công đức' : `${mmss(el)} / ${mmss(meta.duration)}`;
       }
     }
     requestAnimationFrame(chantUI);
