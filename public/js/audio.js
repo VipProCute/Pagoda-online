@@ -85,12 +85,14 @@
   }
 
   /* Tiếng hù cho mốc 666: cú "bùm" trầm + tiếng rít răng cưa tụt xuống + chút nhiễu. Tổng ~1.4 giây, không đuôi vang.
-   * Đỉnh sau bộ nén đo được ~0.85 (dưới mức méo tiếng), đủ giật mình mà không chói tai. */
+   * Đo bằng ebur128 thì với mức 0.8 cũ nó to hơn tiếng chuông 3 LU và hơn tiếng mõ 15 LU; mức 0.5 (-4 dB) đưa nó về gần tiếng chuông:
+   * vẫn đủ giật mình mà không làm người đang nghe tiếng mõ nhỏ bị đau tai. */
+  const SCARE_GAIN = 0.5;
   function scare(t) {
     if (!live()) return; t = at(t);
     const D = 1.35, master = AC.createGain();
-    master.gain.setValueAtTime(0.0001, t); master.gain.exponentialRampToValueAtTime(0.8, t + 0.012);
-    master.gain.setValueAtTime(0.8, t + 0.75); master.gain.exponentialRampToValueAtTime(0.0001, t + D);
+    master.gain.setValueAtTime(0.0001, t); master.gain.exponentialRampToValueAtTime(SCARE_GAIN, t + 0.012);
+    master.gain.setValueAtTime(SCARE_GAIN, t + 0.75); master.gain.exponentialRampToValueAtTime(0.0001, t + D);
     master.connect(BUS);
     const boom = AC.createOscillator(), bg = AC.createGain();
     boom.type = 'sine'; boom.frequency.setValueAtTime(110, t); boom.frequency.exponentialRampToValueAtTime(32, t + 0.9);

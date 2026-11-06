@@ -3,8 +3,9 @@ HÌNH ẢNH TRONG THƯ MỤC NÀY — NGUỒN GỐC VÀ GIẤY PHÉP
 
 1) Bộ meme chúc mừng (public/img/memes/*.jpg) và hình mặt quỷ (public/img/devil.svg)
    Tất cả là tác phẩm gốc do dự án Chùa Tâm An tạo ra bằng mã lệnh (SVG, HTML, CSS, gradient;
-   dựng thành ảnh bằng trình duyệt Chromium). Không dùng ảnh mạng, clipart, ảnh người thật,
-   logo hay nhân vật có bản quyền; không có hình tượng thờ cúng nào (chỉ có hoa sen, đèn lồng,
+   meme dựng thành ảnh bằng trình duyệt Chromium; devil.svg là vector do
+   python3 tools/devil-preview/gen_devil.py sinh ra, mặc định ghi đè public/img/devil.svg).
+   Không dùng ảnh mạng, clipart, ảnh người thật, logo hay nhân vật có bản quyền; không có hình tượng thờ cúng nào (chỉ có hoa sen, đèn lồng,
    hương, mõ, mái chùa, mèo, bông hoa, đồng xu...).
 
    Giấy phép: CC0 1.0 (Public Domain Dedication) — bạn được tự do sao chép, sửa, dùng cho mọi mục đích,
