@@ -1,0 +1,124 @@
+NGUỒN ẢNH CỦA CÁC THẺ MEME "anh-*.jpg" TRONG public/img/memes/
+======================================================================
+Các thẻ này được làm từ ảnh chụp có giấy phép tự do (CC0, public domain hoặc CC BY),
+đã chỉnh sửa: cắt vuông 720x720, chỉnh màu, thêm chữ chúc và hiệu ứng lấp lánh.
+Chữ chúc, hiệu ứng và bố cục là sản phẩm của dự án. Ảnh gốc thuộc về các tác giả bên dưới.
+Các thẻ meme vẽ tay khác (không có tiền tố "anh-") xem public/img/NOTICE.txt.
+
+Mọi ảnh dưới đây không có người, logo hay chữ nhận diện được. Giấy phép đã được đối chiếu
+trên trang gốc (Wikimedia Commons, WordPress Photo Directory, iNaturalist).
+
+## ẢNH CẦN GHI TÊN TÁC GIẢ (CC BY) — 7 thẻ
+
+- anh-binh-minh-1.jpg  ("Chúc Ngày Mới" / An Lành · Bình An)
+    Ảnh gốc : "Sunrise Vietnam"
+    Tác giả : Lenny K Photography (https://www.flickr.com/people/57527070@N06)
+    Giấy phép: CC BY 2.0 (https://creativecommons.org/licenses/by/2.0/)
+    Nguồn    : https://commons.wikimedia.org/wiki/File:Sunrise_Vietnam_-_Flickr_-_Lenny_K_Photography.jpg
+
+- anh-binh-minh-2.jpg  ("Bình Minh Rạng Rỡ" / Chúc bạn một ngày thật vui)
+    Ảnh gốc : "Seagull watching the sunrise on the beach"
+    Tác giả : photochem_PA (https://www.flickr.com/people/58431807@N06)
+    Giấy phép: CC BY 2.0 (https://creativecommons.org/licenses/by/2.0/)
+    Nguồn    : https://commons.wikimedia.org/wiki/File:Seagull_watching_the_sunrise_on_the_beach_(7710745984).jpg
+
+- anh-buoi-sang-1.jpg  ("Chúc Buổi Sáng Tốt Lành" / Một ngày mới thật nhiều niềm vui)
+    Ảnh gốc : "Ray over terrace rice field in Sapa - Trung Chải"
+    Tác giả : Phi Phi Hoang (https://www.flickr.com/photos/myphilinh/)
+    Giấy phép: CC BY 2.0 (https://creativecommons.org/licenses/by/2.0/)
+    Nguồn    : https://commons.wikimedia.org/wiki/File:Ray_over_terrace_rice_field_in_Sapa_-_Trung_Ch%E1%BA%A3i..jpg
+
+- anh-den-long-1.jpg  ("Sớm Mai An Lành" / Nắng ấm mái chùa, lòng nhẹ tênh)
+    Ảnh gốc : "Small pagoda at sunrise"
+    Tác giả : Francisco Anzola (https://www.flickr.com/people/10345599@N03)
+    Giấy phép: CC BY 2.0 (https://creativecommons.org/licenses/by/2.0/)
+    Nguồn    : https://commons.wikimedia.org/wiki/File:Small_pagoda_at_sunrise_(8437638854).jpg
+
+- anh-den-long-3.jpg  ("Hương Lành" / Tâm thành thì phúc đến)
+    Ảnh gốc : "Incense coils (Hanoi)"
+    Tác giả : Pedro Alonso (https://www.flickr.com/people/59485955@N00)
+    Giấy phép: CC BY 2.0 (https://creativecommons.org/licenses/by/2.0/)
+    Nguồn    : https://commons.wikimedia.org/wiki/File:Incense_coils_(Hanoi).jpg
+    Chỉnh sửa thêm: làm dịu vùng sáng gắt ở nền và thêm hạt phim.
+
+- anh-hoa-sen-2.jpg  ("Tâm An, Vạn Sự An" / Sáng nay sen nở, bình yên theo về)
+    Ảnh gốc : "Nelumbo nucifera (sacred lotus), iNaturalist photo 343477871"
+    Tác giả : Diana Studer (https://www.inaturalist.org/people/dianastuder)
+    Giấy phép: CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/)
+    Nguồn    : https://www.inaturalist.org/photos/343477871
+
+- anh-hoa-sen-3.jpg  ("Nụ Sen Đón Nắng" / Chuồn chuồn hỏi: hôm nay bạn vui không?)
+    Ảnh gốc : "Lotus and Dragonfly"
+    Tác giả : Paul Balfe (https://www.flickr.com/people/65847397@N05)
+    Giấy phép: CC BY 2.0 (https://creativecommons.org/licenses/by/2.0/)
+    Nguồn    : https://commons.wikimedia.org/wiki/File:Lotus_and_Dragonfly_-_Flickr_-_PaulBalfe.jpg
+
+## ẢNH CC0 / PUBLIC DOMAIN (không bắt buộc ghi nguồn, vẫn ghi để tri ân) — 11 thẻ
+
+- anh-binh-minh-3.jpg  ("Chào Buổi Sáng" / Vạn sự an lành · Bình an cả ngày)
+    Ảnh gốc : "Sunrise at the Beach"
+    Tác giả : jillsanders2021 (https://commons.wikimedia.org/wiki/User:Jillsanders2021)
+    Giấy phép: CC0 1.0 (https://creativecommons.org/publicdomain/zero/1.0/)
+    Nguồn    : https://commons.wikimedia.org/wiki/File:Sunrise_at_the_Beach.jpg
+
+- anh-buoi-sang-2.jpg  ("mọi chuyện sẽ ổn" / Sáng nay thở thật sâu,)
+    Ảnh gốc : "Sommerlicher Morgentau (dewy spider web at sunrise)"
+    Tác giả : Heiko Stein (https://pixabay.com/photos/spider-web-grass-spider-dewdrop-1576299/)
+    Giấy phép: CC0 1.0 (https://creativecommons.org/publicdomain/zero/1.0/)
+    Nguồn    : https://commons.wikimedia.org/wiki/File:Sommerlicher_Morgentau.jpg
+
+- anh-buoi-sang-3.jpg  ("Gieo thiện lành, gặt bình an" / Ngày mới an yên, vạn sự như ý)
+    Ảnh gốc : "Rice terraces in Ha Giang, Vietnam - 2012 - 140"
+    Tác giả : minhphuc_99kdd (Minh Phuc) on Flickr (https://www.flickr.com/people/36755450@N05)
+    Giấy phép: Public Domain Mark 1.0 (PD-author-FlickrPDM) (https://creativecommons.org/publicdomain/mark/1.0/)
+    Nguồn    : https://commons.wikimedia.org/wiki/File:Rice_terraces_in_Ha_Giang,_Vietnam_-_2012_-_140_(10057539993).jpg
+
+- anh-den-long-2.jpg  ("Vạn Sự Hanh Thông" / Mọi điều thuận lợi, lòng luôn an vui)
+    Ảnh gốc : "Nguyen Dynasty Forbidden City, Hue"
+    Tác giả : Gary Todd (https://www.flickr.com/people/101561334@N08)
+    Giấy phép: CC0 1.0 (https://creativecommons.org/publicdomain/zero/1.0/)
+    Nguồn    : https://commons.wikimedia.org/wiki/File:Nguyen_Dynasty_Forbidden_City,_Hue_(15437196075).jpg
+
+- anh-hoa-hong-1.jpg  ("Hồng Vận Đến Rồi!" / Chúc bạn may mắn, bình an mỗi ngày)
+    Ảnh gốc : "Vibrant red roses in full bloom"
+    Tác giả : Rabin Bhandari (https://wordpress.org/photos/author/churaclicks/)
+    Giấy phép: CC0 1.0 (https://creativecommons.org/publicdomain/zero/1.0/)
+    Nguồn    : https://wordpress.org/photos/photo/9646809fc7/
+
+- anh-hoa-hong-2.jpg  ("Ngày Mới Ngọt Ngào" / Chúc bạn một ngày dịu dàng như hoa)
+    Ảnh gốc : "Pink rose with warm golden bokeh"
+    Tác giả : raivenra (https://wordpress.org/photos/author/raivenra/)
+    Giấy phép: CC0 1.0 (https://creativecommons.org/publicdomain/zero/1.0/)
+    Nguồn    : https://wordpress.org/photos/photo/7586870b87/
+
+- anh-hoa-hong-3.jpg  ("Ngày Mới Rạng Rỡ" / Nắng vàng hoa nở, lộc về đầy tay)
+    Ảnh gốc : "Yellow roses and baby's-breath bouquet under a blue sky"
+    Tác giả : 松季杏沙 (Gibuchan) (https://wordpress.org/photos/author/gibuchan/)
+    Giấy phép: CC0 1.0 (https://creativecommons.org/publicdomain/zero/1.0/)
+    Nguồn    : https://wordpress.org/photos/photo/6276919797/
+
+- anh-hoa-sen-1.jpg  ("Sen Nở Hương Thơm" / Chúc bạn thân tâm an lạc)
+    Ảnh gốc : "Lotus flower (978659)"
+    Tác giả : Hong Zhang (jennyzhh2008) (https://pixabay.com/en/users/jennyzhh2008-1497331/)
+    Giấy phép: CC0 1.0 (https://creativecommons.org/publicdomain/zero/1.0/)
+    Nguồn    : https://commons.wikimedia.org/wiki/File:Lotus_flower_(978659).jpg
+
+- anh-meo-cung-1.jpg  ("Nhẹ Nhàng Thôi" / Hôm nay cứ thong thả như cánh bướm)
+    Ảnh gốc : "Tiger Swallowtail Butterfly on flower"
+    Tác giả : J. M. Pearson (own work) (https://commons.wikimedia.org/wiki/User:J._M._Pearson)
+    Giấy phép: CC0 1.0 (https://creativecommons.org/publicdomain/zero/1.0/)
+    Nguồn    : https://commons.wikimedia.org/wiki/File:Tiger_Swallowtail_Butterfly_on_flower.jpg
+
+- anh-meo-cung-2.jpg  ("Ấm Áp Nha" / Vịt con chúc bạn ngày mới ấm lòng)
+    Ảnh gốc : "Mallard (Anas platyrhynchos), duckling"
+    Tác giả : Hobbyfotowiki (own work) (https://commons.wikimedia.org/wiki/User:Hobbyfotowiki)
+    Giấy phép: CC0 1.0 (https://creativecommons.org/publicdomain/zero/1.0/)
+    Nguồn    : https://commons.wikimedia.org/wiki/File:Mallard_(Anas_platyrhynchos),_duckling.jpg
+
+- anh-meo-cung-3.jpg  ("Không Deadline!" / Chúc bạn ngày mới nhẹ tênh, lộc đầy tay)
+    Ảnh gốc : "Fawn and white Welsh Corgi puppy standing on rear legs and sticking out the tongue"
+    Tác giả : Huoadg5888 (Pixabay user; minor edits by Commons user Subsidiary account) (https://pixabay.com/photos/pet-corgi-puppy-funny-fun-3389729/)
+    Giấy phép: CC0 1.0 (https://creativecommons.org/publicdomain/zero/1.0/)
+    Nguồn    : https://commons.wikimedia.org/wiki/File:Fawn_and_white_Welsh_Corgi_puppy_standing_on_rear_legs_and_sticking_out_the_tongue.jpg
+
+Giấy phép: CC0 1.0 https://creativecommons.org/publicdomain/zero/1.0/ · CC BY 2.0 https://creativecommons.org/licenses/by/2.0/ · CC BY 4.0 https://creativecommons.org/licenses/by/4.0/

@@ -23,9 +23,25 @@ Cài đặt (CPU là đủ):
 Chạy:
     python tools/build_chants.py                      # dựng mọi bài
     python tools/build_chants.py --tracks batnha      # chỉ một bài
+
+Nhân bản giọng (tùy chọn): thay giọng mẫu "Thiền Tâm Đức" bằng giọng của một người cụ thể, với
+sự đồng ý của chính người đó. VieNeu-TTS v3 Turbo không cần lời thoại của file mẫu; chỉ cần một
+đoạn nói rõ, ít ồn. Mọi thứ còn lại (đọc liền từng câu, dò mốc chữ, tốc độ, mõ, chuông) giữ nguyên:
+    python tools/build_chants.py --ref-audio /duong/dan/ngoai/repo/giong_mau.wav
+    python tools/build_chants.py --ref-audio giong_mau.wav --ref-mode speaker   # chỉ lấy âm sắc
+    python tools/build_chants.py --ref-audio giong_mau.wav --no-denoise-ref     # không khử nhiễu mẫu
+  --ref-mode full     (mặc định) lấy cả âm sắc lẫn cách nhả chữ từ ~8 giây đầu của file mẫu.
+  --ref-mode speaker  chỉ lấy âm sắc người nói, cách đọc theo mô hình (đôi khi rõ chữ hơn).
+  Chỉ ~8 giây đầu của file mẫu được dùng; nên cắt đoạn 8–20 giây nói rõ, một người, ít ồn.
+LƯU Ý RIÊNG TƯ: file giọng mẫu là dữ liệu cá nhân, phải để NGOÀI repo (công cụ từ chối đường dẫn
+nằm trong repo), không commit, không tải lên dịch vụ nào. Mọi bước chạy ngay trên máy này.
+Trong MP3/JSON và cache chỉ ghi nhãn "nhân bản từ giọng mẫu #xxxxxxxx" (8 ký tự đầu của sha256
+nội dung file) — không có tên người, không có đường dẫn. File .npz của --cache chỉ chứa âm thanh
+đã tổng hợp, không chứa bản ghi mẫu.
 """
 import argparse
 import difflib
+import hashlib
 import importlib.metadata
 import json
 import math
@@ -264,6 +280,24 @@ def encode(mix, path):
         subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', str(wav), '-ac', '1', '-c:a', 'libmp3lame', '-b:a', '64k', str(path)], check=True)
 
 
+class CloneVoice:
+    """Bọc VieNeu để mọi câu đều đọc bằng giọng nhân bản từ file mẫu (render() không phải sửa).
+    render() vẫn gọi tts.infer(câu, voice=nhãn): nhãn chỉ để làm khóa cache, giọng thật lấy từ file mẫu."""
+
+    def __init__(self, tts, ref_audio, denoise=True, speaker_only=False):
+        self.tts, self.ref_audio, self.denoise, self.speaker_only = tts, str(ref_audio), denoise, speaker_only
+
+    def infer(self, text, voice=None, **kw):
+        return self.tts.infer(text, ref_audio=self.ref_audio, denoise=self.denoise,
+                              use_ref_codes=not self.speaker_only, **kw)
+
+
+def clone_label(ref_audio, denoise, speaker_only):
+    """Nhãn giọng nhân bản: không chứa tên người hay đường dẫn, chỉ 8 ký tự đầu sha256 nội dung file mẫu."""
+    h = hashlib.sha256(Path(ref_audio).read_bytes()).hexdigest()[:8]
+    return f'nhân bản từ giọng mẫu #{h} ({"âm sắc" if speaker_only else "đầy đủ"}, {"khử nhiễu" if denoise else "không khử nhiễu"})'
+
+
 def main():
     ap = argparse.ArgumentParser(description='Dựng bài tụng (MP3 + JSON) bằng VieNeu-TTS v3 Turbo')
     ap.add_argument('--voice', default='Thiền Tâm Đức')
@@ -275,7 +309,20 @@ def main():
     ap.add_argument('--out', default=str(ROOT / 'public' / 'audio' / 'chants'))
     ap.add_argument('--eval', default=None, help='Chỉ xuất phần giọng vài câu đầu ra file WAV để đánh giá')
     ap.add_argument('--eval-lines', type=int, default=10)
+    ap.add_argument('--ref-audio', default=None, help='Nhân bản giọng từ file mẫu (đặt NGOÀI repo; xem phần đầu file)')
+    ap.add_argument('--denoise-ref', action=argparse.BooleanOptionalAction, default=True,
+                    help='Khử nhiễu file mẫu trước khi nhân bản (mặc định: có)')
+    ap.add_argument('--ref-mode', choices=['full', 'speaker'], default='full',
+                    help='full: âm sắc + cách nhả chữ của mẫu; speaker: chỉ âm sắc')
     args = ap.parse_args()
+    if args.ref_audio:
+        ref = Path(args.ref_audio).expanduser().resolve()
+        if not ref.is_file():
+            ap.error(f'không thấy file giọng mẫu: {args.ref_audio}')
+        if ROOT in ref.parents:
+            ap.error('file giọng mẫu là dữ liệu cá nhân, phải để NGOÀI thư mục dự án; hãy chuyển nó ra ngoài rồi chạy lại')
+        args.voice = clone_label(ref, args.denoise_ref, args.ref_mode == 'speaker')
+        print(f'Nhân bản giọng: {args.voice}')
 
     data = chant_data()
     ids = [t for t in args.tracks.split(',') if t in data]
@@ -288,6 +335,8 @@ def main():
         from vieneu import Vieneu
         from faster_whisper import WhisperModel
         tts = Vieneu(onnx_dir=args.onnx_dir) if args.onnx_dir else Vieneu()
+        if args.ref_audio:
+            tts = CloneVoice(tts, ref, args.denoise_ref, args.ref_mode == 'speaker')
         model = WhisperModel(args.whisper, device='cpu', compute_type='int8')
     if args.eval:
         tid = ids[0]

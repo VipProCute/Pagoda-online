@@ -1,0 +1,17 @@
+Nguồn các bộ kinh trong Tàng Kinh Các
+
+dich-can-kinh.md và dich-can-kinh/*.png
+  “Dịch Cân Kinh” của Trần Đại Sỹ, sưu tầm từ diễn đàn ttvnol.com (tài liệu PDF do chủ dự án cung cấp).
+  Giữ thứ tự chữ và hình của tài liệu; sửa lỗi ngắt dòng khi trích chữ từ PDF.
+  Phần “Về bản này”, phần chép lại lời thơ chữ Hán trong các hình “Nguyên bản” và phiên âm Hán Việt
+  do Tàng Kinh Các thêm vào. Lời thơ là bản “Dịch Cân Kinh thập nhị thế” cổ.
+  Nên xin phép người giữ bản quyền trước khi phát hành rộng.
+
+cuu-am-chan-kinh.md, quy-hoa-bao-dien.md
+  Bài tự viết giới thiệu hai bộ sách võ công hư cấu trong tiểu thuyết của Kim Dung
+  (Xạ Điêu Anh Hùng Truyện, Thần Điêu Hiệp Lữ, Ỷ Thiên Đồ Long Ký, Tiếu Ngạo Giang Hồ).
+  Không chép nguyên văn tiểu thuyết; chỉ trích một câu ngắn để bình luận.
+  Chương 77 Đạo Đức Kinh (Lão Tử) và câu 5 kinh Pháp Cú là kinh điển cổ; lời dịch của Tàng Kinh Các.
+
+bat-nha-tam-kinh.md
+  Bản phiên âm Hán Việt phổ thông của Bát Nhã Ba La Mật Đa Tâm Kinh (bản Hán của ngài Huyền Trang).
