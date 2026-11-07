@@ -43,12 +43,12 @@
     return 'không thuộc cặp tam hợp hoặc lục xung trong cách xem này: giữ nhịp ổn định và theo dõi hoàn cảnh';
   }
   function text(el,value) { el.textContent=value; }
-  function init({socket, getMe, getJoined, setScene, toast}) {
-    const $=id=>document.getElementById(id), dlg=$('dlg-fortune'); let state={current:null,waiting:[]}, currentScene='hall';
+  function init({socket, getMe, getJoined, setScene, goScene, getScene, toast}) {
+    const $=id=>document.getElementById(id), dlg=$('dlg-fortune'); let state={current:null,waiting:[]};
     const open=type=>{ if(!getJoined()){toast('Mời bạn vào chùa trước nhé.');return;} $('fortune-lot').hidden=type!=='lot';$('fortune-tarot').hidden=type!=='tarot';$('fortune-horoscope').hidden=type!=='horoscope';text($('fortune-title'),type==='lot'?'Xin xăm':type==='tarot'?'Trải bài Tarot':'Xem tử vi sắp tới');if(!dlg.open)dlg.showModal();};
     $('fortune-close').onclick=()=>dlg.close();
-    $('go-yard').onclick=()=>change('yard'); $('go-hall').onclick=()=>change('hall');
-    function change(scene) { if(!getJoined()){toast('Mời bạn vào chùa trước nhé.');return;} socket.emit('scene',scene,r=>{if(!r||!r.ok)return;currentScene=scene;setScene(scene);$('go-yard').hidden=scene==='yard';$('go-hall').hidden=scene==='hall';$('stage').setAttribute('aria-label',scene==='hall'?'Chánh điện':'Sân chùa');}); }
+    // đổi cảnh (chánh điện, sân chùa, Tàng Kinh Các) do app.js lo: goScene gửi lên máy chủ rồi mới đổi
+    $('go-yard').onclick=()=>goScene('yard'); $('go-hall').onclick=()=>goScene('hall');
     $('fortune-join').onclick=()=>socket.emit('fortune:join',{},r=>{if(!r||!r.ok)toast(r?.reason||'Chưa thể xin xăm.');else $('lot-result').hidden=true;});
     $('fortune-leave').onclick=()=>socket.emit('fortune:leave');
     function renderQueue() {
@@ -58,7 +58,7 @@
       text($('fortune-wait'),idx>=0?`Bạn đang chờ ở vị trí ${idx+1} / ${state.waiting.length}.`:state.waiting.length?`${state.waiting.length} người đang chờ.`:'Chưa có ai chờ.');
     }
     socket.on('fortune:queue',s=>{state=s;renderQueue();});
-    socket.on('fortune:result',({number})=>{const l=lots[number-1];if(!l)return;text($('lot-result'),`Quẻ ${number} · ${l[0]} — ${l[1]}\n${l[2]}`);$('lot-result').hidden=false;toast(`Bạn đã xin được quẻ số ${number}.`);if(currentScene==='hall')open('lot');});
+    socket.on('fortune:result',({number})=>{const l=lots[number-1];if(!l)return;text($('lot-result'),`Quẻ ${number} · ${l[0]} — ${l[1]}\n${l[2]}`);$('lot-result').hidden=false;toast(`Bạn đã xin được quẻ số ${number}.`);if(getScene()==='hall')open('lot');});
     setInterval(renderQueue,250);
     $('tarot-form').onsubmit=e=>{
       e.preventDefault();const pool=deck.slice(), picks=[];
@@ -74,7 +74,7 @@
       let last='';for(let i=0,found=0;i<100&&found<3;i++){const d=new Date(Date.UTC(today.getUTCFullYear(),today.getUTCMonth(),today.getUTCDate()+i));const l=Lunar.toLunar(d.getUTCDate(),d.getUTCMonth()+1,d.getUTCFullYear());const key=`${l[2]}-${l[1]}-${l[3]}`;if(key===last)continue;last=key;const b=mod(l[1]+1,12);out+=`\nTháng ${l[1]}${l[3]?' nhuận':''} âm lịch (chi ${chi[b]}): ${relation(birth,b)}.`;found++;}
       out+='\n\nCách xem: đối chiếu địa chi năm sinh với địa chi ba tháng âm lịch; chưa lập lá số Tử Vi Đẩu Số hay an sao.';text($('horoscope-result'),out);$('horoscope-result').hidden=false;
     };
-    return {open, reset(queue){state=queue||{current:null,waiting:[]};currentScene='hall';setScene('hall');$('go-yard').hidden=false;$('go-hall').hidden=true;renderQueue();}};
+    return {open, reset(queue){state=queue||{current:null,waiting:[]};setScene('hall');renderQueue();}};
   }
   root.Fortune={init};
 })(window);

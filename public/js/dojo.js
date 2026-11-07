@@ -331,7 +331,7 @@
     el = host_el;
     ui.head = h('header', { class: 'dj-head' },
       h('div', { class: 'dj-top' },
-        h('button', { type: 'button', class: 'btn small dj-back', onclick: () => host.goto('hall') }, '← Về chánh điện'),
+        h('button', { type: 'button', class: 'btn small dj-back', onclick: () => host.goto('hall') }, '← Quay lại'),
         ui.arena = h('button', { type: 'button', class: 'dj-link', onclick: () => host.goto('arena') }, 'Ra sân đấu →')),
       h('div', { class: 'dj-title' }, h('h2', null, 'Võ Học Các'), h('span', { class: 'dj-han', lang: 'zh', 'aria-hidden': 'true' }, '武學閣')),
       h('p', { class: 'dj-sub' }, 'Nơi tu luyện nội công và học chiêu.'));

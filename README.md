@@ -6,11 +6,11 @@ Chánh điện trực tuyến cho nhiều người cùng lúc. Mỗi người v�
 
 | Nhóm | Có gì |
 |---|---|
-| Chánh điện | Ba tôn tượng, bàn thờ, bát hương, nến, đèn lồng, tủ Tàng Kinh Các. Chạm sàn (hoặc phím mũi tên / WASD) để đi lại. Chạm bát hương để thắp nhang, chạm tượng để vái lạy, chạm tủ kinh để đọc kinh. |
+| Chánh điện | Ba tôn tượng, bàn thờ, bát hương, nến, đèn lồng, tủ Tàng Kinh Các. Chạm sàn (hoặc phím mũi tên / WASD) để đi lại. Chạm bát hương để thắp nhang, chạm tượng để vái lạy, chạm tủ kinh để bước vào Tàng Kinh Các. |
 | Nhân vật | Tên hoặc pháp danh, giới tính, 4 kiểu tóc (có khăn vấn), 12 màu áo dài (có áo tràng lam, áo tràng nâu). |
 | Lễ Phật | Thắp 1 hoặc 3 nén nhang kèm lời nguyện (nhang cháy 30 phút, khói bay, ai cũng thấy). Dâng hoa sen, hoa hồng, đèn dầu, mâm ngũ quả (hiện lên bàn thờ). Thả tim. Vái lạy (nhân vật cúi người). Gõ mõ. Thỉnh chuông (cả chánh điện cùng nghe). |
 | Tụng kinh chung | Bát Nhã Tâm Kinh, Chú Đại Bi, Kinh Dược Sư (Chú Dược Sư), Niệm Phật A Di Đà, Niệm Quán Thế Âm, Chuông mõ ngồi thiền. Giọng VieNeu-TTS v3 Turbo đọc liền câu, mõ và chuông theo nghi thức (vào mõ, kết mõ). Mọi người nghe cùng một chữ (đồng bộ theo giờ máy chủ), chữ sáng lên theo tiếng mõ. Người vào muộn nghe đúng đoạn đang tụng. |
-| Tàng Kinh Các | Kệ kinh: Dịch Cân Kinh (đủ 12 thức, 59 hình minh họa, lời thơ gốc kèm phiên âm Hán Việt), Cửu Âm Chân Kinh, Quỳ Hoa Bảo Điển, Bát Nhã Tâm Kinh. Đọc theo chương, mục lục, đổi cỡ chữ, nền giấy / nền tối, nhớ chỗ đọc dở. Ai đang đọc thì có biểu tượng sách cạnh tên. |
+| Tàng Kinh Các | Một cảnh đi lại được như sân chùa (chạm tủ kinh ở chánh điện hoặc nút Tàng Kinh Các): cửa sổ trăng nhìn ra rừng trúc, Kệ kinh, kệ Võ học, lư trầm và **8 bồ đoàn**. Chạm bồ đoàn để đi tới ngồi thiền; ngồi rồi chọn công pháp để **tu luyện nội công ngay trên bồ đoàn**, linh khí xoáy quanh người theo màu công pháp và ai trong Tàng Kinh Các cũng thấy. Mỗi bồ đoàn một người; đi chỗ khác là đứng dậy, phiên tu vẫn chạy. Chạm kệ Võ học để sang Võ Học Các học chiêu. Kệ kinh: Dịch Cân Kinh (đủ 12 thức, 59 hình minh họa, lời thơ gốc kèm phiên âm Hán Việt), Cửu Âm Chân Kinh, Quỳ Hoa Bảo Điển, Bát Nhã Tâm Kinh. Đọc theo chương, mục lục, đổi cỡ chữ, nền giấy / nền tối, nhớ chỗ đọc dở. Ai đang đọc thì có biểu tượng sách cạnh tên. |
 | Nói chuyện | Nói chuyện bằng giọng như đi chùa thật: đứng gần nghe rõ, xa nghe nhỏ dần, người bên trái nghe ở tai trái. Đang tụng kinh thì tiếng nói chuyện tự nhỏ lại. Tắt tiếng từng người; ban điều hành khóa mic 10 phút. |
 | Cộng đồng | Chat chung (bong bóng chat hiện trên đầu nhân vật), tường lời nguyện có nút “Tùy hỷ”, báo cáo tin nhắn. |
 | Công đức | Điểm công đức cá nhân (hôm nay / tất cả) và bảng công đức hôm nay. Có thể đăng nhập Google để giữ điểm khi đổi thiết bị. Tính từ nhang, hoa, mõ, tim, vái lạy, tụng kinh và cúng dường (1.000đ = 1 điểm). Nói tục trong chat bị trừ theo 5 mức. Công đức cao hiện **pháp tướng** sau lưng (6 mốc), công đức âm thì có **quỷ** theo sau (4 dạng). |
@@ -19,7 +19,7 @@ Chánh điện trực tuyến cho nhiều người cùng lúc. Mỗi người v�
 | An toàn | Chặn tin có số tài khoản, số điện thoại, đường link (chống lừa đảo giả danh chùa). Che từ tục. Giới hạn tần suất. Tên “Ban điều hành / Admin / Trụ trì…” chỉ dành cho quản trị. |
 | Quản trị | `/admin.html`: xác nhận/hủy lượt cúng dường, xem ai đang có hào quang, ẩn tin nhắn và lời nguyện (thấy cả số công đức bị trừ), gửi thông báo vào chánh điện. |
 | Võ Học Các | Nơi **tu luyện nội công** và **học chiêu**, tách khỏi chánh điện. 6 công pháp (Tĩnh Tâm Quyết, Kim Cương / Phi Yến / Nhu Thủy Tâm Pháp, Cửu Âm Tâm Kinh, Vô Cực Chân Kinh): bắt đầu rồi đóng web cũng được, hết giờ máy chủ tự ghi nhận. 15 chiêu thuộc 3 nhánh Cương / Tốc / Nhu, không khóa phái: học đủ điều kiện (cấp nội công + tâm đắc) là học được cả ba nhánh. Có thể cúng dường để hoàn thành phiên ngay (Ban điều hành xác nhận thủ công). |
-| Sân đấu | Nơi **duy nhất** luận võ 1 đấu 1, người chơi tự ra sân. Mời, nhận lời, chọn 4 chiêu, rồi mỗi lượt hai bên **chọn kín cùng lúc**, máy chủ lật chiêu và giải kết quả (có xác suất né / đỡ). Phòng cân bằng hoặc phòng có buff (pháp tướng, quỷ ám, hào quang). Chánh điện không có đánh nhau. |
+| Sân đấu | Nơi **duy nhất** luận võ 1 đấu 1, người chơi tự ra sân. Sân là một võ đường đi lại được như sân chùa (cổng Luận Võ Đường, võ đài có thái cực, giá binh khí, trống trận, mộc nhân); trên đầu mỗi người có nhãn rảnh / đang đấu / tạm nghỉ và cấp nội công, **chạm vào một người để mời luận võ** (hoặc mở Danh sách). Mời, nhận lời, chọn 4 chiêu, rồi mỗi lượt hai bên **chọn kín cùng lúc**, máy chủ lật chiêu và giải kết quả (có xác suất né / đỡ). Phòng cân bằng hoặc phòng có buff (pháp tướng, quỷ ám, hào quang). Chánh điện không có đánh nhau. |
 | Khác | Lịch âm và đếm ngược đến Rằm / Mùng Một, cài lên màn hình điện thoại (PWA). |
 
 ## Các "nơi" của chùa
@@ -30,7 +30,9 @@ Mỗi nơi một màn hình riêng; chạm nút ở thanh dưới chánh điện
 |---|---|---|
 | Chánh điện | Cúng, thắp nhang, tụng kinh, trò chuyện | Không có đánh nhau, không ai bị mời đấu ở đây |
 | Võ Học Các | Tu luyện, học chiêu, chọn bộ 4 chiêu | `public/js/dojo.js` |
-| Sân đấu | Danh sách người ở sân, mời và luận võ | `public/js/arena.js`; chỉ người đã ra sân mới thấy và mời được nhau |
+| Sân đấu | Sân đi lại được, chạm người để mời, luận võ | `public/js/arena.js`; chỉ người đã ra sân mới thấy và mời được nhau. Sân vẽ bằng chung bộ vẽ của chánh điện (`Hall.attach` lên khung của Sân đấu, cảnh `arena`) |
+
+Trong chùa còn có các **cảnh** dùng chung một khung vẽ: chánh điện, sân chùa, Tàng Kinh Các (`SCENES` trong `server.js`, vẽ ở `public/js/hall.js`). Bồ đoàn: `LIB_SEATS` (phải khớp giữa `server.js` và `hall.js`), sự kiện `sit` / `stand` / `psit`; bảng tọa thiền ở `public/js/meditate.js`.
 
 Người đang ở nơi khác không hiện trong chánh điện. Thêm nơi mới (ví dụ coi bói tử vi, tarot) thì đăng ký thêm một nơi trong `PLACES` của `server.js` và `Places.register` ở `public/js/app.js`, không đụng chánh điện. Chi tiết luật chơi và giao thức: [docs/VO-HOC.md](docs/VO-HOC.md), [docs/VO-HOC-GIAO-THUC.md](docs/VO-HOC-GIAO-THUC.md), số liệu cân bằng: [docs/VO-HOC-CAN-BANG.md](docs/VO-HOC-CAN-BANG.md).
 
@@ -339,7 +341,8 @@ lib/pk/manager.js      sân đấu: người ở sân, lời mời, sảnh, vòn
 lib/pk/buffs.js        buff pháp tướng / quỷ / hào quang cho phòng có buff; rules.js, rng.js
 public/js/martial.js   3 nhánh, 15 chiêu, 6 công pháp, cấp nội công (dùng chung máy chủ và trình duyệt)
 public/js/places.js    chuyển giữa các nơi (chánh điện, Võ Học Các, Sân đấu); dojo.js, arena.js là giao diện hai nơi sau
-public/js/hall.js      vẽ chánh điện, tủ kinh, nhân vật, hào quang, pháp tướng, quỷ (Canvas 2D)
+public/js/hall.js      vẽ chánh điện, sân chùa, Tàng Kinh Các, Sân đấu, nhân vật (đứng, ngồi thiền), hào quang, pháp tướng, quỷ (Canvas 2D)
+public/js/meditate.js  bảng tọa thiền trên bồ đoàn ở Tàng Kinh Các (chọn công pháp, đếm giờ phiên tu)
 public/js/voice.js     nói chuyện bằng giọng (WebRTC, nghe theo khoảng cách)
 public/js/library.js   Tàng Kinh Các: kệ kinh và trang đọc
 public/js/aura.js      9 cảnh giới hào quang cúng dường (dùng chung máy chủ và trình duyệt)

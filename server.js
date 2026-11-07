@@ -70,6 +70,10 @@ const SPEEDUP_PER_DAY = Math.max(1, Number(process.env.SPEEDUP_PER_DAY) || 2);
 const CULTIVATION_TIME_SCALE = Number(process.env.CULTIVATION_TIME_SCALE) > 0 ? Number(process.env.CULTIVATION_TIME_SCALE) : 1;   // chỉ để thử: 0.001 = nhanh gấp nghìn lần
 const MARTIAL_SWEEP_MS = Math.max(100, Number(process.env.MARTIAL_SWEEP_MS) || 15000);
 const PLACES = ['hall', 'dojo', 'arena'];     // thêm nơi mới (ví dụ coi bói, tarot) ở đây và đăng ký phía trình duyệt
+// Cảnh trong chùa (cùng một khung vẽ): chánh điện, sân chùa, Tàng Kinh Các. Mỗi cảnh có chỗ đứng khi mới bước vào.
+const SCENES = { hall: [0.5, 0.8], yard: [0.5, 0.8], library: [0.5, 0.9] };
+// Bồ đoàn trong Tàng Kinh Các (x, z trên sàn). Phải khớp LIB_SEATS trong public/js/hall.js.
+const LIB_SEATS = [[0.22, 0.44], [0.41, 0.44], [0.59, 0.44], [0.78, 0.44], [0.22, 0.72], [0.41, 0.72], [0.59, 0.72], [0.78, 0.72]];
 
 const MERIT = MERITS.EARN;   // thắp nhang +10, dâng lễ +5, … ; cúng dường +1 cho mỗi 1.000đ
 // Mốc công đức trong ngày → hiệu ứng chúc mừng ở trình duyệt. Máy chủ quyết định, trình duyệt chỉ hiển thị.
@@ -548,7 +552,7 @@ auth.mount(app, {
   }
 });
 
-const publicPlayer = p => ({ id: p.id, name: p.name, look: p.look, x: +p.x.toFixed(3), z: +p.z.toFixed(3), mod: p.mod, scene: p.scene || 'hall', v: p.v || 0, rd: p.rd || '', au: auraOf(p.uid), mt: meritTotal(p.uid), at: p.place && p.place !== 'hall' ? p.place : undefined });
+const publicPlayer = p => ({ id: p.id, name: p.name, look: p.look, x: +p.x.toFixed(3), z: +p.z.toFixed(3), mod: p.mod, scene: p.scene || 'hall', v: p.v || 0, rd: p.rd || '', au: auraOf(p.uid), mt: meritTotal(p.uid), at: p.place && p.place !== 'hall' ? p.place : undefined, sit: p.sit >= 0 ? p.sit : undefined, cm: p.sit >= 0 && p.cm ? p.cm : undefined });
 const voiceCount = () => { let n = 0; for (const p of players.values()) if (p.v) n++; return n; };
 function sys(text) {
   const m = { id: store.nextId(), pid: 0, name: '', c: 0, text, t: now(), sys: true };
@@ -621,7 +625,7 @@ const accountReady = p => !auth.enabled || !!auth.sessionFor(p.socket.data.authK
 const BLOCK_SECRET = crypto.randomBytes(24);     // chỉ sống trong tiến trình: mã mờ chỉ dùng trong một phiên làm việc
 const blockHandle = uid => crypto.createHmac('sha256', BLOCK_SECRET).update(String(uid)).digest('base64url').slice(0, 16);
 function emitToUid(uid, ev, payload) { for (const q of players.values()) if (q.uid === uid) q.socket.emit(ev, payload); }
-function deliverUpdates(r) { if (r && r.updates) for (const u of r.updates) emitToUid(u.uid, 'tu:update', u.update); }
+function deliverUpdates(r) { if (r && r.updates) for (const u of r.updates) { emitToUid(u.uid, 'tu:update', u.update); syncCult(u.uid); } }
 /** Cấp pháp tướng (Lc), quỷ (Lq), hào quang (Ld) ngay lúc này; lấy từ đúng dữ liệu công đức / cúng dường đang chạy. */
 function buffInputsOf(uid) {
   const mt = meritTotal(uid), dm = MERITS.demonOf(mt), a = auraOf(uid);
@@ -636,6 +640,30 @@ const guestMartialState = () => {
   };
 };
 const otherInArena = p => { for (const q of players.values()) if (q !== p && q.uid === p.uid && q.place === 'arena') return true; return false; };
+
+/* ---------------- Tàng Kinh Các: ngồi bồ đoàn tu luyện ---------------- */
+/** Công pháp đang tu (để người khác thấy linh khí quanh người ngồi trên bồ đoàn). Khách hay chưa tu thì ''. */
+function cultMethodOf(p) {
+  const all = MARTIAL_ENABLED && db.martial && db.martial.sessions;
+  if (!all || !accountReady(p)) return '';
+  const t = now();                                          // chỉ đọc, không chốt phiên (việc đó của vòng quét)
+  for (const k in all) { const s = all[k]; if (s && s.uid === p.uid && s.status === 'active' && s.endsAt > t) return String(s.methodId || ''); }
+  return '';
+}
+const sitInfo = p => ({ id: p.id, sit: p.sit >= 0 ? p.sit : -1, cm: p.sit >= 0 ? p.cm || '' : '' });
+function standUp(p) {
+  if (!(p.sit >= 0)) return;
+  p.sit = -1; p.cm = '';
+  io.emit('psit', sitInfo(p));
+}
+/** Phiên tu của tài khoản vừa đổi (bắt đầu, hủy, xong): ai đang ngồi bồ đoàn thì cập nhật linh khí. */
+function syncCult(uid) {
+  for (const q of players.values()) {
+    if (q.uid !== uid || !(q.sit >= 0)) continue;
+    const cm = cultMethodOf(q);
+    if (cm !== (q.cm || '')) { q.cm = cm; io.emit('psit', sitInfo(q)); }
+  }
+}
 function leaveArena(p, reason) {
   p.socket.leave('arena');
   if (!otherInArena(p)) arena.leave(p.uid, reason);     // còn tab khác của cùng tài khoản ở sân thì giữ nguyên chỗ
@@ -691,7 +719,7 @@ io.on('connection', socket => {
       id: nextPid++, uid, name: nm.name, mod: isMod, socket,
       look: { g: data.look && data.look.g === 'nam' ? 'nam' : 'nu', c: num(data.look && data.look.c, 0, 11, 0) | 0, h: num(data.look && data.look.h, 0, 3, 0) | 0 },
       x: 0.5 + rand(-0.28, 0.28), z: rand(0.68, 0.92), tx: 0, tz: 0, dirty: false, cd: {}, bk: {}, lastText: '', meritDirty: false,
-      scene: 'hall', v: 0, rd: '', voiceBanUntil: 0, milestone: null, place: 'hall'
+      scene: 'hall', v: 0, rd: '', voiceBanUntil: 0, milestone: null, place: 'hall', sit: -1, cm: ''
     };
     p.tx = p.x; p.tz = p.z;
     p.mkey = MERITS.visualKey(meritTotal(uid));
@@ -715,14 +743,33 @@ io.on('connection', socket => {
   });
 
   socket.on('scene', (scene, ack) => {
-    if (!p || !['hall', 'yard'].includes(scene)) return;
+    if (!p || typeof scene !== 'string' || !Object.prototype.hasOwnProperty.call(SCENES, scene)) return;
     if (scene !== p.scene) {
       if (scene !== 'hall') fortuneQueue.remove(p.id);
-      p.scene = scene; p.x = p.tx = 0.5; p.z = p.tz = 0.8; p.dirty = true;
+      standUp(p);
+      const [x, z] = SCENES[scene];
+      p.scene = scene; p.x = p.tx = x; p.z = p.tz = z; p.dirty = true;
       io.emit('pscene', { id: p.id, scene, x: p.x, z: p.z });
     }
     if (typeof ack === 'function') ack({ ok: true });
   });
+  /* ----- Tàng Kinh Các: ngồi lên một bồ đoàn (đi tới rồi ngồi), đứng dậy ----- */
+  socket.on('sit', (d, ack) => {
+    if (!p) return;
+    const reply = r => typeof ack === 'function' && ack(r);
+    if (p.scene !== 'library' || (p.place && p.place !== 'hall')) return reply({ ok: false, reason: 'Bồ đoàn ở trong Tàng Kinh Các.' });
+    const seat = Number(d && d.seat);
+    if (!Number.isInteger(seat) || seat < 0 || seat >= LIB_SEATS.length) return reply({ ok: false, reason: 'Không có bồ đoàn này.' });
+    if (!bucket('sit', 1, 4)) return reply({ ok: false, reason: 'Bạn đổi chỗ hơi nhanh, đợi một chút nhé.' });
+    for (const q of players.values()) {
+      if (q !== p && q.sit === seat && q.scene === 'library' && q.place === 'hall') return reply({ ok: false, reason: `${q.name} đang ngồi ở bồ đoàn này.` });
+    }
+    p.sit = seat; p.cm = cultMethodOf(p);
+    [p.tx, p.tz] = LIB_SEATS[seat];                         // đi tới bồ đoàn; tới nơi thì trình duyệt vẽ dáng ngồi
+    io.emit('psit', sitInfo(p));
+    reply({ ok: true, seat });
+  });
+  socket.on('stand', () => { if (p) standUp(p); });
   socket.on('fortune:join', (_, ack) => {
     if (!p || typeof ack !== 'function') return;
     if (p.scene !== 'hall' || (p.place && p.place !== 'hall')) return ack({ ok: false, reason: 'Mời bạn vào chánh điện để xin xăm.' });
@@ -746,6 +793,7 @@ io.on('connection', socket => {
 
   socket.on('move', d => {
     if (!p || !d) return;
+    standUp(p);                                             // đang ngồi bồ đoàn mà đi chỗ khác thì đứng dậy
     p.tx = num(d.x, X_MIN, X_MAX, p.x);
     p.tz = num(d.z, Z_MIN, Z_MAX, p.z);
   });
@@ -967,8 +1015,15 @@ io.on('connection', socket => {
       leaveArena(p, 'left');
     }
     if (place !== 'hall') fortuneQueue.remove(p.id);   // đi sang Võ Học Các / Sân đấu thì rời hàng chờ xin xăm
+    standUp(p);
+    if (place !== p.place) {
+      // mỗi nơi có lối vào riêng: ra Sân đấu thì đứng ở cổng sân, về chùa thì đứng ở cửa cảnh đang ở
+      if (place === 'arena') { p.x = rand(0.36, 0.64); p.z = rand(0.84, 0.92); }
+      else if (place === 'hall') { const [x, z] = SCENES[p.scene] || SCENES.hall; p.x = x + rand(-0.12, 0.12); p.z = z; }
+      p.tx = p.x; p.tz = p.z; p.dirty = true;
+    }
     p.place = place;
-    io.emit('pplace', { id: p.id, place });
+    io.emit('pplace', { id: p.id, place, x: +p.x.toFixed(3), z: +p.z.toFixed(3) });
     ack(info);
   });
 
@@ -1017,10 +1072,13 @@ io.on('connection', socket => {
   });
   socket.on('tu:start', martialOnly(async (d, ack) => {
     const r = martial.start(p.uid, String(d.methodId || ''), String(d.duration || ''));
-    ack(r);                       // ghi nền (không flush ngay): phiên chạy theo giờ máy chủ nên mất vài giây thay đổi không làm mất thưởng
+    ack(r);
+    if (r && r.ok) syncCult(p.uid);                       // ghi nền (không flush ngay): phiên chạy theo giờ máy chủ nên mất vài giây thay đổi không làm mất thưởng
   }));
   socket.on('tu:cancel', martialOnly(async (d, ack) => {
-    ack(martial.cancel(p.uid, String(d.sessionId || '')));
+    const r = martial.cancel(p.uid, String(d.sessionId || ''));
+    ack(r);
+    if (r && r.ok) syncCult(p.uid);
   }));
   socket.on('tu:speedup', martialOnly(async (d, ack) => {
     const r = martial.speedup(p.uid, String(d.sessionId || ''), { anon: !!d.anon, name: p.name });
@@ -1033,7 +1091,9 @@ io.on('connection', socket => {
     ack(martial.cancelSpeedup(p.uid, String(d.code || '')));
   }));
   socket.on('tu:voucher', martialOnly(async (d, ack) => {
-    ack(martial.useVoucher(p.uid, String(d.voucherId || ''), String(d.sessionId || '')));
+    const r = martial.useVoucher(p.uid, String(d.voucherId || ''), String(d.sessionId || ''));
+    ack(r);
+    if (r && r.ok) syncCult(p.uid);
   }));
   socket.on('martial:seen', martialOnly((d, ack) => { martial.markSeen(p.uid, Array.isArray(d.ids) ? d.ids.slice(0, 20).map(String) : []); ack({ ok: true }); }));
   socket.on('vo:learn', martialOnly((d, ack) => { const r = martial.learn(p.uid, String(d.skillId || '')); if (r.ok) store.save(); ack(r); }));
@@ -1143,7 +1203,7 @@ setInterval(() => {
 // phiên tu luyện tới giờ: hoàn thành và báo cho người chơi (kể cả khi họ đã đóng web, lần sau vào sẽ thấy trong Võ Học Các)
 setInterval(() => {
   try {
-    for (const u of martial.sweep()) emitToUid(u.uid, 'tu:update', u.update);
+    for (const u of martial.sweep()) { emitToUid(u.uid, 'tu:update', u.update); syncCult(u.uid); }
   } catch (e) { console.error('[martial] sweep:', e && e.stack || e); }
 }, MARTIAL_SWEEP_MS);
 }

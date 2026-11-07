@@ -253,16 +253,21 @@
     el.appendChild(wrap);
   }
 
+  /* Sân đi lại được như sân chùa: khung vẽ dùng chung bộ vẽ của chánh điện (Hall, cảnh 'arena').
+     Chạm một người để mời luận võ; danh sách người ở sân nằm trong ngăn kéo "Danh sách" (cho ai khó chạm trúng người). */
   function buildRoster() {
-    const sec = h('section', 'ar-screen ar-roster', null, { 'aria-label': 'Danh sách người ở sân' }), r = { sec };
-    const box = h('div', 'ar-rwrap'), side = h('div', 'ar-side'), list = h('div', 'ar-listbox');
-    add(side, h('p', 'ar-intro', 'Hai bên cùng chọn chiêu kín, rồi lật ra một lượt. Ai hết máu trước thì thua.'));
+    const sec = h('section', 'ar-screen ar-roster', null, { 'aria-label': 'Sân đấu' }), r = { sec };
+    const yard = h('div', 'ar-yard'), top = h('div', 'ar-ytop'), msgs = h('div', 'ar-ymsgs'), list = h('div', 'ar-listbox');
+    r.cv = h('canvas', 'ar-yardcv', null, { role: 'img', 'aria-label': 'Sân đấu: võ đài giữa sân và những đạo hữu đang ở sân. Chạm vào một người để mời luận võ, chạm sân để đi lại.' });
     r.dnd = btn('ar-switch', null, { role: 'switch', 'aria-checked': 'false' });
     add(r.dnd, h('span', 'ar-knob'), h('span', 'ar-sw-t', 'Tạm không nhận lời mời'));
     r.dnd.addEventListener('click', toggleDnd);
     r.blocks = btn('btn small ar-blocks', 'Danh sách chặn');
     r.blocks.addEventListener('click', openBlocks);
-    add(side, r.dnd, r.blocks);
+    r.listBtn = btn('btn small gold ar-listbtn', 'Danh sách', { 'aria-expanded': 'false' });
+    r.listBtn.addEventListener('click', () => toggleDrawer());
+    add(top, r.listBtn, r.dnd);
+    r.hint = h('p', 'ar-yhint', 'Chạm vào một đạo hữu để mời luận võ · chạm sân để đi lại');
     r.resume = h('p', 'ar-resume', null, { role: 'status' }); r.resume.hidden = true;
     add(r.resume, h('span', 'spin', null, { 'aria-hidden': 'true' }), document.createTextNode('Đang vào lại trận đang đấu dở…'));
     r.login = h('div', 'card ar-login'); r.login.hidden = true;
@@ -272,18 +277,54 @@
     r.outText = h('span', 'ar-out-t'); r.outCancel = btn('btn small', 'Hủy lời mời');
     r.outCancel.addEventListener('click', cancelOut);
     add(r.out, h('span', 'spin', null, { 'aria-hidden': 'true' }), r.outText, r.outCancel);
-    const hd = h('h3', 'ar-lh'), cnt = h('span', 'ar-count', '0');
+    const hd = h('h3', 'ar-lh', null, { tabindex: '-1' }), cnt = h('span', 'ar-count', '0');
     add(hd, h('span', null, 'Người ở sân'), cnt);
     r.count = cnt; r.list = h('ul', 'ar-list'); r.list.setAttribute('aria-label', 'Người ở sân');
     r.empty = h('div', 'ar-empty');
-    r.empty.appendChild(svgIcon('ar-empty-i', '<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 9.5h.01M16 9.5h.01M8.5 15.5c1-1.2 2.2-1.8 3.5-1.8s2.5.6 3.5 1.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>', 40));
+    r.empty.appendChild(svgIcon('ar-empty-i', '<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 9.5h.01M16 9.5h.01M8.5 15.5c1-1.2 2.2-1.8 3.5-1.8s2.5.6 3.5 1.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>', 28));
     r.emptyT = h('b', null, 'Sân đang vắng.');
-    r.emptyS = h('span', null, 'Chưa có đạo hữu nào ra luận võ. Bạn cứ chờ một lát, hoặc rủ bạn bè cùng ra sân. Có người vào là thấy ngay ở đây.');
+    r.emptyS = h('span', null, 'Chưa có đạo hữu nào ra luận võ. Cứ đi dạo quanh võ đài chờ một lát, có người vào là thấy ngay.');
     add(r.empty, r.emptyT, r.emptyS);
-    add(list, r.resume, r.login, r.out, hd, r.list, r.empty);
-    add(box, side, list); add(sec, box);
+    add(msgs, r.resume, r.login, r.out, r.empty);
+    // ngăn kéo danh sách
+    r.drawer = h('div', 'ar-drawer', null, { role: 'region', 'aria-label': 'Danh sách người ở sân' }); r.drawer.hidden = true;
+    const dclose = btn('x ar-dclose', '×', { 'aria-label': 'Đóng danh sách' });
+    dclose.addEventListener('click', () => toggleDrawer(false));
+    hd.appendChild(dclose);
+    r.none = h('p', 'hint ar-none', 'Chưa có ai khác ở sân.');
+    add(list, hd, h('p', 'ar-intro', 'Hai bên cùng chọn chiêu kín, rồi lật ra một lượt và đánh nhau. Ai hết máu trước thì thua.'), r.list, r.none, r.blocks);
+    add(r.drawer, list);
+    add(yard, r.cv, top, msgs, r.hint, r.drawer);
+    add(sec, yard);
     return r;
   }
+  function toggleDrawer(force) {
+    const r = S.ui && S.ui.roster;
+    if (!r) return;
+    const open = force != null ? !!force : r.drawer.hidden;
+    r.drawer.hidden = !open; r.listBtn.setAttribute('aria-expanded', String(open));
+    if (open) { renderRoster(); try { r.drawer.querySelector('h3').focus({ preventScroll: true }); } catch (e) { /* bỏ qua */ } }
+  }
+  /** Chạm vào một người trên sân (Hall báo lên qua app.js): mời luận võ, hoặc báo vì sao chưa mời được. */
+  function pick(pid) {
+    if (!S.visible || S.screen !== 'roster') return;
+    const me = S.host.me ? S.host.me().pid : -1;
+    if (pid === me) return;
+    const p = S.players.get(pid);
+    if (!p) { toast('Người này không còn ở sân.'); return; }
+    if (S.loginNeeded) { toast('Cần đăng nhập Google để luận võ.'); return; }
+    if (p.st === 'busy') { toast(`${p.name} đang đấu, đợi trận xong nhé.`); return; }
+    if (p.st === 'dnd') { toast(`${p.name} đang tạm không nhận lời mời.`); return; }
+    openInvite(pid);
+  }
+  /** Nhãn trên đầu từng người ở sân (Hall vẽ): rảnh / đang đấu / tạm nghỉ và cấp nội công. */
+  function tagOf(pid) {
+    const p = S.players.get(pid);
+    if (!p) return null;
+    const st = ST[p.st] || ST.free;
+    return { text: `${st[0]} · Cấp ${num(p.lv, 1)}`, color: p.st === 'busy' ? '#ec7b6c' : p.st === 'dnd' ? '#9a8b78' : '#86b38a' };
+  }
+  const inYard = () => !!(S.visible && S.screen === 'roster');
 
   function buildDialogs(wrap) {
     const ui = S.ui;
@@ -295,9 +336,10 @@
       add(sp, h('b', null, MODES[mode].name), h('small', null, MODES[mode].desc)); add(lab, inp, sp); opts.appendChild(lab);
     }
     add(fs, lg, opts);
-    const send = btn('btn primary', 'Gửi lời mời', { type: 'submit' }), later = btn('btn', 'Để sau');
+    const send = btn('btn primary', 'Gửi lời mời', { type: 'submit' }), later = btn('btn', 'Để sau'), blk = btn('btn small ar-dblk', 'Chặn người này');
     later.addEventListener('click', () => d1.dlg.close());
-    add(d1.foot, later, send); add(d1.body, fs, d1.warn, d1.foot);
+    blk.addEventListener('click', () => { const pid = S.dlg.pid; d1.dlg.close(); openBlock(pid); });
+    add(d1.foot, blk, later, send); add(d1.body, fs, d1.warn, d1.foot);
     d1.send = send;
     d1.body.addEventListener('submit', e => { e.preventDefault(); sendInvite(); });
     // chặn
@@ -328,12 +370,20 @@
     ui.invites.hidden = screen === 'lobby' || screen === 'match';
     ui.hturn.hidden = ui.hbar.hidden = screen !== 'match';
     ui.root.dataset.screen = screen;
+    yardOn(screen === 'roster' && S.visible);
     if (screen === 'roster') renderRoster();
     if (screen === 'lobby' || screen === 'match') startPaint(); else stopPaint();
     const first = { roster: ui.roster.sec, lobby: ui.lobby, match: ui.match, end: ui.end }[screen];
     const hd = first && first.querySelector('[data-focus]');
     if (hd) { hd.tabIndex = -1; try { hd.focus({ preventScroll: true }); } catch (e) { /* bỏ qua */ } }
     refreshCtl();
+  }
+  let yardShown = false;
+  function yardOn(on) {
+    const y = S.host && S.host.yard;
+    if (!y || on === yardShown) return;
+    yardShown = on;
+    try { if (on) y.show(S.ui.roster.cv); else { toggleDrawer(false); y.hide(); } } catch (e) { console.error('[arena] yard', e); }
   }
   /** Đang ở sảnh / trận, hoặc đang chờ máy chủ cho biết có trận dở không (rời sân lúc đó cũng là bỏ cuộc). */
   const inMatch = () => S.resuming || (!!S.m && (S.screen === 'lobby' || S.screen === 'match'));
@@ -396,9 +446,11 @@
     });
     for (const [pid, row] of S.rows) if (!seen.has(pid)) { row.li.remove(); S.rows.delete(pid); }
     r.count.textContent = String(list.length);
+    r.listBtn.textContent = `Danh sách · ${list.length}`;
     r.empty.hidden = list.length > 0 || S.loginNeeded;
-    r.list.hidden = list.length === 0;
-    if (S.screen === 'roster') for (const row of S.rows.values()) if (!row.drawn) row.drawn = paintPortrait({ cv: row.cv, look: row.p && row.p.look, buff: null }, 0);
+    r.list.hidden = list.length === 0; r.none.hidden = list.length > 0;
+    r.hint.hidden = list.length === 0;
+    if (S.screen === 'roster' && !r.drawer.hidden) for (const row of S.rows.values()) if (!row.drawn) row.drawn = paintPortrait({ cv: row.cv, look: row.p && row.p.look, buff: null }, 0);
     r.dnd.setAttribute('aria-checked', String(S.dnd)); r.dnd.classList.toggle('on', S.dnd); r.dnd.disabled = !canSend() || S.dndBusy;
     r.blocks.disabled = !canSend();
   }
@@ -1317,6 +1369,7 @@
   function init(host) {
     if (S.host) return;
     S.host = host; S.sock = host.socket;
+    if (root.Hall && root.Hall.setTagger) root.Hall.setTagger(tagOf);
     S.connected = S.sock.connected !== false;
     const on = (ev, fn) => S.sock.on(ev, d => { try { fn(d); } catch (e) { console.error('[arena]', ev, e); } });
     on('connect', () => setConn(true)); on('disconnect', () => setConn(false));
@@ -1348,6 +1401,7 @@
     else { S.ui.roster.emptyT.textContent = 'Sân đang vắng.'; S.ui.roster.emptyS.textContent = 'Chưa có đạo hữu nào ra luận võ. Bạn cứ chờ một lát, hoặc rủ bạn bè cùng ra sân. Có người vào là thấy ngay ở đây.'; }
     if (S.screen === 'end') { S.m = null; S.stage = null; dropPaint('lobby'); dropPaint('match'); }
     if (S.screen !== 'lobby' && S.screen !== 'match') go('roster'); else refreshCtl();
+    yardOn(S.screen === 'roster');
     S.ui.roster.resume.hidden = !a.hasMatch; S.resuming = !!a.hasMatch;
     clearInterval(S.tick); S.tick = setInterval(tick, 250);
     S.connected = S.sock.connected !== false;
@@ -1356,6 +1410,7 @@
   }
   function hide() {
     S.visible = false; S.resuming = false;
+    yardOn(false);
     clearInterval(S.tick); S.tick = 0; stopPaint();
     clearMatchTimers();
     if (S.mounted) {
@@ -1366,5 +1421,5 @@
     }
   }
 
-  root.Arena = { init, mount, show, hide, inMatch };
+  root.Arena = { init, mount, show, hide, inMatch, pick, inYard };
 })(this);
