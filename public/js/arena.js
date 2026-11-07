@@ -821,7 +821,7 @@
     for (const [pid, row] of S.rows) if (!seen.has(pid)) { row.li.remove(); S.rows.delete(pid); }
     r.count.textContent = String(list.length);
     r.listBtn.textContent = `Danh sách · ${list.length}`;
-    r.empty.hidden = list.length > 0 || S.loginNeeded;
+    r.empty.hidden = list.length > 0 || S.loginNeeded || !r.drawer.hidden;   // ngăn kéo mở thì đã có dòng "Chưa có ai khác"
     r.list.hidden = list.length === 0; r.none.hidden = list.length > 0;
     r.hint.hidden = list.length === 0;
     if (S.screen === 'roster' && !r.drawer.hidden) for (const row of S.rows.values()) if (!row.drawn) row.drawn = paintPortrait({ cv: row.cv, look: row.p && row.p.look, buff: null }, 0);
@@ -867,6 +867,7 @@
       d.dlg.close();
       if (S.m) return;                                            // nhận lời quá nhanh: sảnh đã mở
       S.out = { inviteId: ack.inviteId, expiresAt: num(ack.expiresAt, nowMs() + 20000), toPid: p.pid, toName: p.name, mode, total: 20000 };
+      toggleDrawer(false);                                        // về lại sân để thấy dải "đang chờ nhận lời"
       renderOut(); renderRoster();
       say(`Đã mời ${p.name}. Đang chờ nhận lời.`);
     });
