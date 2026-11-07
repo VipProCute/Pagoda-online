@@ -190,6 +190,54 @@
   const G = {};
   const players = new Map();
   let me = 0, offset = 0, last = 0, scene = 'hall', yardDay = null;
+  // Khách trong sân là NPC cục bộ, không gửi lên máy chủ hay tính vào số người online.
+  const npcDefs = [
+    { name: 'Lão Ăn Mày', look: { g: 'nam', c: 9, h: 3 }, role: 'beggar', x: 0.14, z: 0.66, lines: ['Thí chủ cho xin chút duyên lành, cơm chay thì càng tốt!', 'Lão ăn xin nhưng không xin mật khẩu Wi-Fi đâu nha.', 'Tu cả ngày, bụng cũng muốn giác ngộ rồi.'] },
+    { name: 'Khách Vãng Lai', look: { g: 'nam', c: 6, h: 2 }, role: 'visitor', x: 0.32, z: 0.48, lines: ['Tôi ghé chùa tìm bình an, tiện tìm luôn dép.', 'Cảnh đẹp quá, phiền não xin đứng ngoài cổng nhé!', 'Đi một vòng cho nhẹ lòng, không phải đang tìm đường đâu.'] },
+    { name: 'Vạn Lý Độc Hành', look: { g: 'nam', c: 11, h: 3 }, role: 'wanderer', x: 0.52, z: 0.73, lines: ['Ta đi vạn dặm... mà vẫn lạc đường vào sân chùa.', 'Giang hồ hiểm ác, may ở đây có cơm chay.', 'Độc hành lâu quá, ai chỉ đường về với?'] },
+    { name: 'Cô Nương Du Xuân', look: { g: 'nu', c: 2, h: 0 }, role: 'lady', x: 0.7, z: 0.53, lines: ['Đi chùa cầu duyên, gặp Wi-Fi mạnh cũng là có duyên!', 'Áo đẹp để du xuân, lòng đẹp để bình an.', 'Chụp ảnh xong nhớ nhặt dép về nha!'] },
+    { name: 'Đại Hiệp Giang Hồ', look: { g: 'nam', c: 0, h: 2 }, role: 'sword', x: 0.86, z: 0.76, lines: ['Tại hạ đến luận võ, nhưng xin uống trà trước.', 'Kiếm pháp của ta rất nhanh, rửa chén còn nhanh hơn.', 'Giang hồ đồn chùa này cao thủ nhiều hơn muỗi!'] }
+  ];
+  const npcs = npcDefs.map((d, i) => ({ ...mk({ id: -100 - i, name: d.name + ' · NPC', look: d.look, x: d.x, z: d.z, scene: 'yard' }), npc: d, tx: d.x, tz: d.z, wait: 0 }));
+  let npcNextSpeech = 0;
+  function updateNpcs(now, dt) {
+    for (const p of npcs) {
+      if (reduceMotion) continue;
+      if (now >= p.wait && Math.hypot(p.tx - p.x, p.tz - p.z) < 0.008) {
+        p.tx = clamp(p.npc.x + rand(-0.17, 0.17), 0.07, 0.93);
+        p.tz = clamp(p.npc.z + rand(-0.12, 0.12), 0.3, 0.86);
+        p.wait = now + rand(2500, 6500);
+      }
+      if (now < p.wait) continue;
+      const dx = p.tx - p.x, dz = p.tz - p.z, dist = Math.hypot(dx, dz);
+      if (dist > 0.001) { const step = Math.min(dist, dt * 0.000025); p.x += dx / dist * step; p.z += dz / dist * step; }
+    }
+    if (!npcNextSpeech) npcNextSpeech = now + 3500;
+    if (now >= npcNextSpeech) {
+      const p = npcs[Math.floor(Math.random() * npcs.length)];
+      p.bubble = { text: p.npc.lines[Math.floor(Math.random() * p.npc.lines.length)], t: now };
+      npcNextSpeech = now + rand(11000, 19000);
+    }
+  }
+  function drawNpcAccessory(g, role) {
+    g.save(); g.lineCap = 'round';
+    if (role === 'beggar') {
+      g.fillStyle = '#705033'; g.beginPath(); g.ellipse(17, -33, 9, 4, 0, 0, TAU); g.fill();
+      g.strokeStyle = '#d4b887'; g.lineWidth = 1; g.stroke();
+    } else if (role === 'wanderer') {
+      g.fillStyle = '#ad8851'; g.beginPath(); g.moveTo(-23, -99); g.lineTo(0, -114); g.lineTo(23, -99); g.quadraticCurveTo(0, -94, -23, -99); g.fill();
+      g.strokeStyle = '#735331'; g.lineWidth = 1.5; g.stroke();
+    } else if (role === 'sword') {
+      g.strokeStyle = '#b9bbc0'; g.lineWidth = 3; g.beginPath(); g.moveTo(-17, -82); g.lineTo(19, -24); g.stroke();
+      g.strokeStyle = '#79502a'; g.lineWidth = 4; g.beginPath(); g.moveTo(-19, -85); g.lineTo(-13, -76); g.stroke();
+    } else if (role === 'lady') {
+      g.fillStyle = '#f8d78f'; circle(g, 8, -98, 3); g.fillStyle = '#fff1da'; circle(g, 8, -98, 1.3);
+    } else {
+      g.fillStyle = '#b98a58'; rrect(g, 10, -50, 8, 12, 2); g.fill();
+    }
+    g.restore();
+  }
+
   let incense = [];
   const parts = [], hearts = [], floaters = [], ripples = [];
   const altar = { lotus: 0, rose: 0, lamp: 0, fruit: 0 };
@@ -894,6 +942,7 @@
     const k = 1 - Math.exp(-dt / 90);
     // mỗi người chỉ hiện ở đúng cảnh mình đang ở (chánh điện, sân chùa, Tàng Kinh Các, Sân đấu); ở Võ Học Các thì không hiện
     const list = [...players.values()].filter(p => viewOf(p) === scene);
+    if (scene === 'yard') { updateNpcs(now, dt); list.push(...npcs); }
     const kl = 1 - Math.exp(-dt / 80);
     for (const p of list) {
       const ox = p.dx, oz = p.dz;
@@ -953,6 +1002,7 @@
       if (rk) meritHalo(g, rk, t + p.id * 0.3, aur && aa > 0.3 ? tierColor(aur.t) : null);
       if (aur) aura(g, aur.t, t, aa, p.id * 1.7, false);
       drawAvatar(g, p.look, p.front, t + p.id, bow, p.walking);
+      if (p.npc) drawNpcAccessory(g, p.npc.role);
       if (aur) aura(g, aur.t, t, aa, p.id * 1.7, true);
       }
       if (p.rburst) {                                         // vừa lên mốc pháp tướng
