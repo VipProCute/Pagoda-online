@@ -1,0 +1,77 @@
+'use strict';
+/*
+ * Hai khái niệm "ở đâu" sống chung sau khi gộp nhánh xin xăm / sân chùa với nhánh Võ Học Các / Sân đấu:
+ *   - cảnh (scene): chánh điện hay sân chùa, cùng một trang, cùng một khung vẽ; có hàng chờ xin xăm ở chánh điện.
+ *   - nơi (place): chánh điện, Võ Học Các hay Sân đấu; mỗi nơi là một màn hình riêng.
+ * Người đi sang Võ Học Các / Sân đấu thì rời hàng chờ xin xăm và không xin xăm được từ đó.
+ */
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const crypto = require('crypto');
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+const { startServer, freePort } = require('./helpers/live');
+const { connect, call, join, waitFor, sleep } = require('./helpers/client');
+
+const digest = v => crypto.createHash('sha256').update(v).digest('base64url');
+
+test('cảnh (chánh điện / sân chùa) và nơi (Võ Học Các / Sân đấu) không dẫm lên nhau', async t => {
+  const port = await freePort();
+  const token = crypto.randomBytes(32).toString('base64url');
+  const acct = 'google:test-scene-1';
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'chua-scene-'));
+  const dataFile = path.join(dir, 'db.json');
+  const day = new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10);
+  fs.writeFileSync(dataFile, JSON.stringify({ version: 2, day, authSessions: { [digest(token)]: { uid: acct, until: Date.now() + 864e5 } } }));
+  const srv = await startServer({ PORT: String(port), DATA_FILE: dataFile, GOOGLE_CLIENT_ID: 'id-thu', GOOGLE_CLIENT_SECRET: 'bi-mat-thu', AUTH_ORIGIN: `http://127.0.0.1:${port}`, CULTIVATION_TIME_SCALE: '1' });
+  t.after(() => srv.stop());
+  const open = [];
+  t.after(() => open.forEach(s => s.close()));
+  const as = async (name, uid, signedIn) => {
+    const socket = await connect(port, signedIn ? { extraHeaders: { cookie: 'ta-session=' + token } } : {});
+    open.push(socket);
+    return { socket, join: await join(socket, name, uid) };
+  };
+
+  const watcher = await as('Nguoi Xem', 'khach-xem-00001', false);
+  const pjP = waitFor(watcher.socket, 'pj', p => p.name === 'Nguoi Ban');
+  const a = await as('Nguoi Ban', 'khach-ban-00001', true);
+  const pj = await pjP;
+  assert.equal(pj.scene, 'hall', 'vào chánh điện thì ở cảnh chánh điện');
+  assert.equal(pj.at, undefined, 'chưa đi nơi nào khác');
+
+  // sang sân chùa: không xin xăm được ở đó
+  const toYard = waitFor(watcher.socket, 'pscene', d => d.id === pj.id && d.scene === 'yard');
+  assert.equal((await call(a.socket, 'scene', 'yard')).ok, true);
+  await toYard;
+  const refused = await call(a.socket, 'fortune:join', null);
+  assert.equal(refused.ok, false, 'ở sân chùa không xin xăm');
+  const late = await as('Nguoi Den Sau', 'khach-sau-00001', false);
+  assert.equal(late.join.players.find(p => p.id === pj.id).scene, 'yard', 'người vào sau thấy đúng cảnh');
+
+  // về chánh điện: vào hàng chờ xin xăm được
+  assert.equal((await call(a.socket, 'scene', 'hall')).ok, true);
+  const queued = await call(a.socket, 'fortune:join', null);
+  assert.equal(queued.ok, true, queued.reason);
+  await sleep(150);
+  const q1 = watcher.socket.log.filter(x => x.ev === 'fortune:queue').pop().payload;
+  assert.equal(q1.current && q1.current.id, pj.id, 'đang được xin xăm');
+
+  // đi Võ Học Các: rời hàng chờ, các nơi khác thấy người này "ở" Võ Học Các
+  const toDojo = waitFor(watcher.socket, 'pplace', d => d.id === pj.id && d.place === 'dojo');
+  assert.equal((await call(a.socket, 'place:set', { place: 'dojo' })).ok, true);
+  await toDojo;
+  await sleep(150);
+  const q2 = watcher.socket.log.filter(x => x.ev === 'fortune:queue').pop().payload;
+  assert.equal(q2.current, null, 'rời chánh điện thì rời hàng chờ');
+  assert.equal(q2.waiting.length, 0);
+  const refused2 = await call(a.socket, 'fortune:join', null);
+  assert.equal(refused2.ok, false, 'đang ở Võ Học Các thì không xin xăm');
+  const late2 = await as('Nguoi Den Sau Nua', 'khach-sau-00002', false);
+  assert.equal(late2.join.players.find(p => p.id === pj.id).at, 'dojo', 'người vào sau thấy người này đang ở Võ Học Các');
+
+  // trở về chánh điện thì xin xăm lại được
+  assert.equal((await call(a.socket, 'place:set', { place: 'hall' })).ok, true);
+  assert.equal((await call(a.socket, 'fortune:join', null)).ok, true);
+});

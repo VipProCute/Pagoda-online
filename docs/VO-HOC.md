@@ -12,7 +12,7 @@ Tài liệu cho người quản trị nhà chùa và người phát triển. Ph�
 
 Ngoài thanh nút lễ Phật, cả hai nơi còn có thẻ ở tab **Nơi khác** (cho màn hình nhỏ nút bị che). Người đang có trận dở mà tải lại trang sẽ được đưa thẳng về Sân đấu. Người đi sang nơi khác thì nhân vật không hiện trong chánh điện. Máy chủ từ chối mọi sự kiện đấu nếu người gửi không ở sân đấu. Người chỉ muốn viếng chùa không cần biết đến phần này (nút "Võ học các" và "Sân đấu" nằm cuối thanh nút, tắt được bằng `MARTIAL_ENABLED=0`).
 
-Khi nhà chùa muốn thêm nơi mới (coi bói tử vi, tarot…): thêm tên vào `PLACES` trong `server.js`, viết một module có `init / mount / show / hide` rồi `Places.register(tên, { el, mod })` trong `app.js`. Chưa có nơi này; phần coi bói chưa được làm trong đợt này.
+Khi nhà chùa muốn thêm nơi mới (coi bói tử vi, tarot…): thêm tên vào `PLACES` trong `server.js`, viết một module có `init / mount / show / hide` rồi `Places.register(tên, { el, mod })` trong `app.js`. Lưu ý: xin xăm, thầy Tử vi và thầy Tarot đã có sẵn ở **sân chùa**, là một *cảnh* trong chính khung chánh điện (nút "Ra sân chùa", do nhánh khác thêm), khác với các *nơi* của tài liệu này. Hai thứ sống chung: `scene` (chánh điện / sân chùa) và `place` (chánh điện / Võ Học Các / Sân đấu). Đi sang Võ Học Các hoặc Sân đấu thì tự rời hàng chờ xin xăm. Nếu sau này muốn coi bói thành một nơi riêng thì dùng cơ chế `PLACES` ở trên.
 
 ## Tu luyện nội công
 
@@ -143,4 +143,4 @@ Khi bật đăng nhập Google (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `AUT
 - Chưa có đo tải thật. Không khẳng định đáp ứng 100 người cùng lúc trên Render Free; xem mục đo tải trong [VO-HOC-CAN-BANG.md](VO-HOC-CAN-BANG.md).
 - Người tu xong lúc đang offline thấy kết quả khi mở Võ Học Các (mục "Vừa hoàn thành"); thông báo đẩy chỉ gửi tới tab đang mở.
 - Cân bằng là bản thử, dựa trên mô phỏng bot (xem giới hạn ở tài liệu cân bằng). Nên cho thử kín trước khi mở rộng, và đọc lịch sử trận (`matches` trong dữ liệu) để chỉnh tiếp.
-- Coi bói tử vi và tarot chưa được làm; cấu trúc "nơi" đã sẵn để thêm riêng.
+- Coi bói tử vi và tarot hiện nằm ở sân chùa (cảnh trong chánh điện), chưa tách thành một nơi riêng; cấu trúc "nơi" đã sẵn nếu muốn tách.

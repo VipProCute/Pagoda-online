@@ -391,3 +391,14 @@ dialog.lib.dark-read .lib-page figure img { mix-blend-mode: normal; background: 
 .pen-row small { grid-column: 1 / -1; font-size: 12px; color: var(--muted); }
 #dlg-rules { width: min(680px, calc(100vw - 24px)); }
 .aura-grid.demons b { color: var(--son-ink); }
+
+.scene-nav { position:absolute; z-index:3; top:12px; left:12px; display:flex; gap:6px; flex-wrap:wrap; max-width:70%; }
+.fortune-body section { display:grid; gap:12px; }
+.fortune-body section[hidden], .tarot-cards[hidden], .fortune-result[hidden], .scene-nav button[hidden] { display:none; }
+.fortune-body p { margin:0; }
+.fortune-body form { display:grid; gap:9px; }
+.fortune-status, .fortune-result { background:#2a1a11; border:1px solid #8d6b39; border-radius:10px; padding:12px; white-space:pre-line; line-height:1.6; }
+.tarot-cards { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+.tarot-cards article { border:1px solid #af8b50; background:linear-gradient(155deg,#392445,#221729); border-radius:10px; min-height:150px; padding:12px; line-height:1.5; }
+.tarot-cards strong { color:#f0d698; } .tarot-cards p { font-size:13px; margin-top:8px; }
+@media(max-width:480px) { .tarot-cards {grid-template-columns:1fr;} .tarot-cards article {min-height:0;} }

@@ -148,13 +148,15 @@
   let cv, g, W = 0, H = 0, DPR = 1, bg = null, u = 1, au = 1;
   const G = {};
   const players = new Map();
-  let me = 0, offset = 0, last = 0;
+  let me = 0, offset = 0, last = 0, scene = 'hall', yardDay = null;
   let incense = [];
   const parts = [], hearts = [], floaters = [], ripples = [];
   const altar = { lotus: 0, rose: 0, lamp: 0, fruit: 0 };
   const handlers = {};
   let clickMark = null;
   const serverNow = () => Date.now() + offset;
+  // Giờ Việt Nam (UTC+7), không phụ thuộc múi giờ trên thiết bị người xem.
+  const yardInDaylight = time => { const hour = new Date(time + 7 * 3600000).getUTCHours(); return hour >= 6 && hour < 18; };
 
   function geo() {
     u = Math.min(W / 960, H / 600);
@@ -844,7 +846,8 @@
   }
   function drawPlayers(now, dt) {
     const k = 1 - Math.exp(-dt / 90);
-    const list = [...players.values()].filter(p => !p.away);   // người đang ở Võ Học Các / Sân đấu không hiện trong chánh điện
+    // người đang ở Võ Học Các / Sân đấu không hiện trong chánh điện; người ở sân chùa chỉ hiện ở cảnh sân chùa
+    const list = [...players.values()].filter(p => !p.away && (p.scene || 'hall') === scene);
     for (const p of list) {
       const ox = p.dx, oz = p.dz;
       p.dx += (p.x - p.dx) * k; p.dz += (p.z - p.dz) * k;
@@ -1000,21 +1003,100 @@
     }
   }
 
+  // Mặt tiền chánh điện dựng lại từ ảnh Canva, nền trong suốt.
+  const YARD_TEMPLE = root.Image ? new Image() : null;
+  if (YARD_TEMPLE) { YARD_TEMPLE.onload = () => { bg = null; }; YARD_TEMPLE.src = '/img/courtyard/chanh-dien.webp'; }
+
+  function drawYard() {
+    bg = document.createElement('canvas'); bg.width = cv.width; bg.height = cv.height;
+    const b = bg.getContext('2d'); b.setTransform(DPR, 0, 0, DPR, 0, 0);
+    const sky = b.createLinearGradient(0, 0, 0, H);
+    const colors = yardDay ? ['#71bad7', '#d7e8e4', '#e7d1b3'] : ['#192633', '#967658', '#3a2720'];
+    sky.addColorStop(0, colors[0]); sky.addColorStop(.5, colors[1]); sky.addColorStop(1, colors[2]);
+    b.fillStyle = sky; b.fillRect(0, 0, W, H);
+    b.fillStyle = yardDay ? '#fff1b4' : '#e4c589'; b.beginPath(); b.arc(W * .8, H * .13, 20 * u, 0, TAU); b.fill();
+    b.fillStyle = yardDay ? '#557b51' : '#25372e'; b.fillRect(0, H * .35, W, H * .2);
+    for (let x = 0; x < W; x += 55 * u) { b.beginPath(); b.arc(x, H * .36, 42 * u, 0, TAU); b.fill(); }
+    b.fillStyle = yardDay ? '#b5987d' : '#6a5141'; b.fillRect(0, G.hb, W, H - G.hb);
+    b.strokeStyle = yardDay ? 'rgba(90,65,48,.24)' : 'rgba(230,200,164,.17)'; b.lineWidth = 1; b.beginPath();
+    for (let i=0;i<14;i++) { const a=proj(i/13,0), z=proj(i/13,1); b.moveTo(a[0],a[1]); b.lineTo(z[0],z[1]); }
+    for(let j=0;j<7;j++) { const y=G.hb+(H-G.hb)*j/7; b.moveTo(0,y); b.lineTo(W,y); } b.stroke();
+    if (YARD_TEMPLE && YARD_TEMPLE.complete && YARD_TEMPLE.naturalWidth) {
+      const scale = Math.min(W * .48 / YARD_TEMPLE.naturalWidth, H * .46 / YARD_TEMPLE.naturalHeight);
+      const w = YARD_TEMPLE.naturalWidth * scale, h = YARD_TEMPLE.naturalHeight * scale;
+      const top = H * .52 - h;
+      b.drawImage(YARD_TEMPLE, W * .5 - w / 2, top, w, h);
+      // Viết biển bằng chữ thật để giữ đúng tiếng Việt khi thay đổi kích thước.
+      b.fillStyle = '#f7dc99'; b.textAlign = 'center'; b.textBaseline = 'middle';
+      b.font = `bold ${Math.max(5, Math.round(w * .029))}px Georgia, serif`;
+      b.fillText('CHÁNH ĐIỆN', W * .5, top + h * .32);
+    }
+  }
+  function drawFortuneJar() {
+    const x=G.bowl.x+G.bowl.rx+25*u, y=G.ty-2*u;
+    g.save(); g.strokeStyle='#e9cf94'; g.lineWidth=2*u;
+    for(let i=-2;i<=2;i++){g.beginPath();g.moveTo(x+i*3*u,y-25*u);g.lineTo(x+i*4*u,y-46*u);g.stroke();}
+    g.fillStyle='#a32019';g.fillRect(x-12*u,y-27*u,24*u,27*u);g.strokeStyle='#e7bd68';g.strokeRect(x-12*u,y-27*u,24*u,27*u);
+    g.fillStyle='#ffe0a0';g.font=`bold ${Math.max(10,12*u)}px sans-serif`;g.textAlign='center';g.fillText('XĂM',x,y-9*u);g.restore();
+  }
+  // Các thầy là hình nền trong suốt, dựng lại từ mẫu Canva người dùng chọn.
+  const READERS = root.Image ? [new Image(), new Image()] : [];
+  if (READERS.length) {
+    READERS[0].src = '/img/readers/tu-vi.webp';
+    READERS[1].src = '/img/readers/tarot.webp';
+  }
+  function readerBounds(i) {
+    const width = Math.min(W * 0.22, 165 * Math.max(u, 0.6));
+    const height = Math.min(H * 0.22, 150 * Math.max(u, 0.6));
+    const x = W * i, bottom = H * 0.63;
+    return { x, bottom, width, height };
+  }
+  function drawReaders(ts) {
+    for (const [index, i, label, col] of [[0, .2, 'TỬ VI', '#6b321e'], [1, .8, 'TAROT', '#52315f']]) {
+      const b = readerBounds(i), img = READERS[index];
+      g.save();
+      // Bóng tiếp đất làm rõ bàn đang đặt trên nền gạch.
+      g.fillStyle = yardDay ? 'rgba(50,35,24,.2)' : 'rgba(0,0,0,.28)';
+      g.beginPath(); g.ellipse(b.x, b.bottom, b.width * .43, Math.max(3, b.height * .035), 0, 0, TAU); g.fill();
+      if (img && img.complete && img.naturalWidth) {
+        const scale = Math.min(b.width / img.naturalWidth, b.height / img.naturalHeight);
+        const w = img.naturalWidth * scale, h = img.naturalHeight * scale;
+        g.drawImage(img, b.x - w / 2, b.bottom - h, w, h);
+      } else {
+        // Vẫn có thể tương tác nếu ảnh đang tải hoặc kết nối chậm.
+        const scale = Math.max(.65, u);
+        g.translate(b.x, b.bottom); g.scale(scale, scale);
+        drawAvatar(g, { g: 'nam', c: index ? 4 : 9, h: 2 }, true, ts / 1000, 0, false);
+        g.setTransform(DPR, 0, 0, DPR, 0, 0);
+      }
+      const font = Math.max(10, Math.round(12 * Math.max(u, .75)));
+      const labelWidth = Math.max(64, 78 * Math.max(u, .75));
+      g.fillStyle = col; g.strokeStyle = '#d9b879'; g.lineWidth = 1;
+      rrect(g, b.x - labelWidth / 2, b.bottom + 2, labelWidth, font + 9, 4); g.fill(); g.stroke();
+      g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = `bold ${font}px sans-serif`;
+      g.fillStyle = '#f7e6be'; g.fillText(label, b.x, b.bottom + 6 + font / 2);
+      g.font = `${Math.max(10, font - 2)}px sans-serif`; g.fillText('Chạm để xem', b.x, b.bottom + font + 18);
+      g.restore();
+    }
+  }
+  const hitJar = (x,y) => Math.abs(x-(G.bowl.x+G.bowl.rx+25*u)) < 22*u && y>G.ty-55*u && y<G.ty+5*u;
+  const hitReader = (x, y) => [.2, .8].some(i => { const b = readerBounds(i); return Math.abs(x - b.x) <= b.width / 2 + 12 && y >= b.bottom - b.height && y <= b.bottom + 38; });
+
   let paused = false;
   function frame(ts) {
     const dt = Math.min(64, ts - (last || ts)); last = ts;
     if (W && H && !document.hidden && !paused) {
-      if (!bg) drawBg();
+      const now = serverNow();
+      if (scene === 'yard') { const day = yardInDaylight(now); if (day !== yardDay) { yardDay = day; bg = null; } }
+      if (!bg) { if (scene === 'yard') drawYard(); else drawBg(); }
       g.setTransform(1, 0, 0, 1, 0, 0);
       g.drawImage(bg, 0, 0);
       g.setTransform(DPR, 0, 0, DPR, 0, 0);
-      const now = serverNow();
       if (hoverLib && G.lib) {
         const L = G.lib, a = 0.35 + 0.2 * Math.sin(ts / 260);
         g.strokeStyle = `rgba(255,211,107,${a})`; g.lineWidth = 2; g.strokeRect(L.x - 6, L.y - 4, L.w + 12, L.h + 4);
       }
-      drawAltar(ts);
-      drawIncense(now, dt);
+      if (scene === 'hall') { drawAltar(ts); drawIncense(now, dt); drawFortuneJar(); } else drawReaders(ts);
       drawPlayers(ts, dt);
       drawFx(ts, dt);
     }
@@ -1036,6 +1118,9 @@
   function point(e) { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; }
   function onDown(e) {
     const [x, y] = point(e);
+    if (scene === 'hall' && hitJar(x, y)) { handlers.fortune && handlers.fortune(); return; }
+    if (scene === 'yard' && hitReader(x, y)) { handlers.reader && handlers.reader(x < W / 2 ? 'horoscope' : 'tarot'); return; }
+    if (scene === 'yard') { if (y > G.hb) { const [wx, wz] = unproj(x, y); handlers.floor && handlers.floor(clamp(wx, 0.03, 0.97), clamp(wz, 0.12, 0.97)); } return; }
     if (hitBowl(x, y)) { handlers.altar && handlers.altar(); return; }
     if (hitStatue(x, y)) { handlers.statue && handlers.statue(); return; }
     if (hitLib(x, y)) { handlers.library && handlers.library(); return; }
@@ -1047,11 +1132,11 @@
   }
   function onMove(e) {
     const [x, y] = point(e);
-    hoverLib = hitLib(x, y);
-    cv.style.cursor = hitBowl(x, y) || hitStatue(x, y) || hoverLib ? 'pointer' : (y > G.hb ? 'crosshair' : 'default');
+    hoverLib = scene === 'hall' && hitLib(x, y);
+    cv.style.cursor = (scene === 'hall' && (hitJar(x, y) || hitBowl(x, y) || hitStatue(x, y))) || (scene === 'yard' && hitReader(x, y)) || hoverLib ? 'pointer' : (y > G.hb ? 'crosshair' : 'default');
   }
 
-  function mk(p) { return { id: p.id, away: !!(p.at && p.at !== 'hall'), name: p.name, look: p.look, mod: !!p.mod, x: p.x, z: p.z, dx: p.x, dz: p.z, front: false, walking: false, bubble: null, bowAt: 0, v: p.v || 0, rd: p.rd || '', au: p.au || 0, talk: 0, burst: null, mt: p.mt || 0, pens: [], rburst: 0, dmp: null }; }
+  function mk(p) { return { scene: p.scene || 'hall', id: p.id, away: !!(p.at && p.at !== 'hall'), name: p.name, look: p.look, mod: !!p.mod, x: p.x, z: p.z, dx: p.x, dz: p.z, front: false, walking: false, bubble: null, bowAt: 0, v: p.v || 0, rd: p.rd || '', au: p.au || 0, talk: 0, burst: null, mt: p.mt || 0, pens: [], rburst: 0, dmp: null }; }
 
   root.Hall = {
     COLORS, HAIRS,
@@ -1071,6 +1156,8 @@
     setPlace(id, place) { const p = players.get(id); if (p) { p.away = !!place && place !== 'hall'; if (!p.away) { p.dx = p.x; p.dz = p.z; } } },
     /** Vẽ một nhân vật tại gốc toạ độ hiện tại (chân ở 0,0, cao khoảng 85 đơn vị) cho các màn hình khác dùng lại. */
     avatar(c, look, opts) { opts = opts || {}; drawAvatar(c, look, opts.front !== false, opts.t || 0, opts.bow || 0, !!opts.walking); },
+    setScene(value) { scene = value; bg = null; },
+    playerScene(d) { const p = players.get(d.id); if (p) { p.scene = d.scene; p.x = p.dx = d.x; p.z = p.dz = d.z; } },
     setOffset(ms) { offset = ms; },
     setPlayers(list) { players.clear(); list.forEach(p => players.set(p.id, mk(p))); },
     addPlayer(p) { players.set(p.id, mk(p)); },
