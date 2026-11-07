@@ -116,7 +116,7 @@ Bot eq, chọn tự do khi chiêu có trong bộ (mẫu 24 bộ ngẫu nhiên, 5
 | greedy | 7 | 7,9 | 1,3% | 0,5% | 27% |
 | random | 17 | 15,9 | 0,5% | 55% | 14% |
 
-- Trận eq trung vị 11 lượt, tối đa khoảng 4,5 phút kể cả 4 giây lật chiêu mỗi lượt.
+- Trận eq trung vị 11 lượt, tối đa khoảng 5 phút kể cả 6,5 giây lật chiêu và hoạt ảnh đánh nhau mỗi lượt.
 - Hòa hiếm (dưới 2%), trừ các cặp có bộ không có đòn đánh (hòa tới 5% trên 15 bộ thuần).
 - **Trận không bao giờ tới lượt 40.** Suy kiệt từ lượt 20 trừ 5, 10, 15... mỗi lượt, tổng 225 ≥ 200 HP sau 9 lượt, nên trận dài nhất là 28 lượt. `MAX_TURNS = 40` không bao giờ xảy ra (đã kiểm bằng test). Vô hại, nhưng chữ "lượt 40" trong luật là thừa.
 - Suy kiệt do 4 lượt liền không ai mất máu tính **ngay ở lượt thứ 4** (lượt đó đã mất 5 HP), không phải lượt thứ 5.
