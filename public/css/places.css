@@ -1,0 +1,15 @@
+/* Các "nơi" của chùa: Võ Học Các, Sân đấu… Mỗi nơi thay thế chánh điện (khung .layout và thanh nút lễ Phật) khi đang ở đó. */
+.place { flex: 1; min-height: 0; min-width: 0; overflow: auto; background: var(--bg); position: relative; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+.place[hidden] { display: none !important; }
+body[data-place="dojo"] .layout, body[data-place="dojo"] .actions,
+body[data-place="arena"] .layout, body[data-place="arena"] .actions { display: none; }
+.place-conn { position: sticky; top: 0; z-index: 20; padding: 6px 12px; text-align: center; font-size: 13px; background: var(--son); color: var(--son-fg); }
+.place-conn[hidden] { display: none; }
+
+/* nút sang các nơi khác trên thanh lễ Phật: nhỏ gọn, không lấn các nút lễ */
+.act.goto { border-style: dashed; }
+.act.goto[hidden] { display: none; }
+
+/* ở Võ Học Các và Sân đấu không có thanh nút lễ Phật ở đáy; thông báo hiện ở trên để khỏi che nút bấm cuối màn hình */
+body[data-place="dojo"] .toast, body[data-place="arena"] .toast { bottom: auto; top: calc(58px + env(safe-area-inset-top, 0px)); transform: translate(-50%, -12px); }
+body[data-place="dojo"] .toast.show, body[data-place="arena"] .toast.show { transform: translate(-50%, 0); }

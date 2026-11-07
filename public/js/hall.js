@@ -846,7 +846,8 @@
   }
   function drawPlayers(now, dt) {
     const k = 1 - Math.exp(-dt / 90);
-    const list = [...players.values()].filter(p => (p.scene || 'hall') === scene);
+    // người đang ở Võ Học Các / Sân đấu không hiện trong chánh điện; người ở sân chùa chỉ hiện ở cảnh sân chùa
+    const list = [...players.values()].filter(p => !p.away && (p.scene || 'hall') === scene);
     for (const p of list) {
       const ox = p.dx, oz = p.dz;
       p.dx += (p.x - p.dx) * k; p.dz += (p.z - p.dz) * k;
@@ -1081,9 +1082,10 @@
   const hitJar = (x,y) => Math.abs(x-(G.bowl.x+G.bowl.rx+25*u)) < 22*u && y>G.ty-55*u && y<G.ty+5*u;
   const hitReader = (x, y) => [.2, .8].some(i => { const b = readerBounds(i); return Math.abs(x - b.x) <= b.width / 2 + 12 && y >= b.bottom - b.height && y <= b.bottom + 38; });
 
+  let paused = false;
   function frame(ts) {
     const dt = Math.min(64, ts - (last || ts)); last = ts;
-    if (W && H && !document.hidden) {
+    if (W && H && !document.hidden && !paused) {
       const now = serverNow();
       if (scene === 'yard') { const day = yardInDaylight(now); if (day !== yardDay) { yardDay = day; bg = null; } }
       if (!bg) { if (scene === 'yard') drawYard(); else drawBg(); }
@@ -1134,7 +1136,7 @@
     cv.style.cursor = (scene === 'hall' && (hitJar(x, y) || hitBowl(x, y) || hitStatue(x, y))) || (scene === 'yard' && hitReader(x, y)) || hoverLib ? 'pointer' : (y > G.hb ? 'crosshair' : 'default');
   }
 
-  function mk(p) { return { scene: p.scene || 'hall', id: p.id, name: p.name, look: p.look, mod: !!p.mod, x: p.x, z: p.z, dx: p.x, dz: p.z, front: false, walking: false, bubble: null, bowAt: 0, v: p.v || 0, rd: p.rd || '', au: p.au || 0, talk: 0, burst: null, mt: p.mt || 0, pens: [], rburst: 0, dmp: null }; }
+  function mk(p) { return { scene: p.scene || 'hall', id: p.id, away: !!(p.at && p.at !== 'hall'), name: p.name, look: p.look, mod: !!p.mod, x: p.x, z: p.z, dx: p.x, dz: p.z, front: false, walking: false, bubble: null, bowAt: 0, v: p.v || 0, rd: p.rd || '', au: p.au || 0, talk: 0, burst: null, mt: p.mt || 0, pens: [], rburst: 0, dmp: null }; }
 
   root.Hall = {
     COLORS, HAIRS,
@@ -1148,6 +1150,12 @@
       requestAnimationFrame(frame);
     },
     setMe(id) { me = id; },
+    /** Tạm dừng vẽ khi người chơi đang ở nơi khác (đỡ tốn pin). */
+    pause(on) { paused = !!on; if (!on) { last = 0; resize(); } },
+    /** Người đi sang Võ Học Các / Sân đấu thì ẩn khỏi chánh điện, quay lại thì hiện. */
+    setPlace(id, place) { const p = players.get(id); if (p) { p.away = !!place && place !== 'hall'; if (!p.away) { p.dx = p.x; p.dz = p.z; } } },
+    /** Vẽ một nhân vật tại gốc toạ độ hiện tại (chân ở 0,0, cao khoảng 85 đơn vị) cho các màn hình khác dùng lại. */
+    avatar(c, look, opts) { opts = opts || {}; drawAvatar(c, look, opts.front !== false, opts.t || 0, opts.bow || 0, !!opts.walking); },
     setScene(value) { scene = value; bg = null; },
     playerScene(d) { const p = players.get(d.id); if (p) { p.scene = d.scene; p.x = p.dx = d.x; p.z = p.dz = d.z; } },
     setOffset(ms) { offset = ms; },

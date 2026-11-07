@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Thử giao diện Võ Học Các</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&family=Cormorant+Garamond:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="/css/style.css">
+<link rel="stylesheet" href="/css/places.css">
+<link rel="stylesheet" href="/css/dojo.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand"><div class="brand-text"><b>Chùa Tâm An</b><span>Đi chùa online</span></div></div>
+  <div class="lunar"><span><b>Mùng 6 tháng 10</b></span><span class="holy">Thử giao diện</span></div>
+  <div class="top-right">
+    <span class="pill"><i class="live"></i><b>12</b><span class="lbl-long">&nbsp;đang có mặt</span></span>
+    <button type="button" class="pill merit">Công đức <b>1.234</b></button>
+  </div>
+</header>
+
+<main class="layout" id="fakeHall">
+  <section class="stage"><p class="stage-hint" style="position:static;padding:24px">Chánh điện (giả lập).</p>
+    <button type="button" class="btn primary" id="toDojo" style="margin:0 24px">Vào Võ Học Các</button>
+  </section>
+  <aside class="side"></aside>
+</main>
+<main class="place" id="place-dojo" aria-label="Võ Học Các" hidden></main>
+<nav class="actions" aria-label="Lễ Phật"><button type="button" class="act primary">Thắp hương</button></nav>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="/js/martial.js"></script>
+<script src="/harness/fake-socket.js"></script>
+<script src="/harness/dojo/sim.js"></script>
+<script src="/js/places.js"></script>
+<script src="/js/dojo.js"></script>
+<script>
+  (function () {
+    const { host, sock } = H;
+    Places.init({ setPlace: (name, cb) => sock.emit('place:set', { place: name }, cb), toast: host.toast, onChange() {} });
+    Dojo.init(host);
+    Places.register('dojo', { el: document.getElementById('place-dojo'), mod: Dojo });
+    document.getElementById('toDojo').addEventListener('click', () => Places.go('dojo'));
+    if (new URLSearchParams(location.search).get('hall') !== '1') Places.go('dojo');
+    window.Places = Places;
+    window.ready = true;
+  })();
+</script>
+</body>
+</html>

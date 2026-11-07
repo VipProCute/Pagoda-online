@@ -13,6 +13,10 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&family=Cormorant+Garamond:wght@500;600;700&display=swap">
 <link rel="stylesheet" href="/css/style.css">
 <link rel="stylesheet" href="/css/celebrate.css">
+<link rel="stylesheet" href="/css/account.css?v=vohoc4">
+<link rel="stylesheet" href="/css/places.css?v=vohoc4">
+<link rel="stylesheet" href="/css/dojo.css?v=vohoc4">
+<link rel="stylesheet" href="/css/arena.css?v=vohoc4">
 </head>
 <body>
 <header class="top">
@@ -22,6 +26,8 @@
   </div>
   <div class="lunar" id="lunar"></div>
   <div class="top-right">
+    <button type="button" class="login-cta" id="btnLogin" data-auth-login hidden title="Đăng nhập Google để lưu công đức, tu luyện và luận võ"><span class="g-badge"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg></span><span>Đăng nhập</span></button>
+    <button type="button" class="acct-chip" id="btnAccount" hidden title="Xem những gì đã được lưu vào tài khoản Google của bạn"><svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Đã lưu</span></button>
     <span class="pill"><i class="live"></i><b id="online">0</b><span class="lbl-long">&nbsp;đang có mặt</span></span>
     <button type="button" class="pill merit" id="meritPill" title="Công đức của bạn hôm nay">Công đức <b id="meritToday">0</b></button>
     <button type="button" class="icon-btn" id="btnSound" aria-label="Tắt tiếng" title="Bật / tắt tiếng">
@@ -76,6 +82,7 @@
       <button type="button" role="tab" aria-selected="true" data-tab="chat" id="tab-chat">Trò chuyện</button>
       <button type="button" role="tab" aria-selected="false" data-tab="prayers" id="tab-prayers">Lời nguyện</button>
       <button type="button" role="tab" aria-selected="false" data-tab="merit" id="tab-merit">Công đức</button>
+      <button type="button" role="tab" aria-selected="false" data-tab="places" id="tab-places">Nơi khác</button>
     </div>
     <div class="pane" id="pane-chat" role="tabpanel" aria-labelledby="tab-chat">
       <div class="feed" id="feed"></div>
@@ -98,6 +105,19 @@
       <div class="list" id="prayers"></div>
       <div class="pane-foot"><button type="button" class="btn" data-act="incense">Thắp nhang và gửi lời nguyện</button></div>
     </div>
+    <div class="pane scroll" id="pane-places" role="tabpanel" aria-labelledby="tab-places" hidden>
+      <section class="card place-card" data-place-card="dojo">
+        <span class="eyebrow">Võ Học Các</span>
+        <p>Tu luyện nội công (bắt đầu rồi đóng web cũng được), học võ công ba nhánh Cương, Tốc, Nhu và chọn bộ chiêu.</p>
+        <button type="button" class="btn gold" data-act="dojo">Vào Võ Học Các</button>
+      </section>
+      <section class="card place-card" data-place-card="arena">
+        <span class="eyebrow">Sân đấu</span>
+        <p>Nơi duy nhất để luận võ một đấu một. Chỉ người tự ra sân mới thấy và mời được nhau; chánh điện không có đánh nhau.</p>
+        <button type="button" class="btn gold" data-act="arena">Ra Sân đấu</button>
+      </section>
+      <p class="hint">Cần đăng nhập Google để tu luyện và luận võ, vì tiến độ gắn với tài khoản của bạn.</p>
+    </div>
     <div class="pane scroll" id="pane-merit" role="tabpanel" aria-labelledby="tab-merit" hidden>
       <section class="card mine">
         <span class="eyebrow">Công đức của bạn</span>
@@ -107,9 +127,18 @@
         <button type="button" class="btn small" data-open="rules">Luật công đức, pháp tướng và quỷ</button>
         <div data-account hidden>
           <p class="hint" data-auth-status></p>
-          <button type="button" class="btn small" data-auth-login hidden>Đăng nhập bằng Google</button>
-          <button type="button" class="btn small" data-auth-logout hidden>Đăng xuất</button>
+          <div class="row wrap"><button type="button" class="btn small gold" data-open="account" data-auth-signedin hidden>Xem những gì đã lưu</button><button type="button" class="btn small" data-auth-logout hidden>Đăng xuất</button></div>
         </div>
+      </section>
+      <section class="card login-card" data-login-card hidden>
+        <b class="lc-title">Đăng nhập Google để giữ những gì bạn đã tích</b>
+        <ul class="lc-list">
+          <li>Công đức, hào quang và tịnh tài đã cúng dường lưu theo tài khoản, đổi máy vẫn còn</li>
+          <li>Tu luyện nội công, học võ công và ra Sân đấu luận võ (dành cho tài khoản đã đăng nhập)</li>
+          <li>Công đức hiện có trên máy này được chuyển vào tài khoản ngay lần đăng nhập đầu</li>
+        </ul>
+        <button type="button" class="btn big cta-login" data-auth-login><span class="g-badge"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg></span>Đăng nhập bằng Google</button>
+        <p class="hint">Khách vãng lai vẫn vào chánh điện lễ Phật bình thường, nhưng dữ liệu chỉ nằm trên trình duyệt này và mất nếu xóa dữ liệu trình duyệt.</p>
       </section>
       <section class="card aura-card" id="auraCard" hidden>
         <span class="eyebrow">Hào quang của bạn</span>
@@ -140,6 +169,10 @@
   </aside>
 </main>
 
+<!-- Võ Học Các và Sân đấu: màn hình riêng, không nằm trong chánh điện. Nội dung do dojo.js / arena.js dựng. -->
+<main class="place" id="place-dojo" aria-label="Võ Học Các" hidden></main>
+<main class="place" id="place-arena" aria-label="Sân đấu" hidden></main>
+
 <nav class="actions" aria-label="Lễ Phật">
   <button type="button" class="act primary" data-act="incense"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21V8M8 21V10M16 21V10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M12 5c1.5-1 1.5-2.5 0-3.5M8 7c1.2-.9 1.2-2 0-3M16 7c1.2-.9 1.2-2 0-3" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linecap="round"/></svg><span>Thắp nhang</span></button>
   <button type="button" class="act voice" data-act="voice" id="actVoice" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" fill="currentColor"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg><span id="actVoiceLbl">Nói chuyện</span></button>
@@ -151,6 +184,8 @@
   <button type="button" class="act" data-act="chant"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h7a3 3 0 0 1 3 3v12a2.5 2.5 0 0 0-2.5-2.5H4ZM20 5h-4" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linejoin="round"/><path d="M17 9h3M17 13h3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span>Tụng kinh</span></button>
   <button type="button" class="act" data-act="library"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9l9-5 9 5" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linejoin="round"/><path d="M5 9v11h14V9M5 14h14" stroke="currentColor" stroke-width="1.7" fill="none"/><path d="M8 11v3M10.5 11v3M15 16v4M13 16.5v3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>Tàng Kinh Các</span></button>
   <button type="button" class="act gold" data-act="donate"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11h16v9H4zM3 7h18v4H3zM12 7v13M12 7c-2-3-6-3-5 0M12 7c2-3 6-3 5 0" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linejoin="round"/></svg><span>Cúng dường</span></button>
+  <button type="button" class="act goto" data-act="dojo" id="actDojo" hidden title="Võ Học Các: tu luyện nội công, học chiêu"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5.5" r="2.4" fill="currentColor"/><path d="M12 9v5.5M5 13.5c2.2 1.1 4.6 1.6 7 1.6s4.8-.5 7-1.6M7.5 21c0-3.6 2-5.6 4.5-5.6s4.5 2 4.5 5.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Võ học các</span></button>
+  <button type="button" class="act goto" data-act="arena" id="actArena" hidden title="Sân đấu: luận võ 1 đấu 1"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M7.5 7.5l9 9M16.5 7.5l-9 9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>Sân đấu</span></button>
 </nav>
 
 <!-- vào chùa / đổi trang phục -->
@@ -159,6 +194,11 @@
     <div class="dlg-head">
       <div><h2 id="join-title">Vào chánh điện</h2><p>Chọn tên và trang phục để mọi người thấy bạn trong chánh điện.</p></div>
       <button type="button" class="x" id="joinClose" aria-label="Đóng" hidden>×</button>
+    </div>
+    <div class="login-card" data-login-card hidden>
+      <b class="lc-title">Đăng nhập Google để giữ công đức và tu luyện, luận võ</b>
+      <button type="button" class="btn big cta-login" data-auth-login><span class="g-badge"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg></span>Đăng nhập bằng Google</button>
+      <p class="hint">Hoặc cứ vào chánh điện như khách (dữ liệu chỉ nằm trên trình duyệt này).</p>
     </div>
     <div class="join-grid">
       <canvas id="preview" width="260" height="220" aria-label="Xem trước nhân vật"></canvas>
@@ -177,13 +217,45 @@
     <fieldset><legend>Màu áo dài</legend><div class="swatches" id="jColors"></div></fieldset>
     <div data-account hidden>
       <p class="hint" data-auth-status></p>
-      <button type="button" class="btn small" data-auth-login hidden>Đăng nhập bằng Google</button>
       <button type="button" class="btn small" data-auth-logout hidden>Đăng xuất</button>
     </div>
     <p class="warn" id="joinWarn" role="status" hidden></p>
     <p class="hint">Giữ lời nói hiền hòa nơi cửa Phật. Tin nhắn có số tài khoản hoặc đường link sẽ bị chặn để tránh lừa đảo.</p>
     <div class="dlg-foot"><button type="submit" class="btn primary big" id="joinBtn">Vào chánh điện</button></div>
   </form>
+</dialog>
+
+<!-- mời đăng nhập khi cần tài khoản -->
+<dialog class="dlg" id="dlg-login" aria-labelledby="lg-title">
+  <div class="dlg-body">
+    <div class="dlg-head">
+      <div><h2 id="lg-title">Đăng nhập để tiếp tục</h2><p id="loginWhy">Tính năng này gắn với tài khoản để tiến độ của bạn không bị mất.</p></div>
+      <button type="button" class="x" data-close aria-label="Đóng">×</button>
+    </div>
+    <div class="login-card plain" data-login-card hidden>
+      <ul class="lc-list">
+        <li>Công đức, hào quang và tịnh tài đã cúng dường lưu theo tài khoản, đổi máy vẫn còn</li>
+        <li>Võ công đã luyện, cấp nội công, chiêu đã học, thắng thua ở Sân đấu đều được giữ</li>
+        <li>Công đức đang có trên máy này được chuyển vào tài khoản một lần</li>
+      </ul>
+      <button type="button" class="btn big cta-login" data-auth-login><span class="g-badge"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg></span>Đăng nhập bằng Google</button>
+      <p class="warn" id="loginWarn" role="status" hidden></p>
+      <p class="hint">Chỉ lấy mã định danh tài khoản (đã băm), không đọc email hay danh bạ của bạn.</p>
+    </div>
+  </div>
+</dialog>
+
+<!-- tài khoản đã lưu -->
+<dialog class="dlg" id="dlg-account" aria-labelledby="ac-title">
+  <div class="dlg-body">
+    <div class="dlg-head">
+      <div><h2 id="ac-title">Tài khoản đã lưu</h2><p>Mọi thứ dưới đây gắn với tài khoản Google của bạn. Đổi máy, đăng nhập lại là còn.</p></div>
+      <button type="button" class="x" data-close aria-label="Đóng">×</button>
+    </div>
+    <dl class="ac-list" id="acList"></dl>
+    <p class="hint" id="acNote"></p>
+    <div class="dlg-foot"><button type="button" class="btn small" data-auth-logout hidden>Đăng xuất</button><button type="button" class="btn primary" data-close>Đóng</button></div>
+  </div>
 </dialog>
 
 <dialog class="dlg" id="dlg-fortune" aria-labelledby="fortune-title">
@@ -415,10 +487,14 @@
 <script src="/js/aura.js"></script>
 <script src="/js/merit.js"></script>
 <script src="/js/celebrate.js"></script>
-<script src="/js/hall.js?v=chanh-dien-2"></script>
-<script src="/js/fortune.js"></script>
+<script src="/js/hall.js?v=vohoc4"></script>
+<script src="/js/fortune.js?v=vohoc4"></script>
 <script src="/js/voice.js"></script>
 <script src="/js/library.js"></script>
-<script src="/js/app.js?v=google-auth"></script>
+<script src="/js/martial.js?v=vohoc4"></script>
+<script src="/js/places.js?v=vohoc4"></script>
+<script src="/js/dojo.js?v=vohoc4"></script>
+<script src="/js/arena.js?v=vohoc4"></script>
+<script src="/js/app.js?v=vohoc4"></script>
 </body>
 </html>

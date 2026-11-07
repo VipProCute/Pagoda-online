@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Thử giao diện Sân đấu</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="/css/style.css">
+<link rel="stylesheet" href="/css/places.css">
+<link rel="stylesheet" href="/css/arena.css">
+<style>
+  .hx { position: fixed; left: 6px; bottom: 6px; z-index: 900; max-width: calc(100vw - 12px); font-size: 12px; }
+  .hx summary { cursor: pointer; background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 2px 8px; width: fit-content; }
+  .hx div { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 6px; display: flex; flex-wrap: wrap; gap: 4px; max-height: 50vh; overflow: auto; }
+  .hx button { font-size: 12px; padding: 3px 8px; }
+  .hall-stub { flex: 1; display: grid; place-items: center; gap: 12px; align-content: center; text-align: center; }
+</style>
+</head>
+<body data-place="hall">
+<!-- Khung giống index.html thật: thanh đầu, chánh điện (giả), khung nơi, thông báo -->
+<header class="top">
+  <div class="brand">
+    <svg width="34" height="34" viewBox="0 0 40 40" aria-hidden="true"><path d="M20 7c4 4.5 5 9.5 0 17-5-7.5-4-12.5 0-17Z" fill="#d4ab52"/><path d="M20 24c-6-1-11-5-13-11 6 0 10.5 3.5 13 11Zm0 0c6-1 11-5 13-11-6 0-10.5 3.5-13 11Z" fill="#b5302a"/></svg>
+    <div class="brand-text"><b>Chùa Tâm An</b><span>Đi chùa online</span></div>
+  </div>
+  <div class="lunar"><span>Hôm nay: <b>16 tháng 9 âm lịch</b></span><span class="holy">Ngày rằm</span></div>
+  <div class="top-right">
+    <span class="pill"><i class="live"></i><b>12</b><span class="lbl-long">&nbsp;đang có mặt</span></span>
+    <button type="button" class="pill merit">Công đức <b>1.234</b></button>
+    <button type="button" class="icon-btn" aria-label="Tắt tiếng">♪</button>
+    <button type="button" class="icon-btn" aria-label="Đổi tên và trang phục">☺</button>
+  </div>
+</header>
+<main class="layout"><section class="stage"><div class="hall-stub"><h2 style="margin:0">Chánh điện (giả)</h2><p class="hint">Trang thử: đây chỉ là chỗ để "Về chánh điện" quay lại.</p></div></section><aside class="side"></aside></main>
+<main class="place" id="place-arena" aria-label="Sân đấu" hidden></main>
+<nav class="actions"><button type="button" class="act" id="goArena"><span>Sân đấu</span></button></nav>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<details class="hx" id="hx"><summary>Kịch bản</summary><div id="hxBtns"></div></details>
+
+<script src="/js/aura.js"></script>
+<script src="/js/merit.js"></script>
+<script src="/js/hall.js"></script>
+<script src="/js/martial.js"></script>
+<script src="/js/places.js"></script>
+<script src="/js/arena.js"></script>
+<script src="/harness/fake-socket.js"></script>
+<script src="/harness/arena/harness.js"></script>
+</body>
+</html>

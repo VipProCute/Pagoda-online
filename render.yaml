@@ -5,7 +5,7 @@ services:
     runtime: node
     plan: free
     buildCommand: npm ci --omit=dev
-    startCommand: npm start
+    startCommand: node server.js   # chạy node trực tiếp: tín hiệu tắt của Render tới thẳng node để ghi nốt dữ liệu (npm start làm mất tín hiệu này)
     healthCheckPath: /healthz
     envVars:
       - key: NODE_VERSION
@@ -16,6 +16,8 @@ services:
         generateValue: true
       - key: FUNDS
         value: Tùy nhà chùa sử dụng
+      - key: DATABASE_URL       # chuỗi kết nối Neon (PostgreSQL), xem docs/NEON.md. Để trống: lưu file JSON, MẤT khi Render khởi động lại
+        sync: false
       - key: BANK_ID
         value: "970436"   # Vietcombank (mã BIN theo VietQR)
       - key: BANK_ACCOUNT
