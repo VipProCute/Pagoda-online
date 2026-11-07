@@ -51,16 +51,51 @@
     g.fillStyle = 'rgba(232,120,110,.35)'; circle(g, -6.5, hy + 4.5, 2); circle(g, 6.5, hy + 4.5, 2);
     g.strokeStyle = '#9b4a3c'; g.lineWidth = 1; g.beginPath(); g.arc(0, hy + 4.6, 2.2, 0.15 * Math.PI, 0.85 * Math.PI); g.stroke();
   }
+  // Tư thế luận võ (chỉ dùng ở Sân đấu): tay ra đòn, chân đá, thủ, khuỵu gối, nghiêng người về phía đối thủ.
+  // pose = { dir: 1|-1 (đối thủ ở bên nào), arm, kick, guard, crouch: 0..1, lean: -1..1 (dương là nghiêng về phía đối thủ) }
+  const plerp = (a, b, k) => a + (b - a) * k;
+  function poseArms(g, pose, sw, sleeve, front) {
+    const d = pose.dir < 0 ? -1 : 1, arm = clamp(pose.arm || 0, 0, 1), gd = clamp(pose.guard || 0, 0, 1);
+    // tay trước (phía đối thủ): chắp tay → thủ trước mặt → duỗi thẳng ra đòn
+    const lx = plerp(plerp(d * 2.5, d * 7, gd), d * (sw + 27), arm), ly = plerp(plerp(-60, -77, gd), -69, arm);
+    // tay sau: thủ ngang ngực, ra đòn thì thu về sát sườn
+    const rk = Math.max(gd, arm * 0.8), rx = plerp(-d * 2.5, d * 1, rk), ry = plerp(-60, -72, rk);
+    const lsx = d * (sw - 1.5), rsx = -d * (sw - 1.5);
+    g.strokeStyle = sleeve; g.lineWidth = front ? 5.5 : 5;
+    g.beginPath(); g.moveTo(rsx, -71); g.quadraticCurveTo(-d * (sw + 1), -55 - 8 * rk, rx, ry); g.stroke();
+    g.beginPath(); g.moveTo(lsx, -71); g.quadraticCurveTo(plerp(d * (sw + 1), d * (sw + 8), arm), plerp(-55, -72, Math.max(arm, gd)), lx, ly); g.stroke();
+    if (!front) return;
+    g.fillStyle = SKIN;
+    if (arm < 0.2 && gd < 0.2) { g.beginPath(); g.ellipse(0, -63.5, 2.6, 4.6, 0, 0, TAU); g.fill(); return; }
+    circle(g, lx + d * 1.2, ly, 3); circle(g, rx, ry, 2.8);
+  }
   // Vẽ ở hệ đơn vị: chân tại (0,0), cao ~100 đơn vị
-  function drawAvatar(g, look, front, t, bow, walking) {
+  function drawAvatar(g, look, front, t, bow, walking, pose) {
     const col = (COLORS[look.c] || COLORS[0]).c, dk = shade(col, -0.28), lt = shade(col, 0.2), sleeve = shade(col, -0.1);
     const male = look.g === 'nam', sw = male ? 15 : 13, ww = male ? 12 : 9.5, hem = male ? 14 : 16.5;
     const bob = walking ? Math.abs(Math.sin(t * 9)) * 2.2 : 0;
-    const sway = walking ? Math.sin(t * 9) * 1.6 : Math.sin(t * 1.3) * 0.4;
+    let sway = walking ? Math.sin(t * 9) * 1.6 : Math.sin(t * 1.3) * 0.4;
     g.fillStyle = 'rgba(0,0,0,.32)'; g.beginPath(); g.ellipse(0, 0, 17, 4.5, 0, 0, TAU); g.fill();
     g.save(); g.translate(0, -bob);
-    g.fillStyle = '#f3eee4'; g.fillRect(-7, -16, 5.5, 14); g.fillRect(1.5, -16, 5.5, 14);
-    g.fillStyle = '#3a2418'; rrect(g, -8, -3.2, 7, 3.2, 1.5); g.fill(); rrect(g, 1, -3.2, 7, 3.2, 1.5); g.fill();
+    const kick = pose ? clamp(pose.kick || 0, 0, 1) : 0, pd = pose && pose.dir < 0 ? -1 : 1;
+    if (pose) {
+      const c = clamp(pose.crouch || 0, 0, 1), ln = clamp(pose.lean || 0, -1, 1);
+      if (ln) g.rotate(ln * pd * 0.22);
+      if (c) g.scale(1 + 0.07 * c, 1 - 0.17 * c);
+      sway += pd * 7 * kick;
+    }
+    g.fillStyle = '#f3eee4';
+    if (kick > 0.02) {                                       // chân trụ đứng yên, chân đá vung về phía đối thủ
+      g.fillRect(pd > 0 ? -7 : 1.5, -16, 5.5, 14);
+      g.fillStyle = '#3a2418'; rrect(g, pd > 0 ? -8 : 1, -3.2, 7, 3.2, 1.5); g.fill();
+      const fx = pd * (4.5 + 30 * kick), fy = -6 - 38 * kick, kx = pd * (6 + 14 * kick), ky = plerp(-14, -36, kick);
+      g.strokeStyle = '#f3eee4'; g.lineWidth = 6; g.lineCap = 'round';
+      g.beginPath(); g.moveTo(pd * 4, -30); g.quadraticCurveTo(kx, ky, fx, fy); g.stroke();
+      g.save(); g.translate(fx, fy); g.rotate(Math.atan2(fy - ky, fx - kx)); g.fillStyle = '#3a2418'; rrect(g, -1.5, -2, 7.5, 4, 1.8); g.fill(); g.restore();
+    } else {
+      g.fillRect(-7, -16, 5.5, 14); g.fillRect(1.5, -16, 5.5, 14);
+      g.fillStyle = '#3a2418'; rrect(g, -8, -3.2, 7, 3.2, 1.5); g.fill(); rrect(g, 1, -3.2, 7, 3.2, 1.5); g.fill();
+    }
     // tà áo
     g.fillStyle = col;
     g.beginPath(); g.moveTo(-ww, -50); g.lineTo(ww, -50); g.lineTo(hem + sway, -11); g.quadraticCurveTo(sway, -8, -hem + sway, -11); g.closePath(); g.fill();
@@ -73,14 +108,20 @@
     g.beginPath(); g.moveTo(-sw, -73); g.quadraticCurveTo(0, -77, sw, -73); g.lineTo(ww + 0.5, -49); g.lineTo(-ww - 0.5, -49); g.closePath(); g.fill();
     g.lineCap = 'round';
     if (front) {
-      g.strokeStyle = sleeve; g.lineWidth = 5.5;
-      g.beginPath(); g.moveTo(-sw + 1.5, -71); g.quadraticCurveTo(-sw - 1, -55, -2.5, -60); g.moveTo(sw - 1.5, -71); g.quadraticCurveTo(sw + 1, -55, 2.5, -60); g.stroke();
-      g.fillStyle = SKIN; g.beginPath(); g.ellipse(0, -63.5, 2.6, 4.6, 0, 0, TAU); g.fill();
+      if (pose) poseArms(g, pose, sw, sleeve, true);
+      else {
+        g.strokeStyle = sleeve; g.lineWidth = 5.5;
+        g.beginPath(); g.moveTo(-sw + 1.5, -71); g.quadraticCurveTo(-sw - 1, -55, -2.5, -60); g.moveTo(sw - 1.5, -71); g.quadraticCurveTo(sw + 1, -55, 2.5, -60); g.stroke();
+        g.fillStyle = SKIN; g.beginPath(); g.ellipse(0, -63.5, 2.6, 4.6, 0, 0, TAU); g.fill();
+      }
       g.fillStyle = dk; g.fillRect(-3.5, -78, 7, 4.5);
       g.strokeStyle = lt; g.lineWidth = 1; g.beginPath(); g.moveTo(0, -74); g.quadraticCurveTo(6, -72, 9, -66); g.stroke();
     } else {
-      g.strokeStyle = sleeve; g.lineWidth = 5;
-      g.beginPath(); g.moveTo(-sw + 1, -71); g.quadraticCurveTo(-sw - 2.5, -60, -sw + 3.5, -52); g.moveTo(sw - 1, -71); g.quadraticCurveTo(sw + 2.5, -60, sw - 3.5, -52); g.stroke();
+      if (pose && (pose.arm > 0.05 || pose.guard > 0.05)) poseArms(g, pose, sw, sleeve, false);
+      else {
+        g.strokeStyle = sleeve; g.lineWidth = 5;
+        g.beginPath(); g.moveTo(-sw + 1, -71); g.quadraticCurveTo(-sw - 2.5, -60, -sw + 3.5, -52); g.moveTo(sw - 1, -71); g.quadraticCurveTo(sw + 2.5, -60, sw - 3.5, -52); g.stroke();
+      }
       g.fillStyle = dk; g.fillRect(-3.5, -78, 7, 3.5);
     }
     g.fillStyle = SKIN; g.fillRect(-3, -81, 6, 5);
@@ -1739,7 +1780,7 @@
     seatPos: i => LIB_SEATS[i] || null,
     get scene() { return scene; },
     /** Vẽ một nhân vật tại gốc toạ độ hiện tại (chân ở 0,0, cao khoảng 85 đơn vị) cho các màn hình khác dùng lại. */
-    avatar(c, look, opts) { opts = opts || {}; drawAvatar(c, look, opts.front !== false, opts.t || 0, opts.bow || 0, !!opts.walking); },
+    avatar(c, look, opts) { opts = opts || {}; drawAvatar(c, look, opts.front !== false, opts.t || 0, opts.bow || 0, !!opts.walking, opts.pose || null); },
     setScene(value) { if (value === scene) return; scene = value; hover = ''; hoverLib = false; if (W && H) geo(); bg = null; },
     playerScene(d) { const p = players.get(d.id); if (p) { p.scene = d.scene; p.sit = -1; p.cm = ''; p.x = p.dx = d.x; p.z = p.dz = d.z; } },
     setOffset(ms) { offset = ms; },

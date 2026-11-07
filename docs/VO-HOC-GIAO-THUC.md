@@ -125,7 +125,7 @@ Khi đối thủ khóa: `pk:locked {matchId, turn}` (không kèm chiêu, không 
   state:{ you:F, op:F },
   ended:null | { result:'win'|'lose'|'draw', reason } }
 ```
-Sau `REVEAL_MS` (4 giây) máy chủ gửi `pk:turn` của lượt kế tiếp. Trong 4 giây đó không nhận `pk:pick`.
+Sau `REVEAL_MS` (6,5 giây) máy chủ gửi `pk:turn` của lượt kế tiếp. Trong 6,5 giây đó không nhận `pk:pick`; trình duyệt dùng khoảng này để lật chiêu và diễn hoạt ảnh đánh nhau.
 
 `events` theo thứ tự xảy ra (tất cả `side`/`atk`/`def`/`target` là `'you'` hoặc `'op'`):
 ```
