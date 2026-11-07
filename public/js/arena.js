@@ -109,7 +109,431 @@
   }
   const dropPaint = scope => { S.pt = S.pt.filter(p => p.scope !== scope); };
 
-  /* sân khấu trận: hai nhân vật đối diện, mình ở trước (quay lưng), đối thủ ở xa (quay mặt) */
+  Object.assign(S, { efx: [], parts: [], body: {}, shake: null, shieldHit: {} });
+  /* ---------- sân khấu trận: lôi đài, hai nhân vật đối mặt, biên đạo theo diễn biến từng lượt ----------
+     Bạn đứng bên trái, đối thủ bên phải, cả hai quay mặt ra ngoài. Mọi hình đều vẽ bằng mã (Canvas 2D), không dùng ảnh.
+       S.fx    các đòn đang diễn (chuyển động nhân vật): { type: 'strike' | 'flinch', t0, dur, … }
+       S.efx   hiệu ứng một lần: vòng sóng, chớp va chạm, vệt chém, chưởng bay, thái cực, nứt đất, chớp màn…
+       S.parts hạt: tia lửa, bụi, lá liễu, mây, đá vụn, linh khí (giới hạn số lượng)
+       S.hold  thế giữ suốt lượt của mỗi bên: thủ (chuông vàng, tường sắt, phân thân, cầu nước), tụ lực, tung đòn tụ lực, điều tức, đứng yên */
+  const BR_COL = { cuong: '#ec7b6c', toc: '#e8c477', nhu: '#86b38a' };
+  const STRIKE = { 'trong-quyen': 'fist', 'tat-phong-quyen': 'rush', 'lien-hoan-cuoc': 'kick', 'lieu-diep-chuong': 'palm', 'doat-anh-phan-kich': 'shadow', 'tu-luc-pha-son': 'smash' };
+  const COUNTER = { 'phan-chan': 'shock', 'tiep-kinh-phan-chuong': 'taiji', 'tu-lang-bat-thien-can': 'taijiBig', 'doat-anh-phan-kich': 'shadow' };
+  const SHIELD = { 'kim-chung-trao': 'bell', 'thiet-bich': 'iron', 'anh-bo-ho-than': 'clones', 'ta-luc-hoa-giai': 'water' };
+  const DODGE = { 'khinh-than-bo': 'swift', 'nhu-van-bo': 'cloud' };
+  const BY_BRANCH = {
+    strike: { cuong: 'fist', toc: 'rush', nhu: 'palm' }, counter: { cuong: 'shock', toc: 'shadow', nhu: 'taiji' },
+    shield: { cuong: 'iron', toc: 'clones', nhu: 'water' }, dodge: { cuong: 'swift', toc: 'swift', nhu: 'cloud' }
+  };
+  const MOTION = { fist: 'fist', rush: 'rush', kick: 'kick', palm: 'palm', shadow: 'shadow', smash: 'smash', shock: 'fist', taiji: 'palm', taijiBig: 'palm' };
+  const colOf = id => { const s = skillOf(id); return (s && BR_COL[s.branch]) || '#e8c477'; };
+  const styleOf = (map, kind, id) => map[id] || BY_BRANCH[kind][(skillOf(id) || {}).branch] || BY_BRANCH[kind].cuong;
+  const clamp01 = x => (x < 0 ? 0 : x > 1 ? 1 : x);
+  const ease = x => { x = clamp01(x); return x * x * (3 - 2 * x); };
+  const easeOut = x => { x = clamp01(x); return 1 - (1 - x) * (1 - x); };
+  const seg = (p, a, b) => (p - a) / (b - a);
+  const bump = x => (x <= 0 || x >= 1 ? 0 : Math.sin(Math.PI * x));
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  function rgba(hex, a) { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${clamp01(a).toFixed(3)})`; }
+  function glowAt(c, x, y, r, col, a) {
+    if (a <= 0.004 || r <= 0) return;
+    const g = c.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, rgba(col, a)); g.addColorStop(0.5, rgba(col, a * 0.35)); g.addColorStop(1, rgba(col, 0));
+    c.fillStyle = g; c.beginPath(); c.arc(x, y, r, 0, TAU); c.fill();
+  }
+  const holdOf = side => { const v = S.hold[side]; return !v ? null : typeof v === 'string' ? { k: v, t0: 0 } : v; };
+
+  /** Toạ độ sân khấu theo khung hiện tại: chân hai người cùng một hàng trên mặt lôi đài. */
+  function stageGeo(W, H) {
+    const s = Math.min(H / 152, W / 240), fy = H * 0.84;
+    return { W, H, s, fy, top: H * 0.6, front: H * 0.9, span: W * 0.42, you: { x: W * 0.29, dir: 1 }, op: { x: W * 0.71, dir: -1 } };
+  }
+
+  /* nền tĩnh (vẽ một lần cho mỗi cỡ khung): trời đêm, tường chùa, sân đá, lôi đài sơn son thếp vàng */
+  function stageBg(W, H, k) {
+    const cv = document.createElement('canvas'); cv.width = Math.max(1, Math.round(W * k)); cv.height = Math.max(1, Math.round(H * k));
+    const c = cv.getContext('2d'); c.setTransform(k, 0, 0, k, 0, 0);
+    const G = stageGeo(W, H), hz = H * 0.5, wy = hz - H * 0.17;
+    let g = c.createLinearGradient(0, 0, 0, hz);
+    g.addColorStop(0, '#120a10'); g.addColorStop(0.65, '#2a1712'); g.addColorStop(1, '#3f2418');
+    c.fillStyle = g; c.fillRect(0, 0, W, hz);
+    glowAt(c, W * 0.5, wy, W * 0.5, '#d98a4a', 0.12);                                   // ánh đèn hắt lên trời
+    glowAt(c, W * 0.86, H * 0.15, Math.max(20, H * 0.22), '#f3dca0', 0.16);              // trăng
+    c.fillStyle = 'rgba(246,232,196,.6)'; c.beginPath(); c.arc(W * 0.86, H * 0.15, Math.max(4, H * 0.04), 0, TAU); c.fill();
+    c.fillStyle = 'rgba(255,240,210,.35)';
+    for (let i = 0; i < 14; i++) { const x = (Math.sin(i * 91.7) * 0.5 + 0.5) * W, y = (Math.sin(i * 37.1) * 0.5 + 0.5) * wy * 0.75; c.fillRect(x, y, 1, 1); }
+    // tường chùa xa, mái ngói, cửa sổ tròn
+    g = c.createLinearGradient(0, wy, 0, hz); g.addColorStop(0, '#5a3421'); g.addColorStop(1, '#3a2016');
+    c.fillStyle = g; c.fillRect(0, wy, W, hz - wy);
+    c.fillStyle = 'rgba(214,170,100,.1)'; c.fillRect(0, wy + (hz - wy) * 0.22, W, Math.max(1, (hz - wy) * 0.1));
+    const rr = Math.max(4, (hz - wy) * 0.22);
+    for (let x = W * 0.08; x < W; x += Math.max(60, W * 0.17)) {
+      const y = wy + (hz - wy) * 0.6;
+      c.fillStyle = '#1d0f0a'; c.beginPath(); c.arc(x, y, rr, 0, TAU); c.fill();
+      c.strokeStyle = 'rgba(212,171,82,.45)'; c.lineWidth = 1; c.stroke();
+      c.beginPath(); c.moveTo(x - rr, y); c.lineTo(x + rr, y); c.moveTo(x, y - rr); c.lineTo(x, y + rr); c.stroke();
+    }
+    const rh = H * 0.055;
+    c.fillStyle = '#1f120d'; c.beginPath(); c.moveTo(-4, wy + 2); c.lineTo(W + 4, wy + 2); c.lineTo(W + 4, wy - rh * 0.55); c.quadraticCurveTo(W * 0.5, wy - rh, -4, wy - rh * 0.55); c.closePath(); c.fill();
+    c.strokeStyle = 'rgba(120,80,50,.35)'; c.lineWidth = 1; c.beginPath();
+    for (let x = 4; x < W; x += Math.max(5, 7 * G.s)) { c.moveTo(x, wy + 1); c.lineTo(x, wy - rh * 0.6); }
+    c.stroke();
+    c.strokeStyle = '#c99a45'; c.lineWidth = 1.2; c.beginPath(); c.moveTo(0, wy + 1.5); c.lineTo(W, wy + 1.5); c.stroke();
+    // sân lát đá
+    g = c.createLinearGradient(0, hz, 0, H); g.addColorStop(0, '#3d2c22'); g.addColorStop(1, '#1b120c');
+    c.fillStyle = g; c.fillRect(0, hz, W, H - hz);
+    c.strokeStyle = 'rgba(230,200,160,.08)'; c.lineWidth = 1; c.beginPath();
+    for (let i = -10; i <= 10; i++) { c.moveTo(W / 2 + i * W * 0.06, hz); c.lineTo(W / 2 + i * W * 0.2, H); }
+    for (let j = 1; j <= 5; j++) { const y = hz + (H - hz) * Math.pow(j / 5, 1.5); c.moveTo(0, y); c.lineTo(W, y); }
+    c.stroke();
+    // lôi đài: mặt sàn gỗ, viền vàng, mặt trước sơn son
+    const bx0 = W * 0.1, bx1 = W * 0.9, fx0 = W * 0.02, fx1 = W * 0.98, tb = G.top, tf = G.front, fh = H * 0.075;
+    c.fillStyle = 'rgba(0,0,0,.35)'; c.beginPath(); c.ellipse(W / 2, tf + fh, W * 0.5, H * 0.05, 0, 0, TAU); c.fill();
+    g = c.createLinearGradient(0, tb, 0, tf); g.addColorStop(0, '#5a2f19'); g.addColorStop(1, '#7a4222');
+    c.fillStyle = g; c.beginPath(); c.moveTo(bx0, tb); c.lineTo(bx1, tb); c.lineTo(fx1, tf); c.lineTo(fx0, tf); c.closePath(); c.fill();
+    c.save(); c.clip();
+    c.strokeStyle = 'rgba(30,12,6,.45)'; c.lineWidth = 1; c.beginPath();
+    for (let i = 1; i < 14; i++) { const q = i / 14; c.moveTo(bx0 + (bx1 - bx0) * q, tb); c.lineTo(fx0 + (fx1 - fx0) * q, tf); }
+    c.stroke();
+    g = c.createLinearGradient(0, tb, 0, tf); g.addColorStop(0, 'rgba(255,214,150,0)'); g.addColorStop(0.55, 'rgba(255,214,150,.08)'); g.addColorStop(1, 'rgba(255,214,150,0)');
+    c.fillStyle = g; c.fillRect(0, tb, W, tf - tb);
+    c.strokeStyle = 'rgba(212,171,82,.28)'; c.lineWidth = 1.3; c.beginPath(); c.ellipse(W / 2, (tb + tf) / 2 + H * 0.02, W * 0.3, (tf - tb) * 0.32, 0, 0, TAU); c.stroke();
+    c.restore();
+    c.strokeStyle = '#d4ab52'; c.lineWidth = 1.5; c.beginPath(); c.moveTo(bx0, tb); c.lineTo(bx1, tb); c.lineTo(fx1, tf); c.lineTo(fx0, tf); c.closePath(); c.stroke();
+    g = c.createLinearGradient(0, tf, 0, tf + fh); g.addColorStop(0, '#9a271c'); g.addColorStop(1, '#4e100b');
+    c.fillStyle = g; c.fillRect(fx0, tf, fx1 - fx0, fh);
+    c.strokeStyle = '#d4ab52'; c.lineWidth = 1.2; c.strokeRect(fx0, tf, fx1 - fx0, fh);
+    c.strokeStyle = 'rgba(212,171,82,.55)'; c.lineWidth = 1;
+    const n = Math.max(5, Math.round(W / 70));
+    for (let i = 0; i < n; i++) {                                                        // đồng tiền cổ trang trí mặt trước
+      const x = fx0 + (fx1 - fx0) * (i + 0.5) / n, y = tf + fh / 2, r = Math.min(fh * 0.32, 9);
+      c.beginPath(); c.arc(x, y, r, 0, TAU); c.stroke(); c.strokeRect(x - r * 0.35, y - r * 0.35, r * 0.7, r * 0.7);
+    }
+    // cột góc sau và dây thừng đỏ
+    for (const x of [bx0, bx1]) {
+      const ph = H * 0.15;
+      c.fillStyle = '#6e1a13'; c.fillRect(x - 3, tb - ph, 6, ph);
+      c.fillStyle = '#d4ab52'; c.beginPath(); c.arc(x, tb - ph, 4, 0, TAU); c.fill();
+    }
+    c.strokeStyle = '#b5302a'; c.lineWidth = 2; c.beginPath(); c.moveTo(bx0, tb - H * 0.12); c.quadraticCurveTo(W / 2, tb - H * 0.07, bx1, tb - H * 0.12); c.stroke();
+    return cv;
+  }
+
+  /* phần động của nền: cờ phướn bay, đèn lồng lung linh */
+  function drawProps(c, G, t) {
+    const { W, H } = G;
+    for (const [x, sd] of [[W * 0.1, 1], [W * 0.9, -1]]) {
+      const top = H * 0.05, bw = Math.max(16, W * 0.055), bh = H * 0.3, w = Math.sin(t * 1.6 + sd) * bw * 0.12;
+      c.fillStyle = '#3a2016'; c.fillRect(x - 1.5, top - 3, 3, G.top - top - H * 0.15 + 3);
+      c.fillStyle = '#c99a45'; c.fillRect(x - bw * 0.7, top - 2, bw * 1.4, 3);
+      c.beginPath(); c.moveTo(x - bw / 2, top); c.lineTo(x + bw / 2, top);
+      c.lineTo(x + bw / 2 + w, top + bh); c.lineTo(x + w * 0.5, top + bh - bw * 0.35); c.lineTo(x - bw / 2 + w, top + bh); c.closePath();
+      const g = c.createLinearGradient(x - bw / 2, 0, x + bw / 2, 0); g.addColorStop(0, '#6e1a13'); g.addColorStop(0.5, '#a3271c'); g.addColorStop(1, '#6e1a13');
+      c.fillStyle = g; c.fill(); c.strokeStyle = '#d4ab52'; c.lineWidth = 1; c.stroke();
+      const cy = top + bh * 0.36, r = bw * 0.36;
+      c.strokeStyle = 'rgba(232,196,119,.9)'; c.beginPath(); c.arc(x + w * 0.3, cy, r, 0, TAU); c.stroke();
+      c.fillStyle = '#efcd7c'; c.font = `700 ${Math.round(r * 1.2)}px "Cormorant Garamond", Georgia, serif`; c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillText('武', x + w * 0.3, cy + 0.5);
+    }
+    const lr = Math.max(6, Math.min(H * 0.055, W * 0.03));
+    for (const x of [lr + 3, W - lr - 3]) {                                            // đèn lồng hai góc
+      const y = H * 0.24, r = lr, fl = 0.85 + 0.15 * Math.sin(t * 7 + x) + 0.05 * Math.sin(t * 17);
+      c.strokeStyle = '#7a5a2a'; c.lineWidth = 1; c.beginPath(); c.moveTo(x, 0); c.lineTo(x, y - r); c.stroke();
+      glowAt(c, x, y, r * 6, '#ff9a4a', 0.22 * fl);
+      const lg = c.createRadialGradient(x - r * 0.3, y - r * 0.3, 1, x, y, r * 1.2); lg.addColorStop(0, '#ff7a45'); lg.addColorStop(1, '#a3180f');
+      c.fillStyle = lg; c.beginPath(); c.ellipse(x, y, r * 0.85, r, 0, 0, TAU); c.fill();
+      c.fillStyle = '#d4ab52'; c.fillRect(x - r * 0.45, y - r - 2, r * 0.9, 3); c.fillRect(x - r * 0.45, y + r - 1, r * 0.9, 3);
+    }
+  }
+
+  /* ----- biên đạo: tư thế mỗi bên theo các đòn đang diễn ----- */
+  function strikePose(P, side, a, p) {
+    const motion = MOTION[a.style] || 'fist', pI = a.pI;
+    const pA = a.first ? (motion === 'rush' ? 0.26 : motion === 'palm' ? 0.3 : motion === 'smash' ? 0.5 : 0.38) : 0;
+    const pR = a.last ? Math.min(0.9, pI + (a.first ? 0.2 : 0.26)) : 2;
+    if (side === a.atk) {
+      P.front = true;
+      const reach = a.reach;
+      let x = p < pA ? reach * (motion === 'rush' ? easeOut(p / pA) : ease(p / pA)) : p < pR ? reach : reach * (1 - ease(seg(p, pR, 1)));
+      if (a.result === 'parry' && p > pI) x -= 0.18 * bump(seg(p, pI, pI + 0.5)) * reach;            // bị đỡ: bật ngược lại
+      P.dx += x;
+      if (motion === 'smash' && a.first && p < pI) P.dy -= 34 * bump(p / pI);                       // nhảy vọt lên rồi giáng xuống
+      if (motion === 'shadow' && a.first && p < pA + 0.04) P.alpha = Math.max(0.05, Math.abs(1 - 2 * clamp01(p / (pA + 0.04))));   // lướt ảnh: mờ đi, hiện ra sát đối thủ
+      if (motion === 'rush' && a.first && p < pA + 0.06) P.ghosts = [[-0.1, 0.34], [-0.2, 0.22], [-0.3, 0.12]];
+      const ext = p < pI ? ease(seg(p, pI - 0.15, pI)) : 1 - ease(seg(p, pI + 0.05, pI + 0.22));
+      if (motion === 'kick') { P.kick = Math.max(P.kick, ext); P.rot += (a.idx % 2 ? 0 : 0.12) * ext; } else P.arm = Math.max(P.arm, ext);
+      P.lean += (a.result === 'dodge' && p > pI ? 0.9 : 0.6) * ext;                              // đánh hụt thì chúi người theo đà
+      P.crouch = Math.max(P.crouch, motion === 'smash' ? 0.55 * ext : 0.22);
+      P.guard = Math.min(P.guard, 0.4);
+      return;
+    }
+    if (side !== a.def) return;
+    if (a.result === 'dodge') {
+      const q = seg(p, pI - 0.16, pI + 0.32), b = bump(q);
+      if (b > 0) {
+        P.dx -= 0.16 * b; P.dy -= (a.dstyle === 'cloud' ? 12 : 26) * b; P.lean -= 0.5 * b; P.crouch = Math.max(P.crouch, 0.2);
+        P.ghosts = a.dstyle === 'swift' ? [[0.16 * b * 0.35, 0.3 * b], [0.16 * b * 0.7, 0.18 * b]] : [[0.16 * b, 0.25 * b]];
+      }
+      return;
+    }
+    if (a.result === 'parry') {
+      const q = seg(p, pI - 0.22, pI + 0.3);
+      if (q > 0 && q < 1) { P.guard = 1; P.crouch = Math.max(P.crouch, 0.32); P.lean -= 0.12 * bump(q); P.dx -= 0.02 * bump(q); }
+      return;
+    }
+    if (a.tried === 'dodge' && p < pI) { const b = ease(seg(p, pI - 0.18, pI)); P.lean -= 0.3 * b; P.dx -= 0.03 * b; }
+    if (a.tried === 'parry' && p < pI) P.guard = Math.max(P.guard, ease(seg(p, pI - 0.2, pI)));
+    if (a.result === 'hit' && p >= pI) {
+      const q = clamp01(seg(p, pI, Math.min(1, pI + 0.36))), kb = a.big ? 0.16 : 0.08;
+      P.dx -= kb * (q < 0.3 ? easeOut(q / 0.3) : 1 - ease((q - 0.3) / 0.7));
+      P.hit = Math.max(P.hit, 1 - q); P.lean -= 0.6 * bump(q); P.crouch = Math.max(P.crouch, 0.25 * bump(q)); P.guard = Math.min(P.guard, 0.2);
+      if (a.big) P.dy -= 14 * bump(q);
+    }
+  }
+  function poseOf(side, ts) {
+    const P = { dx: 0, dy: 0, rot: 0, alpha: 1, ghosts: null, hit: 0, crouch: 0.14, lean: 0.05, arm: 0, kick: 0, guard: 0.45, bow: 0, front: false };
+    const hd = holdOf(side);
+    if (hd) {
+      if (hd.k === 'guard') { P.guard = 0.95; P.crouch = 0.28; }
+      else if (hd.k === 'charge') { P.crouch = 0.55; P.guard = 0.7; P.lean = -0.12; }
+      else if (hd.k === 'release') { P.crouch = 0.6; P.guard = 0.25; P.lean = 0.2; }
+      else if (hd.k === 'rest') { P.crouch = 0.85; P.guard = 0; P.bow = 0.22; P.lean = 0; }
+      else if (hd.k === 'idle') { P.crouch = 0; P.guard = 0; P.lean = -0.06; }
+    }
+    if (reduced()) return P;
+    for (const a of S.fx) {
+      const p = (ts - a.t0) / a.dur;
+      if (p < 0 || p > 1.05) continue;
+      if (a.type === 'strike') strikePose(P, side, a, clamp01(p));
+      else if (a.type === 'flinch' && a.side === side) { const b = bump(p); P.hit = Math.max(P.hit, b); P.dx -= 0.04 * b; P.lean -= 0.4 * b; P.guard = 0; }
+    }
+    return P;
+  }
+  const dirtyStage = () => { if (S.stage) S.stage.dirty = true; };
+  const resetStageFx = () => { S.fx.length = 0; S.efx.length = 0; S.parts.length = 0; S.shake = null; };
+
+  /* ----- hạt ----- */
+  function part(o) { if (S.parts.length >= 260) S.parts.shift(); S.parts.push(Object.assign({ vx: 0, vy: 0, gy: 0, life: 0, max: 700, r: 2, rot: 0, vr: 0, drag: 0 }, o)); }
+  function burst(x, y, n, o) {
+    for (let i = 0; i < n; i++) {
+      const an = (o.an != null ? o.an : 0) + rnd(-(o.spread || Math.PI), o.spread || Math.PI), sp = rnd(o.v0 || 60, o.v1 || 220);
+      part({ x, y, vx: Math.cos(an) * sp, vy: Math.sin(an) * sp, gy: o.gy || 0, max: rnd(o.l0 || 380, o.l1 || 760), r: rnd(o.r0 || 1.2, o.r1 || 2.6), kind: o.kind || 'spark', col: o.col || '#ffd38a', rot: rnd(0, TAU), vr: rnd(-8, 8), drag: o.drag || 0 });
+    }
+  }
+  function drawParts(c, dt) {
+    const k = dt / 1000;
+    c.save();
+    for (let i = S.parts.length - 1; i >= 0; i--) {
+      const p = S.parts[i];
+      p.life += dt;
+      if (p.life >= p.max) { S.parts.splice(i, 1); continue; }
+      if (p.to) { p.x += (p.to.x - p.x) * Math.min(1, k * 3.2); p.y += (p.to.y - p.y) * Math.min(1, k * 3.2); }
+      p.vy += p.gy * k; if (p.drag) { p.vx *= 1 - p.drag * k; p.vy *= 1 - p.drag * k; }
+      p.x += p.vx * k; p.y += p.vy * k; p.rot += p.vr * k;
+      if (p.floor && p.y > p.floor) { p.y = p.floor; p.vy *= -0.3; p.vx *= 0.6; }
+      const q = p.life / p.max, a = q < 0.15 ? q / 0.15 : 1 - (q - 0.15) / 0.85;
+      if (p.kind === 'spark') {
+        c.globalCompositeOperation = 'lighter'; c.strokeStyle = rgba(p.col, a); c.lineWidth = p.r * 0.7; c.lineCap = 'round';
+        c.beginPath(); c.moveTo(p.x, p.y); c.lineTo(p.x - p.vx * 0.035, p.y - p.vy * 0.035); c.stroke();
+      } else if (p.kind === 'ember') { c.globalCompositeOperation = 'lighter'; glowAt(c, p.x, p.y, p.r * 3, p.col, 0.7 * a); }
+      else if (p.kind === 'leaf') {
+        c.globalCompositeOperation = 'source-over'; c.save(); c.translate(p.x, p.y); c.rotate(p.rot); c.fillStyle = rgba(p.col, 0.9 * a);
+        c.beginPath(); c.moveTo(-p.r * 2.4, 0); c.quadraticCurveTo(0, -p.r, p.r * 2.4, 0); c.quadraticCurveTo(0, p.r, -p.r * 2.4, 0); c.fill(); c.restore();
+      } else if (p.kind === 'cloud' || p.kind === 'dust') {
+        c.globalCompositeOperation = 'source-over'; c.fillStyle = rgba(p.col, (p.kind === 'cloud' ? 0.32 : 0.3) * a);
+        c.beginPath(); c.arc(p.x, p.y, p.r * (1 + q * 1.4), 0, TAU); c.fill();
+      } else if (p.kind === 'rock') {
+        c.globalCompositeOperation = 'source-over'; c.save(); c.translate(p.x, p.y); c.rotate(p.rot); c.fillStyle = rgba(p.col, Math.min(1, a * 1.5));
+        c.beginPath(); c.moveTo(-p.r, -p.r * 0.6); c.lineTo(p.r * 0.8, -p.r); c.lineTo(p.r, p.r * 0.5); c.lineTo(-p.r * 0.4, p.r); c.closePath(); c.fill(); c.restore();
+      }
+    }
+    c.restore();
+  }
+
+  /* ----- hiệu ứng một lần ----- */
+  function fxAdd(k, o, delay) { if (S.efx.length > 40) S.efx.shift(); S.efx.push(Object.assign({ k, t0: performance.now() + (delay || 0), dur: 500 }, o)); }
+  function taiji(c, x, y, r, rot, a, col) {
+    c.save(); c.translate(x, y); c.rotate(rot); c.globalAlpha *= a;
+    c.fillStyle = 'rgba(240,250,240,.85)'; c.beginPath(); c.arc(0, 0, r, 0, TAU); c.fill();
+    c.fillStyle = rgba(col, 0.95); c.beginPath(); c.arc(0, 0, r, -Math.PI / 2, Math.PI / 2); c.arc(0, r / 2, r / 2, Math.PI / 2, -Math.PI / 2, true); c.arc(0, -r / 2, r / 2, Math.PI / 2, -Math.PI / 2); c.fill();
+    c.fillStyle = rgba(col, 0.95); c.beginPath(); c.arc(0, -r / 2, r * 0.13, 0, TAU); c.fill();
+    c.fillStyle = 'rgba(240,250,240,.95)'; c.beginPath(); c.arc(0, r / 2, r * 0.13, 0, TAU); c.fill();
+    c.strokeStyle = rgba('#e8ffe9', 0.8); c.lineWidth = Math.max(1, r * 0.06); c.beginPath(); c.arc(0, 0, r, 0, TAU); c.stroke();
+    c.restore();
+  }
+  const EFX = {
+    ring(c, e, q) {                                       // vòng sóng xung kích (flat < 1: vòng trên mặt sàn)
+      const r = e.r0 + (e.r1 - e.r0) * easeOut(q);
+      c.globalCompositeOperation = 'lighter'; c.strokeStyle = rgba(e.col, 0.9 * (1 - q)); c.lineWidth = Math.max(1, e.w * (1 - q));
+      c.beginPath(); c.ellipse(e.x, e.y, r, r * (e.flat || 1), 0, 0, TAU); c.stroke();
+    },
+    star(c, e, q) {                                       // chớp va chạm hình sao
+      const r = e.r * (0.5 + 0.8 * easeOut(q)), a = 1 - q;
+      c.globalCompositeOperation = 'lighter'; glowAt(c, e.x, e.y, r * 2.2, e.col, 0.7 * a);
+      c.fillStyle = rgba('#fff6e0', 0.95 * a); c.beginPath();
+      for (let i = 0; i < 20; i++) { const an = i * TAU / 20 + e.rot, rad = i % 2 ? r * 0.28 : r * (i % 4 ? 0.8 : 1); c.lineTo(e.x + Math.cos(an) * rad, e.y + Math.sin(an) * rad); }
+      c.closePath(); c.fill();
+    },
+    slash(c, e, q) {                                      // vệt chém / vệt cước hình trăng khuyết
+      const grow = easeOut(Math.min(1, q * 2.4)), a = q < 0.45 ? 1 : 1 - (q - 0.45) / 0.55;
+      const a0 = e.a0, a1 = e.a0 + (e.a1 - e.a0) * grow, r = e.r;
+      c.globalCompositeOperation = 'lighter';
+      c.fillStyle = rgba(e.col, 0.8 * a); c.beginPath(); c.arc(e.x, e.y, r, a0, a1, e.a1 < e.a0); c.arc(e.x + Math.cos((a0 + a1) / 2) * r * 0.18, e.y + Math.sin((a0 + a1) / 2) * r * 0.18, r * 0.86, a1, a0, e.a1 >= e.a0); c.closePath(); c.fill();
+      c.strokeStyle = rgba('#fff8e8', 0.85 * a); c.lineWidth = Math.max(1, r * 0.05); c.beginPath(); c.arc(e.x, e.y, r, a0, a1, e.a1 < e.a0); c.stroke();
+    },
+    wave(c, e, q, ts) {                                   // chưởng lực bay: lá liễu / thái cực / sóng khí
+      const x = e.x0 + (e.x1 - e.x0) * easeOut(q), y = e.y0 + (e.y1 - e.y0) * q + Math.sin(q * Math.PI) * e.arc;
+      c.globalCompositeOperation = 'lighter';
+      for (let i = 4; i >= 0; i--) { const k = Math.max(0, q - i * 0.05), tx = e.x0 + (e.x1 - e.x0) * easeOut(k); glowAt(c, tx, e.y0 + (e.y1 - e.y0) * k + Math.sin(k * Math.PI) * e.arc, e.r * (1.6 - i * 0.18), e.col, 0.45 - i * 0.07); }
+      if (e.shape === 'taiji') { c.globalCompositeOperation = 'source-over'; taiji(c, x, y, e.r * 0.9, ts / 120, 0.9, e.col); }
+      else {
+        c.save(); c.translate(x, y); c.scale(Math.sign(e.x1 - e.x0) || 1, 1);
+        c.fillStyle = rgba('#f4ffe8', 0.9); c.beginPath(); c.moveTo(e.r * 1.4, 0); c.quadraticCurveTo(0, -e.r * 0.9, -e.r * 1.2, 0); c.quadraticCurveTo(0, e.r * 0.9, e.r * 1.4, 0); c.fill();
+        c.restore();
+      }
+      if (Math.random() < 0.5) part({ x, y: y + rnd(-e.r, e.r) * 0.5, vx: rnd(-40, 40), vy: rnd(-30, 40), max: 600, r: Math.max(1.4, e.r * 0.22), kind: e.shape === 'taiji' ? 'ember' : 'leaf', col: e.leaf || e.col, vr: rnd(-6, 6), drag: 1.5 });
+    },
+    speed(c, e, q) {                                      // vệt gió khi lướt nhanh
+      c.globalCompositeOperation = 'lighter'; c.strokeStyle = rgba(e.col, 0.55 * (1 - q)); c.lineCap = 'round';
+      for (const l of e.lines) { c.lineWidth = l.w; c.beginPath(); const x0 = e.x0 + (e.x1 - e.x0) * l.s, x1 = x0 + (e.x1 - e.x0) * l.l * (0.4 + 0.6 * q); c.moveTo(x0, l.y); c.lineTo(x1, l.y); c.stroke(); }
+    },
+    taiji(c, e, q, ts) {                                  // vòng thái cực xoay khi hóa giải
+      const a = q < 0.2 ? q / 0.2 : q > 0.7 ? 1 - (q - 0.7) / 0.3 : 1;
+      c.globalCompositeOperation = 'lighter'; glowAt(c, e.x, e.y, e.r * 1.9, e.col, 0.45 * a);
+      c.globalCompositeOperation = 'source-over'; taiji(c, e.x, e.y, e.r * (0.7 + 0.3 * easeOut(q * 2)), (e.spin || 1) * ts / 160, 0.85 * a, e.col);
+    },
+    crack(c, e, q) {                                      // nứt sàn lôi đài
+      const len = Math.min(1, q * 3.5), a = q < 0.7 ? 1 : 1 - (q - 0.7) / 0.3;
+      c.globalCompositeOperation = 'source-over'; c.lineCap = 'round'; c.lineJoin = 'round';
+      for (const L of e.lines) {
+        const n = Math.max(2, Math.ceil(L.length * len));
+        c.strokeStyle = rgba('#140803', 0.9 * a); c.lineWidth = e.w; c.beginPath(); c.moveTo(L[0][0], L[0][1]);
+        for (let i = 1; i < n; i++) c.lineTo(L[i][0], L[i][1]);
+        c.stroke();
+        c.strokeStyle = rgba('#ff9a4a', 0.75 * a * (1 - q)); c.lineWidth = e.w * 0.4; c.stroke();
+      }
+    },
+    flash(c, e, q, ts, G) { c.globalCompositeOperation = 'source-over'; c.fillStyle = rgba(e.col, e.a * (1 - q)); c.fillRect(-20, -20, G.W + 40, G.H + 40); },
+    bell(c, e, q) {                                       // tiếng chuông vàng ngân ra khi Kim Chung bị đánh
+      c.save(); c.translate(e.x, e.y); const k = e.s * (1 + 0.45 * easeOut(q)); c.scale(k, k);
+      c.globalCompositeOperation = 'lighter'; c.strokeStyle = rgba('#ffd36b', 0.8 * (1 - q)); c.lineWidth = 2.2 / (1 + q); bellPath(c); c.stroke(); c.restore();
+    },
+    whoosh(c, e, q) {                                     // đánh hụt: vệt gió trắng
+      const a = 1 - q;
+      c.globalCompositeOperation = 'lighter'; c.strokeStyle = rgba('#f4efe0', 0.7 * a); c.lineWidth = Math.max(1, e.r * 0.07 * a); c.lineCap = 'round';
+      c.beginPath(); c.arc(e.x, e.y, e.r * (0.8 + 0.3 * q), e.a0, e.a1); c.stroke();
+      c.beginPath(); c.arc(e.x, e.y + e.r * 0.25, e.r * (0.6 + 0.3 * q), e.a0 + 0.2, e.a1 - 0.2); c.stroke();
+    }
+  };
+  function drawEfx(c, ts, G) {
+    for (let i = S.efx.length - 1; i >= 0; i--) {
+      const e = S.efx[i], q = (ts - e.t0) / e.dur;
+      if (q >= 1) { S.efx.splice(i, 1); continue; }
+      if (q < 0) continue;
+      c.save(); EFX[e.k](c, e, q, ts, G); c.restore();
+    }
+  }
+
+  /* ----- thế giữ: khiên, linh khí ----- */
+  function bellPath(c) {                                  // chuông vàng Kim Chung (đơn vị nhân vật, đáy chuông ở chân)
+    c.beginPath(); c.moveTo(-13, -116);
+    c.bezierCurveTo(-32, -116, -35, -92, -36, -62); c.bezierCurveTo(-37, -32, -42, -14, -50, -3);
+    c.lineTo(50, -3); c.bezierCurveTo(42, -14, 37, -32, 36, -62); c.bezierCurveTo(35, -92, 32, -116, 13, -116); c.closePath();
+  }
+  function shieldOf(side) { const h = holdOf(side); return h && h.k === 'guard' ? styleOf(SHIELD, 'shield', h.skill) : null; }
+  function drawHold(c, G, side, B, t, ts, front) {
+    const h = holdOf(side);
+    if (!h) return;
+    const still = reduced(), age = still || !h.t0 ? 1e9 : ts - h.t0, inn = ease(age / 380), x = B.x, y = B.y, s = B.s, dir = G[side].dir;
+    const hitAge = S.shieldHit && S.shieldHit[side] ? ts - S.shieldHit[side] : 1e9, hf = hitAge < 420 ? 1 - hitAge / 420 : 0;
+    const pulse = still ? 1 : 0.85 + 0.15 * Math.sin(t * 3.2 + (side === 'op' ? 1 : 0));
+    c.save();
+    if (h.k === 'guard') {
+      const st = shieldOf(side);
+      if (st === 'bell' && front) {
+        c.translate(x, y); c.scale(s * (0.78 + 0.14 * inn), s * (0.78 + 0.14 * inn)); c.globalAlpha = inn;
+        const g = c.createLinearGradient(-40, 0, 40, 0); g.addColorStop(0, 'rgba(255,211,107,.26)'); g.addColorStop(0.5, 'rgba(255,236,170,.08)'); g.addColorStop(1, 'rgba(255,211,107,.26)');
+        c.fillStyle = g; bellPath(c); c.fill();
+        c.strokeStyle = rgba('#ffd36b', (0.75 + 0.25 * hf) * pulse); c.lineWidth = 1.8 + 1.5 * hf; c.stroke();
+        c.strokeStyle = rgba('#ffd36b', 0.45); c.lineWidth = 1;
+        c.beginPath(); c.moveTo(-35, -96); c.quadraticCurveTo(0, -90, 35, -96); c.moveTo(-38, -34); c.quadraticCurveTo(0, -27, 38, -34); c.stroke();
+        c.fillStyle = rgba('#ffe39a', 0.7); for (let i = -2; i <= 2; i++) { c.beginPath(); c.arc(i * 9, -76, 1.6, 0, TAU); c.fill(); }
+        c.beginPath(); c.arc(0, -121, 5, 0, TAU); c.stroke();
+        if (hf) { c.globalCompositeOperation = 'lighter'; glowAt(c, 0, -60, 60, '#ffd36b', 0.5 * hf); }
+      } else if (st === 'iron' && front) {
+        const px = dir * 30, hgt = 98 * inn;
+        c.translate(x, y); c.scale(s, s);
+        c.beginPath(); c.moveTo(px - 7, -2); c.lineTo(px + 7, -6); c.lineTo(px + 7, -6 - hgt); c.lineTo(px, -10 - hgt); c.lineTo(px - 7, -6 - hgt); c.closePath();
+        const g = c.createLinearGradient(px - 7, 0, px + 7, 0); g.addColorStop(0, '#2c343b'); g.addColorStop(0.5, '#7d8c98'); g.addColorStop(1, '#3b4650');
+        c.fillStyle = g; c.globalAlpha = 0.88; c.fill(); c.globalAlpha = 1;
+        c.strokeStyle = rgba('#c6d3dc', 0.75 + 0.25 * hf); c.lineWidth = 1.1; c.stroke();
+        c.save(); c.clip(); c.strokeStyle = 'rgba(20,24,28,.6)'; c.lineWidth = 0.8; c.beginPath();
+        for (let yy = -14; yy > -10 - hgt; yy -= 14) { c.moveTo(px - 7, yy); c.lineTo(px, yy - 4); c.lineTo(px + 7, yy - 1); }
+        c.stroke(); c.restore();
+        c.fillStyle = '#d4ab52'; for (let yy = -18; yy > -6 - hgt; yy -= 28) { c.beginPath(); c.arc(px, yy, 1.4, 0, TAU); c.fill(); }
+        if (hf) { c.globalCompositeOperation = 'lighter'; glowAt(c, px, -55, 40, '#cfe0ff', 0.6 * hf); }
+      } else if (st === 'water' && front) {
+        c.translate(x, y - 56 * s); c.scale(s * (0.8 + 0.2 * inn), s * (0.8 + 0.2 * inn)); c.globalAlpha = inn;
+        const g = c.createRadialGradient(-10, -16, 4, 0, 0, 62); g.addColorStop(0, 'rgba(180,240,230,.05)'); g.addColorStop(0.75, 'rgba(110,200,200,.14)'); g.addColorStop(1, 'rgba(110,200,210,.32)');
+        c.fillStyle = g; c.beginPath(); c.ellipse(0, 0, 37, 54, 0, 0, TAU); c.fill();
+        c.strokeStyle = rgba('#bff3ea', 0.55 + 0.35 * hf); c.lineWidth = 1.3; c.stroke();
+        c.strokeStyle = rgba('#d8fff7', 0.5); c.lineWidth = 1;
+        for (let i = 0; i < 3; i++) { const r0 = t * 1.4 + i * 2.1; c.beginPath(); c.ellipse(0, 0, 37 - i * 6, 54 - i * 8, 0, r0, r0 + 1.1); c.stroke(); }
+        c.strokeStyle = 'rgba(255,255,255,.55)'; c.lineWidth = 2; c.beginPath(); c.ellipse(-12, -22, 18, 26, 0, Math.PI * 1.05, Math.PI * 1.45); c.stroke();
+      } else if (st === 'clones' && !front) {
+        for (const k of [-1, 1]) {
+          const a = (0.22 + 0.08 * Math.sin(t * 5 + k)) * inn;
+          c.save(); c.globalAlpha = a; c.translate(x + k * 24 * s * inn, y); c.scale(s, s);
+          avatar(c, B.look, { front: true, t: t + k, pose: { dir, guard: 0.9, crouch: 0.3 } }); c.restore();
+        }
+        if (!still && Math.random() < 0.3) part({ x: x + rnd(-30, 30) * s, y: y - rnd(10, 90) * s, vy: -20, max: 700, r: 1.4, kind: 'ember', col: '#e8c477' });
+      }
+    } else if (h.k === 'charge' || h.k === 'release') {
+      const col = h.k === 'release' ? '#ff6a3a' : '#ffb04a', cy = y - 55 * s;
+      if (!front) {
+        c.globalCompositeOperation = 'lighter';
+        c.save(); c.translate(x, y); c.scale(1, 0.28); glowAt(c, 0, 0, 70 * s, col, 0.5 * pulse * inn); c.restore();
+        glowAt(c, x, cy, 64 * s, col, (h.k === 'release' ? 0.42 : 0.28) * pulse * inn);
+        c.strokeStyle = rgba(col, 0.55 * inn); c.lineWidth = Math.max(1, 1.6 * s);
+        for (let i = 0; i < 3; i++) { const r0 = (still ? 0 : t * (2.4 + i * 0.6)) + i * 2.1, R = (34 + i * 9) * s; c.beginPath(); c.ellipse(x, cy, R, R * 0.42, 0, r0, r0 + 1.8); c.stroke(); }
+        if (!still && S.parts.length < 200 && Math.random() < (h.k === 'release' ? 0.9 : 0.55)) {
+          const an = rnd(0, TAU), R = rnd(55, 80) * s;
+          part({ x: x + Math.cos(an) * R, y: cy + Math.sin(an) * R * 0.6, to: { x, y: cy }, max: 520, r: rnd(1.2, 2.2), kind: 'ember', col: Math.random() < 0.5 ? col : '#ffe39a' });
+        }
+      }
+    } else if (h.k === 'rest' && !front) {
+      c.globalCompositeOperation = 'lighter';
+      const br = still ? 0.5 : 0.5 + 0.5 * Math.sin(t * 2.2);
+      glowAt(c, x, y - 40 * s, (46 + 14 * br) * s, '#7fd38a', 0.42 * inn);
+      if (!still && S.parts.length < 200 && Math.random() < 0.35) part({ x: x + rnd(-20, 20) * s, y: y - rnd(0, 30) * s, vy: -rnd(25, 50), vx: rnd(-8, 8), max: rnd(900, 1400), r: rnd(1, 1.8), kind: 'ember', col: '#9fe6a8' });
+      for (let i = 0; i < 2; i++) { const q = still ? 0.5 : (t * 0.5 + i * 0.5) % 1; c.strokeStyle = rgba('#a8e6b0', 0.5 * (1 - q) * inn); c.lineWidth = 1.2; c.beginPath(); c.ellipse(x, y - 10 * s - q * 80 * s, (22 + q * 14) * s, (6 + q * 4) * s, 0, 0, TAU); c.stroke(); }
+    } else if (h.k === 'idle' && front) {
+      const bx = x + 18 * s, by = y - 112 * s, n = still ? 3 : 1 + Math.floor(t * 3) % 3;
+      c.fillStyle = 'rgba(251,245,232,.92)'; c.beginPath(); c.ellipse(bx, by, 15 * s, 9 * s, 0, 0, TAU); c.fill();
+      c.beginPath(); c.moveTo(bx - 8 * s, by + 6 * s); c.lineTo(bx - 12 * s, by + 13 * s); c.lineTo(bx - 3 * s, by + 7 * s); c.fill();
+      c.fillStyle = '#2a1a12'; for (let i = 0; i < n; i++) { c.beginPath(); c.arc(bx - 6 * s + i * 6 * s, by, 1.6 * s, 0, TAU); c.fill(); }
+    }
+    c.restore();
+  }
+
+  /* ----- vẽ một bên ----- */
+  function drawFighter(c, G, side, P, t, look) {
+    const g = G[side], s = G.s, x = g.x + g.dir * P.dx * G.span, y = G.fy + P.dy * s;
+    S.body[side] = { x, y, s, look };
+    const pose = { dir: g.dir, arm: P.arm, kick: P.kick, guard: P.guard, crouch: P.crouch, lean: P.lean };
+    if (P.ghosts) for (const [gdx, ga] of P.ghosts) {
+      if (ga <= 0.02) continue;
+      c.save(); c.globalAlpha = ga; c.translate(x + g.dir * gdx * G.span, y); c.scale(s, s);
+      avatar(c, look, { front: true, t, pose }); c.restore();
+    }
+    c.save(); c.globalAlpha = P.alpha; c.translate(x, y); c.rotate(P.rot * g.dir); c.scale(s, s);
+    avatar(c, look, { front: true, t, bow: P.bow, pose });
+    c.restore();
+    if (P.hit > 0.03) {                                                // chớp đỏ trên người khi trúng đòn
+      c.save(); c.globalCompositeOperation = 'lighter'; glowAt(c, x, y - 58 * s, 46 * s, '#ff6a50', 0.55 * P.hit); c.restore();
+    }
+  }
+
   function drawStage(ts) {
     const st = S.stage;
     if (!st) return;
@@ -121,77 +545,27 @@
     const k = dpr(), W = Math.round(r.width), H = Math.round(r.height);
     if (cv.width !== Math.round(W * k) || cv.height !== Math.round(H * k)) { cv.width = Math.round(W * k); cv.height = Math.round(H * k); }
     const c = st.c || (st.c = cv.getContext('2d'));
-    c.setTransform(k, 0, 0, k, 0, 0); c.clearRect(0, 0, W, H);
-    const hz = H * 0.56, g1 = c.createLinearGradient(0, 0, 0, H);
-    g1.addColorStop(0, '#1a0f0a'); g1.addColorStop(hz / H, '#2b1911'); g1.addColorStop(hz / H, '#3a2519'); g1.addColorStop(1, '#190d08');
-    c.fillStyle = g1; c.fillRect(0, 0, W, H);
-    for (const lx of [0.14, 0.86]) {                                   // đèn lồng hắt sáng lên tường
-      const lg = c.createRadialGradient(W * lx, hz * 0.5, 2, W * lx, hz * 0.5, W * 0.3);
-      lg.addColorStop(0, 'rgba(236,160,80,.22)'); lg.addColorStop(1, 'rgba(236,160,80,0)');
-      c.fillStyle = lg; c.fillRect(0, 0, W, hz);
+    if (!st.bg || st.bgKey !== W + 'x' + H + '@' + k) { st.bg = stageBg(W, H, k); st.bgKey = W + 'x' + H + '@' + k; }
+    const dt = Math.min(64, Math.max(0, ts - (st.lastTs || ts))); st.lastTs = ts;
+    const G = stageGeo(W, H), t = still ? 0 : ts / 1000, m = S.m;
+    let sx = 0, sy = 0;
+    if (S.shake && !still) {
+      const q = (ts - S.shake.t0) / S.shake.dur;
+      if (q >= 1) S.shake = null; else { const a = S.shake.amp * G.s * (1 - q); sx = Math.sin(ts * 0.11) * a; sy = Math.cos(ts * 0.13) * a * 0.6; }
     }
-    c.strokeStyle = 'rgba(212,171,82,.1)'; c.lineWidth = 1; c.beginPath();
-    for (let i = -7; i <= 7; i++) { c.moveTo(W / 2 + i * W * 0.025, hz); c.lineTo(W / 2 + i * W * 0.16, H); }
-    for (let j = 1; j <= 4; j++) { const y = hz + (H - hz) * Math.pow(j / 4, 1.6); c.moveTo(0, y); c.lineTo(W, y); }
-    c.stroke();
-    c.strokeStyle = 'rgba(212,171,82,.3)'; c.lineWidth = 1.5; c.beginPath(); c.ellipse(W / 2, H * 0.8, W * 0.43, H * 0.14, 0, 0, TAU); c.stroke();
-    const base = Math.min(H / 128, W / 240), tNow = still ? 0 : ts / 1000;
-    const G = { you: { x: W * 0.27, y: H * 0.94, s: base, front: false, dir: 1 }, op: { x: W * 0.73, y: H * 0.8, s: base * 0.86, front: true, dir: -1 } };
-    const span = G.op.x - G.you.x, m = S.m;
-    for (const side of ['op', 'you']) {
-      const g = G[side], P = poseOf(side, ts, span, g.dir), look = m && m[side] ? m[side].look : DEF_LOOK;
-      if (P.glow) {
-        const pl = still ? 1 : 0.8 + 0.2 * Math.sin(tNow * 5), rg = c.createRadialGradient(g.x, g.y - 50 * g.s, 4, g.x, g.y - 50 * g.s, 70 * g.s * pl);
-        rg.addColorStop(0, 'rgba(240,200,110,.55)'); rg.addColorStop(1, 'rgba(240,200,110,0)');
-        c.fillStyle = rg; c.fillRect(g.x - 90 * g.s, g.y - 130 * g.s, 180 * g.s, 150 * g.s);
-      }
-      if (P.ghost > 0.05) {
-        c.save(); c.globalAlpha = 0.32 * P.ghost; c.translate(g.x + P.dx - g.dir * 16 * g.s, g.y + P.dy); c.scale(g.s, g.s); avatar(c, look, { front: g.front, t: tNow }); c.restore();
-      }
-      c.save(); c.translate(g.x + P.dx, g.y + P.dy); c.rotate(P.rot); c.scale(g.s, g.s);
-      avatar(c, look, { front: g.front, t: tNow + (side === 'op' ? 1.7 : 0), bow: P.bow });
-      c.restore();
-      if (P.shield) {
-        c.save(); c.translate(g.x + g.dir * 16 * g.s, g.y - 50 * g.s); c.scale(g.dir, 1);
-        c.strokeStyle = 'rgba(232,196,119,.85)'; c.lineWidth = 3 * g.s; c.fillStyle = 'rgba(232,196,119,.1)';
-        c.beginPath(); c.arc(0, 0, 36 * g.s, -1.05, 1.05); c.stroke();
-        c.beginPath(); c.arc(0, 0, 36 * g.s, -1.05, 1.05); c.lineTo(0, 0); c.closePath(); c.fill();
-        c.restore();
-      }
-      if (P.hit > 0.05) {
-        const cx = g.x, cy = g.y - 55 * g.s, rr = 26 * g.s * P.hit;
-        const rg = c.createRadialGradient(cx, cy, 1, cx, cy, rr * 1.6);
-        rg.addColorStop(0, 'rgba(255,230,190,.9)'); rg.addColorStop(0.4, 'rgba(236,90,70,.55)'); rg.addColorStop(1, 'rgba(236,90,70,0)');
-        c.fillStyle = rg; c.fillRect(cx - rr * 2, cy - rr * 2, rr * 4, rr * 4);
-        c.fillStyle = 'rgba(255,245,220,.95)'; c.beginPath();
-        for (let i = 0; i < 16; i++) { const a = i * TAU / 16 + 0.3, rad = i % 2 ? rr * 0.35 : rr; c.lineTo(cx + Math.cos(a) * rad, cy + Math.sin(a) * rad); }
-        c.closePath(); c.fill();
-      }
-      if (P.spark > 0.05) {
-        c.strokeStyle = `rgba(240,210,130,${0.9 * (1 - P.spark * 0.4)})`; c.lineWidth = 2.5;
-        c.beginPath(); c.arc(g.x + g.dir * 20 * g.s, g.y - 52 * g.s, (10 + 26 * (1 - Math.abs(P.spark - 0.5))) * g.s, 0, TAU); c.stroke();
-      }
-    }
+    c.setTransform(1, 0, 0, 1, 0, 0); c.clearRect(0, 0, cv.width, cv.height);
+    c.setTransform(k, 0, 0, k, 0, 0);
+    c.drawImage(st.bg, 0, 0, W, H);
+    c.setTransform(k, 0, 0, k, sx * k, sy * k);                       // rung màn: chỉ cờ, đèn, người và hiệu ứng rung, nền đứng yên
+    drawProps(c, G, t);
+    const P = { you: poseOf('you', ts), op: poseOf('op', ts) }, look = { you: m && m.you ? m.you.look : DEF_LOOK, op: m && m.op ? m.op.look : DEF_LOOK };
+    const order = P.you.front && !P.op.front ? ['op', 'you'] : ['you', 'op'];          // bên đang ra đòn vẽ sau để đè lên đối thủ
+    const bodyOf = side => ({ x: G[side].x + G[side].dir * P[side].dx * G.span, y: G.fy + P[side].dy * G.s, s: G.s, look: look[side] });
+    for (const side of order) drawHold(c, G, side, bodyOf(side), t, ts, false);
+    for (const side of order) drawFighter(c, G, side, P[side], t + (side === 'op' ? 1.7 : 0), look[side]);
+    for (const side of order) drawHold(c, G, side, bodyOf(side), t, ts, true);
+    if (!still) { drawEfx(c, ts, G); drawParts(c, dt); }
   }
-  /** Tư thế của một bên: nắm giữ (thủ, tụ lực, nghỉ) và các cử động ngắn đang chạy. */
-  function poseOf(side, ts, span, dir) {
-    const P = { dx: 0, dy: 0, rot: 0, ghost: 0, hit: 0, spark: 0, shield: 0, glow: 0, bow: 0 }, hold = S.hold[side];
-    if (hold === 'guard') P.shield = 1; else if (hold === 'charge') P.glow = 1; else if (hold === 'rest') P.bow = 0.55;
-    if (reduced()) return P;
-    for (const a of S.fx) {
-      if (a.side !== side) continue;
-      const p = (ts - a.t0) / a.dur;
-      if (p < 0 || p > 1) continue;
-      const b = Math.sin(Math.PI * p);
-      if (a.type === 'atk') P.dx += dir * span * 0.3 * b;
-      else if (a.type === 'hit') { P.dx -= dir * span * 0.05 * b; P.hit = Math.max(P.hit, b); }
-      else if (a.type === 'dodge') { P.rot = -dir * 0.3 * b; P.dx -= dir * span * 0.07 * b; P.ghost = Math.max(P.ghost, b); }
-      else if (a.type === 'parry') { P.spark = Math.max(P.spark, b); P.dx -= dir * span * 0.02 * b; }
-    }
-    return P;
-  }
-  const anim = (side, type, dur) => { if (reduced()) return; S.fx.push({ side, type, t0: performance.now(), dur: dur || 380 }); if (S.fx.length > 40) S.fx.splice(0, S.fx.length - 40); };
-  const dirtyStage = () => { if (S.stage) S.stage.dirty = true; };
 
   function paintLoop(ts) {
     S.raf = requestAnimationFrame(paintLoop);
@@ -253,16 +627,21 @@
     el.appendChild(wrap);
   }
 
+  /* Sân đi lại được như sân chùa: khung vẽ dùng chung bộ vẽ của chánh điện (Hall, cảnh 'arena').
+     Chạm một người để mời luận võ; danh sách người ở sân nằm trong ngăn kéo "Danh sách" (cho ai khó chạm trúng người). */
   function buildRoster() {
-    const sec = h('section', 'ar-screen ar-roster', null, { 'aria-label': 'Danh sách người ở sân' }), r = { sec };
-    const box = h('div', 'ar-rwrap'), side = h('div', 'ar-side'), list = h('div', 'ar-listbox');
-    add(side, h('p', 'ar-intro', 'Hai bên cùng chọn chiêu kín, rồi lật ra một lượt. Ai hết máu trước thì thua.'));
+    const sec = h('section', 'ar-screen ar-roster', null, { 'aria-label': 'Sân đấu' }), r = { sec };
+    const yard = h('div', 'ar-yard'), top = h('div', 'ar-ytop'), msgs = h('div', 'ar-ymsgs'), list = h('div', 'ar-listbox');
+    r.cv = h('canvas', 'ar-yardcv', null, { role: 'img', 'aria-label': 'Sân đấu: võ đài giữa sân và những đạo hữu đang ở sân. Chạm vào một người để mời luận võ, chạm sân để đi lại.' });
     r.dnd = btn('ar-switch', null, { role: 'switch', 'aria-checked': 'false' });
     add(r.dnd, h('span', 'ar-knob'), h('span', 'ar-sw-t', 'Tạm không nhận lời mời'));
     r.dnd.addEventListener('click', toggleDnd);
     r.blocks = btn('btn small ar-blocks', 'Danh sách chặn');
     r.blocks.addEventListener('click', openBlocks);
-    add(side, r.dnd, r.blocks);
+    r.listBtn = btn('btn small gold ar-listbtn', 'Danh sách', { 'aria-expanded': 'false' });
+    r.listBtn.addEventListener('click', () => toggleDrawer());
+    add(top, r.listBtn, r.dnd);
+    r.hint = h('p', 'ar-yhint', 'Chạm vào một đạo hữu để mời luận võ · chạm sân để đi lại');
     r.resume = h('p', 'ar-resume', null, { role: 'status' }); r.resume.hidden = true;
     add(r.resume, h('span', 'spin', null, { 'aria-hidden': 'true' }), document.createTextNode('Đang vào lại trận đang đấu dở…'));
     r.login = h('div', 'card ar-login'); r.login.hidden = true;
@@ -272,18 +651,54 @@
     r.outText = h('span', 'ar-out-t'); r.outCancel = btn('btn small', 'Hủy lời mời');
     r.outCancel.addEventListener('click', cancelOut);
     add(r.out, h('span', 'spin', null, { 'aria-hidden': 'true' }), r.outText, r.outCancel);
-    const hd = h('h3', 'ar-lh'), cnt = h('span', 'ar-count', '0');
+    const hd = h('h3', 'ar-lh', null, { tabindex: '-1' }), cnt = h('span', 'ar-count', '0');
     add(hd, h('span', null, 'Người ở sân'), cnt);
     r.count = cnt; r.list = h('ul', 'ar-list'); r.list.setAttribute('aria-label', 'Người ở sân');
     r.empty = h('div', 'ar-empty');
-    r.empty.appendChild(svgIcon('ar-empty-i', '<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 9.5h.01M16 9.5h.01M8.5 15.5c1-1.2 2.2-1.8 3.5-1.8s2.5.6 3.5 1.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>', 40));
+    r.empty.appendChild(svgIcon('ar-empty-i', '<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 9.5h.01M16 9.5h.01M8.5 15.5c1-1.2 2.2-1.8 3.5-1.8s2.5.6 3.5 1.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>', 28));
     r.emptyT = h('b', null, 'Sân đang vắng.');
-    r.emptyS = h('span', null, 'Chưa có đạo hữu nào ra luận võ. Bạn cứ chờ một lát, hoặc rủ bạn bè cùng ra sân. Có người vào là thấy ngay ở đây.');
+    r.emptyS = h('span', null, 'Chưa có đạo hữu nào ra luận võ. Cứ đi dạo quanh võ đài chờ một lát, có người vào là thấy ngay.');
     add(r.empty, r.emptyT, r.emptyS);
-    add(list, r.resume, r.login, r.out, hd, r.list, r.empty);
-    add(box, side, list); add(sec, box);
+    add(msgs, r.resume, r.login, r.out, r.empty);
+    // ngăn kéo danh sách
+    r.drawer = h('div', 'ar-drawer', null, { role: 'region', 'aria-label': 'Danh sách người ở sân' }); r.drawer.hidden = true;
+    const dclose = btn('x ar-dclose', '×', { 'aria-label': 'Đóng danh sách' });
+    dclose.addEventListener('click', () => toggleDrawer(false));
+    hd.appendChild(dclose);
+    r.none = h('p', 'hint ar-none', 'Chưa có ai khác ở sân.');
+    add(list, hd, h('p', 'ar-intro', 'Hai bên cùng chọn chiêu kín, rồi lật ra một lượt và đánh nhau. Ai hết máu trước thì thua.'), r.list, r.none, r.blocks);
+    add(r.drawer, list);
+    add(yard, r.cv, top, msgs, r.hint, r.drawer);
+    add(sec, yard);
     return r;
   }
+  function toggleDrawer(force) {
+    const r = S.ui && S.ui.roster;
+    if (!r) return;
+    const open = force != null ? !!force : r.drawer.hidden;
+    r.drawer.hidden = !open; r.listBtn.setAttribute('aria-expanded', String(open));
+    if (open) { renderRoster(); try { r.drawer.querySelector('h3').focus({ preventScroll: true }); } catch (e) { /* bỏ qua */ } }
+  }
+  /** Chạm vào một người trên sân (Hall báo lên qua app.js): mời luận võ, hoặc báo vì sao chưa mời được. */
+  function pick(pid) {
+    if (!S.visible || S.screen !== 'roster') return;
+    const me = S.host.me ? S.host.me().pid : -1;
+    if (pid === me) return;
+    const p = S.players.get(pid);
+    if (!p) { toast('Người này không còn ở sân.'); return; }
+    if (S.loginNeeded) { toast('Cần đăng nhập Google để luận võ.'); return; }
+    if (p.st === 'busy') { toast(`${p.name} đang đấu, đợi trận xong nhé.`); return; }
+    if (p.st === 'dnd') { toast(`${p.name} đang tạm không nhận lời mời.`); return; }
+    openInvite(pid);
+  }
+  /** Nhãn trên đầu từng người ở sân (Hall vẽ): rảnh / đang đấu / tạm nghỉ và cấp nội công. */
+  function tagOf(pid) {
+    const p = S.players.get(pid);
+    if (!p) return null;
+    const st = ST[p.st] || ST.free;
+    return { text: `${st[0]} · Cấp ${num(p.lv, 1)}`, color: p.st === 'busy' ? '#ec7b6c' : p.st === 'dnd' ? '#9a8b78' : '#86b38a' };
+  }
+  const inYard = () => !!(S.visible && S.screen === 'roster');
 
   function buildDialogs(wrap) {
     const ui = S.ui;
@@ -295,9 +710,10 @@
       add(sp, h('b', null, MODES[mode].name), h('small', null, MODES[mode].desc)); add(lab, inp, sp); opts.appendChild(lab);
     }
     add(fs, lg, opts);
-    const send = btn('btn primary', 'Gửi lời mời', { type: 'submit' }), later = btn('btn', 'Để sau');
+    const send = btn('btn primary', 'Gửi lời mời', { type: 'submit' }), later = btn('btn', 'Để sau'), blk = btn('btn small ar-dblk', 'Chặn người này');
     later.addEventListener('click', () => d1.dlg.close());
-    add(d1.foot, later, send); add(d1.body, fs, d1.warn, d1.foot);
+    blk.addEventListener('click', () => { const pid = S.dlg.pid; d1.dlg.close(); openBlock(pid); });
+    add(d1.foot, blk, later, send); add(d1.body, fs, d1.warn, d1.foot);
     d1.send = send;
     d1.body.addEventListener('submit', e => { e.preventDefault(); sendInvite(); });
     // chặn
@@ -328,12 +744,20 @@
     ui.invites.hidden = screen === 'lobby' || screen === 'match';
     ui.hturn.hidden = ui.hbar.hidden = screen !== 'match';
     ui.root.dataset.screen = screen;
+    yardOn(screen === 'roster' && S.visible);
     if (screen === 'roster') renderRoster();
     if (screen === 'lobby' || screen === 'match') startPaint(); else stopPaint();
     const first = { roster: ui.roster.sec, lobby: ui.lobby, match: ui.match, end: ui.end }[screen];
     const hd = first && first.querySelector('[data-focus]');
     if (hd) { hd.tabIndex = -1; try { hd.focus({ preventScroll: true }); } catch (e) { /* bỏ qua */ } }
     refreshCtl();
+  }
+  let yardShown = false;
+  function yardOn(on) {
+    const y = S.host && S.host.yard;
+    if (!y || on === yardShown) return;
+    yardShown = on;
+    try { if (on) y.show(S.ui.roster.cv); else { toggleDrawer(false); y.hide(); } } catch (e) { console.error('[arena] yard', e); }
   }
   /** Đang ở sảnh / trận, hoặc đang chờ máy chủ cho biết có trận dở không (rời sân lúc đó cũng là bỏ cuộc). */
   const inMatch = () => S.resuming || (!!S.m && (S.screen === 'lobby' || S.screen === 'match'));
@@ -396,9 +820,11 @@
     });
     for (const [pid, row] of S.rows) if (!seen.has(pid)) { row.li.remove(); S.rows.delete(pid); }
     r.count.textContent = String(list.length);
-    r.empty.hidden = list.length > 0 || S.loginNeeded;
-    r.list.hidden = list.length === 0;
-    if (S.screen === 'roster') for (const row of S.rows.values()) if (!row.drawn) row.drawn = paintPortrait({ cv: row.cv, look: row.p && row.p.look, buff: null }, 0);
+    r.listBtn.textContent = `Danh sách · ${list.length}`;
+    r.empty.hidden = list.length > 0 || S.loginNeeded || !r.drawer.hidden;   // ngăn kéo mở thì đã có dòng "Chưa có ai khác"
+    r.list.hidden = list.length === 0; r.none.hidden = list.length > 0;
+    r.hint.hidden = list.length === 0;
+    if (S.screen === 'roster' && !r.drawer.hidden) for (const row of S.rows.values()) if (!row.drawn) row.drawn = paintPortrait({ cv: row.cv, look: row.p && row.p.look, buff: null }, 0);
     r.dnd.setAttribute('aria-checked', String(S.dnd)); r.dnd.classList.toggle('on', S.dnd); r.dnd.disabled = !canSend() || S.dndBusy;
     r.blocks.disabled = !canSend();
   }
@@ -441,6 +867,7 @@
       d.dlg.close();
       if (S.m) return;                                            // nhận lời quá nhanh: sảnh đã mở
       S.out = { inviteId: ack.inviteId, expiresAt: num(ack.expiresAt, nowMs() + 20000), toPid: p.pid, toName: p.name, mode, total: 20000 };
+      toggleDrawer(false);                                        // về lại sân để thấy dải "đang chờ nhận lời"
       renderOut(); renderRoster();
       say(`Đã mời ${p.name}. Đang chờ nhận lời.`);
     });
@@ -789,7 +1216,7 @@
     add(U.logPanel, lh, U.logList);
     add(stage, cv, U.float, U.logPanel, U.logBtn);
     box.appendChild(stage);
-    S.stage = { cv, c: null, dirty: true };
+    S.stage = { cv, c: null, dirty: true }; resetStageFx();
     if (root.ResizeObserver) new ResizeObserver(dirtyStage).observe(stage);
     // bộ chiêu đối thủ (đã công bố)
     U.opl = h('ul', 'ar-oploadout', null, { 'aria-label': 'Bộ 4 chiêu của đối thủ' });
@@ -970,33 +1397,34 @@
       switch (e.k) {
         case 'guard': out.push({ who: e.side, text: `thủ, giảm ${pc(e.red)}% sát thương`, hold: [e.side, 'guard'] }); break;
         case 'charge': out.push({ who: e.side, text: 'bắt đầu tụ lực, lượt sau tự tung đòn', hold: [e.side, 'charge'] }); break;
-        case 'release': out.push({ who: e.side, text: 'tung đòn đã tụ lực', hold: [e.side, null] }); break;
+        case 'release': out.push({ who: e.side, text: 'tung đòn đã tụ lực', hold: [e.side, 'release'] }); break;
         case 'rest': out.push({ who: e.side, text: 'điều tức, hồi thêm nội lực', hold: [e.side, 'rest'] }); break;
-        case 'idle': out.push({ who: e.side, text: P[e.side] && P[e.side].auto ? 'hết giờ nên đứng yên' : 'đứng yên', hold: [e.side, null] }); break;
+        case 'idle': out.push({ who: e.side, text: P[e.side] && P[e.side].auto ? 'hết giờ nên đứng yên' : 'đứng yên', hold: [e.side, 'idle'] }); break;
         case 'dodge':
           out.push({ who: e.def, text: e.ok ? `né thành công${nth(e)} (${pc(e.p)}%)` : `né hụt${nth(e)} (${pc(e.p)}%)`,
-            fx: e.ok ? [['anim', e.def, 'dodge', 420], ['anim', e.atk, 'atk', 360], ['float', e.def, 'Né!', 'good']] : [] });
+            fx: e.ok ? [['float', e.def, 'Né!', 'good']] : [] });
           break;
         case 'parry':
           out.push({ who: e.def, text: e.ok ? `đỡ thành công${nth(e)} (${pc(e.p)}%)` : `đỡ hụt${nth(e)} (${pc(e.p)}%)`,
-            fx: e.ok ? [['anim', e.def, 'parry', 420], ['anim', e.atk, 'atk', 360], ['float', e.def, 'Đỡ!', 'good']] : [] });
+            fx: e.ok ? [['float', e.def, 'Đỡ!', 'good']] : [] });
           break;
         case 'hit': {
           const sk = skillName(P[e.atk] && P[e.atk].skill);
           out.push({ who: e.atk, text: `${sk} trúng ${tg(e.def)}${e.of > 1 ? `, nhịp ${e.idx}/${e.of}` : ''}, gây ${e.dmg}${e.red > 0 ? ` (giảm ${pc(e.red)}%)` : ''}`,
-            fx: [['anim', e.atk, 'atk', 360], ['anim', e.def, 'hit', 380], ['hp', e.def, e.dmg], ['float', e.def, '−' + e.dmg, 'dmg']] });
+            fx: [['hp', e.def, e.dmg], ['float', e.def, '−' + e.dmg, 'dmg']] });
           break;
         }
         case 'counter':
-          out.push({ who: e.side, text: `phản đòn, ${tg(e.target)} mất ${e.dmg}`, fx: [['anim', e.target, 'hit', 380], ['hp', e.target, e.dmg], ['float', e.target, '−' + e.dmg, 'dmg']] });
+          out.push({ who: e.side, text: `phản đòn, ${tg(e.target)} mất ${e.dmg}`, fx: [['hp', e.target, e.dmg], ['float', e.target, '−' + e.dmg, 'dmg']] });
           break;
         case 'exposed': out.push({ who: e.side, text: `sơ hở: lượt sau nhận thêm ${EXPOSED_PCT}% sát thương`, fx: [['float', e.side, 'Sơ hở', 'warn']] }); break;
         case 'kc': out.push({ who: e.side, text: `nhận Kim Chung: trong ${KC_TURNS} lượt tới, đòn công đầu tiên mạnh thêm ${KC_PCT}%`, fx: [['float', e.side, 'Kim Chung', 'gold']] }); break;
         case 'sudden':
-          out.push({ who: 'both', text: `Suy kiệt: cả hai mất ${e.dmg}`, plain: true, fx: [['anim', 'you', 'hit', 380], ['anim', 'op', 'hit', 380], ['hp', 'you', e.dmg], ['hp', 'op', e.dmg], ['float', 'you', '−' + e.dmg, 'warn'], ['float', 'op', '−' + e.dmg, 'warn']] });
+          out.push({ who: 'both', text: `Suy kiệt: cả hai mất ${e.dmg}`, plain: true, fx: [['hp', 'you', e.dmg], ['hp', 'op', e.dmg], ['float', 'you', '−' + e.dmg, 'warn'], ['float', 'op', '−' + e.dmg, 'warn']] });
           break;
         default: break;                                           // pick, rage, end: thể hiện bằng thẻ lật, thanh nộ và màn kết thúc
       }
+      if (out.length && !out[out.length - 1].ev) out[out.length - 1].ev = e;   // sự kiện gốc: dùng để biên đạo hoạt ảnh
     }
     for (const s of out) s.line = s.plain ? s.text : `${S_(s.who)} ${s.text}`;
     return out;
@@ -1020,11 +1448,173 @@
     if (!U) return;
     const f = h('span', 'ar-fl ar-fl-' + (kind || 'dmg'), text), n = S.floats++;
     const lab = kind === 'warn' || kind === 'gold';
-    f.style.left = (side === 'you' ? 27 : 73) + '%'; f.style.top = (side === 'you' ? (lab ? 12 : 34) : (lab ? 2 : 22)) + '%';
+    f.style.left = (side === 'you' ? 29 : 71) + '%'; f.style.top = (lab ? 4 : 16) + '%';
     f.style.marginLeft = ((n % 3) - 1) * 22 + 'px';
     U.float.appendChild(f);
     setTimeout(() => f.remove(), 1500);
   }
+  /* ---------- biên đạo một lượt: chia diễn biến thành các "nhịp" (thế giữ, đòn đánh, phản đòn, dấu hiệu) ---------- */
+  const STANCE_K = { guard: 1, charge: 1, release: 1, rest: 1, idle: 1 };
+  function choreo(steps, picks) {
+    const beats = [];
+    for (let i = 0; i < steps.length; i++) {
+      const e = steps[i].ev || {};
+      if (STANCE_K[e.k]) {
+        const last = beats[beats.length - 1];
+        if (last && last.type === 'stance') last.steps.push(i); else beats.push({ type: 'stance', steps: [i], impact: [], dur: 680 });
+        continue;
+      }
+      if (e.k === 'hit' || e.k === 'dodge' || e.k === 'parry') {
+        const b = { type: 'strike', atk: e.atk, def: e.def, idx: e.idx || 1, of: e.of || 1, steps: [], impact: [i], result: 'hit', tried: null };
+        if (e.k !== 'hit') {
+          if (e.ok) b.result = e.k;
+          else {                                                    // né / đỡ hụt: thử né rồi vẫn trúng đòn ngay sau
+            b.tried = e.k; b.steps = [i]; b.impact = [];
+            const n = steps[i + 1] && steps[i + 1].ev;
+            if (n && n.k === 'hit' && n.atk === e.atk && (n.idx || 1) === b.idx) { b.impact.push(i + 1); i++; } else b.result = 'miss';
+          }
+        }
+        beats.push(b); continue;
+      }
+      if (e.k === 'counter') { beats.push({ type: 'strike', counter: true, atk: e.side, def: e.target, idx: 1, of: 1, steps: [], impact: [i], result: 'hit' }); continue; }
+      if (e.k === 'sudden') { beats.push({ type: 'sudden', steps: [], impact: [i], dur: 820 }); continue; }
+      beats.push({ type: 'mark', k: e.k, side: e.side, steps: [], impact: [i], dur: e.k === 'kc' ? 460 : 320 });
+    }
+    const chain = (x, y) => x && y && x.type === 'strike' && y.type === 'strike' && !x.counter && !y.counter && x.atk === y.atk && y.idx === x.idx + 1;
+    beats.forEach((b, k) => {
+      if (b.type !== 'strike') return;
+      const ap = picks[b.atk] || {}, dp = picks[b.def] || {};
+      b.first = !chain(beats[k - 1], b); b.last = !chain(b, beats[k + 1]);
+      b.style = b.counter ? styleOf(COUNTER, 'counter', ap.skill) : ap.phase === 'release' ? 'smash' : styleOf(STRIKE, 'strike', ap.skill);
+      b.big = b.style === 'smash' || b.style === 'taijiBig';
+      b.col = colOf(ap.skill);
+      b.dstyle = b.result === 'dodge' || b.tried === 'dodge' ? styleOf(DODGE, 'dodge', dp.skill) : b.result === 'parry' || b.tried === 'parry' ? styleOf(COUNTER, 'counter', dp.skill) : null;
+      b.dcol = colOf(dp.skill);
+      b.dur = b.counter ? 780 : b.first && b.last ? 940 : b.first ? 640 : b.last ? 600 : 420;
+      if (b.style === 'smash') b.dur *= 1.3;
+      const mo = MOTION[b.style];
+      b.pI = !b.first ? 0.34 : mo === 'rush' ? 0.36 : mo === 'palm' ? 0.6 : mo === 'smash' ? 0.56 : 0.5;
+    });
+    return beats;
+  }
+  /** Khoảng cách lao tới (tính theo khoảng cách hai người) để tay / chân chạm đối thủ. */
+  function reachOf(motion) {
+    const st = S.stage, r = st && st.cv.getBoundingClientRect(), G = stageGeo(Math.max(8, r ? r.width : 360), Math.max(8, r ? r.height : 160));
+    const touch = { fist: 50, rush: 50, shadow: 46, kick: 44, smash: 46 }[motion];
+    return touch ? Math.max(0.2, (G.span - touch * G.s) / G.span) : 0.3;
+  }
+  const bodyNow = side => S.body[side] || null;
+  /** Hiệu ứng lúc ra đòn (trước va chạm): chưởng bay, vệt gió, vệt cước. */
+  function strikeStart(a) {
+    const A = bodyNow(a.atk), D = bodyNow(a.def), st = S.stage;
+    if (!A || !D || !st) return;
+    const s = A.s, dir = a.atk === 'you' ? 1 : -1, mo = MOTION[a.style], tI = a.dur * a.pI;
+    if (mo === 'rush' && a.first) {
+      const lines = []; for (let i = 0; i < 7; i++) lines.push({ y: A.y - rnd(20, 95) * s, s: rnd(0, 0.3), l: rnd(0.25, 0.6), w: rnd(1, 2.4) });
+      fxAdd('speed', { x0: A.x, x1: D.x - dir * 40 * s, lines, col: a.col, dur: tI * 1.1 });
+    }
+    if (mo === 'palm') {                                          // chưởng / thái cực bay từ tay sang ngực đối thủ
+      const reach = a.reach * (D.x - A.x), hx = A.x + reach + dir * 42 * s, fly = a.dur * 0.24;
+      fxAdd('wave', { x0: hx, y0: A.y - 69 * s, x1: D.x - dir * 6 * s, y1: D.y - 62 * s, arc: -10 * s, r: (a.big ? 16 : 11) * s, col: a.col, leaf: a.style === 'palm' ? '#9fd39f' : '#e8ffe9', shape: a.style === 'palm' ? 'leaf' : 'taiji', dur: fly }, tI - fly);
+    }
+    if (mo === 'kick') fxAdd('slash', { x: D.x - dir * 16 * s, y: D.y - 50 * s, r: 30 * s, a0: dir > 0 ? Math.PI * 0.75 : Math.PI * 0.25, a1: dir > 0 ? Math.PI * 1.55 : -Math.PI * 0.55, col: a.col, dur: a.dur * 0.38 }, tI - a.dur * 0.1);
+    if (mo === 'smash') fxAdd('ring', { x: A.x, y: A.y, r0: 10 * s, r1: 48 * s, flat: 0.28, w: 3 * s, col: '#ff8a4a', dur: 420 });
+  }
+  /** Lúc va chạm: chớp sáng, sóng, hạt, rung màn; khiên của bên thủ sáng lên. */
+  function strikeImpact(a) {
+    const A = bodyNow(a.atk), D = bodyNow(a.def);
+    if (!A || !D) return;
+    const s = D.s, dir = a.atk === 'you' ? 1 : -1, hx = D.x - dir * 10 * s, hy = D.y - 60 * s, col = a.col, now = performance.now();
+    const shake = amp => { S.shake = { t0: now, dur: 300 + amp * 25, amp }; };
+    if (a.result === 'dodge') {
+      fxAdd('whoosh', { x: hx, y: hy + 6 * s, r: 30 * s, a0: dir > 0 ? Math.PI * 0.7 : -Math.PI * 0.3, a1: dir > 0 ? Math.PI * 1.3 : Math.PI * 0.3, dur: 380 });
+      if (a.dstyle === 'cloud') for (let i = 0; i < 9; i++) part({ x: D.x + rnd(-24, 24) * s, y: D.y - rnd(0, 18) * s, vx: rnd(-30, 30), vy: rnd(-24, -6), max: rnd(500, 800), r: rnd(3, 5.5) * s, kind: 'cloud', col: '#eef3f2' });
+      else burst(D.x, D.y - 50 * s, 10, { col: '#ffe39a', kind: 'ember', v0: 20, v1: 90, l0: 400, l1: 800, r0: 1, r1: 2 });
+      return;
+    }
+    if (a.result === 'miss') { fxAdd('whoosh', { x: hx, y: hy, r: 26 * s, a0: Math.PI * 0.8, a1: Math.PI * 1.2, dur: 320 }); return; }
+    if (a.result === 'parry') {                                     // đỡ được: chạm chiêu tóe lửa, đòn bật lại
+      fxAdd('star', { x: hx, y: hy, r: 14 * s, col: '#ffe0a0', rot: rnd(0, 1), dur: 300 });
+      burst(hx, hy, 12, { col: '#ffd38a', an: dir > 0 ? Math.PI : 0, spread: 1.1, v0: 90, v1: 260, l0: 250, l1: 500, r0: 1.2, r1: 2.4 });
+      if (a.dstyle === 'shock') fxAdd('ring', { x: D.x, y: D.y - 55 * s, r0: 14 * s, r1: 70 * s, w: 4 * s, col: '#ec7b6c', dur: 460 });
+      else if (a.dstyle === 'taiji' || a.dstyle === 'taijiBig') fxAdd('taiji', { x: hx, y: hy, r: (a.dstyle === 'taijiBig' ? 26 : 18) * s, col: '#5f9a6a', spin: -dir, dur: 620 });
+      else fxAdd('ring', { x: hx, y: hy, r0: 6 * s, r1: 36 * s, w: 3 * s, col: '#e8c477', dur: 360 });
+      shake(2);
+      return;
+    }
+    // trúng đòn
+    const guard = shieldOf(a.def);
+    if (guard) {
+      S.shieldHit[a.def] = now;
+      if (guard === 'bell') fxAdd('bell', { x: D.x, y: D.y, s: s * 0.92, dur: 520 });
+      else if (guard === 'water') fxAdd('ring', { x: D.x, y: D.y - 56 * s, r0: 30 * s, r1: 62 * s, w: 2.4 * s, col: '#9fe6dc', dur: 460 });
+      else if (guard === 'iron') burst(D.x - dir * 30 * s, hy, 10, { col: '#e8f0ff', an: dir > 0 ? Math.PI : 0, spread: 1.2, v0: 80, v1: 220, l0: 200, l1: 420 });
+      else if (guard === 'clones') burst(D.x, hy, 8, { col: '#e8c477', kind: 'ember', v0: 30, v1: 120, l0: 300, l1: 600 });
+    }
+    const big = a.big;
+    switch (a.style) {
+      case 'fist': case 'shock':
+        fxAdd('ring', { x: hx, y: hy, r0: 8 * s, r1: 58 * s, w: 5 * s, col: '#ec7b6c', dur: 420 });
+        fxAdd('ring', { x: hx, y: hy, r0: 4 * s, r1: 34 * s, w: 3 * s, col: '#ffd0a0', dur: 300 });
+        burst(hx, hy, 14, { col: '#ffb07a', an: dir > 0 ? 0 : Math.PI, spread: 1.3, v0: 120, v1: 320, l0: 220, l1: 480 });
+        break;
+      case 'rush':
+        burst(hx, hy, 16, { col: '#ffe39a', an: dir > 0 ? 0 : Math.PI, spread: 0.9, v0: 160, v1: 380, l0: 180, l1: 420 });
+        break;
+      case 'kick':
+        fxAdd('ring', { x: hx, y: D.y - 48 * s, r0: 6 * s, r1: 30 * s, w: 3 * s, col: '#e8c477', dur: 300 });
+        burst(hx, D.y - 48 * s, 10, { col: '#ffe39a', an: dir > 0 ? 0 : Math.PI, spread: 1.2, v0: 100, v1: 260, l0: 200, l1: 420 });
+        break;
+      case 'palm':
+        fxAdd('ring', { x: hx, y: hy, r0: 6 * s, r1: 44 * s, w: 2.6 * s, col: '#9fd39f', dur: 480 });
+        for (let i = 0; i < 12; i++) part({ x: hx, y: hy, vx: dir * rnd(30, 170), vy: rnd(-120, 60), gy: 90, max: rnd(600, 1000), r: rnd(1.6, 2.6) * s, kind: 'leaf', col: Math.random() < 0.5 ? '#9fd39f' : '#6fae6a', vr: rnd(-9, 9), drag: 1.2 });
+        break;
+      case 'taiji': case 'taijiBig':
+        fxAdd('taiji', { x: hx, y: hy, r: (big ? 30 : 20) * s, col: '#5f9a6a', spin: dir, dur: 700 });
+        for (let i = 0; i < 10; i++) part({ x: hx, y: hy, vx: dir * rnd(40, 180), vy: rnd(-120, 40), gy: 80, max: rnd(600, 900), r: rnd(1.5, 2.4) * s, kind: 'leaf', col: '#9fd39f', vr: rnd(-9, 9), drag: 1.2 });
+        break;
+      case 'shadow': {
+        const r = 30 * s;
+        fxAdd('slash', { x: hx, y: hy, r, a0: -Math.PI * 0.85, a1: -Math.PI * 0.05, col: '#c9a24a', dur: 360 });
+        fxAdd('slash', { x: hx, y: hy + 4 * s, r: r * 0.9, a0: Math.PI * 0.15, a1: Math.PI * 0.95, col: '#7a5cc0', dur: 360 }, 70);
+        break;
+      }
+      case 'smash': {                                               // Tụ Lực Phá Sơn: nứt lôi đài, đá văng, sóng đỏ
+        const gx = D.x - dir * 22 * s, gy = D.y + 2 * s, lines = [];
+        for (let i = 0; i < 6; i++) {
+          let x = gx, y = gy, an = (i / 6) * TAU + rnd(-0.3, 0.3); const L = [[x, y]];
+          for (let j = 0; j < 6; j++) { an += rnd(-0.5, 0.5); const d = rnd(6, 13) * s; x += Math.cos(an) * d; y += Math.sin(an) * d * 0.3; L.push([x, y]); }
+          lines.push(L);
+        }
+        fxAdd('crack', { lines, w: 2.2 * s, dur: 1300 });
+        fxAdd('ring', { x: gx, y: gy, r0: 10 * s, r1: 110 * s, flat: 0.28, w: 6 * s, col: '#ff6a3a', dur: 560 });
+        fxAdd('ring', { x: hx, y: hy, r0: 10 * s, r1: 80 * s, w: 6 * s, col: '#ffd36b', dur: 480 });
+        fxAdd('flash', { col: '#fff1d0', a: 0.35, dur: 260 });
+        for (let i = 0; i < 16; i++) part({ x: gx + rnd(-16, 16) * s, y: gy - 4, vx: rnd(-160, 160), vy: rnd(-300, -120), gy: 900, max: rnd(700, 1100), r: rnd(1.6, 3.6) * s, kind: 'rock', col: Math.random() < 0.5 ? '#6b3a1f' : '#9c7b5a', vr: rnd(-10, 10), floor: gy + 6 * s });
+        for (let i = 0; i < 10; i++) part({ x: gx + rnd(-20, 20) * s, y: gy, vx: rnd(-60, 60), vy: rnd(-40, -10), max: rnd(700, 1100), r: rnd(5, 9) * s, kind: 'dust', col: '#a08060' });
+        break;
+      }
+      default: break;
+    }
+    if (a.style !== 'smash') fxAdd('star', { x: hx, y: hy, r: (big ? 22 : 15) * s, col, rot: rnd(0, 1), dur: 300 });
+    shake(a.style === 'smash' ? 11 : a.style === 'taijiBig' ? 6 : a.style === 'fist' || a.style === 'shock' ? 5 : 3);
+  }
+  function markFx(b) {
+    const B = bodyNow(b.side);
+    if (!B) return;
+    const s = B.s;
+    if (b.k === 'kc') { fxAdd('bell', { x: B.x, y: B.y, s: s * 0.92, dur: 640 }); burst(B.x, B.y - 60 * s, 12, { col: '#ffd36b', kind: 'ember', v0: 20, v1: 110, l0: 500, l1: 900 }); }
+    else if (b.k === 'exposed') fxAdd('ring', { x: B.x, y: B.y, r0: 8 * s, r1: 40 * s, flat: 0.3, w: 2 * s, col: '#ec7b6c', dur: 420 });
+  }
+  function stanceFx(side, k) {
+    const B = bodyNow(side);
+    if (!B) return;
+    const s = B.s;
+    if (k === 'charge' || k === 'release') { fxAdd('ring', { x: B.x, y: B.y, r0: 50 * s, r1: 12 * s, flat: 0.28, w: 3 * s, col: k === 'release' ? '#ff6a3a' : '#ffb04a', dur: 520 }); if (k === 'release') fxAdd('flash', { col: '#ff8a4a', a: 0.12, dur: 300 }); }
+    else if (k === 'rest') fxAdd('ring', { x: B.x, y: B.y, r0: 10 * s, r1: 46 * s, flat: 0.3, w: 2 * s, col: '#7fd38a', dur: 600 });
+    else if (k === 'guard') { const g = shieldOf(side); fxAdd('ring', { x: B.x, y: B.y - 55 * s, r0: 20 * s, r1: 56 * s, w: 2 * s, col: g === 'bell' ? '#ffd36b' : g === 'water' ? '#9fe6dc' : g === 'iron' ? '#c6d3dc' : '#e8c477', dur: 420 }); }
+  }
+
   function startReveal(rev, o) {
     const m = S.m, U = m.ui, rv = U.rv;
     o = o || {};
@@ -1044,15 +1634,18 @@
     toggleLog(false);
     clear(rv.lines); rv.label.textContent = ''; rv.label.classList.remove('on');
     for (const f of [rv.flipYou, rv.flipOp]) { f.w.classList.remove('on'); f.front.setAttribute('aria-hidden', 'true'); fillFlip(f, picks[f.side] || { skill: M.IDLE_ID }); }
-    S.hold = { you: null, op: null }; dirtyStage();
+    // thế giữ của lượt trước bỏ đi: lượt này dựng lại từ diễn biến (tụ lực đã tụ thì lượt này là "tung đòn")
+    S.hold = { you: null, op: null }; S.fx.length = 0; S.shieldHit = {}; dirtyStage();
     U.turn.textContent = `Lượt ${rev.turn}`; U.turn.appendChild(h('small', null, ` / ${M.PK.MAX_TURNS}`));
     U.clock.textContent = ''; U.tfill.style.width = '0%';
     U.fc.op.lock.hidden = true;
     addLog(rev, label);
-    const R = m.rev = { rev, steps, i: 0, timers: [], done: false, flipped: false, labelled: false, label, picks };
-    const avail = rev.nextAt ? rev.nextAt - nowMs() : 4000;
-    const instant = o.instant || reduced() || avail < 1400;
-    const doFlip = quiet => {
+    const R = m.rev = { rev, steps, i: 0, timers: [], done: false, flipped: false, labelled: false, label, picks, fxDone: new Set() };
+    const avail = rev.nextAt ? rev.nextAt - nowMs() : 6000;
+    const beats = choreo(steps, picks), T0 = 900, budget = avail - 350 - T0;
+    const total = beats.reduce((a, b) => a + b.dur + 60, 0);
+    const instant = o.instant || reduced() || avail < 1600 || budget < 700;
+    const doFlip = () => {
       if (R.flipped) return; R.flipped = true;
       for (const f of [rv.flipYou, rv.flipOp]) {
         f.w.classList.add('on'); f.front.removeAttribute('aria-hidden');
@@ -1061,23 +1654,58 @@
       for (const side of ['you', 'op']) { setBars(U.fc[side], rev.state[side], 'mp'); setBars(U.fc[side], rev.state[side], 'rg'); }
     };
     const doLabel = () => { if (R.labelled) return; R.labelled = true; rv.label.textContent = label; rv.label.classList.add('on'); };
-    const doStep = (i, quiet) => {
-      if (i < R.i) return; R.i = i + 1;
-      const s = steps[i];
-      rv.lines.appendChild(lineEl(s)); rv.lines.scrollTop = rv.lines.scrollHeight;
-      if (s.hold) { S.hold[s.hold[0]] = s.hold[1]; dirtyStage(); }
-      if (quiet) return;
-      for (const f of s.fx || []) {
-        if (f[0] === 'anim') anim(f[1], f[2], f[3]);
-        else if (f[0] === 'float') floatAt(f[1], f[2], f[3]);
+    // dòng chữ diễn biến: luôn theo đúng thứ tự
+    const line = i => {
+      while (R.i <= i && R.i < steps.length) {
+        const s = steps[R.i]; R.i++;
+        rv.lines.appendChild(lineEl(s));
+        if (s.hold) setHold(s.hold[0], s.hold[1], 0);
+      }
+      rv.lines.scrollTop = rv.lines.scrollHeight;
+    };
+    const setHold = (side, k, t0) => { S.hold[side] = k ? { k, skill: picks[side] && picks[side].skill, t0 } : null; dirtyStage(); };
+    const applyFx = i => {
+      if (R.fxDone.has(i)) return; R.fxDone.add(i);
+      for (const f of steps[i].fx || []) {
+        if (f[0] === 'float') floatAt(f[1], f[2], f[3]);
         else if (f[0] === 'hp') { m.disp[f[1]].hp = Math.max(0, m.disp[f[1]].hp - f[2]); setBars(U.fc[f[1]], Object.assign({}, rev.state[f[1]], { hp: m.disp[f[1]].hp }), 'hp'); }
       }
-      dirtyStage();
+    };
+    const at = (ms, fn) => R.timers.push(setTimeout(() => { if (!R.done) fn(); }, Math.max(0, ms)));
+    const runBeat = (b, d) => {
+      const now = performance.now();
+      if (b.type === 'stance') {
+        for (const i of b.steps) {
+          const s = steps[i];
+          line(i - 1);
+          if (s.hold && s.hold[1]) { setHold(s.hold[0], s.hold[1], now); stanceFx(s.hold[0], s.hold[1]); }
+          rv.lines.appendChild(lineEl(s)); R.i = Math.max(R.i, i + 1); rv.lines.scrollTop = rv.lines.scrollHeight;
+          applyFx(i);
+        }
+        return;
+      }
+      for (const i of b.steps) line(i);
+      if (b.type === 'strike') {
+        const mv = Object.assign({}, b, { type: 'strike', t0: now, dur: d, reach: reachOf(MOTION[b.style]) });
+        S.fx.push(mv); if (S.fx.length > 12) S.fx.shift();
+        strikeStart(mv);
+        at(d * b.pI, () => { for (const i of b.impact) { line(i); applyFx(i); } strikeImpact(mv); });
+        if (b.style === 'smash' && b.last) at(d * 0.95, () => { const hd = holdOf(b.atk); if (hd && hd.k === 'release') setHold(b.atk, null); });
+        return;
+      }
+      for (const i of b.impact) { line(i); applyFx(i); }
+      if (b.type === 'sudden') {
+        fxAdd('flash', { col: '#c0181a', a: 0.35, dur: 700 });
+        for (const side of ['you', 'op']) S.fx.push({ type: 'flinch', side, t0: now, dur: 520 });
+        S.shake = { t0: now, dur: 420, amp: 4 };
+      } else markFx(b);
     };
     R.finish = () => {
       if (R.done) return;
       R.done = true; R.timers.forEach(clearTimeout); R.timers = [];
-      doFlip(); doLabel(); for (let i = R.i; i < steps.length; i++) doStep(i, true);
+      doFlip(); doLabel(); line(steps.length - 1);
+      for (const side of ['you', 'op']) { const hd = holdOf(side); if (hd && hd.k === 'release') S.hold[side] = null; }
+      S.fx.length = 0;
       for (const side of ['you', 'op']) setFighter(side, rev.state[side]);
       m.state = rev.state; m.holdUntil = Date.now() + (rev.ended ? 900 : 0);
       U.status.textContent = '';
@@ -1086,16 +1714,17 @@
       maybeEnd();
     };
     if (instant) {
-      doFlip(true); doLabel(); steps.forEach((s, i) => doStep(i, true));
+      doFlip(); doLabel();
       for (const f of [rv.flipYou, rv.flipOp]) f.w.classList.add('on');
       R.finish();
       return;
     }
-    const total = Math.max(1200, Math.min(3700, avail - 300)), gap = Math.max(110, Math.min(420, (total - 1500) / Math.max(1, steps.length)));
-    const at = (ms, fn) => R.timers.push(setTimeout(fn, ms));
-    at(250, doFlip); at(850, doLabel);
-    steps.forEach((s, i) => at(1300 + i * gap, () => doStep(i, false)));
-    at(1300 + steps.length * gap + 250, R.finish);
+    // dồn nhịp nếu thời gian tới lượt sau không đủ (giữ tối thiểu 40% để còn nhìn rõ)
+    const k = total > budget ? Math.max(0.4, budget / total) : 1;
+    at(250, doFlip); at(Math.min(850, T0 - 50), doLabel);
+    let tt = T0;
+    for (const b of beats) { const d = b.dur * k; at(tt, () => runBeat(b, d)); tt += d + 60 * k; }
+    at(tt + 200, R.finish);
   }
   /** Dừng hoạt ảnh lượt đang chạy: giữ hoặc bỏ phần còn lại (settle = true thì chốt luôn trạng thái cuối). */
   function cancelReveal(settle) {
@@ -1317,6 +1946,7 @@
   function init(host) {
     if (S.host) return;
     S.host = host; S.sock = host.socket;
+    if (root.Hall && root.Hall.setTagger) root.Hall.setTagger(tagOf);
     S.connected = S.sock.connected !== false;
     const on = (ev, fn) => S.sock.on(ev, d => { try { fn(d); } catch (e) { console.error('[arena]', ev, e); } });
     on('connect', () => setConn(true)); on('disconnect', () => setConn(false));
@@ -1348,6 +1978,7 @@
     else { S.ui.roster.emptyT.textContent = 'Sân đang vắng.'; S.ui.roster.emptyS.textContent = 'Chưa có đạo hữu nào ra luận võ. Bạn cứ chờ một lát, hoặc rủ bạn bè cùng ra sân. Có người vào là thấy ngay ở đây.'; }
     if (S.screen === 'end') { S.m = null; S.stage = null; dropPaint('lobby'); dropPaint('match'); }
     if (S.screen !== 'lobby' && S.screen !== 'match') go('roster'); else refreshCtl();
+    yardOn(S.screen === 'roster');
     S.ui.roster.resume.hidden = !a.hasMatch; S.resuming = !!a.hasMatch;
     clearInterval(S.tick); S.tick = setInterval(tick, 250);
     S.connected = S.sock.connected !== false;
@@ -1356,6 +1987,7 @@
   }
   function hide() {
     S.visible = false; S.resuming = false;
+    yardOn(false);
     clearInterval(S.tick); S.tick = 0; stopPaint();
     clearMatchTimers();
     if (S.mounted) {
@@ -1366,5 +1998,5 @@
     }
   }
 
-  root.Arena = { init, mount, show, hide, inMatch };
+  root.Arena = { init, mount, show, hide, inMatch, pick, inYard };
 })(this);

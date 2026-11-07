@@ -62,3 +62,9 @@ HÌNH ẢNH TRONG THƯ MỤC NÀY — NGUỒN GỐC VÀ GIẤY PHÉP
    Chỉ cần thả ảnh (jpg, jpeg, png, webp, gif, avif) vào public/img/memes/ — máy chủ tự liệt kê và
    hiệu ứng chúc mừng sẽ bốc ngẫu nhiên cả ảnh mới. Nên dùng ảnh vuông ~720 px, dưới ~110 KB, và chỉ
    dùng ảnh bạn có quyền sử dụng (tự làm, CC0, hoặc được cho phép).
+
+4) Cảnh Tàng Kinh Các (cửa sổ trăng, rừng trúc, kệ kinh, kệ võ học, lư trầm, bồ đoàn, chiếu cói, câu đối),
+   Sân đấu (cổng Luận Võ Đường, tường ngói, cây tùng, võ đài thái cực, cờ, giá binh khí, trống trận, mộc nhân, đèn đá),
+   dáng ngồi thiền và linh khí khi tu luyện
+   Không phải tệp ảnh: vẽ trực tiếp bằng mã lệnh Canvas 2D trong public/js/hall.js, là tác phẩm gốc của dự án.
+   Giấy phép: CC0 1.0 như mục 1.

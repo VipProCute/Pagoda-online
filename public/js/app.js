@@ -61,10 +61,73 @@
     floor(x, z) { if (joined) socket.emit('move', { x, z }); },
     altar() { act('incense'); },
     statue() { act('bow'); },
-    library() { act('library', null, true); },
+    library() { goScene('library'); },                     // chạm tủ Tàng Kinh Các: bước vào trong
+    read() { act('read'); },                               // trong Tàng Kinh Các: chạm Kệ kinh để đọc kinh
+    dojo() { act('dojo'); },                               // chạm kệ Võ học: sang Võ Học Các học chiêu
+    seat(i) { sitAt(i); },                                 // chạm bồ đoàn: đi tới, ngồi thiền
+    person(id) { if (window.Arena && Arena.pick) Arena.pick(id); },   // Sân đấu: chạm một người để mời luận võ
     fortune() { fortune.open('lot'); },
     reader(type) { fortune.open(type); }
   });
+  /* ---------- các cảnh trong chùa: chánh điện, sân chùa, Tàng Kinh Các (cùng một khung vẽ) ---------- */
+  let curScene = 'hall';
+  const SCENE_LABEL = { hall: 'Chánh điện', yard: 'Sân chùa', library: 'Tàng Kinh Các' };
+  const SCENE_HINT = {
+    hall: 'Chạm sàn để đi lại · chạm bát hương để thắp nhang · chạm tượng Phật để vái lạy · chạm tủ Tàng Kinh Các để vào trong',
+    yard: 'Chạm sàn để đi lại · chạm bàn thầy tử vi hoặc thầy Tarot để xem',
+    library: 'Chạm bồ đoàn để ngồi thiền tu luyện · chạm Kệ kinh để đọc kinh · chạm kệ Võ học để học chiêu'
+  };
+  function applyScene(scene) {
+    curScene = scene;
+    if (Places.current !== 'arena') Hall.setScene(scene);
+    const mc = (cfg && cfg.martial) || {};
+    $('#go-yard').hidden = scene !== 'hall';
+    $('#go-hall').hidden = scene === 'hall';
+    $('#go-library').hidden = scene !== 'hall';
+    $('#open-lot').hidden = scene !== 'hall';
+    $('#open-horoscope').hidden = $('#open-tarot').hidden = scene !== 'yard';
+    $('#lib-read').hidden = $('#lib-sit').hidden = scene !== 'library';
+    $('#lib-dojo').hidden = scene !== 'library' || !mc.enabled;
+    $('#stage').setAttribute('aria-label', SCENE_LABEL[scene] || 'Chánh điện');
+    $('#stageHint').textContent = SCENE_HINT[scene] || SCENE_HINT.hall;
+    if (scene !== 'library') Meditate.close();
+  }
+  function goScene(scene) {
+    if (!joined) { openDlg('join'); return; }
+    if (scene === curScene) return;
+    socket.emit('scene', scene, r => {
+      if (!r || !r.ok) { toast((r && r.reason) || 'Chưa đi được, thử lại nhé.'); return; }
+      applyScene(scene);
+      if (scene === 'library') toast('Tàng Kinh Các: chạm bồ đoàn để ngồi thiền tu luyện, chạm kệ để đọc kinh hay học võ.');
+    });
+  }
+  $('#go-library').addEventListener('click', () => goScene('library'));
+  $('#lib-read').addEventListener('click', () => act('read'));
+  // Ngồi thiền: đang ngồi thì mở lại bảng; chưa thì chọn bồ đoàn trống gần mình nhất
+  $('#lib-sit').addEventListener('click', () => {
+    const mine = Hall.player(me);
+    if (mine && mine.sit >= 0) { Meditate.open(mine.sit); return; }
+    const taken = new Set(Hall.list().filter(p => p.id !== me && p.sit >= 0 && p.scene === 'library' && (p.place || 'hall') === 'hall').map(p => p.sit));
+    let best = -1, bd = Infinity;
+    for (let i = 0; i < Hall.seatCount; i++) {
+      if (taken.has(i)) continue;
+      const [x, z] = Hall.seatPos(i), d = mine ? Math.hypot((mine.x - x) * 1.6, mine.z - z) : i;
+      if (d < bd) { bd = d; best = i; }
+    }
+    if (best < 0) toast('Các bồ đoàn đều có người ngồi rồi, bạn đợi một chút nhé.'); else sitAt(best);
+  });
+  $('#lib-dojo').addEventListener('click', () => act('dojo'));
+  /** Ngồi lên bồ đoàn số i: máy chủ cho đi tới chỗ đó, tới nơi thì ngồi xuống; bảng tọa thiền mở ngay. */
+  function sitAt(i) {
+    if (!joined) return;
+    const mine = Hall.player(me);
+    if (mine && mine.sit === i) { Meditate.open(i); return; }
+    socket.emit('sit', { seat: i }, r => {
+      if (!r || !r.ok) { toast((r && r.reason) || 'Chưa ngồi được, thử lại nhé.'); return; }
+      Hall.setSit(me, i, (mine && mine.cm) || '');
+      Meditate.open(i);
+    });
+  }
   const keys = new Set();
   addEventListener('keydown', e => {
     if (e.target.closest('input, textarea, select, dialog[open]')) return;
@@ -75,6 +138,7 @@
   addEventListener('blur', () => keys.clear());
   setInterval(() => {
     if (!joined || !keys.size) return;
+    if (Places.current === 'dojo' || (Places.current === 'arena' && !(window.Arena && Arena.inYard && Arena.inYard()))) return;
     const p = Hall.player(me); if (!p) return;
     let dx = 0, dz = 0;
     if (keys.has('arrowleft') || keys.has('a')) dx -= 1;
@@ -209,7 +273,7 @@
 
   /* ---------- kết nối ---------- */
   const socket = io({ transports: ['websocket', 'polling'] });
-  const fortune = Fortune.init({ socket, getMe: () => me, getJoined: () => joined, setScene: scene => { Hall.setScene(scene); $('#open-lot').hidden = scene !== 'hall'; $('#open-horoscope').hidden = $('#open-tarot').hidden = scene !== 'yard'; }, toast });
+  const fortune = Fortune.init({ socket, getMe: () => me, getJoined: () => joined, setScene: applyScene, goScene, getScene: () => curScene, toast });
   $('#open-lot').addEventListener('click', () => fortune.open('lot'));
   $('#open-horoscope').addEventListener('click', () => fortune.open('horoscope'));
   $('#open-tarot').addEventListener('click', () => fortune.open('tarot'));
@@ -301,7 +365,8 @@
   socket.on('pl', d => { Voice.drop(d.id); Hall.removePlayer(d.id); $('#online').textContent = NUM(Hall.count()); voiceUI(); });
   socket.on('pv', d => { Hall.setVoice(d.id, d.v); voiceUI(); });
   socket.on('prd', d => Hall.setReading(d.id, d.rd));
-  socket.on('pplace', d => Hall.setPlace(d.id, d.place));
+  socket.on('pplace', d => Hall.setPlace(d.id, d.place, d.x, d.z));
+  socket.on('psit', d => { Hall.setSit(d.id, d.sit, d.cm); if (d.id === me && !(d.sit >= 0)) Meditate.close(); });
   socket.on('pm', d => { Hall.setMerit(d.id, d.mt, d.up); if (d.id === me) renderRank(); });
   socket.on('penalty', d => Hall.penalty(d.pid, d.n));
   socket.on('penalty:me', d => {
@@ -554,9 +619,10 @@
         if (!Voice.active) startVoice(false);
         else Voice.toggleMic().then(r => { if (typeof r === 'string') toast(MIC_ERR[r]); voiceUI(); });
         pulse(btn); break;
-      case 'library':
-        if (walk) { const pos = Hall.libraryPos(); if (pos) socket.emit('move', { x: pos[0], z: pos[1] }); }
-        Library.open(); break;
+      case 'library':                                          // nút Tàng Kinh Các: vào Tàng Kinh Các; đang ở trong rồi thì mở kệ kinh
+        if (curScene !== 'library' && Places.current === 'hall') goScene('library'); else Library.open();
+        break;
+      case 'read': Library.open(); break;
       case 'incense': $('#incWarn').hidden = true; openDlg('incense'); break;
       case 'flower': closeDlg('donate'); openDlg('flower'); break;
       case 'heart': socket.emit('emote', { type: 'heart' }); SFX.pop(); pulse(btn); break;
@@ -759,7 +825,8 @@
       return false;
     },
     onChange(name) {
-      Hall.pause(name !== 'hall'); Hall.setPlace(me, name);
+      Hall.pause(name === 'dojo'); Hall.setPlace(me, name);       // Sân đấu có khung vẽ riêng (Arena gắn cảnh vào đó)
+      if (name !== 'hall') Meditate.close();
       // nói chuyện chỉ ở chánh điện: sang nơi khác thì tắt micro, vì ở đó không có nút tắt và nhân vật đã biến mất khỏi chánh điện
       if (name !== 'hall' && Voice.active) { Voice.leave(); voiceUI(); toast('Đã tắt nói chuyện khi rời chánh điện.'); }
     }
@@ -773,8 +840,21 @@
     needLogin,
     me: () => ({ pid: me, name: myName, look }),
     meritTotal: () => myTotal,
-    vnd: VND
+    vnd: VND,
+    // sân đấu đi lại được: cảnh 'arena' vẽ lên khung của Sân đấu; rời sân thì trả về khung chánh điện
+    yard: {
+      show(canvas) { Hall.attach(canvas); Hall.setScene('arena'); Hall.pause(false); },
+      hide() { Hall.attach($('#hall')); Hall.setScene(curScene); Hall.pause(Places.current === 'dojo'); }
+    },
+    hallPlayer: id => Hall.player(id)
   };
+  Meditate.init({
+    socket, el: $('#medi'), toast, serverNow,
+    cfg: () => cfg || { martial: { enabled: false } },
+    login: () => changeAuth(true),
+    stand: () => { socket.emit('stand'); Hall.setSit(me, -1); Meditate.close(); },
+    dojo: () => act('dojo')
+  });
   for (const [name, mod, el] of [['dojo', window.Dojo, $('#place-dojo')], ['arena', window.Arena, $('#place-arena')]]) {
     if (!mod) continue;
     mod.init(martialHost);

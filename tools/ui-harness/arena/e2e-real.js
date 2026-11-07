@@ -81,7 +81,9 @@ const leaks = (pg, needles, allow) => pg.evaluate(([ns, al]) => {
   const cnt = (s, n) => s.split(n).length - 1;
   return ns.map(n => cnt(all, n) - cnt(ok, n)).reduce((a, b) => a + Math.max(0, b), 0);
 }, [needles, allow]);
-async function rowOf(page, name) { return page.locator('.ar-row', { hasText: name }).first(); }
+/** Sân là khung vẽ đi lại được; danh sách người nằm trong ngăn kéo "Danh sách". */
+async function openList(page) { await page.waitForSelector('.ar-listbtn'); if (await page.$eval('.ar-drawer', d => d.hidden)) await page.click('.ar-listbtn'); }
+async function rowOf(page, name) { await openList(page); return page.locator('.ar-row', { hasText: name }).first(); }
 async function inviteBot(page, botName, mode) {
   const row = await rowOf(page, botName);
   await row.locator('.ar-inv').click();
@@ -159,8 +161,9 @@ async function t(name, fn) {
     await enterHall(page, srv, 'Diệu Liên');
     assert.ok(!(await vis(page, '#place-arena')), 'chánh điện không được có màn sân đấu');
     await goArena(page);
+    await openList(page);
     await page.waitForSelector('.ar-row:has-text("Huyen Trang")');
-    assert.match(await text(page, '.ar-rwrap'), /Rảnh/);
+    assert.match(await text(page, '.ar-drawer'), /Rảnh/);
     await shot(page, 'roster');
     // công tắc không nhận lời mời: bot thấy st = dnd rồi trở lại
     await page.click('.ar-switch'); await page.waitForFunction(() => document.querySelector('.ar-switch').getAttribute('aria-checked') === 'true');
@@ -195,6 +198,7 @@ async function t(name, fn) {
     // về sân: bot hiện lại là Rảnh, thành tích cập nhật
     await page.click('.ar-eact .btn.primary');
     await page.waitForSelector('.ar-roster:not([hidden])');
+    await openList(page);
     await page.waitForFunction(() => /Rảnh/.test((document.querySelector('.ar-row') || {}).textContent || ''), null, { timeout: 5000 });
     const meta = await text(page, '.ar-row:has-text("Huyen Trang") .ar-rmeta');
     const total = (be.record.wins || 0) + (be.record.losses || 0);
@@ -212,6 +216,7 @@ async function t(name, fn) {
     const page = await newPage(browser, srv);
     await enterHall(page, srv, 'Diệu Liên');
     await goArena(page);
+    await openList(page);
     await page.waitForSelector('.ar-row:has-text("Huyen Trang")');
     const me = bot.rows.get('Diệu Liên');                      // bot nhận arena:add khi người chơi ra sân
     assert.ok(me, 'bot phải thấy người chơi ra sân');
@@ -248,6 +253,7 @@ async function t(name, fn) {
     const page = await newPage(browser, srv);
     await enterHall(page, srv, 'Diệu Liên');
     await goArena(page);
+    await openList(page);
     await page.waitForSelector('.ar-row:has-text("Huyen Trang")');
     await inviteBot(page, 'Huyen Trang', 'buff');
     await page.waitForSelector('.ar-lobby:not([hidden])', { timeout: 10000 });
@@ -283,6 +289,7 @@ async function t(name, fn) {
     const page = await newPage(browser, srv);
     await enterHall(page, srv, 'Diệu Liên');
     await goArena(page);
+    await openList(page);
     await page.waitForSelector('.ar-row:has-text("Huyen Trang")');
     await inviteBot(page, 'Huyen Trang', 'balanced');
     await page.waitForSelector('.ar-lobby:not([hidden])', { timeout: 10000 });
@@ -334,6 +341,7 @@ async function t(name, fn) {
     const page = await newPage(browser, srv, 'reduced');
     await enterHall(page, srv, 'Diệu Liên');
     await goArena(page);
+    await openList(page);
     await page.waitForSelector('.ar-row:has-text("Huyen Trang")');
     await inviteBot(page, 'Huyen Trang', 'balanced');
     await page.waitForSelector('.ar-lobby:not([hidden])', { timeout: 10000 });

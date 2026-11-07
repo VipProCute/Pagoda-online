@@ -21,7 +21,7 @@
     return NAMES.map((n, i) => mkRow(i, ['free', 'free', 'busy', 'free', 'dnd'][i % 5]));
   };
   const S = { players: rosterOf(q.get('players') || 'crowded'), dnd: false, blocks: [{ uid: 'u9', name: 'Tâm Bình' }, { uid: 'u8', name: 'Quảng Hải' }], place: 'hall', match: null, seq: 0 };
-  const O = { startDelay: 0, auto: true, opDelay: 500, revealDelay: 250, revealMs: 4000, endDelay: 700, opLockMs: 1500, inviteOutcome: 'accept', inviteDelay: 1000, lobbyAuto: true, fail: {} };
+  const O = { startDelay: 0, auto: true, opDelay: 500, revealDelay: 250, revealMs: 6500, endDelay: 700, opLockMs: 1500, inviteOutcome: 'accept', inviteDelay: 1000, lobbyAuto: true, fail: {} };
   const timers = [];
   const later = (ms, fn) => { const t = setTimeout(fn, ms); timers.push(t); return t; };
   const failOr = (ev, fn) => { if (O.fail[ev]) { const a = O.fail[ev]; delete O.fail[ev]; return a; } return fn(); };

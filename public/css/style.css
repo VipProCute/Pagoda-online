@@ -69,7 +69,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .today b { color: #fff3dc; font-variant-numeric: tabular-nums; }
 @media (max-width: 900px) { .stage-hint { display: none; } .today { max-width: calc(100% - 24px); } }
 .conn { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); background: var(--son); color: var(--son-fg); padding: 5px 14px; border-radius: 999px; font-size: 13px; z-index: 3; }
-.ticker { position: absolute; left: 12px; top: 10px; display: grid; gap: 4px; pointer-events: none; max-width: min(60%, 420px); z-index: 2; }
+.ticker { position: absolute; left: 12px; top: 58px; display: grid; gap: 4px; pointer-events: none; max-width: min(60%, 420px); z-index: 2; }
 .ticker div { background: rgba(14, 8, 5, .72); border: 1px solid rgba(212, 171, 82, .25); color: #f2e8d5; font-size: 12.5px; padding: 4px 10px; border-radius: 999px; width: fit-content; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; animation: tick 5.5s ease forwards; }
 @keyframes tick { 0% { opacity: 0; transform: translateY(-6px); } 8%, 85% { opacity: 1; transform: none; } 100% { opacity: 0; } }
 
@@ -402,3 +402,53 @@ dialog.lib.dark-read .lib-page figure img { mix-blend-mode: normal; background: 
 .tarot-cards article { border:1px solid #af8b50; background:linear-gradient(155deg,#392445,#221729); border-radius:10px; min-height:150px; padding:12px; line-height:1.5; }
 .tarot-cards strong { color:#f0d698; } .tarot-cards p { font-size:13px; margin-top:8px; }
 @media(max-width:480px) { .tarot-cards {grid-template-columns:1fr;} .tarot-cards article {min-height:0;} }
+
+/* ---------- Tàng Kinh Các: bảng tọa thiền nổi trên cảnh ---------- */
+.medi { position: absolute; z-index: 4; right: 12px; bottom: 12px; width: min(380px, calc(100% - 24px)); max-height: calc(100% - 64px);
+  display: flex; flex-direction: column; border: 1px solid rgba(212, 171, 82, .55); border-radius: 14px;
+  background: linear-gradient(180deg, rgba(42, 22, 12, .95), rgba(20, 11, 7, .96)); box-shadow: 0 14px 34px rgba(0, 0, 0, .55), 0 0 24px rgba(212, 171, 82, .12); animation: md-in .28s ease; }
+.medi[hidden] { display: none; }
+@keyframes md-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.md-cdmini { font-variant-numeric: tabular-nums; letter-spacing: 0; text-transform: none; }
+.md-locked { font-size: 12px; }
+.md-head { flex: none; display: flex; align-items: center; gap: 8px; padding: 8px 10px 8px 14px; }
+.md-ttl { flex: 1; min-width: 0; display: grid; line-height: 1.2; }
+.md-ttl b { font-family: var(--font-display); font-size: 19px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.md-min { flex: none; width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface-2); color: var(--fg); cursor: pointer; font-size: 14px; }
+.md-stand { flex: none; }
+.md-body { min-height: 0; overflow-y: auto; padding: 0 14px 12px; display: grid; gap: 9px; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+.md-body p { margin: 0; }
+.md-prof { font-size: 13px; color: var(--gold-ink); }
+.md-intro { font-size: 13.5px; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+.md-list { display: grid; gap: 7px; }
+.md-m { display: grid; gap: 6px; padding: 8px 10px; border: 1px solid var(--line); border-left: 3px solid var(--bc); border-radius: 10px; background: rgba(0, 0, 0, .22); }
+.md-m.is-locked { opacity: .55; }
+.md-m-name { display: flex; align-items: baseline; gap: 7px; min-width: 0; }
+.md-m-name b { font-size: 14.5px; }
+.md-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--bc); flex: none; align-self: center; }
+.md-han { font-family: "Noto Serif TC", "Songti TC", "PMingLiU", "SimSun", serif; color: var(--gold-ink); letter-spacing: .1em; font-size: 13px; }
+.md-lock { font-size: 12px; color: var(--muted); }
+.md-durs { display: flex; flex-wrap: wrap; gap: 6px; }
+.md-dur { min-height: 40px; display: inline-grid; justify-items: center; gap: 0; padding: 4px 12px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface-2); color: var(--fg); cursor: pointer; font: inherit; line-height: 1.2; }
+.md-dur b { font-size: 13px; font-weight: 600; }
+.md-dur small { font-size: 11.5px; color: var(--jade); }
+.md-dur:not(:disabled):hover { border-color: var(--gold); }
+.md-dur:disabled { cursor: default; opacity: .6; }
+.md-sess { display: grid; gap: 8px; padding: 10px 12px; border: 1px solid var(--bc); border-radius: 12px; background: radial-gradient(120% 100% at 50% 0%, rgba(212, 171, 82, .14), rgba(0, 0, 0, .2)); }
+.md-sess-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.md-sess-top .md-han { font-size: 20px; }
+.md-cd { font-variant-numeric: tabular-nums; font-size: 30px; font-family: var(--font-display); color: var(--gold-ink); }
+.md-bar { height: 8px; border-radius: 99px; background: rgba(255, 255, 255, .08); overflow: hidden; }
+.md-bar i { display: block; height: 100%; width: 0; border-radius: inherit; background: linear-gradient(90deg, var(--bc), #fff3c4); transition: width .9s linear; }
+.md-gain { font-size: 13px; color: var(--muted); }
+.md-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.medi.mini { width: auto; max-width: calc(100% - 24px); }
+.medi.mini .md-head { padding: 5px 6px 5px 12px; }
+@media (max-width: 900px) {
+  .medi { right: 8px; left: 8px; width: auto; bottom: 8px; max-height: 58%; }
+  .medi.mini { left: auto; }
+  .md-ttl b { font-size: 16px; } .md-cd { font-size: 24px; }
+  .md-tip, .md-locked { display: none; }
+  .md-sess .md-han { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { .medi { animation: none; } .md-bar i { transition: none; } }

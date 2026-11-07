@@ -62,6 +62,37 @@
   .ar-list { grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); }
 }
 
+/* ---------- sân đi lại được (khung vẽ dùng chung với chánh điện) ---------- */
+.ar-root[data-screen="roster"] .ar-roster { padding: 0; overflow: hidden; position: relative; }
+.ar-yard { position: absolute; inset: 0; background: #0c0705; overflow: hidden; }
+.ar-yardcv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: manipulation; }
+.ar-ytop { position: absolute; z-index: 3; top: 10px; left: 10px; right: 10px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; pointer-events: none; }
+.ar-ytop > * { pointer-events: auto; }
+.ar-ytop .ar-switch { min-height: 44px; padding: 4px 12px 4px 6px; background: rgba(28, 20, 16, .88); font-size: 13px; }
+.ar-ytop .btn { min-height: 44px; background: rgba(28, 20, 16, .88); }
+.ar-ytop .ar-listbtn { background: rgba(40, 24, 12, .92); border-color: var(--gold); color: var(--gold-ink); }
+.ar-ymsgs { position: absolute; z-index: 6; left: 50%; top: 62px; transform: translateX(-50%); width: min(460px, calc(100% - 20px)); display: grid; gap: 8px; pointer-events: none; }
+.ar-ymsgs > * { pointer-events: auto; }
+.ar-ymsgs .ar-out, .ar-ymsgs .ar-resume, .ar-ymsgs .ar-login { background: rgba(28, 16, 10, .94); box-shadow: 0 8px 22px rgba(0, 0, 0, .45); }
+.ar-ymsgs .ar-empty { padding: 10px 14px; gap: 2px; background: rgba(20, 12, 8, .82); border-style: solid; border-color: rgba(212, 171, 82, .3); }
+.ar-ymsgs .ar-empty b { font-size: 19px; }
+.ar-ymsgs .ar-empty span { font-size: 13px; }
+.ar-ymsgs .ar-empty-i { display: none; }
+.ar-yhint { position: absolute; z-index: 2; left: 50%; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); margin: 0; padding: 5px 12px; border-radius: 999px; background: rgba(14, 8, 5, .72); border: 1px solid rgba(212, 171, 82, .3); color: #f2e8d5; font-size: 12.5px; white-space: nowrap; max-width: calc(100% - 20px); overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
+.ar-yhint[hidden] { display: none; }
+.ar-drawer { position: absolute; z-index: 5; top: 62px; right: 0; bottom: 0; width: min(400px, 100%); overflow-y: auto; padding: 12px 14px calc(16px + env(safe-area-inset-bottom, 0px)); background: linear-gradient(180deg, rgba(30, 18, 12, .98), rgba(18, 11, 8, .98)); border-left: 1px solid var(--line); border-top: 1px solid var(--line); border-top-left-radius: 14px; box-shadow: -12px 0 30px rgba(0, 0, 0, .45); animation: ar-drawer .22s ease; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+.ar-drawer[hidden] { display: none; }
+@keyframes ar-drawer { from { opacity: 0; } to { opacity: 1; } }
+.ar-drawer .ar-lh { justify-content: flex-start; }
+.ar-dclose { margin-left: auto; min-width: 44px; min-height: 44px; }
+.ar-drawer .ar-list { grid-template-columns: minmax(0, 1fr); }
+.ar-none { margin: 0; }
+.ar-none[hidden] { display: none; }
+.ar-dblk { margin-right: auto; }
+.ar-drawer .ar-blocks { justify-self: start; }
+@media (max-width: 520px) { .ar-ytop .ar-sw-t { font-size: 12px; } }
+@media (prefers-reduced-motion: reduce) { .ar-drawer { animation: none; } }
+
 /* ---------- lời mời đến (thẻ nổi trên cùng) ---------- */
 .ar-invites { position: absolute; left: 0; right: 0; top: 0; z-index: 30; display: grid; gap: 8px; padding: 8px 12px; max-height: 78%; overflow-y: auto; pointer-events: none; }
 .ar-invites[hidden] { display: none; }
