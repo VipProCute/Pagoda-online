@@ -1736,6 +1736,7 @@
     /** Sân đấu: hàm cho biết nhãn trên đầu từng người { text, color } (rảnh / đang đấu / tạm nghỉ). */
     setTagger(fn) { tagger = typeof fn === 'function' ? fn : null; },
     seatCount: LIB_SEATS.length,
+    seatPos: i => LIB_SEATS[i] || null,
     get scene() { return scene; },
     /** Vẽ một nhân vật tại gốc toạ độ hiện tại (chân ở 0,0, cao khoảng 85 đơn vị) cho các màn hình khác dùng lại. */
     avatar(c, look, opts) { opts = opts || {}; drawAvatar(c, look, opts.front !== false, opts.t || 0, opts.bow || 0, !!opts.walking); },

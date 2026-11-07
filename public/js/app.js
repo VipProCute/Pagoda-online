@@ -86,7 +86,7 @@
     $('#go-library').hidden = scene !== 'hall';
     $('#open-lot').hidden = scene !== 'hall';
     $('#open-horoscope').hidden = $('#open-tarot').hidden = scene !== 'yard';
-    $('#lib-read').hidden = scene !== 'library';
+    $('#lib-read').hidden = $('#lib-sit').hidden = scene !== 'library';
     $('#lib-dojo').hidden = scene !== 'library' || !mc.enabled;
     $('#stage').setAttribute('aria-label', SCENE_LABEL[scene] || 'Chánh điện');
     $('#stageHint').textContent = SCENE_HINT[scene] || SCENE_HINT.hall;
@@ -103,6 +103,19 @@
   }
   $('#go-library').addEventListener('click', () => goScene('library'));
   $('#lib-read').addEventListener('click', () => act('read'));
+  // Ngồi thiền: đang ngồi thì mở lại bảng; chưa thì chọn bồ đoàn trống gần mình nhất
+  $('#lib-sit').addEventListener('click', () => {
+    const mine = Hall.player(me);
+    if (mine && mine.sit >= 0) { Meditate.open(mine.sit); return; }
+    const taken = new Set(Hall.list().filter(p => p.id !== me && p.sit >= 0 && p.scene === 'library' && (p.place || 'hall') === 'hall').map(p => p.sit));
+    let best = -1, bd = Infinity;
+    for (let i = 0; i < Hall.seatCount; i++) {
+      if (taken.has(i)) continue;
+      const [x, z] = Hall.seatPos(i), d = mine ? Math.hypot((mine.x - x) * 1.6, mine.z - z) : i;
+      if (d < bd) { bd = d; best = i; }
+    }
+    if (best < 0) toast('Các bồ đoàn đều có người ngồi rồi, bạn đợi một chút nhé.'); else sitAt(best);
+  });
   $('#lib-dojo').addEventListener('click', () => act('dojo'));
   /** Ngồi lên bồ đoàn số i: máy chủ cho đi tới chỗ đó, tới nơi thì ngồi xuống; bảng tọa thiền mở ngay. */
   function sitAt(i) {
