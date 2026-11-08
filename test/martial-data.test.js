@@ -69,7 +69,7 @@ test('mỗi chiêu có đủ và chỉ các trường engine cần theo kind', (
       if (p.failRed != null) assert.ok(p.failRed > 0 && p.failRed < 1);
     }
     if (s.kind === 'charge') {
-      assert.ok(s.charge.red > 0 && s.charge.red < 1);
+      assert.ok(s.charge.red >= 0 && s.charge.red < 1);
       base(s.charge.release.base); spd(s.charge.release.spd);
       if (s.charge.release.dodgeMul != null) assert.ok(s.charge.release.dodgeMul > 0 && s.charge.release.dodgeMul < 1);
     }
@@ -92,10 +92,10 @@ test('số liệu của từng chiêu đúng bảng thiết kế (bắt sửa nh
   assert.deepEqual(S['nhu-van-bo'].dodge, { spd: 80, rageOnDodge: 10 });
   assert.deepEqual(S['phan-chan'].parry, { spd: 50, flat: 20, failRed: 0.25 });
   assert.deepEqual(S['tiep-kinh-phan-chuong'].parry, { spd: 75, flat: 18, pct: 0.2, cap: 14 });
-  assert.deepEqual(S['tu-lang-bat-thien-can'].parry, { spd: 70, flat: 25, pct: 0.3, cap: 21 });
+  assert.deepEqual(S['tu-lang-bat-thien-can'].parry, { spd: 70, flat: 25, pct: 0.3, cap: 21, reflectCharge: 'tu-luc-pha-son', maxAttackSpeed: 79 });
   assert.deepEqual(S['doat-anh-phan-kich'].parry, { spd: 80, flat: 24 });
   assert.deepEqual(S['doat-anh-phan-kich'].hits, [{ base: 20, spd: 90 }]);
-  assert.deepEqual(S['tu-luc-pha-son'].charge, { red: 0.3, release: { base: 70, spd: 20, dodgeMul: 0.5 } });
+  assert.deepEqual(S['tu-luc-pha-son'].charge, { red: 0, release: { base: 70, spd: 20, unavoidable: true, trueDamage: true, masteryBase: [70, 90, 115, 145, 180] } });
   assert.deepEqual(M.SKILL_LIST.map(s => s.mana), [10, 14, 30, 12, 10, 10, 6, 12, 22, 22, 7, 14, 9, 9, 20]);
 });
 

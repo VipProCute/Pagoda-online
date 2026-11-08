@@ -1,5 +1,7 @@
 # Võ học · Báo cáo cân bằng
 
+> **Số liệu lịch sử trước bản Phá Sơn/Tứ Lạng và độ thành thạo tháng 11/2026.** Các bảng dưới không đánh giá luật mới. Chạy `node tools/pk-sim/audit100k.js` để tái lập 100.000 trận theo luật hiện tại; xem [cơ chế Phá Sơn mới](PK-PHA-SON.md). Metadata ghi seed, hệ số buff, kế hoạch độ thành thạo, commit nền, trạng thái working tree và hash các nguồn.
+
 Số liệu từ công cụ mô phỏng `tools/pk-sim`, chạy trên **đúng engine thật** `lib/pk/engine.js`. Đây là số liệu để chủ dự án quyết định, **không phải kết luận "đã cân bằng"**. > **Lưu ý:** các số buff dưới đây đo ở `BUFF_SCALE` 0,25 / 0,5 / 1. Vì buff quá nhạy, mặc định thực tế được hạ xuống **0,15** (biến môi trường `PK_BUFF_SCALE`, có thể chỉnh 0 đến 1 mà không sửa code).
 
 Mọi con số lấy ở luật hiện tại (`BUFF_SCALE` 0,5 lúc đo; HP 200; hồi nội lực 6; cấp nội công 7 nếu không ghi khác).

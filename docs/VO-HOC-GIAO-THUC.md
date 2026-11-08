@@ -37,7 +37,7 @@ Khi bật đăng nhập Google mà người chơi chưa đăng nhập: mọi s�
 { ok:true, enabled, serverTime,
   login:{ required, signedIn },
   profile:{ congLuc, level, levelFrom, levelTo, pct, manaMax, tam:{cuong,toc,nhu},
-            learned:[id], loadout:[id], wins, losses, draws, vouchers:[{id, value, createdAt}] },
+            learned:[id], mastery:{[skillId]:xp}, loadout:[id], wins, losses, draws, vouchers:[{id, value, createdAt}] },
   session: null | { id, methodId, durationKey, startedAt, endsAt, price, status:'active',
                     speedup: null | { code, amount, status:'pending', bankReported:boolean, createdAt } },
   recent:[ { id, methodId, durationKey, status:'completed'|'cancelled', via:'time'|'speedup'|'voucher'|null,
@@ -50,7 +50,7 @@ Khi bật đăng nhập Google mà người chơi chưa đăng nhập: mọi s�
 ### Sự kiện từ trình duyệt
 | Sự kiện | Tham số | Ack thành công |
 |---|---|---|
-| `tu:start` | `{methodId, duration}` (duration là `key` như `4h`) | `{ok:true, session}` |
+| `tu:start` | `{methodId, duration, skillId?}` (duration là `key` như `4h`, skillId là chiêu đã học để luyện cùng phiên) | `{ok:true, session}` |
 | `tu:cancel` | `{sessionId}` | `{ok:true}` (mất hết tiến độ phiên đó) |
 | `tu:speedup` | `{sessionId, anon?:boolean}` | `{ok:true, existing:boolean, code, amount, fund, qr, bank, account, accountName, auto, methodName, durationKey, endsAt}` |
 | `tu:speedup:cancel` | `{code}` | `{ok:true}` |
@@ -98,7 +98,7 @@ Hạn lời mời 20 giây. Mỗi người một lời mời đang chờ gửi �
 1. **Sảnh chọn bộ chiêu** (30 giây): `pk:lobby`
 ```
 { matchId, mode, deadlineAt, loadoutMs,
-  you:{ pid,name,look,level,hpMax,manaMax, learned:[id], loadout:[id], warnings:[{code,text}] },
+  you:{ pid,name,look,level,hpMax,manaMax, learned:[id], mastery:{[skillId]:xp}, loadout:[id], warnings:[{code,text}] },
   op:{ pid,name,look,level,hpMax,manaMax },
   buffs: null | { you:Buff, op:Buff } }
 ```
@@ -163,9 +163,11 @@ Ghi chú về thứ tự gói tin (giao diện phải chịu được):
 Quá giờ chọn 20 giây: tự "Đứng yên". 3 lượt quá giờ liên tiếp: xử thua (`idle-forfeit`). Cả hai vắng quá 60 giây: hủy trận (`both-away`).
 Máy chủ khởi động lại giữa trận: trận bị hủy, không ai bị tính thua.
 
+Độ thành thạo `mastery` là XP 0..240, chuẩn hóa theo chiêu đã học. `session.skillId?` xác định một chiêu luyện cùng phiên; khi hoàn thành, `tu:update.practice?` và `recent[].practice?` có `{skillId, xp, total, rank}`. Phần thưởng này lưu cùng sổ cái phiên tu để chống cộng trùng. `pk:lobby.you.mastery` và snapshot của chính người chơi cung cấp tiến độ; không gửi mastery của đối thủ trước trận. Nhật ký trận lưu thêm `levels` và `mastery` đã chụp để phát lại đúng.
+
 ## 5. Dữ liệu lưu bền (`db.martial`)
 ```
-profiles[uid] = { uid, congLuc, tam:{cuong,toc,nhu}, learned:[id], loadout:[id], activeSession:id|null, activeMatch:id|null,
+profiles[uid] = { uid, congLuc, tam:{cuong,toc,nhu}, learned:[id], mastery:{[skillId]:xp}, loadout:[id], activeSession:id|null, activeMatch:id|null,
                   vouchers:[{id,value,code,createdAt,usedAt?,usedFor?}], wins, losses, draws, dnd, blocked:[{uid,name}], createdAt }
 sessions[id]  = { id, uid, methodId, durationKey, startedAt, endsAt, price, status:'active'|'completed'|'cancelled',
                   via, completedAt, reward, seen, speedupCode }

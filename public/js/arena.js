@@ -1016,7 +1016,8 @@
 
   /* ---------- sảnh chọn bộ chiêu ---------- */
   function skillCard(id, o) {
-    const s = skillOf(id) || { id, name: String(id), kind: 'idle' }, br = branchOf(s), b = btn('ar-card', null, { 'aria-pressed': 'false' });
+    const original = skillOf(id), xp = S.m && S.m.mastery && S.m.mastery[id];
+    const s = M.SKILLS[id] ? M.combatSkill(id, xp) : original || { id, name: String(id), kind: 'idle' }, br = branchOf(s), b = btn('ar-card', null, { 'aria-pressed': 'false' });
     b.dataset.skill = id;
     b.style.setProperty('--bc', br ? br.color : 'var(--line)');
     const kind = (M.KIND_NAMES && M.KIND_NAMES[s.kind]) || '';
@@ -1025,6 +1026,7 @@
     ck.appendChild(document.createTextNode(kind));
     ck.appendChild(h('span', 'ar-cx'));
     add(b, h('span', 'ar-cn', s.name), ck, h('span', 'ar-cs', s.mana > 0 || s.kind !== 'rest' ? M.statsLine(s) : s.short));
+    if (M.SKILLS[id]) b.appendChild(h('span', 'ar-cd', M.masteryInfo(xp).name));
     if (o && o.short && s.short) b.appendChild(h('span', 'ar-cd', s.short));
     if (o && o.no) b.appendChild(h('i', 'ar-no'));
     return b;
@@ -1301,14 +1303,14 @@
     const choosing = m.phase === 'choosing', frozen = !choosing || m.locked || m.pending || m.timeUp || !canSend();
     const all = Object.assign({}, U.cards, { [M.REST_ID]: U.rest });
     for (const id in all) {
-      const c = all[id], legal = choosing && m.legal.includes(id), on = m.sel === id, s = skillOf(id);
+      const c = all[id], legal = choosing && m.legal.includes(id), on = m.sel === id, s = M.SKILLS[id] ? M.combatSkill(id, m.mastery && m.mastery[id]) : skillOf(id);
       c.setAttribute('aria-pressed', String(on));
       c.disabled = !legal || frozen;
       c.classList.toggle('off', choosing && !legal);
       c.classList.toggle('frozen', frozen && legal);
       const cx = c.querySelector('.ar-cx');
       cx.textContent = m.forced === id ? 'Tự tung' : m.locked && on ? 'Đã khóa' : '';
-      c.title = choosing && !legal ? reasonOff(m, id) : '';
+      c.title = choosing && !legal ? reasonOff(m, id) : s.desc || '';
       c.setAttribute('aria-label', `${s.name}. ${(M.KIND_NAMES || {})[s.kind] || ''}. ${id === M.REST_ID ? s.short : M.statsLine(s)}.` + (choosing && !legal ? ` Không chọn được: ${reasonOff(m, id)}.` : '') + (m.forced === id ? ' Đang tụ lực, lượt này tự tung.' : '') + (on ? (m.locked ? ' Đã khóa.' : ' Đang chọn.') : ''));
     }
     U.lock.hidden = m.locked;
@@ -1408,17 +1410,17 @@
             fx: e.ok ? [['float', e.def, 'Né!', 'good']] : [] });
           break;
         case 'parry':
-          out.push({ who: e.def, text: e.ok ? `đỡ thành công${nth(e)} (${pc(e.p)}%)` : `đỡ hụt${nth(e)} (${pc(e.p)}%)`,
+          out.push({ who: e.def, text: e.reflect ? 'dùng Tứ Lạng hóa giải Phá Sơn, trả nguyên sát thương' : e.ok ? `đỡ thành công${nth(e)} (${pc(e.p)}%)` : `đỡ hụt${nth(e)} (${pc(e.p)}%)`,
             fx: e.ok ? [['float', e.def, 'Đỡ!', 'good']] : [] });
           break;
         case 'hit': {
           const sk = skillName(P[e.atk] && P[e.atk].skill);
-          out.push({ who: e.atk, text: `${sk} trúng ${tg(e.def)}${e.of > 1 ? `, nhịp ${e.idx}/${e.of}` : ''}, gây ${e.dmg}${e.red > 0 ? ` (giảm ${pc(e.red)}%)` : ''}`,
+          out.push({ who: e.atk, text: `${sk} trúng ${tg(e.def)}${e.of > 1 ? `, nhịp ${e.idx}/${e.of}` : ''}, gây ${e.dmg}${e.trueDamage ? ' sát thương chuẩn xuyên thủ' : e.red > 0 ? ` (giảm ${pc(e.red)}%)` : ''}`,
             fx: [['hp', e.def, e.dmg], ['float', e.def, '−' + e.dmg, 'dmg']] });
           break;
         }
         case 'counter':
-          out.push({ who: e.side, text: `phản đòn, ${tg(e.target)} mất ${e.dmg}`, fx: [['hp', e.target, e.dmg], ['float', e.target, '−' + e.dmg, 'dmg']] });
+          out.push({ who: e.side, text: `${e.reflect ? 'phản nguyên Phá Sơn' : 'phản đòn'}, ${tg(e.target)} mất ${e.dmg}`, fx: [['hp', e.target, e.dmg], ['float', e.target, '−' + e.dmg, 'dmg']] });
           break;
         case 'exposed': out.push({ who: e.side, text: `sơ hở: lượt sau nhận thêm ${EXPOSED_PCT}% sát thương`, fx: [['float', e.side, 'Sơ hở', 'warn']] }); break;
         case 'kc': out.push({ who: e.side, text: `nhận Kim Chung: trong ${KC_TURNS} lượt tới, đòn công đầu tiên mạnh thêm ${KC_PCT}%`, fx: [['float', e.side, 'Kim Chung', 'gold']] }); break;
@@ -1837,7 +1839,7 @@
     const youLoad = (d.you.loadout || []).filter(id => (d.you.learned || []).includes(id)).slice(0, 4);
     S.m = {
       id: d.matchId, mode: d.mode, phase: 'lobby', deadline: num(d.deadlineAt), lobbyTotal: Math.max(5000, num(d.loadoutMs, num(d.deadlineAt) - nowMs())), you: d.you, op: d.op, buffs: d.buffs || null,
-      learned: Array.isArray(d.you.learned) ? d.you.learned : [], sel: youLoad, locked: false, pending: false, timeUp: false, opReady: false, msg: '', state: null, disp: { you: {}, op: {} }
+      learned: Array.isArray(d.you.learned) ? d.you.learned : [], mastery: d.you.mastery || {}, sel: youLoad, locked: false, pending: false, timeUp: false, opReady: false, msg: '', state: null, disp: { you: {}, op: {} }
     };
     buildLobby(); go('lobby'); updLobbyClock(nowMs());
     say('Đã vào sảnh. Chọn 4 chiêu rồi khóa bộ chiêu.');
@@ -1902,7 +1904,7 @@
     S.invites.slice().forEach(i => removeInvite(i.inviteId)); S.out = null; renderOut();
     const m = S.m = {
       id: snap.matchId, mode: snap.mode, you: snap.you, op: snap.op, buffs: snap.buffs || null, loadouts: snap.loadouts || null, state: snap.state,
-      learned: [], sel: [], locked: false, pending: false, timeUp: false, opReady: !!snap.opLocked, msg: '', disp: { you: {}, op: {} }, log: []
+      learned: [], mastery: snap.you.mastery || {}, sel: [], locked: false, pending: false, timeUp: false, opReady: !!snap.opLocked, msg: '', disp: { you: {}, op: {} }, log: []
     };
     if (snap.phase === 'lobby') {
       m.phase = 'lobby'; m.deadline = num(snap.deadlineAt); m.lobbyTotal = Math.max(5000, M.PK.LOADOUT_SECONDS * 1000);

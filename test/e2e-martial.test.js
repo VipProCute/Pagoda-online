@@ -93,16 +93,19 @@ test('tu luyện offline, lên cấp, học chiêu, bộ chiêu, và còn nguyê
   assert.equal((await call(c.socket, 'tu:start', { methodId: 'tinh-tam-quyet', duration: '99h' })).ok, false);
 
   const done = waitFor(c.socket, 'tu:update', u => u.kind === 'completed');
-  const s1 = await call(c.socket, 'tu:start', { methodId: 'tinh-tam-quyet', duration: '15m' });
+  const s1 = await call(c.socket, 'tu:start', { methodId: 'tinh-tam-quyet', duration: '15m', skillId: 'trong-quyen' });
   assert.ok(s1.ok, s1.reason);
+  assert.equal(s1.session.skillId, 'trong-quyen');
   const busy = await call(c.socket, 'tu:start', { methodId: 'tinh-tam-quyet', duration: '15m' });
   assert.equal(busy.ok, false, 'không tu hai phiên cùng lúc');
   const u1 = await done;
   assert.equal(u1.via, 'time');
   assert.equal(u1.reward.congLuc, 5);
+  assert.equal(u1.practice.xp, 2);
 
   let st = await call(c.socket, 'martial:state', {});
   assert.equal(st.profile.congLuc, 5);
+  assert.equal(st.profile.mastery['trong-quyen'], 2);
   assert.equal(st.session, null);
   assert.equal(st.recent[0].seen, false);
   assert.ok((await call(c.socket, 'martial:seen', { ids: [st.recent[0].id] })).ok);
@@ -153,6 +156,7 @@ test('tu luyện offline, lên cấp, học chiêu, bộ chiêu, và còn nguyê
   assert.equal(st.profile.congLuc, 195);
   assert.ok(st.profile.learned.includes('kim-chung-trao'));
   assert.deepEqual(st.profile.loadout, ['thiet-bich', 'anh-bo-ho-than', 'kim-chung-trao', 'nhu-van-bo']);
+  assert.equal(st.profile.mastery['trong-quyen'], 2, 'thuần thục lưu bền qua khởi động lại');
 });
 
 /* ---------------------------------------------------------------------------------------------- */
