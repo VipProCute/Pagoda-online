@@ -101,8 +101,8 @@ test('Xuyên kình (Liễu Diệp): bỏ qua một nửa mức giảm của chi�
 
 test('Xuyên kình không bỏ qua giảm của tụ lực hay đỡ hụt', () => {
   let d = duel([LDC], [TL], { rng: seq(V, V) });
-  d.step(LDC, TL);                                                    // đối thủ tụ lực: giảm 30% giữ nguyên
-  assert.equal(d.f.b.hp, 200 - 15);                                   // 22 × 0,7 = 15,4
+  d.step(LDC, TL);                                                    // tụ lực không có phòng thủ
+  assert.equal(d.f.b.hp, 200 - 22);
   d = duel([LDC], [PC], { rng: seq(NO, V) });
   const o = d.step(LDC, PC);
   assert.equal(one(o, 'hit').red, 0.25);
@@ -189,25 +189,23 @@ test('Nhu Vân: né một nhịp, trúng một nhịp thì +10 và nộ do sát 
 
 /* ---------- Chấn địa (Tụ Lực Phá Sơn) ---------- */
 
-test('Chấn địa: xác suất NÉ giảm một nửa, ĐỠ vẫn tính bình thường', () => {
-  let d = duel([TL], [KTB], { rng: seq(V, OK) });
-  d.step(TL, REST);
-  let o = d.step(null, KTB);
-  near(one(o, 'dodge').p, Math.round(chance(95, 20) * 0.5 * 1000) / 1000);
-  assert.equal(one(o, 'dodge').p, 0.441);
-  done(d);
-  d = duel([TL], [TKP], { rng: seq(OK) });
-  d.step(TL, REST);
-  o = d.step(null, TKP);
-  assert.equal(one(o, 'parry').p, Math.round(chance(75, 20) * 1000) / 1000);
-  assert.equal(one(o, 'parry').p, 0.852);
-  done(d);
+test('Phá Sơn bỏ qua né và các đỡ thường, không tung phép thử xác suất', () => {
+  for (const def of [KTB, NVB, TKP, PC, DAP]) {
+    const d = duel([TL], [def], { rng: seq(V) });
+    d.step(TL, REST);
+    const o = d.step(null, def);
+    assert.equal(ev(o, 'dodge').length + ev(o, 'parry').length, 0);
+    assert.equal(one(o, 'hit').dmg, 70);
+    assert.equal(ev(o, 'counter').length, 0);
+    done(d);
+  }
 });
 
-test('Chấn địa: kể cả có buff né, xác suất né không quá nửa trần', () => {
-  const d = duel([TL], [KTB], { rng: seq(OK), bb: { dodgeB: 0.08 } });
+test('Phá Sơn xuyên cả buff né và giảm sát thương bị động', () => {
+  const d = duel([TL], [KTB], { rng: seq(V), bb: { dodgeB: 0.08, defP: 0.15 } });
   d.step(TL, REST);
-  assert.equal(one(d.step(null, KTB), 'dodge').p, 0.45);
+  assert.equal(one(d.step(null, KTB), 'hit').dmg, 70);
+  done(d);
 });
 
 /* ---------- đỡ ---------- */
@@ -226,18 +224,19 @@ test('đỡ thành công: chặn đòn và phản đúng công thức Tiếp Kì
   d = duel([TQ], [TKP], { rng: seq(OK) });
   o = d.step(TQ, TKP);
   assert.equal(one(o, 'counter').dmg, 26);                            // 18 + 0,2 × 38 = 25,6
-  d = duel([TL], [TKP], { rng: seq(V, OK) });
+  d = duel([TL], [TKP], { rng: seq(V) });
   d.step(TL, REST);
   o = d.step(null, TKP);
-  assert.equal(one(o, 'counter').dmg, 32);                            // 18 + min(14, 0,2 × 70)
+  assert.equal(ev(o, 'counter').length, 0, 'Tiếp Kình không hóa giải được Phá Sơn');
+  assert.equal(one(o, 'hit').dmg, 70);
 });
 
 test('đỡ thành công: Tứ Lạng 25 + min(21, 30%), Phản Chấn chỉ 20 phẳng, Đoạt Ảnh 24 phẳng', () => {
   let d = duel([TQ], [TLB], { rng: seq(OK) });
   assert.equal(one(d.step(TQ, TLB), 'counter').dmg, 36);              // 25 + 0,3 × 38 = 36,4
-  d = duel([TL], [TLB], { rng: seq(V, OK) });
+  d = duel([TL], [TLB], { rng: seq(V) });
   d.step(TL, REST);
-  assert.equal(one(d.step(null, TLB), 'counter').dmg, 46);            // 25 + min(21, 21)
+  assert.equal(one(d.step(null, TLB), 'counter').dmg, 70);            // trả nguyên Phá Sơn
   d = duel([TQ], [PC], { rng: seq(OK) });
   assert.equal(one(d.step(TQ, PC), 'counter').dmg, 20);
   d = duel([TQ], [DAP], { rng: seq(OK) });
@@ -368,17 +367,17 @@ test('Đoạt Ảnh gặp công → đỡ, KHÔNG đánh', () => {
   assert.equal(d.f.b.hp, 200);
 });
 
-test('Đoạt Ảnh gặp tụ lực tung đòn → đỡ; gặp tụ lực lượt 1 → đánh (đối thủ giảm 30%)', () => {
-  let d = duel([DAP], [TL], { rng: seq(V, OK) });
+test('Đoạt Ảnh không đỡ được Phá Sơn; đánh lúc chuẩn bị gây đủ sát thương', () => {
+  let d = duel([DAP], [TL], { rng: seq(V) });
   d.step(REST, TL);
   const o = d.step(DAP, null);
-  assert.equal(one(o, 'parry').p, 0.862);
-  assert.equal(one(o, 'counter').dmg, 24);
-  assert.equal(ev(o, 'hit').length, 0);
+  assert.equal(ev(o, 'parry').length, 0);
+  assert.equal(ev(o, 'counter').length, 0);
+  assert.equal(one(o, 'hit').dmg, 70);
   d = duel([DAP], [TL], { rng: seq(V) });
   const o1 = d.step(DAP, TL);
-  assert.equal(one(o1, 'hit').dmg, 14);                                // 20 × 0,7
-  assert.equal(one(o1, 'hit').red, 0.3);
+  assert.equal(one(o1, 'hit').dmg, 20);
+  assert.equal(one(o1, 'hit').red, 0);
   assert.equal(ev(o1, 'parry').length, 0);
   done(d);
 });
@@ -461,16 +460,16 @@ test('tụ lực: chọn đúng chiêu tụ lực ở lượt 2 thì auto = fals
   assert.equal(one(o, 'pick', { side: 'a' }).auto, false);
 });
 
-test('tụ lực: lượt 1 giảm 30% sát thương nhận và KHÔNG bị ngắt khi bị đánh', () => {
+test('tụ lực: lượt 1 chịu đủ sát thương và KHÔNG bị ngắt khi bị đánh', () => {
   const d = duel([TL], [TQ], { rng: seq(V, V) });
   let o = d.step(TL, TQ);
-  assert.equal(one(o, 'hit').red, 0.3);
-  assert.equal(one(o, 'hit').dmg, 27);                                 // 38 × 0,7 = 26,6
+  assert.equal(one(o, 'hit').red, 0);
+  assert.equal(one(o, 'hit').dmg, 38);
   assert.equal(d.f.a.charging, TL);
-  near(d.f.a.rage, 0.8 * 27);
+  near(d.f.a.rage, 0.8 * 38);
   o = d.step(null, REST);                                              // lượt 2 vẫn tung, có cộng nộ đã tích
   assert.equal(ev(o, 'release').length, 1);
-  assert.equal(one(o, 'hit').dmg, Math.round(70 * (1 + 0.003 * 21.6)));
+  assert.equal(one(o, 'hit').dmg, Math.round(70 * (1 + 0.003 * 30.4)));
   done(d);
 });
 
@@ -493,27 +492,27 @@ test('tụ lực: hết nội lực vẫn tung, mana không âm', () => {
   assert.equal(d.f.a.mana, R.REGEN);
 });
 
-test('tụ lực: đối thủ né → vẫn tiêu nộ và Kim Chung, kẻ tung đòn sơ hở', () => {
-  const d = duel([TL], [KTB], { rng: seq(OK) });
+test('tụ lực: xuyên né, tiêu nộ và Kim Chung, không sơ hở', () => {
+  const d = duel([TL], [KTB], { rng: seq(V) });
   d.step(TL, REST);
   d.f.a.rage = 40; d.f.a.kc = 2;
   const o = d.step(null, KTB);
-  assert.equal(one(o, 'dodge').ok, true);
+  assert.equal(ev(o, 'dodge').length, 0);
   assert.equal(d.f.a.rage, 0);
   assert.equal(d.f.a.kc, 0);
-  assert.equal(d.f.a.exposed, 1);
-  assert.equal(d.f.b.hp, 200);
+  assert.equal(d.f.a.exposed, 0);
+  assert.equal(d.f.b.hp, 200 - Math.round(70 * 1.37));
   done(d);
 });
 
-test('tụ lực: đối thủ đỡ → tiêu nộ, Kim Chung, bị phản', () => {
-  const d = duel([TL], [TKP], { rng: seq(OK) });
+test('tụ lực: Tứ Lạng phản nguyên sát thương gồm nộ và Kim Chung', () => {
+  const d = duel([TL], [TLB], { rng: seq(V) });
   d.step(TL, REST);
   d.f.a.rage = 40; d.f.a.kc = 1;
-  const o = d.step(null, TKP);
-  assert.equal(one(o, 'counter').dmg, 32);
+  const o = d.step(null, TLB);
+  assert.equal(one(o, 'counter').dmg, 96);
   assert.equal(d.f.a.kc, 0);
-  near(d.f.a.rage, 0.8 * 32);
+  near(d.f.a.rage, 0.8 * 96);
   assert.equal(d.f.a.exposed, 1);
 });
 
@@ -1045,12 +1044,12 @@ test('hai bên cùng tụ lực rồi cùng tung: cả hai trúng, không ai ng�
   assert.equal(ev(o, 'release').length, 2);
 });
 
-test('thế của hành động tụ lực: thủ trong lúc đối thủ tung đòn → chiêu thủ vẫn giảm đúng', () => {
+test('thủ trong lúc Phá Sơn tung đòn không giảm sát thương', () => {
   const d = duel([TL], [TB], { rng: seq(V) });
   d.step(TL, REST);
   const o = d.step(null, TB);
-  assert.equal(one(o, 'hit').red, 0.65);
-  assert.equal(d.f.b.hp, 200 - 25);                                     // 70 × 0,35 = 24,5 → 25
+  assert.equal(one(o, 'hit').red, 0);
+  assert.equal(d.f.b.hp, 200 - 70);
 });
 
 /* ---------- property: bot chọn bừa hợp lệ ---------- */
@@ -1073,7 +1072,7 @@ function randomBuff(r) {
 function verifyTurn(pre, d, out, track) {
   const post = d.f;
   const act = {};
-  for (const e of ev(out, 'pick')) act[e.side] = { id: e.skill, skill: M.SKILLS[e.skill] || null, phase: e.phase, cost: e.mana };
+  for (const e of ev(out, 'pick')) act[e.side] = { id: e.skill, skill: M.combatSkill(e.skill, pre[e.side].mastery && pre[e.side].mastery[e.skill]), phase: e.phase, cost: e.mana };
   const stance = (a, o) => {
     if (a.id === REST) return 'rest';
     if (a.id === IDLE) return 'idle';
@@ -1096,6 +1095,25 @@ function verifyTurn(pre, d, out, track) {
     hits.forEach((h, i) => {
       const idx = i + 1, of = hits.length;
       const dod = mine.filter(e => e.k === 'dodge' && e.idx === idx), par = mine.filter(e => e.k === 'parry' && e.idx === idx), hit = mine.filter(e => e.k === 'hit' && e.idx === idx);
+      if (h.unavoidable) {
+        const reflected = st[o] === 'parry' && act[o].skill.parry.reflectCharge === act[s].id;
+        assert.equal(dod.length, 0);
+        assert.equal(par.length, reflected ? 1 : 0);
+        assert.equal(hit.length, reflected ? 0 : 1);
+        const raw = h.base * off * (1 + (Y.exposed ? R.EXPOSED_PCT : 0));
+        const lo = Math.max(1, Math.round((1 - R.DMG_VAR) * raw)), hi = Math.max(1, Math.round((1 + R.DMG_VAR) * raw));
+        if (reflected) {
+          assert.equal(par[0].p, 1); assert.equal(par[0].ok, true);
+          const counter = one(out, 'counter', { side: o, target: s, reflect: true });
+          assert.ok(Number.isInteger(counter.dmg) && counter.dmg >= lo && counter.dmg <= hi);
+          dmg[s] += counter.dmg; evadedAsAtk[s]++;
+        } else {
+          assert.equal(hit[0].red, 0); assert.equal(hit[0].trueDamage, true);
+          assert.ok(Number.isInteger(hit[0].dmg) && hit[0].dmg >= lo && hit[0].dmg <= hi);
+          dmg[o] += hit[0].dmg; landed[o]++;
+        }
+        return;
+      }
       assert.equal(dod.length, st[o] === 'dodge' ? 1 : 0);
       assert.equal(par.length, st[o] === 'parry' ? 1 : 0);
       let evaded = false;
@@ -1107,7 +1125,8 @@ function verifyTurn(pre, d, out, track) {
         if (dod[0].ok) { evaded = true; dodgedOk[o]++; }
       }
       if (par.length) {
-        const p = chance(act[o].skill.parry.spd, h.spd);
+        const pr = act[o].skill.parry;
+        const p = pr.maxAttackSpeed != null && h.spd > pr.maxAttackSpeed ? 0 : chance(pr.spd, h.spd);
         assert.equal(par[0].p, rnd3(p));
         if (par[0].ok) { evaded = true; parried++; lastBase = h.base; }
       }
@@ -1123,7 +1142,7 @@ function verifyTurn(pre, d, out, track) {
       assert.ok(hit[0].dmg >= lo && hit[0].dmg <= hi && Number.isInteger(hit[0].dmg), `sát thương ${hit[0].dmg} ngoài [${lo}, ${hi}]`);
       dmg[o] += hit[0].dmg; landed[o]++;
     });
-    const counters = out.events.filter(e => e.k === 'counter' && e.target === s);
+    const counters = out.events.filter(e => e.k === 'counter' && e.target === s && !e.reflect);
     if (parried) {
       const pr = act[o].skill.parry;
       const c = (pr.flat + Math.min(pr.cap || 0, (pr.pct || 0) * lastBase)) * (parried / hits.length);

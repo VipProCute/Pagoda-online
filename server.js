@@ -1128,7 +1128,7 @@ io.on('connection', socket => {
     ack(result);
   }));
   socket.on('tu:start', martialOnly(async (d, ack) => {
-    const r = martial.start(p.uid, String(d.methodId || ''), String(d.duration || ''));
+    const r = martial.start(p.uid, String(d.methodId || ''), String(d.duration || ''), d.skillId == null || d.skillId === '' ? null : String(d.skillId));
     ack(r);
     if (r && r.ok) syncCult(p.uid);                       // ghi nền (không flush ngay): phiên chạy theo giờ máy chủ nên mất vài giây thay đổi không làm mất thưởng
   }));

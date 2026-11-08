@@ -22,6 +22,7 @@
   let confirmCancel = false, confirmSp = false, anon = false;
   let sp = null, spLoading = false, sessKey = '', endTries = 0, endT = 0, tickT = 0;
   let draft = [], draftBase = [], saveWarn = null;
+  let practiceSkillId = '';
   let celeb = [], celebFresh = false;
   const seenSent = new Set(), upd = {}, timers = new Set();
 
@@ -163,7 +164,7 @@
         levelUp = M.levelOf(Math.max(0, (p.congLuc || 0) - (r.reward.congLuc || 0))) < p.level;
       }
       celebFresh = true;
-      celeb.push({ id: r.id, methodId: r.methodId, durationKey: r.durationKey, status: r.status, via: r.via, reward: r.reward, levelUp, level });
+      celeb.push({ id: r.id, methodId: r.methodId, durationKey: r.durationKey, status: r.status, via: r.via, reward: r.reward, practice: r.practice || u.practice, levelUp, level });
     });
     if (celeb.length > 3) celeb = celeb.slice(-3);
   }
@@ -226,7 +227,7 @@
 
   /* ---------- hành động ---------- */
   function startSession(m, d) {
-    act('start', 'tu:start', { methodId: m.id, duration: d.key }, a => {
+    act('start', 'tu:start', { methodId: m.id, duration: d.key, ...(practiceSkillId ? { skillId: practiceSkillId } : {}) }, a => {
       st.session = a.session; sessKey = String(a.session.id); confirmCancel = false; confirmSp = false; sp = null; endTries = 0;
       host.toast(`Bắt đầu tu ${m.name} (${durText(d.minutes)}).`);
       say(`Đã bắt đầu tu ${m.name}, ${durText(d.minutes)}. Có thể đóng web.`);
@@ -476,7 +477,17 @@
       if (v) out.push(v);
       const sc = speedCard(s);
       if (sc) out.push(sc);
-    } else out.push(methodsSection());
+    } else {
+      const choices = (st.profile.learned || []).filter(id => M.SKILLS[id] && M.masteryInfo(st.profile.mastery && st.profile.mastery[id]).to != null);
+      if (!choices.includes(practiceSkillId)) practiceSkillId = '';
+      out.push(h('section', { class: 'card dj-practice' },
+        h('label', { for: 'dj-practice-skill', class: 'dj-h' }, 'Luyện võ công cùng phiên tu'),
+        h('p', { class: 'hint' }, 'Chọn một chiêu đã học để tăng độ thành thạo. Hoàn thành phiên mới nhận tiến độ; hủy phiên không nhận. Mỗi 15 phút được 2 điểm thuần thục, tối đa 240 điểm mỗi chiêu.'),
+        h('select', { id: 'dj-practice-skill', class: 'dj-practice-select', onchange: e => { practiceSkillId = e.target.value; render(); } },
+          h('option', { value: '', selected: practiceSkillId === '' ? '' : null }, 'Chỉ tu nội công'),
+          choices.map(id => h('option', { value: id, selected: practiceSkillId === id ? '' : null }, `${M.SKILLS[id].name} · ${M.masteryInfo(st.profile.mastery && st.profile.mastery[id]).name}`)))));
+      out.push(methodsSection());
+    }
     return out;
   }
 
@@ -490,6 +501,7 @@
       if (r.congLuc > 0) gains.push(`+${r.congLuc} công lực`);
       const tt = tamText(r.tam);
       if (tt) gains.push(tt);
+      if (c.practice && c.practice.xp > 0 && M.SKILLS[c.practice.skillId]) gains.push(`+${c.practice.xp} thuần thục ${M.SKILLS[c.practice.skillId].name} · ${M.masteryInfo(c.practice.total).name}`);
     }
     return h('section', { class: 'card dj-celeb' + (c.levelUp ? ' up' : ''), 'aria-label': 'Kết quả phiên tu' },
       h('div', { class: 'dj-celeb-head' },
@@ -534,7 +546,8 @@
     return h('button', {
       type: 'button', class: 'dj-dur', 'data-send': '', 'data-fk': `dur:${m.id}:${d.key}`, 'data-locked': can.ok ? null : '',
       disabled: !can.ok || !online(), 'aria-label': can.ok ? label : `${label}. ${can.reason}`, onclick: () => startSession(m, d)
-    }, h('b', null, durText(d.minutes)), h('span', { class: 'dj-dur-g' }, gain), tt ? h('small', null, tt) : null);
+    }, h('b', null, durText(d.minutes)), h('span', { class: 'dj-dur-g' }, gain), tt ? h('small', null, tt) : null,
+      practiceSkillId ? h('small', null, `+${Math.min(M.practiceXP(m.id, d.key), M.MASTERY_MAX - M.masteryXP(st.profile.mastery && st.profile.mastery[practiceSkillId]))} thuần thục ${M.SKILLS[practiceSkillId].name}`) : null);
   }
 
   function sessionCard(s) {
@@ -551,6 +564,7 @@
       h('div', { class: 'eyebrow' }, 'Đang tu luyện'),
       h('div', { class: 'dj-m-head' }, h('h3', { class: 'dj-sess-name' }, m.name), h('span', { class: 'dj-han', lang: 'zh', 'aria-hidden': 'true' }, m.han || '')),
       h('p', { class: 'dj-sess-sub' }, [d ? durText(d.minutes) : s.durationKey, g.real && g.real.congLuc > 0 ? `+${g.real.congLuc} công lực` : null, tt || null].filter(Boolean).join(' · ')),
+      s.skillId && M.SKILLS[s.skillId] ? h('p', { class: 'dj-intro' }, `Đang luyện ${M.SKILLS[s.skillId].name} · +${M.practiceXP(s.methodId, s.durationKey)} thuần thục khi hoàn thành (tối đa ${M.MASTERY_MAX}).`) : null,
       ui.cd, ui.cdBar, ui.cdMsg,
       h('p', { class: 'dj-keep' }, 'Có thể đóng web, hết giờ máy chủ tự ghi nhận.'),
       noteEl('session'),
@@ -668,7 +682,9 @@
     const state = has ? 'is-learned' : can.ok ? 'is-open' : 'is-locked';
     const statusText = has ? 'đã học' : can.ok ? 'học được' : 'chưa đủ điều kiện';
     const tamNow = (p.tam && p.tam[s.branch]) || 0;
-    let foot = null;
+    const mastery = M.masteryInfo(p.mastery && p.mastery[id]);
+    let foot = has && mastery.to != null ? h('button', { type: 'button', class: 'btn small dj-wide', 'data-fk': 'practice:' + id,
+      onclick: () => { practiceSkillId = id; tab = 'tam'; store.set(tab); render(); el.scrollTop = 0; } }, 'Luyện chiêu này') : null;
     if (can && can.ok) {
       foot = sendBtn('Lĩnh hội', 'btn gold dj-wide', () => learn(id), { 'data-fk': 'learn:' + id, 'aria-label': `Lĩnh hội ${s.name}` });
     } else if (can) {
@@ -687,7 +703,8 @@
         has ? h('span', { class: 'dj-sk-st' }, ico('check'), 'Đã học') : null),
       h('p', { class: 'dj-sk-meta' }, `${M.TIER_NAMES[s.tier]} · ${M.KIND_NAMES[s.kind]}`),
       h('p', { class: 'dj-sk-short' }, s.short),
-      h('p', { class: 'dj-sk-stats' }, M.statsLine(s)),
+      h('p', { class: 'dj-sk-stats' }, M.statsLine(has ? M.combatSkill(id, mastery.xp) : s)),
+      has ? h('p', { class: 'dj-sk-meta' }, `${mastery.name} · ${mastery.xp}/${M.MASTERY_MAX} thuần thục`) : null,
       h('p', { class: 'dj-sk-desc' }, s.desc),
       foot);
   }

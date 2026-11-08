@@ -83,7 +83,7 @@ function stateKey(d, la, lb) {
   const f = s => {
     const x = d.f[s];
     const hp = x.hp <= 90 ? x.hp : 'H';
-    return `${hp},${Math.floor(x.mana / 8)},${Math.round(x.rage / 10)},${x.kc},${x.exposed},${x.charging || ''},${x.offExt},${x.defP},${x.dodgeB},${x.manaMax}`;
+    return `${hp},${Math.floor(x.mana / 8)},${Math.round(x.rage / 10)},${x.kc},${x.exposed},${x.charging || ''},${x.offExt},${x.defP},${x.dodgeB},${x.manaMax},${Object.entries(x.mastery).map(([id, xp]) => id + ':' + xp).join(';')}`;
   };
   const late = d.sudden != null || d.turn >= 18 ? d.turn + ':' + d.noDamageStreak : d.noDamageStreak;
   return la + '|' + lb + '|' + f('a') + '|' + f('b') + '|' + late;

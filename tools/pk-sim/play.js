@@ -9,10 +9,10 @@ const { realCtx } = require('./ctx');
  */
 function playMatch(o) {
   const ctx = o.ctx || realCtx();
-  const levels = o.levels || [7, 7], buffs = o.buffs || [];
+  const levels = o.levels || [7, 7], buffs = o.buffs || [], mastery = o.mastery || [];
   const seed = String(o.seed);
   const d = new ctx.Duel({
-    seed, a: { level: levels[0], loadout: o.loadouts.a, buff: buffs[0] }, b: { level: levels[1], loadout: o.loadouts.b, buff: buffs[1] }
+    seed, a: { level: levels[0], loadout: o.loadouts.a, buff: buffs[0], mastery: mastery[0] }, b: { level: levels[1], loadout: o.loadouts.b, buff: buffs[1], mastery: mastery[1] }
   });
   const r = makeRng(seed + '|bot');
   const kinds = o.bots || ['eq', 'eq'];

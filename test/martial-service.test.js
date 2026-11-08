@@ -842,7 +842,7 @@ test('recordResult: cộng thắng, thua, hòa; kết quả lạ bị bỏ', () 
 test('pkIdentity: tự tạo hồ sơ mặc định, trả đúng hình dạng và bản sao', () => {
   const e = env();
   const id = e.svc.pkIdentity('u1');
-  assert.deepEqual(Object.keys(id).sort(), ['activeMatch', 'draws', 'learned', 'level', 'loadout', 'losses', 'wins']);
+  assert.deepEqual(Object.keys(id).sort(), ['activeMatch', 'draws', 'learned', 'level', 'loadout', 'losses', 'mastery', 'wins']);
   assert.equal(id.level, 1);
   assert.deepEqual(id.learned, M.STARTERS);
   assert.deepEqual(id.loadout, []);

@@ -116,6 +116,28 @@ function duel(e, mode = 'balanced', la = LA, lb = LB, fa = {}, fb = {}) {
 }
 const turnOf = (e, uid) => e.lastOf(uid, 'pk:turn');
 const pickFor = (e, P, mid, skill) => e.mgr.pick(P.uid, mid, turnOf(e, P.uid).turn, skill);
+
+test('độ thành thạo chụp lúc nhận lời, giữ qua vào lại và ghi đủ để phát lại; Phá Sơn/Tứ Lạng đúng qua manager', () => {
+  const tl = 'tu-luc-pha-son', tlb = 'tu-lang-bat-thien-can';
+  for (const response of ['thiet-bich', tlb]) {
+    const e = env({ deps: { rngFor: () => () => 0.5 } });
+    const A = e.player('A', { level: 10, mastery: { [tl]: 240 } }), B = e.player('B', { level: 10 });
+    const mid = startMatch(e, A, B);
+    assert.equal(e.lastOf('A', 'pk:lobby').you.mastery[tl], 240);
+    assert.equal(e.lastOf('B', 'pk:lobby').op.mastery, undefined);
+    e.fighters.get('A').mastery[tl] = 0;
+    lockBoth(e, A, B, mid, [tl, 'trong-quyen', 'thiet-bich', 'tat-phong-quyen'], [tlb, 'thiet-bich', 'nhu-van-bo', 'tat-phong-quyen']);
+    assert.equal(e.mgr.resume('A').snapshot.you.mastery[tl], 240);
+    pickFor(e, A, mid, tl); pickFor(e, B, mid, M.REST_ID);
+    e.clock.advance(R.REVEAL_MS);
+    assert.equal(turnOf(e, 'A').forced, tl);
+    pickFor(e, B, mid, response);
+    e.clock.advance(R.REVEAL_MS);
+    assert.equal(e.lastOf('A', 'pk:end').result, response === tlb ? 'lose' : 'win');
+    assert.equal(e.saved[0].mastery.a[tl], 240);
+    assert.equal(e.saved[0].levels.a, 10);
+  }
+});
 /** Bot chọn bừa trong các chiêu hợp lệ (rnd: () => [0,1)). */
 const randomPick = (t, rnd) => t.legal[Math.floor(rnd() * t.legal.length)];
 function lcg(seed) { let s = seed >>> 0; return () => { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return s / 4294967296; }; }
@@ -418,7 +440,7 @@ test('sảnh: pk:lobby đủ trường theo hợp đồng, balanced không có b
   assert.deepEqual(la.buffs, { you: computeBuff({}), op: computeBuff({}) });
   assert.deepEqual(la.you, {
     pid: A.pid, name: 'ten-A', look: { g: 'nam', c: 1, h: 0 }, level: 4, hpMax: R.HP, manaMax: M.manaMaxOf(4),
-    learned: ALL, loadout: LA, warnings: []
+    learned: ALL, mastery: M.masteryMap({}, ALL), loadout: LA, warnings: []
   });
   assert.deepEqual(la.op, { pid: B.pid, name: 'ten-B', look: { g: 'nam', c: 1, h: 0 }, level: 6, hpMax: R.HP, manaMax: M.manaMaxOf(6) });
   assert.deepEqual(lb.op, { pid: A.pid, name: 'ten-A', look: { g: 'nam', c: 1, h: 0 }, level: 4, hpMax: R.HP, manaMax: M.manaMaxOf(4) });

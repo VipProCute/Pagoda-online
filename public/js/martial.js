@@ -44,9 +44,9 @@
     },
     {
       id: 'tu-luc-pha-son', name: 'Tụ Lực Phá Sơn', branch: 'cuong', tier: 4, kind: 'charge', mana: 30,
-      charge: { red: 0.3, release: { base: 70, spd: 20, dodgeMul: 0.5 } },
-      short: 'Tích lực một lượt, tung đòn lượt sau',
-      desc: 'Lượt đầu tụ lực, không tấn công, giảm 30% sát thương nhận; đối thủ thấy bạn đang tụ lực. Lượt sau tự tung đòn 70 (tốc 20). Chấn địa: xác suất bị NÉ giảm một nửa, bị đỡ vẫn tính bình thường. Bị đánh khi đang tụ lực không bị ngắt.'
+      charge: { red: 0, release: { base: 70, spd: 20, unavoidable: true, trueDamage: true, masteryBase: [70, 90, 115, 145, 180] } },
+      short: 'Chuẩn bị một lượt; xuyên thủ, chỉ sợ Tứ Lạng',
+      desc: 'Lượt đầu đứng tụ lực, không tấn công và giảm 0% sát thương; đối thủ thấy bạn đang chuẩn bị. Lượt sau bắt buộc tung đòn tốc 20, chắc chắn trúng và gây sát thương chuẩn, xuyên mọi lớp giảm sát thương. Sát thương gốc theo độ thành thạo: 70 / 90 / 115 / 145 / 180. Chỉ Tứ Lạng Bạt Thiên Cân phản nguyên sát thương về bạn. Bị đánh không ngắt tụ lực; bị hạ trước lúc tung thì thua.'
     },
     {
       id: 'thiet-bich', name: 'Thiết Bích', branch: 'cuong', tier: 1, kind: 'guard', mana: 12,
@@ -116,9 +116,9 @@
     },
     {
       id: 'tu-lang-bat-thien-can', name: 'Tứ Lạng Bạt Thiên Cân', branch: 'nhu', tier: 4, kind: 'parry', mana: 20,
-      parry: { spd: 70, flat: 25, pct: 0.3, cap: 21 },
-      short: 'Bốn lạng nhấc ngàn cân',
-      desc: 'Đỡ cao cấp. Thành công thì chặn đòn và phản 25 sát thương cộng 30% sát thương gốc của đòn bị chặn (cộng tối đa 21). Đỡ hụt thì nhận đủ.'
+      parry: { spd: 70, flat: 25, pct: 0.3, cap: 21, reflectCharge: 'tu-luc-pha-son', maxAttackSpeed: 79 },
+      short: 'Phản Phá Sơn; không đỡ được đòn nhanh',
+      desc: 'Chọn đúng lượt Phá Sơn tung ra: chắc chắn hóa giải và trả nguyên sát thương chuẩn về người tung, không nhân thêm sức mạnh của bạn. Với đòn chậm, đỡ theo tốc 70; thành công phản 25 cộng 30% sát thương gốc (cộng tối đa 21). Chỉ đỡ đòn tốc tối đa 79: các đòn nhanh xuyên qua và không bị phản. Không gặp đòn công thì mất lượt và nội lực.'
     }
   ];
   const SKILLS = {};
@@ -145,6 +145,42 @@
   function combatPower(level) {
     const lv = Math.max(1, Math.min(LEVEL_MAX, level | 0));
     return { attack: 1 + 0.04 * (lv - 1), reduction: 0.015 * (lv - 1) };
+  }
+
+  // Độ thành thạo được luyện có chủ đích trong một phiên tu, không cộng bằng cách spam PK.
+  const MASTERY_AT = Object.freeze([0, 20, 60, 120, 240]);
+  const MASTERY_NAMES = Object.freeze(['Tiếp xúc da lông', 'Sơ nhập môn đình', 'Đăng đường nhập thất', 'Lô hỏa thuần thanh', 'Đại viên mãn']);
+  const MASTERY_MAX = MASTERY_AT[MASTERY_AT.length - 1];
+  function masteryXP(value) { return Math.max(0, Math.min(MASTERY_MAX, Number.isFinite(value) ? Math.floor(value) : 0)); }
+  function masteryInfo(value) {
+    const xp = masteryXP(value);
+    let index = 0;
+    for (let i = 0; i < MASTERY_AT.length; i++) if (xp >= MASTERY_AT[i]) index = i;
+    const from = MASTERY_AT[index], to = MASTERY_AT[index + 1] == null ? null : MASTERY_AT[index + 1];
+    return { xp, rank: index + 1, name: MASTERY_NAMES[index], from, to, pct: to == null ? 1 : (xp - from) / (to - from) };
+  }
+  function masteryMap(raw, ids = SKILL_ORDER) {
+    const out = {};
+    for (const id of ids) if (Object.prototype.hasOwnProperty.call(SKILLS, id)) out[id] = masteryXP(raw && Object.prototype.hasOwnProperty.call(raw, id) ? raw[id] : 0);
+    return out;
+  }
+  function practiceXP(methodId, durationKey) {
+    const m = Object.prototype.hasOwnProperty.call(METHODS, methodId) ? METHODS[methodId] : null, d = m && m.durations.find(x => x.key === durationKey);
+    return d ? Math.floor(d.minutes * 2 / 15) : 0;
+  }
+  /** Bản số liệu riêng của người ra chiêu; không sửa SKILLS dùng chung. */
+  function combatSkill(id, xp = 0) {
+    const s = Object.prototype.hasOwnProperty.call(SKILLS, id) ? SKILLS[id] : null;
+    if (!s) return null;
+    const index = masteryInfo(xp).rank - 1;
+    if (index === 0) return s;
+    const factor = 1 + 0.05 * index, out = { ...s };
+    if (s.hits) out.hits = s.hits.map(h => ({ ...h, base: h.base * factor }));
+    if (s.guard) out.guard = { ...s.guard, red: Math.min(0.8, s.guard.red + 0.02 * index) };
+    if (s.dodge) out.dodge = { ...s.dodge, spd: Math.min(100, s.dodge.spd + 2 * index) };
+    if (s.parry) out.parry = { ...s.parry, spd: Math.min(100, s.parry.spd + 1.5 * index), flat: s.parry.flat * factor };
+    if (s.charge) out.charge = { ...s.charge, release: { ...s.charge.release, base: s.charge.release.masteryBase ? s.charge.release.masteryBase[index] : s.charge.release.base * factor } };
+    return out;
   }
   /** Cấp hiện tại, mốc đầu/cuối của cấp, phần trăm đã đi trong cấp. */
   function levelInfo(congLuc) {
@@ -283,6 +319,7 @@
     BRANCHES, BRANCH_ORDER, TIER_REQ, TIER_NAMES, SKILLS, SKILL_LIST, SKILL_ORDER, STARTERS, SPECIAL, REST_ID, IDLE_ID,
     METHODS, METHOD_LIST, METHOD_ORDER, LEVEL_AT, LEVEL_MAX, CONG_LUC_MAX, TAM_MAX, MANA_BASE, MANA_PER_LEVEL, KIND_NAMES, PK,
     levelOf, levelInfo, manaMaxOf, combatPower, rewardOf, clampReward, canLearn, canCultivate,
+    MASTERY_AT, MASTERY_NAMES, MASTERY_MAX, masteryXP, masteryInfo, masteryMap, practiceXP, combatSkill,
     isDamaging, isAttacking, loadoutWarnings, validateLoadout, statsLine
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

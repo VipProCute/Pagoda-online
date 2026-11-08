@@ -18,7 +18,7 @@ Khi nhà chùa muốn thêm nơi mới (coi bói tử vi, tarot…): thêm tên 
 
 - Mỗi người có **công lực** (tối đa 3.000), **cấp nội công** 1–10 theo công lực, và **tâm đắc** ba nhánh Cương / Tốc / Nhu (mỗi nhánh tối đa 300).
 - Chọn công pháp và thời lượng, bấm bắt đầu. **Có thể đóng web**: giờ do máy chủ ghi, hết giờ máy chủ tự cộng kết quả. Mỗi người một phiên tại một thời điểm. Hủy phiên là mất hết tiến độ phiên đó.
-- Cấp nội công chỉ làm một việc trong trận: tăng **nội lực tối đa** (80 ở cấp 1, thêm 4 mỗi cấp, 116 ở cấp 10). Công lực không cộng sát thương hay máu.
+- Cấp nội công tăng **nội lực tối đa** (80 ở cấp 1, thêm 4 mỗi cấp, 116 ở cấp 10), lực đánh (+4% mỗi cấp sau cấp 1) và giảm sát thương nhận (+1,5 điểm phần trăm mỗi cấp). HP luôn 200. Phá Sơn gây sát thương chuẩn nên bỏ qua cả giảm sát thương từ nội công.
 
 | Cấp | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
 |---|---|---|---|---|---|---|---|---|---|---|
@@ -49,6 +49,12 @@ Ai cũng học được cả ba nhánh. Điều kiện học theo bậc; học x
 
 Chi tiết từng chiêu (nội lực, tốc độ, sát thương, hiệu ứng) hiển thị ngay trong Võ Học Các từ `public/js/martial.js`. Quan hệ Cương – Tốc – Nhu là quan hệ giữa **nhóm chiêu và lối chơi**, không phải hệ nhân vật: không có cộng sát thương theo "hệ". Lợi thế đến từ tốc độ, nội lực, sát thương và cơ chế từng chiêu.
 
+### Độ thành thạo từng chiêu
+
+Học xong ở bậc Tiếp xúc da lông; chọn **Luyện chiêu này** hoặc chọn chiêu trong tab Tâm pháp trước khi bắt đầu phiên tu. Một phiên luyện một chiêu đã học, đồng thời nhận công lực/tâm đắc như cũ. Cứ 15 phút thời lượng gốc được 2 điểm thuần thục; mốc 0 / 20 / 60 / 120 / 240 tương ứng Tiếp xúc da lông / Sơ nhập môn đình / Đăng đường nhập thất / Lô hỏa thuần thanh / Đại viên mãn. Từ 0 đến tối đa mất tổng 30 giờ tu hoàn thành cho mỗi chiêu. Hoàn thành ngay/phiếu nhận cùng phần thưởng sau khi xác nhận; hủy hoặc spam PK không nhận thuần thục.
+
+Chiêu công thông thường tăng 5% sát thương gốc mỗi bậc sau bậc đầu; chiêu thủ thêm 2 điểm phần trăm giảm sát thương mỗi bậc; né thêm 2 tốc, đỡ thêm 1,5 tốc và 5% phản phẳng mỗi bậc. Phá Sơn có thang riêng bên dưới. Dữ liệu cũ giữ nguyên công lực/chiêu đã học; các chiêu chưa luyện có thuần thục 0. Độ thành thạo chụp lúc nhận lời đấu, không thay đổi giữa trận.
+
 ## Luận võ so chiêu đồng thời
 
 1. Hai người tự nguyện: một bên mời (phòng cân bằng hoặc phòng có buff), bên kia nhận lời. Lời mời hết hạn sau 20 giây; mỗi người gửi cách nhau 10 giây; bị từ chối thì 5 phút sau mới mời lại người đó; có chế độ "Tạm không nhận lời mời" và danh sách chặn.
@@ -60,13 +66,14 @@ Cặp chiêu gặp nhau:
 
 | | Công | Thủ | Né | Đỡ | Tụ lực | Nghỉ |
 |---|---|---|---|---|---|---|
-| **Công** | cả hai cùng trúng, không ai ngắt ai | sát thương giảm theo chiêu thủ | thử né từng nhịp | thử đỡ từng nhịp, đỡ được thì phản | trúng, giảm 30% | trúng đủ |
+| **Công** | cả hai cùng trúng, không ai ngắt ai | sát thương giảm theo chiêu thủ | thử né từng nhịp | thử đỡ từng nhịp, đỡ được thì phản | trúng đủ | trúng đủ |
 | **Thủ / Né / Đỡ / Nghỉ** | không có đòn thì không có sát thương | | | | | |
 
 - **Xác suất né và đỡ**: `P = 10% + 80% / (1 + exp(-(tốc phòng - tốc công) / 20))`. Bằng tốc thì 50%, không bao giờ chắc chắn (10% đến 90%). Né và đỡ khác nhau: né thành công thì tránh nhịp đó; đỡ thành công thì chặn nhịp đó và có thể phản đòn; đỡ hụt có thể vẫn giảm một phần (Phản Chấn).
 - **Đòn hai nhịp** (Liên Hoàn Cước): né hoặc đỡ từng nhịp; phản đòn chỉ tính một lần mỗi lượt theo tỉ lệ nhịp đỡ được.
 - **Đoạt Ảnh Phản Kích**: thấy đối thủ tấn công thì đỡ, không thì đánh; hai bên cùng Đoạt Ảnh thì cả hai đánh.
-- **Tụ Lực Phá Sơn**: lượt 1 tụ lực (giảm 30% sát thương, đối thủ thấy), lượt 2 tự tung đòn 70. Bị đánh khi tụ không bị ngắt. Khi tung, xác suất bị **né** giảm một nửa (chấn địa), bị đỡ thì bình thường.
+- **Tụ Lực Phá Sơn**: lượt 1 chỉ tụ lực, không có giảm sát thương; lượt 2 bắt buộc tung, chắc trúng và bỏ qua mọi lớp giảm sát thương (thủ, giảm bị động, giảm từ nội công). Sát thương gốc theo độ thành thạo 70 / 90 / 115 / 145 / 180; vẫn nhân công nội lực, nộ/Kim Chung/buff công trong trần và dao động ±10%. Cấp nội công ≥7 và Đại viên mãn gây ít nhất 201 sát thương khi không bị phản, đủ hạ HP 200. Nếu bị hạ ở lượt chuẩn bị thì không được tung.
+- **Tứ Lạng Bạt Thiên Cân**: chọn đúng lượt Phá Sơn tung thì chặn chắc và trả nguyên sát thương chuẩn, không nhân thêm công của người phản và không bị giáp người tung giảm. Chọn sớm trong lượt chuẩn bị không có đòn để phản. Với đòn thường chỉ thử đỡ khi tốc đòn ≤79; Tật Phong, Liên Hoàn, Liễu Diệp và đòn công của Đoạt Ảnh đều xuyên Tứ Lạng, không bị phản. Phản Chấn/Tiếp Kình/Đoạt Ảnh không hóa giải được Phá Sơn.
 - **Sơ hở**: đòn của bạn bị né hoặc đỡ hết thì lượt sau bạn nhận thêm 25% sát thương.
 - **Tránh hòa vô hạn**: từ lượt 20, hoặc sớm hơn nếu 4 lượt liền không ai mất máu, cả hai mất 5, 10, 15… máu mỗi lượt; tối đa 40 lượt. Cùng về 0: ai còn ít âm hơn thắng, bằng nhau thì hòa.
 - **Quá giờ, mất mạng**: quá giờ thì tự "Đứng yên"; 3 lượt liền quá giờ thì thua; rớt mạng vẫn vào lại được đúng trận; cả hai vắng quá 60 giây thì hủy trận; máy chủ khởi động lại giữa trận thì hủy, không ai bị tính thua. Rời sân giữa trận là bỏ cuộc (có hỏi xác nhận). Rời hoặc bỏ ở phòng chờ chọn chiêu (trận chưa bắt đầu) thì trận **hủy, không ai bị tính thua**. Nếu trận kết thúc lúc một người đang offline thì lần vào lại sau đó, trang báo kết quả bằng một thông báo ngắn. Người không kịp chọn 4 chiêu thì máy chủ tự chọn bộ mặc định: ưu tiên chiêu bậc thấp và luôn có ít nhất một đòn công.

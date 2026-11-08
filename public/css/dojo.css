@@ -222,3 +222,5 @@
   .dj-bar i, .dj-dur { transition: none; }
   .dj-celeb { animation: none; }
 }
+/* Luyện một chiêu trong cùng phiên tu; dùng được trên màn hình hẹp. */
+.dj-practice-select { display: block; width: 100%; max-width: 100%; min-height: 44px; padding: 10px; color: var(--fg); background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; font: inherit; }
