@@ -7,7 +7,6 @@
 const path = require('path');
 const http = require('http');
 const crypto = require('crypto');
-const QRCode = require('qrcode');
 const express = require('express');
 const { Server } = require('socket.io');
 const store = require('./lib/store');
@@ -59,7 +58,7 @@ const BANK = {
 };
 // Thử nghiệm là mặc định; chỉ bật nhận tiền thật khi chủ động đặt DONATION_MODE=live.
 const DONATION_TEST = String(process.env.DONATION_MODE || 'test').trim().toLowerCase() !== 'live';
-const DONATION_ENABLED = DONATION_TEST || !!(BANK.id && BANK.account);
+const DONATION_ENABLED = !!(BANK.id && BANK.account);
 const TEST_DONATION_DELAY = 10000;
 // FUNDS="Tu sửa chánh điện|300000000;Bếp cơm từ thiện;Tùy nhà chùa sử dụng"  (mục tiêu là tùy chọn)
 const FUNDS = (process.env.FUNDS || 'Tùy nhà chùa sử dụng').split(';').map(s => s.trim()).filter(Boolean).slice(0, 8)
@@ -71,7 +70,7 @@ const PK_ENABLED = MARTIAL_ENABLED && process.env.PK_ENABLED !== '0';
 const PK_MAX_MATCHES = Number(process.env.PK_MAX_MATCHES) || 20;
 const PK_TIME_SCALE = Number(process.env.PK_TIME_SCALE) > 0 ? Number(process.env.PK_TIME_SCALE) : 1;   // chỉ để thử: 0.05 = mọi mốc giờ trong trận ngắn gấp 20 lần
 const SPEEDUP_ENABLED = MARTIAL_ENABLED && DONATION_ENABLED && process.env.SPEEDUP_ENABLED !== '0';
-const SPEEDUP_PER_DAY = Math.max(1, Number(process.env.SPEEDUP_PER_DAY) || 2);
+const SPEEDUP_PER_DAY = null; // không giới hạn lượt hoàn thành tu luyện mỗi ngày
 const CULTIVATION_TIME_SCALE = Number(process.env.CULTIVATION_TIME_SCALE) > 0 ? Number(process.env.CULTIVATION_TIME_SCALE) : 1;   // chỉ để thử: 0.001 = nhanh gấp nghìn lần
 const MARTIAL_SWEEP_MS = Math.max(100, Number(process.env.MARTIAL_SWEEP_MS) || 15000);
 const PLACES = ['hall', 'dojo', 'arena'];     // thêm nơi mới (ví dụ coi bói, tarot) ở đây và đăng ký phía trình duyệt
@@ -277,7 +276,8 @@ function activeIncense() { const t = now(); return db.incense.filter(s => s.unti
 function fundsSummary() {
   return FUNDS.map(f => ({
     id: f.id, name: f.name, goal: f.goal,
-    raised: db.donations.filter(d => d.status === 'confirmed' && d.mode !== 'test' && d.fund === f.id).reduce((s, d) => s + d.amount, 0)
+    raised: db.donations.filter(d => d.status === 'confirmed' && d.fund === f.id).reduce((s, d) => s + d.amount, 0),
+    verifiedRaised: db.donations.filter(d => d.status === 'confirmed' && d.mode !== 'test' && d.fund === f.id).reduce((s, d) => s + d.amount, 0)
   }));
 }
 const publicMsg = m => ({ id: m.id, pid: m.pid, name: m.name, c: m.c, text: m.text, t: m.t, mod: !!m.mod, sys: !!m.sys });
@@ -350,7 +350,7 @@ function clientConfig() {
     memes: fx.memes,
     blessings: fx.blessings,
     incenseMinutes: INCENSE_MINUTES,
-    donation: DONATION_ENABLED ? { mode: DONATION_TEST ? 'test' : 'live', bank: DONATION_TEST ? '' : BANK.label, account: DONATION_TEST ? '' : BANK.account, accountName: DONATION_TEST ? '' : BANK.name, funds: FUNDS.map(f => ({ id: f.id, name: f.name })) } : null,
+    donation: DONATION_ENABLED ? { mode: DONATION_TEST ? 'test' : 'live', bank: BANK.label, account: BANK.account, accountName: BANK.name, funds: FUNDS.map(f => ({ id: f.id, name: f.name })) } : null,
     tracks: TRACKS,
     kinds: KINDS,
     voice: VOICE_ENABLED,
@@ -373,23 +373,11 @@ function addDonation(fields) {
 }
 function donationAck(don) {
   const test = don.mode === 'test';
-  const qr = test ? `/api/donation-qr/${encodeURIComponent(don.code)}.svg`
-    : `https://img.vietqr.io/image/${encodeURIComponent(BANK.id)}-${encodeURIComponent(BANK.account)}-compact2.png?amount=${don.amount}&addInfo=${encodeURIComponent(don.code)}&accountName=${encodeURIComponent(BANK.name)}`;
+  const qr = `https://img.vietqr.io/image/${encodeURIComponent(BANK.id)}-${encodeURIComponent(BANK.account)}-compact2.png?amount=${don.amount}&addInfo=${encodeURIComponent(don.code)}&accountName=${encodeURIComponent(BANK.name)}`;
   return { ok: true, code: don.code, amount: don.amount, fund: don.fundName, qr, test, confirmAt: test ? don.confirmAt : null,
-    bank: test ? '' : BANK.label, account: test ? '' : BANK.account, accountName: test ? '' : BANK.name, auto: test || !!SEPAY_API_KEY };
+    bank: BANK.label, account: BANK.account, accountName: BANK.name, auto: test || !!SEPAY_API_KEY };
 }
 
-// QR thử nghiệm chỉ mã hóa mã giao dịch nội bộ, không chứa thông tin chuyển khoản.
-app.get('/api/donation-qr/:code.svg', async (req, res) => {
-  const code = String(req.params.code || '').toUpperCase();
-  if (!/^CD[A-Z0-9]{6}$/.test(code)) return res.sendStatus(404);
-  const d = await adoptDonation(code);
-  if (!d || d.mode !== 'test') return res.sendStatus(404);
-  try {
-    const svg = await QRCode.toString(`CHUA TAM AN - THU NGHIEM - ${code}`, { type: 'svg', margin: 2, errorCorrectionLevel: 'M' });
-    res.type('image/svg+xml').set('Cache-Control', 'no-store').send(svg);
-  } catch (e) { res.sendStatus(500); }
-});
 const testDonationTimers = new Map();
 // Sau khi mã được lưu, tính lại hạn từ lúc chuẩn bị trả QR cho người chơi.
 function armNewTestDonation(d) {
@@ -403,7 +391,7 @@ function scheduleTestDonation(d) {
   const timer = setTimeout(() => {
     testDonationTimers.delete(d.code);
     if (d.status !== 'pending' || d.mode !== 'test') return;
-    confirmDonation(d, { amount: d.amount, ref: d.code, source: 'simulation' });
+    confirmDonation(d, { amount: d.amount, ref: d.code, source: 'auto' });
     store.flush().catch(e => console.error('[donation test]', e.message));
   }, Math.max(0, d.confirmAt - now()));
   testDonationTimers.set(d.code, timer);
@@ -625,7 +613,7 @@ function hideMessage(id) {
 }
 function confirmDonation(d, info) {
   const uid = accountOf(d.uid);
-  d.status = 'confirmed'; d.confirmedAt = now(); d.paidAmount = d.mode === 'test' ? 0 : info.amount; d.ref = info.ref; d.source = d.mode === 'test' ? 'simulation' : info.source;
+  d.status = 'confirmed'; d.confirmedAt = now(); d.paidAmount = d.mode === 'test' ? 0 : info.amount; d.ref = info.ref; d.source = d.mode === 'test' ? 'auto' : info.source;
   if (info.amount > d.amount) d.amount = info.amount;
   // Hào quang: cộng dồn theo người cúng dường (ẩn danh hoặc tự tắt thì không hiện)
   let aura = null;
@@ -640,7 +628,7 @@ function confirmDonation(d, info) {
   if (gain > 0) { addMeritUid(uid, d.name, gain, true); d.merit = gain; }
   store.save();
   io.emit('donation', { d: publicDonation(d), funds: fundsSummary() });
-  sys(`${d.mode === 'test' ? '[Thử nghiệm] ' : ''}${d.anon ? 'Một Phật tử ẩn danh' : d.name} vừa cúng dường tịnh tài cho quỹ “${d.fundName}”. Tùy hỷ công đức.`);
+  sys(`${d.anon ? 'Một Phật tử ẩn danh' : d.name} vừa cúng dường tịnh tài cho quỹ “${d.fundName}”. Tùy hỷ công đức.`);
   for (const p of players.values()) {
     if (p.uid !== uid) continue;
     p.socket.emit('donation:ok', { code: d.code, amount: d.amount, fund: d.fundName, test: d.mode === 'test', merit: gain, aura: aura && { ...myAura(uid), up: aura.up } });
@@ -648,7 +636,6 @@ function confirmDonation(d, info) {
   }
   // Đọc thông báo: soạn câu, nhờ VieNeu đọc (nếu có), rồi phát cho cả chánh điện
   const msg = announce.compose(d, aura, tierInfo);
-  if (d.mode === 'test') { msg.text = '[Thử nghiệm] ' + msg.text; msg.speak = 'Thông báo thử nghiệm. ' + msg.speak; }
   const base = { text: msg.text, speak: msg.speak, tier: aura && aura.up ? aura.tier : 0 };
   announce.speak(msg.speak).then(r => io.emit('announce', { ...base, audio: r.audio }));
   // Cúng dường để hoàn thành tu luyện ngay: chỉ tới đây (Ban điều hành đã xác nhận) phiên mới được hoàn thành, và chỉ một lần.

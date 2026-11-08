@@ -89,6 +89,7 @@
   };
   function applyScene(scene) {
     curScene = scene;
+    SFX.recover();
     if (Places.current !== 'arena') Hall.setScene(scene);
     const mc = (cfg && cfg.martial) || {};
     $('#go-yard').hidden = scene !== 'hall';
@@ -424,14 +425,14 @@
   socket.on('chant', setChant);
   socket.on('donation', d => { donations.unshift(d.d); renderDonations(null, d.funds); $('#donCard').hidden = false; });
   socket.on('donation:ok', d => {
-    if (d.merit) setTimeout(() => toast(`${d.test ? 'Cúng dường thử nghiệm' : 'Cúng dường'} ${VND(d.amount)}: +${NUM(d.merit)} công đức.`), 1600);
+    if (d.merit) setTimeout(() => toast(`Cúng dường ${VND(d.amount)}: +${NUM(d.merit)} công đức.`), 1600);
     if (d.aura) {
       myAura = d.aura; renderAura();
       if (d.aura.up && d.aura.t) setTimeout(() => toast(`Hào quang bừng sáng: bạn đã đột phá cảnh giới ${AURA.TIERS[d.aura.t - 1].name}!`), 3200);
     }
     if (pendingCode === d.code) {
       $('#dnQr').hidden = true; $('#dnDone').hidden = false;
-      $('#dnDoneText').textContent = d.test ? `Đã xác nhận thử nghiệm ${VND(d.amount)} cho quỹ “${d.fund}”. Không có giao dịch tiền thật.` : `Nhà chùa đã nhận ${VND(d.amount)} cho quỹ “${d.fund}”. Cảm ơn tấm lòng của bạn.`;
+      $('#dnDoneText').textContent = `Đã ghi nhận cúng dường ${VND(d.amount)} cho quỹ “${d.fund}”. Tùy hỷ công đức của bạn.`;
       pendingCode = null; SFX.bell(0.7);
     } else toast('Nhà chùa đã nhận tịnh tài của bạn. Tùy hỷ công đức.');
   });
@@ -552,7 +553,7 @@
       const li = document.createElement('li');
       const n = document.createElement('b'); n.textContent = d.name;
       const a = document.createElement('span'); a.className = 'amt'; a.textContent = d.amount == null ? 'Ẩn số tiền' : VND(d.amount);
-      const w = document.createElement('span'); w.className = 'what'; w.textContent = `${d.test ? 'Thử nghiệm · ' : ''}Quỹ ${d.fund} · ${hhmm(d.t)}${d.note ? ' · “' + d.note + '”' : ''}`;
+      const w = document.createElement('span'); w.className = 'what'; w.textContent = `Quỹ ${d.fund} · ${hhmm(d.t)}${d.note ? ' · “' + d.note + '”' : ''}`;
       li.append(n, a, w); ul.appendChild(li);
     });
   }
@@ -690,8 +691,8 @@
     $('#dnOff').hidden = on; $('#dnForm').hidden = !on; $('#dnQr').hidden = true; $('#dnDone').hidden = true; $('#dnWarn').hidden = true;
     if (on) {
       const d = cfg.donation;
-      $('#dnSub').textContent = d.mode === 'test' ? 'Chế độ thử nghiệm: không chuyển tiền thật; tự xác nhận sau 10 giây.' : `Tiền chuyển thẳng vào tài khoản ${d.bank} ${d.account}${d.accountName ? ' (' + d.accountName + ')' : ''}. Website không giữ tiền.`;
-      $('#dnFormHint').textContent = d.mode === 'test' ? 'Sau 10 giây, game tự cấp công đức và hào quang theo số tiền thử nghiệm.' : 'Khi nhà chùa xác nhận đã nhận, nhân vật của bạn tỏa hào quang theo số tiền, cộng dồn qua nhiều lần cúng dường.';
+      $('#dnSub').textContent = `Tiền chuyển thẳng vào tài khoản ${d.bank} ${d.account}${d.accountName ? ' (' + d.accountName + ')' : ''}. Website không giữ tiền.`;
+      $('#dnFormHint').textContent = 'Khi nhà chùa xác nhận đã nhận, nhân vật của bạn tỏa hào quang theo số tiền, cộng dồn qua nhiều lần cúng dường.';
       $('#dnFunds').innerHTML = cfg.donation.funds.map((f, i) => `<label class="opt"><input type="radio" name="fund" value="${f.id}"${i === 0 ? ' checked' : ''}><span><b></b></span></label>`).join('');
       $$('#dnFunds .opt b').forEach((b, i) => { b.textContent = cfg.donation.funds[i].name; });
       $('#dnName').value = myName;
@@ -712,12 +713,12 @@
       if (!r || !r.ok) { w.textContent = (r && r.reason) || 'Chưa tạo được mã.'; w.hidden = false; return; }
       pendingCode = r.code;
       $('#qrImg').src = r.qr;
-      $('#qrImg').alt = r.test ? 'Mã QR thử nghiệm, không dùng để chuyển tiền' : 'Mã VietQR để chuyển khoản cúng dường';
-      $$('.qr-live').forEach(el => { el.hidden = !!r.test; });
-      $('#qrHint').textContent = r.test ? 'Đây là mã thử nghiệm, không cần quét hoặc chuyển tiền. Hệ thống tự xác nhận sau 10 giây.' : 'Quét mã bằng app ngân hàng và kiểm tra tên chủ tài khoản trước khi chuyển. Giữ đúng nội dung chuyển khoản để được ghi nhận công đức.';
+      $('#qrImg').alt = 'Mã VietQR để chuyển khoản cúng dường';
+      $$('.qr-live').forEach(el => { el.hidden = false; });
+      $('#qrHint').textContent = 'Quét mã bằng app ngân hàng và kiểm tra tên chủ tài khoản trước khi chuyển. Giữ đúng nội dung chuyển khoản để được ghi nhận công đức.';
       $('#qrBank').textContent = r.bank; $('#qrAcc').textContent = r.account; $('#qrName').textContent = r.accountName || '—';
       $('#qrAmt').textContent = VND(r.amount); $('#qrCode').textContent = r.code; $('#qrFund').textContent = r.fund;
-      $('#qrStatus').textContent = r.test ? 'Đang chờ xác nhận thử nghiệm tự động…' : r.auto ? 'Đang chờ ngân hàng báo đã nhận tiền. Trang sẽ tự cập nhật.' : 'Nhà chùa sẽ xác nhận và ghi công đức trong ngày.';
+      $('#qrStatus').textContent = 'Đang chờ xác nhận cúng dường. Trang sẽ tự cập nhật.';
       $('#dnForm').hidden = true; $('#dnQr').hidden = false;
     });
   });
@@ -902,6 +903,7 @@
       return false;
     },
     onChange(name) {
+      SFX.recover();
       Hall.pause(name === 'dojo'); Hall.setPlace(me, name);       // Sân đấu có khung vẽ riêng (Arena gắn cảnh vào đó)
       if (name !== 'hall') Meditate.close();
       // Voice tự chuyển phòng khi nơi của người chơi đổi; giữ trạng thái mic rõ ràng trên thanh điều khiển.

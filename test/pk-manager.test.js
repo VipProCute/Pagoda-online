@@ -3,6 +3,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const M = require('../public/js/martial');
 const R = require('../lib/pk/rules');
+const { computeBuff } = require('../lib/pk/buffs');
 const { fromSequence } = require('../lib/pk/rng');
 const { createArenaManager } = require('../lib/pk/manager');
 
@@ -198,7 +199,7 @@ test('mời: gửi tới đúng người, đủ trường, không lộ uid; hế
   const got = e.lastOf('B', 'pk:invited');
   assert.deepEqual(got, {
     inviteId: r.inviteId, mode: 'balanced', expiresAt: t0 + 20000,
-    from: { pid: A.pid, name: 'ten-A', look: { g: 'nam', c: 1, h: 0 }, lv: 5, wins: 3, losses: 2 }, buffs: null
+    from: { pid: A.pid, name: 'ten-A', look: { g: 'nam', c: 1, h: 0 }, lv: 5, wins: 3, losses: 2 }, buffs: { you: computeBuff({}), op: computeBuff({}) }
   });
   assert.equal(e.count('A', 'pk:invited'), 0);
   assert.equal(e.mgr.stats().invites, 1);
@@ -414,7 +415,7 @@ test('sảnh: pk:lobby đủ trường theo hợp đồng, balanced không có b
   assert.equal(la.mode, 'balanced');
   assert.equal(la.deadlineAt, t0 + R.LOADOUT_MS);
   assert.equal(la.loadoutMs, 30000);
-  assert.equal(la.buffs, null);
+  assert.deepEqual(la.buffs, { you: computeBuff({}), op: computeBuff({}) });
   assert.deepEqual(la.you, {
     pid: A.pid, name: 'ten-A', look: { g: 'nam', c: 1, h: 0 }, level: 4, hpMax: R.HP, manaMax: M.manaMaxOf(4),
     learned: ALL, loadout: LA, warnings: []
@@ -543,7 +544,7 @@ test('lượt: chạy hết trận bằng pick hợp lệ cả hai bên, pk:end 
   assert.equal(rec.mode, 'balanced'); assert.equal(rec.seed, 'seed-1');
   assert.deepEqual(rec.a, { uid: 'A', name: 'ten-A' }); assert.deepEqual(rec.b, { uid: 'B', name: 'ten-B' });
   assert.deepEqual(rec.loadouts, { a: LA, b: LB });
-  assert.equal(rec.buffs, null);
+  assert.deepEqual(rec.buffs, { a: computeBuff({}), b: computeBuff({}) });
   assert.equal(rec.turns, ea.turns);
   assert.equal(rec.log.length, ea.turns);
   assert.ok(rec.log.every(t => t.picks && Array.isArray(t.events) && Object.keys(t).sort().join() === 'events,picks,turn'));
@@ -1149,18 +1150,17 @@ test('buff: xem trước lúc mời, chụp một lần lúc nhận lời và gi
   assert.equal(e.saved[0].buffs.a.Lc, 2); assert.equal(e.saved[0].buffs.b.Lq, 4);
 });
 
-test('buff: chế độ balanced không có buff dù người chơi có công đức cao', () => {
+test('mọi chế độ kể cả token balanced cũ bắt buộc dùng buff', () => {
   const e = env();
   const A = e.player('A'), B = e.player('B');
   e.buffIn.set('A', { Lc: 6, Lq: 4, Ld: 9 });
   e.mgr.invite('A', B.pid, 'balanced');
-  assert.equal(e.lastOf('B', 'pk:invited').buffs, null);
+  assert.equal(e.lastOf('B', 'pk:invited').buffs.op.Ld, 9);
   e.mgr.respond('B', e.lastOf('B', 'pk:invited').inviteId, true);
   const mid = e.lastOf('A', 'pk:lobby').matchId;
-  assert.equal(e.lastOf('A', 'pk:lobby').buffs, null);
   lockBoth(e, A, B, mid);
-  for (const k of ['offExt', 'defP', 'dodgeB']) { assert.equal(turnOf(e, 'A').state.you[k], 0); assert.equal(turnOf(e, 'A').state.op[k], 0); }
-  assert.equal(e.mgr.resume('A').snapshot.buffs, null);
+  assert.ok(turnOf(e, 'A').state.you.offExt > 0);
+  assert.equal(e.mgr.resume('A').snapshot.buffs.you.Lq, 4);
 });
 
 test('buff: buffInputsOf chỉ được gọi lúc mời (xem trước) và lúc nhận lời, không gọi giữa trận', () => {

@@ -56,7 +56,7 @@ test('các nơi tách biệt: đánh nhau chỉ ở Sân đấu, chánh điện 
   assert.ok(inv.ok, inv.reason);
   const iv = await got;
   assert.equal(iv.mode, 'balanced');
-  assert.equal(iv.buffs, null);
+  assert.ok(iv.buffs && iv.buffs.you && iv.buffs.op);
   assert.equal(iv.from.pid, a.pid);
   const closed = waitFor(a.socket, 'pk:invite:closed');
   assert.ok((await call(b.socket, 'pk:respond', { inviteId: iv.inviteId, accept: false })).ok);
@@ -193,7 +193,7 @@ test('trận so chiêu đủ lượt: chọn kín, lật cùng lúc, hai phía t
   autoplay(A, 11); autoplay(B, 29);
 
   const { la, lb } = await startMatch(A, B, 'balanced', STARTERS_A, STARTERS_B);
-  assert.equal(la.buffs, null);
+  assert.ok(la.buffs && la.buffs.you && la.buffs.op);
   assert.equal(la.you.pid, A.pid);
   assert.equal(la.op.pid, B.pid);
   assert.ok(la.you.learned.length >= 6);
@@ -437,8 +437,7 @@ test('cúng dường hoàn thành tu luyện ngay: chỉ khi Ban điều hành x
   // --- 4) giới hạn mỗi ngày (đã xác nhận 3 lần: sp, sp3, sp4) ---
   const s5 = await call(c.socket, 'tu:start', { methodId: 'tinh-tam-quyet', duration: '4h' });
   const lim = await call(c.socket, 'tu:speedup', { sessionId: s5.session.id });
-  assert.equal(lim.ok, false);
-  assert.equal(lim.code, 'limit');
+  assert.equal(lim.ok, true, lim.reason);
   assert.ok((await call(c.socket, 'tu:cancel', { sessionId: s5.session.id })).ok);
 
   // --- 5) quản trị: sai mã bị khóa, có nhật ký và bản sao lưu ---

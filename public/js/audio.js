@@ -26,21 +26,25 @@
       const d = NOISE.getChannelData(0); for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
       loadBell();
     }
-    if (AC.state === 'suspended') AC.resume().catch(() => {});
+    if (AC.state !== 'running' && AC.state !== 'closed') AC.resume().catch(() => {});
     return AC;
   }
   const live = () => !!(AC && AC.state === 'running' && !muted);
   const AMBIENCE_GAIN = 0.22;
   const AMBIENCE_DUCK = 0.10;
   const ambienceReasons = new Set();
-  let ambience = null, ambienceGain = null, ambienceLevel = null;
+  const ios = !!(root.navigator && (/iP(hone|ad|od)/.test(root.navigator.userAgent || '') || (root.navigator.platform === 'MacIntel' && root.navigator.maxTouchPoints > 1)));
+  let ambience = null, ambienceGain = null, ambienceSource = null, ambienceLevel = null;
+  let musicBlocked = false, musicTimer = 0, musicTime = -1, musicProgress = 0, musicRepair = 0;
   let duckUntil = 0, duckTimer = null;
 
   function updateAmbience() {
-    if (!ambienceGain) return;
+    if (!ambience) return;
     const ducked = ambienceReasons.size || clipSrc || (chEl && !chEl.paused && !chEl.ended) || performance.now() < duckUntil;
     const level = AMBIENCE_GAIN * (ducked ? AMBIENCE_DUCK : 1);
-    if (level === ambienceLevel) return;
+    ambience.muted = muted;
+    if (ios) { ambience.volume = Math.max(0, Math.min(1, level * volume)); ambienceLevel = level; return; }
+    if (!ambienceGain || level === ambienceLevel) return;
     ambienceLevel = level;
     ambienceGain.gain.setTargetAtTime(level, AC.currentTime, level < AMBIENCE_GAIN ? 0.025 : 0.28);
   }
@@ -60,25 +64,57 @@
     updateAmbience();
   }
 
+  function playAmbience() {
+    if (!ambience || muted || (root.document && document.hidden) || musicBlocked) return;
+    const el = ambience;
+    if (el.paused) el.play().catch(e => { if (el === ambience && e.name === 'NotAllowedError') musicBlocked = true; });
+  }
+  function rebuildAmbience() {
+    const position = ambience && Number.isFinite(ambience.currentTime) ? ambience.currentTime : 0;
+    if (ambience) { ambience.pause(); ambience.removeAttribute('src'); ambience.load(); }
+    if (ambienceSource) ambienceSource.disconnect();
+    if (ambienceGain) ambienceGain.disconnect();
+    ambience = ambienceSource = ambienceGain = null; ambienceLevel = null;
+    startAmbience();
+    if (ambience && position > 0) ambience.addEventListener('loadedmetadata', () => { try { ambience.currentTime = Math.min(position, Math.max(0, ambience.duration - 0.5)); } catch (e) {} }, { once: true });
+  }
+  function musicHealth() {
+    if (!ambience || muted || (root.document && document.hidden)) return;
+    const now = Date.now(), current = ambience.currentTime;
+    if (Math.abs(current - musicTime) > 0.05) { musicTime = current; musicProgress = now; }
+    else if (!musicBlocked && now - musicProgress > 6500 && now - musicRepair > 10000) {
+      musicRepair = now; musicProgress = now; rebuildAmbience(); return;
+    }
+    playAmbience();
+  }
   function startAmbience() {
-    if (muted) return;
+    if (muted || (root.document && document.hidden)) return;
     if (!ambience) {
       ambience = new Audio('/audio/ambience-thien-am.mp3');
-      ambience.loop = true;
-      ambience.preload = 'none';
-      ambienceGain = AC.createGain();
-      ambienceGain.gain.value = 0;
-      AC.createMediaElementSource(ambience).connect(ambienceGain);
-      ambienceGain.connect(OUT);
+      ambience.loop = true; ambience.preload = 'auto';
+      ambience.setAttribute('playsinline', '');
+      // iOS phát nhạc nền bằng media player trực tiếp, tránh đường resampling Web Audio gây rè/lặp mẫu.
+      if (!ios) {
+        ambienceGain = AC.createGain(); ambienceGain.gain.value = 0;
+        ambienceSource = AC.createMediaElementSource(ambience); ambienceSource.connect(ambienceGain); ambienceGain.connect(OUT);
+      }
+      musicTime = -1; musicProgress = Date.now();
       updateAmbience();
+      if (!musicTimer) musicTimer = setInterval(musicHealth, 2000);
     }
-    if (ambience.paused) {
-      ambience.play().catch(e => {
-        if (e.name !== 'NotAllowedError' && e.name !== 'AbortError' && root.console) {
-          console.warn('Không phát được nhạc nền:', e);
-        }
-      });
-    }
+    playAmbience();
+  }
+  function recoverAudio() {
+    musicBlocked = false;
+    if (AC && AC.state !== 'running' && AC.state !== 'closed') AC.resume().catch(() => {});
+    if (AC) startAmbience();
+  }
+  if (root.document) {
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) { if (ambience) ambience.pause(); }
+      else { musicProgress = Date.now(); recoverAudio(); }
+    });
+    root.addEventListener('pageshow', recoverAudio);
   }
 
   function impulse(sec) {
@@ -263,7 +299,7 @@
   }
 
   root.SFX = {
-    unlock() { const ok = !!ctx(); if (ok) startAmbience(); blocked = false; return ok; },
+    unlock() { musicBlocked = false; const ok = !!ctx(); if (ok) startAmbience(); blocked = false; return ok; },
     context() { return ctx(); },
     get ready() { return live(); },
     get muted() { return muted; },
@@ -271,11 +307,12 @@
     setMuted(m) {
       muted = !!m;
       if (OUT) OUT.gain.setTargetAtTime(muted ? 0 : volume, AC.currentTime, 0.05);
+      if (ambience) { ambience.muted = muted; if (muted) ambience.pause(); }
       if (muted && chEl && !chEl.paused) chEl.pause();
       if (!muted && AC) startAmbience();
     },
-    setVolume(v) { volume = v; if (OUT && !muted) OUT.gain.setTargetAtTime(volume, AC.currentTime, 0.05); if (chEl) chEl.volume = v; },
-    mo: () => mo(), bell, ting, pop, setAmbienceDuck,
+    setVolume(v) { volume = v; if (OUT && !muted) OUT.gain.setTargetAtTime(volume, AC.currentTime, 0.05); if (chEl) chEl.volume = v; updateAmbience(); },
+    mo: () => mo(), bell, ting, pop, setAmbienceDuck, recover: recoverAudio,
     chime: () => chime(), scare: () => scare(), playClip, preloadClip, stopClip,
     startChant, stopChant, syncChant
   };

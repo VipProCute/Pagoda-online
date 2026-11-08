@@ -40,7 +40,7 @@
       bus = AC.createGain(); bus.connect(AC.destination);
       applyBus();
     }
-    if (AC.state === 'suspended') AC.resume().catch(() => {});
+    if ((AC.state === 'suspended' || AC.state === 'interrupted')) AC.resume().catch(() => {});
     return AC;
   }
   function applyBus() { if (bus) bus.gain.setTargetAtTime(muted ? 0 : volume * duck, AC.currentTime, 0.12); }
@@ -302,7 +302,7 @@
     get hasMic() { return !!track; },
     join, leave: () => leave(false), setMic,
     forceMute() { micOn = false; if (track) track.enabled = false; changed(); },
-    unlock() { if (AC && AC.state === 'suspended') AC.resume().catch(() => {}); },
+    unlock() { if (AC && (AC.state === 'suspended' || AC.state === 'interrupted')) AC.resume().catch(() => {}); },
     get audioBlocked() { return !!(AC && AC.state !== 'running'); },
     sameRoom(a, b) { return !!a && !!b && roomOf(a) === roomOf(b); },
     distance: dist,
