@@ -2,11 +2,11 @@
 
 Chánh điện trực tuyến cho nhiều người cùng lúc. Mỗi người vào chùa là một nhân vật mặc áo dài, có tên trên đầu, đi lại trong chánh điện và thấy nhau theo thời gian thực.
 
-## Chế độ cúng dường thử nghiệm
+## Xác nhận cúng dường
 
-Mặc định `DONATION_MODE=test`: game tạo QR nội bộ không chứa tài khoản ngân hàng và tự xác nhận lượt thử nghiệm sau 10 giây, kể cả yêu cầu hoàn thành tu luyện. Không cần quét mã hay chuyển tiền. Các lượt giả lập được đánh dấu `mode=test`, `source=simulation`, không cộng vào tổng tiền cúng dường thật hoặc số tiền quỹ thực nhận; công đức, hào quang và tiến độ game vẫn được cấp để chơi thử. Mã chuyển khoản thật đang chờ từ trước sẽ không tự được xác nhận.
+Cả `DONATION_MODE=test` và `DONATION_MODE=live` đều tạo mã VietQR thật từ `BANK_ID`, `BANK_ACCOUNT`, số tiền và nội dung giao dịch. Chế độ `test` tự ghi nhận sau 10 giây; `live` chờ đối soát/xác nhận. Giao diện người chơi và phần thưởng giống nhau. Các bản ghi tự xác nhận vẫn giữ nguồn `auto`, `paidAmount=0` khi chưa đối soát; số liệu ngân hàng đã đối soát được lưu riêng, không suy ra việc nhận tiền chỉ từ một QR được tạo.
 
-Khi chuẩn bị nhận tiền thật, cấu hình `DONATION_MODE=live`, tài khoản ngân hàng và quy trình đối soát/SePay; kiểm tra toàn bộ luồng thật trước khi mở. Phần thưởng game của các lượt thử nghiệm đã cấp sẽ vẫn nằm trong dữ liệu người chơi, cần quyết định cách xử lý trước khi chuyển production. Máy chủ cần lưu dữ liệu bền vững để khôi phục các lượt thử nghiệm đang chờ sau khi khởi động lại.
+Hoàn thành tu luyện nhanh không giới hạn lượt mỗi ngày. Mọi trận PK áp dụng pháp tướng, quỷ, hào quang cúng dường và cảnh giới nội công. Mỗi cấp sau cấp 1 cộng 4% lực đánh, 1,5% giảm sát thương nhận và 4 nội lực tối đa. Nộ cộng 0,3% lực đánh mỗi điểm, tiêu hao ở đòn công kế tiếp, chung trần cộng dồn 50% với Kim Chung và buff tăng sát thương.
 
 ## Tính năng
 
@@ -25,7 +25,7 @@ Khi chuẩn bị nhận tiền thật, cấu hình `DONATION_MODE=live`, tài kh
 | An toàn | Chặn tin có số tài khoản, số điện thoại, đường link (chống lừa đảo giả danh chùa). Che từ tục. Giới hạn tần suất. Tên “Ban điều hành / Admin / Trụ trì…” chỉ dành cho quản trị. |
 | Quản trị | `/admin.html`: xác nhận/hủy lượt cúng dường, xem ai đang có hào quang, ẩn tin nhắn và lời nguyện (thấy cả số công đức bị trừ), gửi thông báo vào chánh điện. |
 | Võ Học Các | Nơi **tu luyện nội công** và **học chiêu**, tách khỏi chánh điện. 6 công pháp (Tĩnh Tâm Quyết, Kim Cương / Phi Yến / Nhu Thủy Tâm Pháp, Cửu Âm Tâm Kinh, Vô Cực Chân Kinh): bắt đầu rồi đóng web cũng được, hết giờ máy chủ tự ghi nhận. 15 chiêu thuộc 3 nhánh Cương / Tốc / Nhu, không khóa phái: học đủ điều kiện (cấp nội công + tâm đắc) là học được cả ba nhánh. Có thể cúng dường để hoàn thành phiên ngay (Ban điều hành xác nhận thủ công). |
-| Sân đấu | Nơi **duy nhất** luận võ 1 đấu 1, người chơi tự ra sân. Sân là một võ đường đi lại được như sân chùa (cổng Luận Võ Đường, võ đài có thái cực, giá binh khí, trống trận, mộc nhân); trên đầu mỗi người có nhãn rảnh / đang đấu / tạm nghỉ và cấp nội công, **chạm vào một người để mời luận võ** (hoặc mở Danh sách). Mời, nhận lời, chọn 4 chiêu, rồi mỗi lượt hai bên **chọn kín cùng lúc**, máy chủ lật chiêu và giải kết quả (có xác suất né / đỡ). Phòng cân bằng hoặc phòng có buff (pháp tướng, quỷ ám, hào quang). Chánh điện không có đánh nhau. |
+| Sân đấu | Nơi **duy nhất** luận võ 1 đấu 1, người chơi tự ra sân. Sân là một võ đường đi lại được như sân chùa (cổng Luận Võ Đường, võ đài có thái cực, giá binh khí, trống trận, mộc nhân); trên đầu mỗi người có nhãn rảnh / đang đấu / tạm nghỉ và cấp nội công, **chạm vào một người để mời luận võ** (hoặc mở Danh sách). Mời, nhận lời, chọn 4 chiêu, rồi mỗi lượt hai bên **chọn kín cùng lúc**, máy chủ lật chiêu và giải kết quả (có xác suất né / đỡ). Mọi trận đều áp dụng pháp tướng, quỷ ám, hào quang và cảnh giới nội công. Chánh điện không có đánh nhau. |
 | Khác | Lịch âm và đếm ngược đến Rằm / Mùng Một, cài lên màn hình điện thoại (PWA). |
 
 ## Các "nơi" của chùa
@@ -245,7 +245,7 @@ Mở http://localhost:3000. Muốn dùng file cấu hình: `cp .env.example .env
 | `TRUST_PROXY` | Đặt `0` nếu không chạy sau proxy (nginx, Render…). |
 | `DATABASE_URL` | Chuỗi kết nối PostgreSQL (Neon). Có thì lưu vào PostgreSQL thay cho file JSON. `PG_FLUSH_MS` (mặc định 10000) là nhịp ghi nền, `PG_SSL=0` tắt SSL khi chạy cục bộ, `PG_IMPORT_JSON=0` tắt tự nhập file JSON cũ. |
 | `MARTIAL_ENABLED`, `PK_ENABLED` | Đặt `0` để tắt cả Võ Học Các và Sân đấu, hoặc chỉ Sân đấu. `PK_MAX_MATCHES` (mặc định 20) là số trận cùng lúc tối đa; `PK_BUFF_SCALE` (mặc định 0,15) là hệ số buff của phòng có buff. |
-| `SPEEDUP_ENABLED`, `SPEEDUP_PER_DAY` | Cúng dường để hoàn thành tu luyện ngay (cần bật cúng dường tịnh tài). `0` để tắt; mỗi người tối đa 2 lần đã xác nhận mỗi ngày. |
+| `SPEEDUP_ENABLED` | Cúng dường để hoàn thành tu luyện ngay (cần bật cúng dường tịnh tài). `0` để tắt; không giới hạn số lần hoàn thành nhanh mỗi ngày. |
 | `VOICE` | Đặt `0` để tắt nói chuyện bằng giọng. `VOICE_MAX`: số người tối đa bật nói chuyện cùng lúc (mặc định 150). |
 | `CF_TURN_KEY_ID`, `CF_TURN_API_TOKEN` | TURN của Cloudflare cho nói chuyện bằng giọng qua 4G / mạng công ty. |
 | `TURN_URLS`, `TURN_USERNAME`, `TURN_CREDENTIAL` | TURN tự dựng (coturn…). `STUN_URLS` để đổi máy chủ STUN. |

@@ -8,7 +8,7 @@ const { startServer, sleep } = require('./helpers/live');
 const { connect, call, join, waitFor } = require('./helpers/client');
 
 test('cúng dường thử nghiệm và hoàn thành ngay tự xác nhận sau 10 giây, kể cả khởi động lại', async t => {
-  const srv = await startServer({ DONATION_MODE: 'test', BANK_ID: '', BANK_ACCOUNT: '', SEPAY_API_KEY: '' });
+  const srv = await startServer({ DONATION_MODE: 'test', BANK_ID: '970436', BANK_ACCOUNT: '0123456789', BANK_ACCOUNT_NAME: 'CHUA', SEPAY_API_KEY: '' });
   t.after(() => srv.stop());
   let a = await connect(srv.port), b = await connect(srv.port), c = await connect(srv.port);
   t.after(() => { a.close(); b.close(); c.close(); });
@@ -16,15 +16,17 @@ test('cúng dường thử nghiệm và hoàn thành ngay tự xác nhận sau 1
   await join(b, 'Dao Huu B', 'donation-test-user-2');
   await join(c, 'Dao Huu C', 'donation-test-user-3');
   assert.equal(intro.config.donation.mode, 'test');
-  assert.equal(intro.config.donation.account, '');
+  assert.equal(intro.config.donation.account, '0123456789');
   const start = Date.now();
   const don = await call(a, 'donate', { amount: 50000, fund: 'q0', anon: true });
   assert.equal(don.ok, true); assert.equal(don.test, true);
   assert.ok(don.confirmAt - start >= 9900 && don.confirmAt - start <= 10300);
-  assert.match(don.qr, /^\/api\/donation-qr\/CD[A-Z0-9]{6}\.svg$/);
-  const qr = await fetch(srv.url + don.qr);
-  assert.equal(qr.status, 200); assert.match(qr.headers.get('content-type'), /image\/svg\+xml/);
-  assert.match(await qr.text(), /<svg/);
+  const qr = new URL(don.qr);
+  assert.equal(qr.hostname, 'img.vietqr.io');
+  assert.equal(qr.pathname, '/image/970436-0123456789-compact2.png');
+  assert.equal(qr.searchParams.get('amount'), '50000');
+  assert.equal(qr.searchParams.get('addInfo'), don.code);
+  assert.equal(qr.searchParams.get('accountName'), 'CHUA');
   const sess = await call(b, 'tu:start', { methodId: 'tinh-tam-quyet', duration: '15m' });
   assert.equal(sess.ok, true);
   const speed = await call(b, 'tu:speedup', { sessionId: sess.session.id });
@@ -44,12 +46,13 @@ test('cúng dường thử nghiệm và hoàn thành ngay tự xác nhận sau 1
   const [paid, completed] = await Promise.all([eventA, eventB]);
   assert.equal(paid.test, true);
   assert.ok(Date.now() - start >= 9900, 'không xác nhận trước 10 giây');
-  assert.match(completed.text, /thử nghiệm/);
+  assert.doesNotMatch(completed.text, /thử nghiệm|mô phỏng/);
   const list = await srv.admin('/api/admin/summary');
-  assert.ok(list.json.donations.find(x => x.code === don.code && x.source === 'simulation' && x.paidAmount === 0));
+  assert.ok(list.json.donations.find(x => x.code === don.code && x.source === 'auto' && x.paidAmount === 0));
   assert.equal(list.json.donations.find(x => x.code === canceled.code).status, 'cancelled');
-  assert.equal(list.json.funds[0].raised, 0, 'không cộng tiền ảo vào quỹ thực');
-  assert.equal((await call(a, 'account:summary', {})).donated.total, 0, 'không tính tiền giả là tiền thật');
+  assert.equal(list.json.funds[0].raised, 50000 + speed.amount);
+  assert.equal(list.json.funds[0].verifiedRaised, 0, 'ghi nhận tự động không giả mạo đối soát ngân hàng');
+  assert.equal((await call(a, 'account:summary', {})).donated.total, 50000);
   assert.equal((await call(b, 'martial:state', {})).profile.congLuc, 5);
 });
 

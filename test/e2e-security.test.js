@@ -81,7 +81,7 @@ test('gói pk:* chỉ tới tab đang ở Sân đấu, không tới tab chánh �
   assert.equal(tabHall.socket.log.filter(x => /^(pk:|arena:)/.test(x.ev)).length, 0);
 });
 
-test('hoàn thành ngay: yêu cầu đang chờ cũng tính vào giới hạn mỗi ngày', async t => {
+test('hoàn thành ngay: bỏ giới hạn ngày cũ, yêu cầu cũ vẫn có thể hủy', async t => {
   const srv = await startServer({ ...BANK, SPEEDUP_PER_DAY: '1' });
   t.after(() => srv.stop());
   const c = await enter(srv, 'Dieu Lien', 'uid-quota-0000001');
@@ -91,8 +91,7 @@ test('hoàn thành ngay: yêu cầu đang chờ cũng tính vào giới hạn m�
   assert.ok((await call(c.socket, 'tu:cancel', { sessionId: s1.session.id })).ok);   // yêu cầu cũ vẫn đang chờ xác nhận
   const s2 = await call(c.socket, 'tu:start', { methodId: 'tinh-tam-quyet', duration: '4h' });
   const sp2 = await call(c.socket, 'tu:speedup', { sessionId: s2.session.id });
-  assert.equal(sp2.ok, false);
-  assert.equal(sp2.code, 'limit');
+  assert.equal(sp2.ok, true, sp2.reason);
   // hủy yêu cầu đang chờ thì có thể tạo yêu cầu mới
   assert.ok((await call(c.socket, 'tu:speedup:cancel', { code: sp1.code })).ok);
   assert.ok((await call(c.socket, 'tu:speedup', { sessionId: s2.session.id })).ok);

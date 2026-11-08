@@ -10,8 +10,8 @@
   const RAGE_MAX = 100, EXPOSED_PCT = 25, KC_PCT = 25, KC_TURNS = 2;       // khớp lib/pk/rules.js
   const ST = { free: ['Rảnh', 'free'], busy: ['Đang đấu', 'busy'], dnd: ['Tạm nghỉ', 'dnd'] };
   const MODES = {
-    balanced: { name: 'Phòng cân bằng', desc: 'Không buff. Chỉ chiêu thức, nội công và cách chọn chiêu quyết định thắng thua.' },
-    buff: { name: 'Phòng có buff', desc: 'Pháp tướng, quỷ ám và hào quang cúng dường có tác dụng. Hai bên thấy buff của nhau trước khi nhận lời.' }
+    balanced: { name: 'Luận võ', desc: 'Nội công, pháp tướng, quỷ ám và hào quang đều ảnh hưởng sức mạnh.' },
+    buff: { name: 'Luận võ', desc: 'Pháp tướng, quỷ ám và hào quang cúng dường có tác dụng. Hai bên thấy buff của nhau trước khi nhận lời.' }
   };
   const STANCE = { atk: 'Công', release: 'Đòn tụ lực', guard: 'Thủ', dodge: 'Né', parry: 'Đỡ', charge: 'Tụ lực', rest: 'Điều tức', idle: 'Đứng yên' };
   const CLOSED_OUT = {
@@ -30,7 +30,7 @@
 
   const S = {
     host: null, sock: null, el: null, ui: null, mounted: false, visible: false, connected: true,
-    players: new Map(), rows: new Map(), dnd: false, dndBusy: false, invites: [], out: null, lastMode: 'balanced',
+    players: new Map(), rows: new Map(), dnd: false, dndBusy: false, invites: [], out: null, lastMode: 'buff',
     screen: 'roster', m: null, tick: 0, raf: 0, last: 0, pt: [], stage: null, fx: [], hold: { you: null, op: null }, floats: 0,
     dlg: { pid: 0, blockPid: 0 }
   };
@@ -267,7 +267,7 @@
       P.guard = Math.min(P.guard, 0.4);
       return;
     }
-    if (side !== a.def) return;
+    if (side !== a.def || a.clash) return;
     if (a.result === 'dodge') {
       const q = seg(p, pI - 0.16, pI + 0.32), b = bump(q);
       if (b > 0) {
@@ -705,11 +705,11 @@
     // chọn chế độ mời
     const d1 = ui.dMode = mkDlg('Mời luận võ', ''); ui.dlgs.push(d1.dlg);
     const fs = h('fieldset'), lg = h('legend', null, 'Chế độ'), opts = h('div', 'opts one');
-    for (const mode of ['balanced', 'buff']) {
+    for (const mode of ['buff']) {
       const lab = h('label', 'opt'), inp = h('input', null, null, { type: 'radio', name: 'ar-mode', value: mode }), sp = h('span');
       add(sp, h('b', null, MODES[mode].name), h('small', null, MODES[mode].desc)); add(lab, inp, sp); opts.appendChild(lab);
     }
-    add(fs, lg, opts);
+    add(fs, lg, opts); fs.hidden = true;
     const send = btn('btn primary', 'Gửi lời mời', { type: 'submit' }), later = btn('btn', 'Để sau'), blk = btn('btn small ar-dblk', 'Chặn người này');
     later.addEventListener('click', () => d1.dlg.close());
     blk.addEventListener('click', () => { const pid = S.dlg.pid; d1.dlg.close(); openBlock(pid); });
@@ -857,7 +857,7 @@
     openDlg(d.dlg);
   }
   function sendInvite() {
-    const d = S.ui.dMode, p = S.players.get(S.dlg.pid), mode = (d.body.querySelector('input[name="ar-mode"]:checked') || {}).value || 'balanced';
+    const d = S.ui.dMode, p = S.players.get(S.dlg.pid), mode = (d.body.querySelector('input[name="ar-mode"]:checked') || {}).value || 'buff';
     if (!p) { d.dlg.close(); return; }
     if (!canSend()) { d.warn.textContent = 'Mất kết nối, chưa gửi được.'; d.warn.hidden = false; return; }
     S.lastMode = mode; d.send.disabled = true;
@@ -965,7 +965,7 @@
     add(top, pt.cv, who, time);
     const mode = h('p', 'ar-ic-mode'); add(mode, h('b', null, MODES[inv.mode].name), document.createTextNode(' · ' + MODES[inv.mode].desc));
     add(card, top, mode);
-    if (inv.mode === 'buff') {
+    if (inv.buffs) {
       const bt = h('div', 'ar-bt'), c1 = h('div', 'ar-bt-c'), c2 = h('div', 'ar-bt-c');
       add(c1, h('h4', null, 'Bạn'), buffList(inv.buffs && inv.buffs.you)); add(c2, h('h4', null, f.name || 'Đối thủ'), buffList(inv.buffs && inv.buffs.op));
       add(bt, c1, c2); add(card, bt, h('p', 'hint', inv.buffs ? 'Đây là bản xem trước. Buff thật được chụp một lần lúc bạn nhận lời.' : 'Buff sẽ được chụp một lần lúc bạn nhận lời.'));
@@ -1152,11 +1152,14 @@
     const root_ = h('section', 'ar-fc ar-fc-' + side, null, { 'aria-label': side === 'you' ? 'Bạn' : 'Đối thủ' });
     const pt = portrait('ar-pm', p.look, buff, 'match'), info = h('div', 'ar-fc-info'), top = h('div', 'ar-fc-top');
     const name = h('b', 'ar-fc-name', side === 'you' ? `${p.name} (bạn)` : p.name), lv = h('span', 'ar-fc-lv', `Cấp ${num(p.level, 1)}`);
+    const power = M.combatPower(p.level);
+    lv.title = `Nội công: +${Math.round((power.attack - 1) * 100)}% lực đánh, giảm ${(power.reduction * 100).toFixed(1).replace('.', ',')}% sát thương nhận`;
     const lock = h('span', 'ar-lockb'); lock.appendChild(svgIcon('ar-lk-i', ICON_LOCK, 13)); lock.appendChild(h('span', 'ar-lk-t'));
     if (side === 'you') lock.hidden = true;
     add(top, name, lv, lock);
     const hp = meter('ar-hp', side === 'you' ? 'HP của bạn' : 'HP của đối thủ'), mp = meter('ar-mp', 'Nội lực'), rg = meter('ar-rg', 'Nộ');
     hp.w.querySelector('.ar-m-l').textContent = 'HP';
+    rg.w.title = 'Mỗi điểm nộ tăng 0,3% sát thương đòn công kế tiếp, tối đa 30%. Đòn công tiêu hao toàn bộ nộ; tổng tăng cùng Kim Chung và hào quang tối đa 50%.';
     const two = h('div', 'ar-m2'), bd = h('div', 'ar-bd');
     add(two, mp.w, rg.w); add(info, top, hp.w, two, bd); add(root_, pt.cv, info);
     return { root: root_, name, lock, lockT: lock.querySelector('.ar-lk-t'), hp, mp, rg, bd, buff, shown: null };
@@ -1495,6 +1498,16 @@
       const mo = MOTION[b.style];
       b.pI = !b.first ? 0.34 : mo === 'rush' ? 0.36 : mo === 'palm' ? 0.6 : mo === 'smash' ? 0.56 : 0.5;
     });
+    const attacking = (pk, op) => ['atk', 'release'].includes(stanceOf(pk, op));
+    if (attacking(picks.you, picks.op) && attacking(picks.op, picks.you)) {
+      const strikes = beats.filter(b => b.type === 'strike'), groups = new Map();
+      for (const b of strikes) {
+        const i = b.idx || 1;
+        if (!groups.has(i)) groups.set(i, []);
+        groups.get(i).push({ ...b, clash: true, pI: 0.5 });
+      }
+      return [...beats.filter(b => b.type === 'stance'), ...[...groups.values()].map(members => ({ type: 'clash', members, dur: Math.max(...members.map(b => b.dur)) })), ...beats.filter(b => b.type !== 'stance' && b.type !== 'strike')];
+    }
     return beats;
   }
   /** Khoảng cách lao tới (tính theo khoảng cách hai người) để tay / chân chạm đối thủ. */
@@ -1643,6 +1656,7 @@
     const R = m.rev = { rev, steps, i: 0, timers: [], done: false, flipped: false, labelled: false, label, picks, fxDone: new Set() };
     const avail = rev.nextAt ? rev.nextAt - nowMs() : 6000;
     const beats = choreo(steps, picks), T0 = 900, budget = avail - 350 - T0;
+    R.deferHp = beats.some(b => b.type === 'clash');
     const total = beats.reduce((a, b) => a + b.dur + 60, 0);
     const instant = o.instant || reduced() || avail < 1600 || budget < 700;
     const doFlip = () => {
@@ -1668,12 +1682,13 @@
       if (R.fxDone.has(i)) return; R.fxDone.add(i);
       for (const f of steps[i].fx || []) {
         if (f[0] === 'float') floatAt(f[1], f[2], f[3]);
-        else if (f[0] === 'hp') { m.disp[f[1]].hp = Math.max(0, m.disp[f[1]].hp - f[2]); setBars(U.fc[f[1]], Object.assign({}, rev.state[f[1]], { hp: m.disp[f[1]].hp }), 'hp'); }
+        else if (f[0] === 'hp' && !R.deferHp) { m.disp[f[1]].hp = Math.max(0, m.disp[f[1]].hp - f[2]); setBars(U.fc[f[1]], Object.assign({}, rev.state[f[1]], { hp: m.disp[f[1]].hp }), 'hp'); }
       }
     };
     const at = (ms, fn) => R.timers.push(setTimeout(() => { if (!R.done) fn(); }, Math.max(0, ms)));
     const runBeat = (b, d) => {
       const now = performance.now();
+      if (b.type === 'clash') { for (const member of b.members) runBeat(member, d); return; }
       if (b.type === 'stance') {
         for (const i of b.steps) {
           const s = steps[i];
@@ -1686,7 +1701,7 @@
       }
       for (const i of b.steps) line(i);
       if (b.type === 'strike') {
-        const mv = Object.assign({}, b, { type: 'strike', t0: now, dur: d, reach: reachOf(MOTION[b.style]) });
+        const mv = Object.assign({}, b, { type: 'strike', t0: now, dur: d, reach: b.clash ? 0.43 : reachOf(MOTION[b.style]) });
         S.fx.push(mv); if (S.fx.length > 12) S.fx.shift();
         strikeStart(mv);
         at(d * b.pI, () => { for (const i of b.impact) { line(i); applyFx(i); } strikeImpact(mv); });

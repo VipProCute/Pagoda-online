@@ -247,7 +247,7 @@
       sp = a;
       if (st.session && st.session.id === s.id) st.session.speedup = { code: a.code, amount: a.amount, status: 'pending', bankReported: false, createdAt: host.serverNow(), test: !!a.test, confirmAt: a.confirmAt || null };
       if (a.existing) refresh();
-      say(a.test ? 'Đã tạo yêu cầu thử nghiệm. Hệ thống tự xác nhận sau 10 giây, không cần chuyển tiền.' : 'Đã tạo yêu cầu hoàn thành ngay. Quét mã QR để chuyển khoản, rồi đợi Ban điều hành xác nhận.');
+      say('Đã tạo yêu cầu hoàn thành ngay. Quét mã QR để cúng dường và chờ xác nhận.');
       render();
       if (ui.spCard) ui.spCard.scrollIntoView({ block: 'nearest' });
     }, 'speedup');
@@ -580,11 +580,11 @@
   }
 
   const speedRules = (priceText, limitText) => h('ul', { class: 'dj-list' },
-    h('li', null, cfgOf().donation && cfgOf().donation.mode === 'test' ? `Cúng dường thử nghiệm ${priceText}; không chuyển tiền thật.` : `Bạn cúng dường ${priceText} bằng chuyển khoản (quét mã QR).`),
-    h('li', null, cfgOf().donation && cfgOf().donation.mode === 'test' ? 'Hệ thống tự xác nhận sau 10 giây.' : 'Ban điều hành xác nhận thủ công nên có thể mất vài giờ.'),
+    h('li', null, `Bạn cúng dường ${priceText} bằng chuyển khoản (quét mã QR).`),
+    h('li', null, 'Phiên tu hoàn thành khi cúng dường được xác nhận.'),
     h('li', null, 'Chỉ khi được xác nhận, phiên mới hoàn thành. Trong lúc chờ, phiên vẫn chạy bình thường.'),
     h('li', null, 'Xác nhận xong, bạn nhận công đức, hào quang và lời thông báo như một lượt cúng dường thường.'),
-    h('li', null, `Tác dụng chỉ là rút ngắn thời gian: công lực không vượt trần ${NUM(M.CONG_LUC_MAX)}, và chỉ giúp bạn xong sớm, không làm bạn mạnh hơn trong trận (nội lực tối đa vẫn chỉ tăng theo cấp nội công).`),
+    h('li', null, `Tác dụng chỉ là rút ngắn thời gian: công lực không vượt trần ${NUM(M.CONG_LUC_MAX)}, và chỉ giúp bạn xong sớm, sức mạnh trong trận phụ thuộc cảnh giới đã đạt và các hào quang.`),
     h('li', null, limitText));
 
   function speedCard(s) {
@@ -595,10 +595,10 @@
     ui.spCard = card;
     if (s.speedup) add(card, pendingView(s));
     else {
-      const left = Math.max(0, (sc.perDay || 0) - (sc.usedToday || 0)), used = left <= 0;
+      const used = false;
       add(card, [
         h('h3', { class: 'dj-h' }, `Cúng dường ${vnd(price)} để rút ngắn phiên này`),
-        speedRules(vnd(price), `Mỗi ngày dùng tối đa ${sc.perDay || 0} lần, hôm nay bạn đã dùng ${sc.usedToday || 0}.`),
+        speedRules(vnd(price), 'Không giới hạn số lượt hoàn thành tu luyện nhanh.'),
         used ? h('p', { class: 'warn' }, 'Hôm nay bạn đã dùng đủ lượt hoàn thành ngay. Mai thử lại, hoặc đợi phiên tự viên mãn.') : null,
         h('label', { class: 'dj-check' }, h('input', { type: 'checkbox', checked: anon ? '' : null, onchange: e => { anon = e.target.checked; } }), h('span', null, 'Ẩn danh (không hiện tên khi thông báo cúng dường)')),
         noteEl('speedup'),
@@ -615,21 +615,21 @@
     const accNode = h('span', null, info ? String(info.account || '') : '');
     const kv = h('dl', { class: 'kv dj-kv' },
       h('dt', null, 'Số tiền'), h('dd', null, h('b', { class: 'dj-amt' }, vnd(pd.amount))),
-      h('dt', null, test ? 'Mã thử nghiệm' : 'Nội dung chuyển khoản'), h('dd', { class: 'dj-copyrow' }, codeNode, copyBtn(pd.code, codeNode, test ? 'mã thử nghiệm' : 'nội dung chuyển khoản')),
-      info && !test ? [
+      h('dt', null, 'Nội dung chuyển khoản'), h('dd', { class: 'dj-copyrow' }, codeNode, copyBtn(pd.code, codeNode, 'nội dung chuyển khoản')),
+      info ? [
         h('dt', null, 'Ngân hàng'), h('dd', null, info.bank || ''),
         h('dt', null, 'Số tài khoản'), h('dd', { class: 'dj-copyrow' }, accNode, copyBtn(String(info.account || ''), accNode, 'số tài khoản')),
         h('dt', null, 'Chủ tài khoản'), h('dd', null, info.accountName || '—')
       ] : null);
     return h('div', { class: 'dj-pend' },
       h('p', { class: 'dj-wait dj-status', role: 'status' }, h('span', { class: 'spin', 'aria-hidden': 'true' }),
-        h('b', null, test ? 'Thử nghiệm: đang chờ tự xác nhận sau 10 giây' : pd.bankReported ? 'Ngân hàng đã báo nhận, chờ Ban điều hành xác nhận' : 'Đang chờ Ban điều hành xác nhận')),
+        h('b', null, 'Đang chờ xác nhận cúng dường')),
       h('div', { class: 'dj-qr' },
-        qrOk ? h('img', { class: 'dj-qr-img', src: info.qr, alt: test ? 'Mã QR thử nghiệm, không dùng để chuyển tiền' : `Mã QR chuyển khoản ${vnd(pd.amount)}, nội dung ${pd.code}`, width: '220', height: '220' })
-          : h('div', { class: 'dj-qr-none' }, spLoading ? 'Đang tải mã QR…' : test ? 'Đang chờ mã QR thử nghiệm.' : 'Chưa có mã QR, bạn vẫn chuyển khoản được theo thông tin bên cạnh.'),
+        qrOk ? h('img', { class: 'dj-qr-img', src: info.qr, alt: `Mã QR chuyển khoản ${vnd(pd.amount)}, nội dung ${pd.code}`, width: '220', height: '220' })
+          : h('div', { class: 'dj-qr-none' }, spLoading ? 'Đang tải mã QR…' : 'Chưa có mã QR, bạn vẫn chuyển khoản được theo thông tin bên cạnh.'),
         kv),
-      !info && !spLoading ? h('p', { class: 'hint' }, test ? 'Chưa tải được mã thử nghiệm. ' : 'Chưa tải được thông tin ngân hàng. ', h('button', { type: 'button', class: 'dj-link', onclick: () => { sp = null; ensureSpeedInfo(); render(); } }, 'Tải lại')) : null,
-      h('p', { class: 'hint' }, test ? 'Không cần quét hoặc chuyển tiền. Sau 10 giây hệ thống sẽ tự xác nhận thử nghiệm.' : 'Chuyển đúng số tiền và đúng nội dung để được xác nhận. Nếu phiên tự hết giờ trước khi được xác nhận, khoản cúng dường vẫn được nhận và đổi thành phiếu hoàn thành ngay cho phiên sau.'),
+      !info && !spLoading ? h('p', { class: 'hint' }, 'Chưa tải được thông tin ngân hàng. ', h('button', { type: 'button', class: 'dj-link', onclick: () => { sp = null; ensureSpeedInfo(); render(); } }, 'Tải lại')) : null,
+      h('p', { class: 'hint' }, 'Chuyển đúng số tiền và đúng nội dung để được xác nhận. Nếu phiên tự hết giờ trước khi được xác nhận, khoản cúng dường vẫn được nhận và đổi thành phiếu hoàn thành ngay cho phiên sau.'),
       noteEl('speedup'),
       pd.bankReported ? h('p', { class: 'hint' }, 'Ngân hàng đã báo nhận tiền nên không hủy yêu cầu được.') : spCancelBlock(test));
   }
@@ -639,7 +639,7 @@
   function spCancelBlock(test) {
     if (!confirmSp) return h('div', { class: 'dj-acts' }, sendBtn('Hủy yêu cầu', 'btn small', () => { confirmSp = true; focusNext = 'sp:keep'; render(); }, { 'data-fk': 'sp:open' }));
     return h('div', { class: 'dj-confirm', role: 'group', 'aria-label': 'Xác nhận hủy yêu cầu hoàn thành ngay' },
-      h('p', null, h('b', null, 'Hủy yêu cầu hoàn thành ngay?'), test ? ' Thao tác này sẽ hủy yêu cầu thử nghiệm.' : ' Nếu bạn đã chuyển khoản rồi thì đừng hủy, hãy đợi Ban điều hành xác nhận.'),
+      h('p', null, h('b', null, 'Hủy yêu cầu hoàn thành ngay?'), ' Nếu bạn đã chuyển khoản rồi thì đừng hủy, hãy đợi Ban điều hành xác nhận.'),
       h('div', { class: 'dj-acts' },
         h('button', { type: 'button', class: 'btn small', 'data-fk': 'sp:keep', onclick: () => { confirmSp = false; focusNext = 'sp:open'; render(); } }, 'Giữ yêu cầu'),
         sendBtn('Hủy yêu cầu', 'btn small dj-danger', cancelSpeedup, { 'data-fk': 'sp:yes' })));
@@ -750,7 +750,7 @@
         h('h4', null, 'Tu luyện theo giờ máy chủ'),
         h('p', null, 'Chọn công pháp và thời lượng rồi bắt đầu. Bạn có thể đóng web: hết giờ máy chủ tự ghi nhận kết quả. Mỗi lúc chỉ có một phiên. Hủy phiên là mất hết tiến độ phiên đó.'),
         h('h4', null, 'Công lực và cấp nội công'),
-        h('p', null, `Công lực có trần ${NUM(M.CONG_LUC_MAX)}. Đủ mốc thì lên cấp (tối đa cấp ${M.LEVEL_MAX}). Cấp càng cao, nội lực tối đa trong trận càng nhiều: ${M.MANA_BASE} ở cấp 1, thêm ${M.MANA_PER_LEVEL} mỗi cấp.`),
+        h('p', null, `Công lực có trần ${NUM(M.CONG_LUC_MAX)}. Đủ mốc thì lên cấp (tối đa cấp ${M.LEVEL_MAX}). Mỗi cấp thêm 4% lực đánh và 1,5% giảm sát thương nhận. Nội lực tối đa: ${M.MANA_BASE} ở cấp 1, thêm ${M.MANA_PER_LEVEL} mỗi cấp.`),
         h('table', { class: 'dj-tbl' }, h('caption', { class: 'sr' }, 'Cấp nội công, công lực cần có và nội lực tối đa'),
           h('thead', null, h('tr', null, h('th', { scope: 'col' }, 'Cấp'), h('th', { scope: 'col' }, 'Công lực từ'), h('th', { scope: 'col' }, 'Nội lực tối đa'))), h('tbody', null, lv)),
         h('h4', null, 'Tâm đắc'),
@@ -760,7 +760,7 @@
         h('table', { class: 'dj-tbl' }, h('caption', { class: 'sr' }, 'Điều kiện học chiêu theo bậc'),
           h('thead', null, h('tr', null, h('th', { scope: 'col' }, 'Bậc'), h('th', { scope: 'col' }, 'Nội công'), h('th', { scope: 'col' }, 'Tâm đắc'))), h('tbody', null, req)),
         h('h4', null, 'Hoàn thành ngay'),
-        speedRules(`số tiền ghi trên phiên tu (từ ${vnd(Math.min(...prices))} đến ${vnd(Math.max(...prices))} tùy công pháp)`, 'Mỗi ngày chỉ dùng được một số lần nhất định, số lần còn lại ghi ngay trên phiên tu.'),
+        speedRules(`số tiền ghi trên phiên tu (từ ${vnd(Math.min(...prices))} đến ${vnd(Math.max(...prices))} tùy công pháp)`, 'Không giới hạn số lượt hoàn thành tu luyện nhanh.'),
         h('p', { class: 'hint' }, 'Phiếu hoàn thành ngay: nếu phiên tự hết giờ trước khi khoản cúng dường được xác nhận, khoản đó đổi thành một phiếu dùng cho phiên sau.'),
         h('h4', null, 'Ở đâu đánh nhau'),
         h('p', null, 'Nơi này chỉ để tu luyện. Muốn luận võ, hãy ra Sân đấu.')));

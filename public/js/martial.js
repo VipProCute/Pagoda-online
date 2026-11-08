@@ -141,6 +141,11 @@
 
   function levelOf(congLuc) { let lv = 1; for (let i = 0; i < LEVEL_AT.length; i++) if (congLuc >= LEVEL_AT[i]) lv = i + 1; return lv; }
   function manaMaxOf(level) { const lv = Math.max(1, Math.min(LEVEL_MAX, level | 0)); return MANA_BASE + MANA_PER_LEVEL * (lv - 1); }
+  // Cảnh giới tăng cả lực đánh và sức chịu đòn, ngoài nội lực tối đa.
+  function combatPower(level) {
+    const lv = Math.max(1, Math.min(LEVEL_MAX, level | 0));
+    return { attack: 1 + 0.04 * (lv - 1), reduction: 0.015 * (lv - 1) };
+  }
   /** Cấp hiện tại, mốc đầu/cuối của cấp, phần trăm đã đi trong cấp. */
   function levelInfo(congLuc) {
     const cl = Math.max(0, Math.min(CONG_LUC_MAX, congLuc | 0)), level = levelOf(cl);
@@ -277,7 +282,7 @@
   const api = {
     BRANCHES, BRANCH_ORDER, TIER_REQ, TIER_NAMES, SKILLS, SKILL_LIST, SKILL_ORDER, STARTERS, SPECIAL, REST_ID, IDLE_ID,
     METHODS, METHOD_LIST, METHOD_ORDER, LEVEL_AT, LEVEL_MAX, CONG_LUC_MAX, TAM_MAX, MANA_BASE, MANA_PER_LEVEL, KIND_NAMES, PK,
-    levelOf, levelInfo, manaMaxOf, rewardOf, clampReward, canLearn, canCultivate,
+    levelOf, levelInfo, manaMaxOf, combatPower, rewardOf, clampReward, canLearn, canCultivate,
     isDamaging, isAttacking, loadoutWarnings, validateLoadout, statsLine
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;

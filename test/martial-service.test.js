@@ -350,7 +350,7 @@ test('state: đủ trường, hoàn thành phiên tới giờ trước khi dựn
   assert.equal(st0.serverTime, T0);
   assert.equal(st0.session, null);
   assert.deepEqual(st0.recent, []);
-  assert.deepEqual(st0.speedup, { enabled: true, perDay: 2, usedToday: 0 });
+  assert.deepEqual(st0.speedup, { enabled: true, perDay: null, usedToday: 0 });
   assert.deepEqual(st0.profile.learned, M.STARTERS);
   assert.equal(e.svc.profile('u1'), null, 'state không tạo hồ sơ');
   assert.equal('login' in st0, false, 'phần login do server thêm');
@@ -810,40 +810,20 @@ test('cancelSpeedup: chỉ yêu cầu đang chờ của chính mình', () => {
 
 /* ---------- giới hạn mỗi ngày ---------- */
 
-test('giới hạn hoàn thành ngay mỗi ngày tính theo giờ Việt Nam, chỉ lượt đã xác nhận', () => {
+test('hoàn thành nhanh hơn 20 lần cùng ngày, bỏ cấu hình giới hạn cũ', () => {
   const e = env({ speedupPerDay: 2 });
-  const run = () => {
-    const s = e.svc.start('u1', 'tinh-tam-quyet', '4h').session;
+  for (let i = 0; i < 24; i++) {
+    const s = e.svc.start('u1', 'tinh-tam-quyet', '15m').session;
     const r = e.svc.speedup('u1', s.id, {});
-    return { s, r };
-  };
-  let a = run();
-  assert.equal(a.r.ok, true);
-  assert.equal(e.svc.state('u1').speedup.usedToday, 0, 'yêu cầu đang chờ chưa tính');
-  e.confirm(a.r.donation);
-  assert.equal(e.svc.state('u1').speedup.usedToday, 1);
-  let b = run();
-  assert.equal(b.r.ok, true);
-  e.confirm(b.r.donation);
-  assert.equal(e.svc.state('u1').speedup.usedToday, 2);
-  const c = run();
-  assert.equal(c.r.ok, false);
-  assert.equal(c.r.code, 'limit');
-  assert.equal(e.svc.state('u1').speedup.perDay, 2);
-  assert.equal(e.svc.speedup('u2', e.svc.start('u2', 'tinh-tam-quyet', '4h').session.id, {}).ok, true, 'người khác có hạn mức riêng');
-
-  // ranh giới ngày: 23:59:59 giờ VN còn là hôm nay, 00:00 giờ VN là ngày mới
-  e.clock.t = Date.UTC(2026, 0, 10, 16, 59, 59);
-  assert.equal(e.svc.state('u1').speedup.usedToday, 2);
-  e.clock.t = Date.UTC(2026, 0, 10, 17, 0, 0);
-  assert.equal(e.svc.state('u1').speedup.usedToday, 0);
-  const fresh = e.svc.start('u1', 'tinh-tam-quyet', '4h').session;
-  assert.equal(e.svc.speedup('u1', fresh.id, {}).ok, true, 'sang ngày mới dùng lại được');
+    assert.equal(r.ok, true, r.reason);
+    e.confirm(r.donation);
+  }
+  assert.equal(e.svc.state('u1').speedup.usedToday, 24);
+  assert.equal(e.svc.state('u1').speedup.perDay, null);
 });
 
-test('speedupPerDay mặc định 2 khi không đặt', () => {
-  const e = env({ speedupPerDay: undefined });
-  assert.equal(e.svc.state('u1').speedup.perDay, 2);
+test('không đặt giới hạn ngày thì báo không giới hạn', () => {
+  assert.equal(env({ speedupPerDay: undefined }).svc.state('u1').speedup.perDay, null);
 });
 
 /* ---------- kết quả luận võ, danh tính ---------- */
@@ -1067,14 +1047,12 @@ test('timeScale không hợp lệ (0, âm, NaN, chuỗi) thì coi như 1', () =>
   assert.equal(s.endsAt - s.startedAt, 7.5 * MIN);
 });
 
-test('speedupPerDay = 0: coi như chưa mở hoàn thành ngay', () => {
+test('cấu hình giới hạn ngày cũ không tắt tính năng; SPEEDUP_ENABLED là công tắc', () => {
   const e = env({ speedupPerDay: 0 });
   const s = e.svc.start('u1', 'tinh-tam-quyet', '4h').session;
-  const r = e.svc.speedup('u1', s.id, {});
-  assert.equal(r.ok, false);
-  assert.equal(r.code, 'disabled');
-  assert.equal(e.db.donations.length, 0);
-  assert.equal(e.svc.state('u1').speedup.enabled, false);
+  assert.equal(e.svc.speedup('u1', s.id, {}).ok, true);
+  const off = env({ speedupEnabled: false });
+  assert.equal(off.svc.state('u1').speedup.enabled, false);
 });
 
 test('chống tạo mã hàng loạt: tối đa 10 yêu cầu chưa xác nhận trong 24 giờ, đã xác nhận không tính', () => {

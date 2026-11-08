@@ -1091,7 +1091,7 @@ function verifyTurn(pre, d, out, track) {
     if (!isAtk(s)) { assert.equal(mine.length, 0, 'bên không tấn công không có sự kiện tấn công'); continue; }
     const hits = st[s] === 'release' ? [act[s].skill.charge.release] : act[s].skill.hits;
     hitsAsAtk[s] = hits.length;
-    const off = 1 + Math.min(R.OFF_CAP, R.RAGE_PCT * X.rage + (X.kc > 0 ? R.KC_BONUS : 0) + X.offExt);
+    const off = (1 + 0.04 * (X.level - 1)) * (1 + Math.min(R.OFF_CAP, R.RAGE_PCT * X.rage + (X.kc > 0 ? R.KC_BONUS : 0) + X.offExt));
     let parried = 0, lastBase = 0;
     hits.forEach((h, i) => {
       const idx = i + 1, of = hits.length;
@@ -1118,7 +1118,7 @@ function verifyTurn(pre, d, out, track) {
       else if (st[o] === 'charge') red = act[o].skill.charge.red;
       else if (st[o] === 'parry') red = act[o].skill.parry.failRed || 0;
       assert.ok(Math.abs(hit[0].red - rnd3(red)) < 1e-9, `red ${hit[0].red} != ${rnd3(red)}`);
-      const rawBase = h.base * off * (1 - red) * (1 - Y.defP) * (1 + (Y.exposed ? R.EXPOSED_PCT : 0));
+      const rawBase = h.base * off * (1 - red) * (1 - Y.defP) * (1 - 0.015 * (Y.level - 1)) * (1 + (Y.exposed ? R.EXPOSED_PCT : 0));
       const lo = Math.max(1, Math.round((1 - R.DMG_VAR) * rawBase)), hi = Math.max(1, Math.round((1 + R.DMG_VAR) * rawBase));
       assert.ok(hit[0].dmg >= lo && hit[0].dmg <= hi && Number.isInteger(hit[0].dmg), `sát thương ${hit[0].dmg} ngoài [${lo}, ${hi}]`);
       dmg[o] += hit[0].dmg; landed[o]++;
@@ -1127,7 +1127,7 @@ function verifyTurn(pre, d, out, track) {
     if (parried) {
       const pr = act[o].skill.parry;
       const c = (pr.flat + Math.min(pr.cap || 0, (pr.pct || 0) * lastBase)) * (parried / hits.length);
-      const want = Math.max(1, Math.round(c * (1 + Math.min(R.OFF_CAP, Y.offExt)) * (1 - X.defP) * (1 + (X.exposed ? R.EXPOSED_PCT : 0))));
+      const want = Math.max(1, Math.round(c * (1 + 0.04 * (Y.level - 1)) * (1 + Math.min(R.OFF_CAP, Y.offExt)) * (1 - X.defP) * (1 - 0.015 * (X.level - 1)) * (1 + (X.exposed ? R.EXPOSED_PCT : 0))));
       assert.equal(counters.length, 1);
       assert.equal(counters[0].side, o);
       assert.equal(counters[0].dmg, want);

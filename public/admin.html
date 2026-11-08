@@ -86,14 +86,14 @@
     try {
       const d = await api('/api/admin/summary');
       $('#err').hidden = true; $('#app').hidden = false;
-      $('#stats').innerHTML = `<span>Đang có mặt: <b>${NUM(d.online)}</b></span><span>Nhang hôm nay: <b>${NUM(d.today.incense)}</b></span><span>Lượt vào hôm nay: <b>${NUM(d.today.visits)}</b></span><span>Tịnh tài: <b>${d.donationEnabled ? 'đang bật' : 'đang tắt'}</b></span><span>Đang nói chuyện: <b>${NUM(d.voice)}</b></span><span>Giọng đọc thông báo: <b>${d.tts ? 'VieNeu “' + d.tts.replace(/[<>&]/g, '') + '”' : 'trình duyệt tự đọc'}</b></span>` +
+      $('#stats').innerHTML = `<span>Đang có mặt: <b>${NUM(d.online)}</b></span><span>Nhang hôm nay: <b>${NUM(d.today.incense)}</b></span><span>Lượt vào hôm nay: <b>${NUM(d.today.visits)}</b></span><span>Tịnh tài: <b>${d.donationEnabled ? 'đang bật' : 'đang tắt'}</b></span><span>Đang nói chuyện: <b>${NUM(d.voice)}</b></span><span>Giọng đọc thông báo: <b>${d.tts ? 'đang bật' : 'trình duyệt tự đọc'}</b></span>` +
         d.funds.map(f => `<span>${f.name.replace(/[<>&]/g, '')}: <b>${NUM(f.raised)}đ</b></span>`).join('');
       const tb = $('#dons'); tb.textContent = '';
-      $('#donationModeHelp').textContent = d.donationMode === 'test' ? 'Chế độ thử nghiệm: QR không chuyển tiền, tự xác nhận sau 10 giây. Tiền giả không cộng vào tổng thực nhận.' : 'Chế độ nhận tiền thật: đối chiếu ngân hàng hoặc SePay trước khi xác nhận.';
+      $('#donationModeHelp').textContent = d.donationMode === 'test' ? 'QR chuyển khoản VietQR. Đang bật xác nhận tự động sau 10 giây; chưa đối soát ngân hàng.' : 'Chế độ nhận tiền thật: đối chiếu ngân hàng hoặc SePay trước khi xác nhận.';
       d.donations.forEach(x => {
         const tr = document.createElement('tr');
         const sp = x.purpose === 'speedup' ? x.speedup || {} : null;
-        cell(tr, x.code, 'code'); cell(tr, (sp ? 'Hoàn thành tu luyện' : 'Cúng dường') + (x.mode === 'test' ? ' · thử nghiệm' : '')); cell(tr, t(x.createdAt)); cell(tr, x.name + (x.anon ? ' (ẩn danh)' : ''));
+        cell(tr, x.code, 'code'); cell(tr, (sp ? 'Hoàn thành tu luyện' : 'Cúng dường') + (x.mode === 'test' ? ' · tự xác nhận' : '')); cell(tr, t(x.createdAt)); cell(tr, x.name + (x.anon ? ' (ẩn danh)' : ''));
         cell(tr, NUM(x.amount) + 'đ' + (x.hide ? ' (ẩn)' : '')); cell(tr, x.fundName);
         cell(tr, sp ? `${sp.methodName} (${sp.durationKey}) · phiên ${SESS[sp.sessionStatus] || sp.sessionStatus}` + (sp.bankReported ? ' · ngân hàng đã báo nhận' : '') + (x.note ? ' · ' + x.note : '') : x.note || '');
         cell(tr, ST[x.status] + (x.source ? ' · ' + x.source : '') + (x.outcome ? ' · ' + (OUT[x.outcome] || x.outcome) : ''), 'st-' + x.status);
