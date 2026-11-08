@@ -93,14 +93,16 @@
       g.beginPath(); g.moveTo(pd * 4, -30); g.quadraticCurveTo(kx, ky, fx, fy); g.stroke();
       g.save(); g.translate(fx, fy); g.rotate(Math.atan2(fy - ky, fx - kx)); g.fillStyle = '#3a2418'; rrect(g, -1.5, -2, 7.5, 4, 1.8); g.fill(); g.restore();
     } else {
-      g.fillRect(-7, -16, 5.5, 14); g.fillRect(1.5, -16, 5.5, 14);
+      if (look.npcFashion) g.fillStyle = SKIN;
+      g.fillRect(-7, look.npcFashion ? -36 : -16, 5.5, look.npcFashion ? 34 : 14); g.fillRect(1.5, look.npcFashion ? -36 : -16, 5.5, look.npcFashion ? 34 : 14);
       g.fillStyle = '#3a2418'; rrect(g, -8, -3.2, 7, 3.2, 1.5); g.fill(); rrect(g, 1, -3.2, 7, 3.2, 1.5); g.fill();
     }
     // tà áo
     g.fillStyle = col;
-    g.beginPath(); g.moveTo(-ww, -50); g.lineTo(ww, -50); g.lineTo(hem + sway, -11); g.quadraticCurveTo(sway, -8, -hem + sway, -11); g.closePath(); g.fill();
+    const hemY = look.npcFashion ? -33 : -11;
+    g.beginPath(); g.moveTo(-ww, -50); g.lineTo(ww, -50); g.lineTo(hem + sway, hemY); g.quadraticCurveTo(sway, hemY + 3, -hem + sway, hemY); g.closePath(); g.fill();
     g.strokeStyle = dk; g.lineWidth = 1.1;
-    g.beginPath(); g.moveTo(-ww + 1, -50); g.lineTo(-hem + sway + 2.5, -11.5); g.moveTo(ww - 1, -50); g.lineTo(hem + sway - 2.5, -11.5); g.stroke();
+    g.beginPath(); g.moveTo(-ww + 1, -50); g.lineTo(-hem + sway + 2.5, hemY - 0.5); g.moveTo(ww - 1, -50); g.lineTo(hem + sway - 2.5, hemY - 0.5); g.stroke();
     // thân trên (cúi khi vái)
     g.save();
     if (bow > 0) { g.translate(0, -50); g.scale(1, 1 - 0.2 * bow); g.translate(0, 50 + 13 * bow); }
@@ -125,6 +127,10 @@
       g.fillStyle = dk; g.fillRect(-3.5, -78, 7, 3.5);
     }
     g.fillStyle = SKIN; g.fillRect(-3, -81, 6, 5);
+    if (look.npcFashion) { // trang phục dạo chơi vai trần, chỉ dành riêng cho NPC
+      g.fillStyle = SKIN;
+      g.beginPath(); g.moveTo(-sw + 1, -73); g.lineTo(-6, -75); g.lineTo(0, -67); g.lineTo(6, -75); g.lineTo(sw - 1, -73); g.lineTo(sw - 2, -68); g.lineTo(-sw + 2, -68); g.closePath(); g.fill();
+    }
     drawHead(g, look, front, col);
     g.restore();
     g.restore();
@@ -190,22 +196,46 @@
   const G = {};
   const players = new Map();
   let me = 0, offset = 0, last = 0, scene = 'hall', yardDay = null;
-  // Khách trong sân là NPC cục bộ, không gửi lên máy chủ hay tính vào số người online.
+  // Khách vãng lai là hình ảnh cục bộ, mỗi đợt chọn ngẫu nhiên cho từng khu.
   const npcDefs = [
-    { name: 'Lão Ăn Mày', look: { g: 'nam', c: 9, h: 3 }, role: 'beggar', x: 0.14, z: 0.66, lines: ['Thí chủ cho xin chút duyên lành, cơm chay thì càng tốt!', 'Lão ăn xin nhưng không xin mật khẩu Wi-Fi đâu nha.', 'Tu cả ngày, bụng cũng muốn giác ngộ rồi.'] },
-    { name: 'Khách Vãng Lai', look: { g: 'nam', c: 6, h: 2 }, role: 'visitor', x: 0.32, z: 0.48, lines: ['Tôi ghé chùa tìm bình an, tiện tìm luôn dép.', 'Cảnh đẹp quá, phiền não xin đứng ngoài cổng nhé!', 'Đi một vòng cho nhẹ lòng, không phải đang tìm đường đâu.'] },
-    { name: 'Vạn Lý Độc Hành', look: { g: 'nam', c: 11, h: 3 }, role: 'wanderer', x: 0.52, z: 0.73, lines: ['Ta đi vạn dặm... mà vẫn lạc đường vào sân chùa.', 'Giang hồ hiểm ác, may ở đây có cơm chay.', 'Độc hành lâu quá, ai chỉ đường về với?'] },
-    { name: 'Cô Nương Du Xuân', look: { g: 'nu', c: 2, h: 0 }, role: 'lady', x: 0.7, z: 0.53, lines: ['Đi chùa cầu duyên, gặp Wi-Fi mạnh cũng là có duyên!', 'Áo đẹp để du xuân, lòng đẹp để bình an.', 'Chụp ảnh xong nhớ nhặt dép về nha!'] },
-    { name: 'Đại Hiệp Giang Hồ', look: { g: 'nam', c: 0, h: 2 }, role: 'sword', x: 0.86, z: 0.76, lines: ['Tại hạ đến luận võ, nhưng xin uống trà trước.', 'Kiếm pháp của ta rất nhanh, rửa chén còn nhanh hơn.', 'Giang hồ đồn chùa này cao thủ nhiều hơn muỗi!'] }
+    { name: 'Lão Ăn Mày', look: { g: 'nam', c: 9, h: 3 }, role: 'beggar', lines: ['Thí chủ cho xin chút duyên lành, cơm chay thì càng tốt!', 'Lão ăn xin nhưng không xin mật khẩu Wi-Fi đâu nha.', 'Tu cả ngày, bụng cũng muốn giác ngộ rồi.'] },
+    { name: 'Khách Vãng Lai', look: { g: 'nam', c: 6, h: 2 }, role: 'visitor', lines: ['Tôi ghé chùa tìm bình an, tiện tìm luôn dép.', 'Cảnh đẹp quá, phiền não xin đứng ngoài cổng nhé!', 'Đi một vòng cho nhẹ lòng, không phải đang tìm đường đâu.'] },
+    { name: 'Vạn Lý Độc Hành', look: { g: 'nam', c: 11, h: 3 }, role: 'wanderer', lines: ['Ta đi vạn dặm... mà vẫn lạc đường vào sân chùa.', 'Độc hành lâu quá, ai chỉ đường về với?', 'Giang hồ hiểm ác, may ở đây có cơm chay.'] },
+    { name: 'Cô Nương Hồng', look: { g: 'nu', c: 2, h: 0, npcFashion: true }, role: 'lady', lines: ['Hoa rơi cửa Phật, vạn vật tùy duyên.', 'Mình có thói quen cardio tại ban công.', 'Thèm nhiêu anh đủ cắc?'] },
+    { name: 'Cô Nương Đỏ', look: { g: 'nu', c: 0, h: 0, npcFashion: true }, role: 'lady', lines: ['Đi chùa cầu duyên, gặp Wi-Fi mạnh cũng là có duyên!', 'Hoa rơi cửa Phật, vạn vật tùy duyên.', 'Anh ơi, tu tâm trước rồi hãy thả tim nha!'] },
+    { name: 'Đại Hiệp Giang Hồ', look: { g: 'nam', c: 0, h: 2 }, role: 'sword', lines: ['Tại hạ đến luận võ, nhưng xin uống trà trước.', 'Kiếm pháp của ta rất nhanh, rửa chén còn nhanh hơn.', 'Giang hồ đồn chùa này cao thủ nhiều hơn muỗi!'] },
+    { name: 'Hắc Phong Ma Khách', look: { g: 'nam', c: 11, h: 2 }, role: 'sword', demon: true, lines: ['Quỷ sau lưng ta dữ lắm, nhưng nó sợ ăn chay.', 'Ta đi tìm đối thủ, quỷ đi tìm chỗ sạc pin.', 'Đừng nhìn ta, nhìn sau lưng ta kìa!'] },
+    { name: 'Nữ Hiệp Áo Tím', look: { g: 'nu', c: 4, h: 1 }, role: 'sword', lines: ['Kiếm chưa rút mà bụng đã réo rồi.', 'Đại hiệp xin nhường đường, ta đang đi tìm trà đá.', 'Võ công cao mấy cũng phải cởi dép vào chùa.'] },
+    { name: 'Tiểu Thư Mê Chùa', look: { g: 'nu', c: 5, h: 1 }, role: 'lady', lines: ['Xin Phật độ con qua deadline tuần này.', 'Chùa yên tĩnh, trừ cái bụng của tiểu nữ.', 'Hôm nay mang dép đôi, mong về vẫn đủ đôi.'] },
+    { name: 'Thư Sinh Lạc Đường', look: { g: 'nam', c: 5, h: 3 }, role: 'visitor', lines: ['Đọc hết kinh rồi, có ai thấy kính của ta không?', 'Học võ dùng não, đừng dùng nồi cơm điện nhé.', 'Tại hạ đang suy ngẫm... mai ăn gì.'] },
+    { name: 'Đạo Hữu Mê Thiền', look: { g: 'nam', c: 8, h: 2 }, role: 'visitor', lines: ['Thiền được năm phút, nghĩ tới bữa trưa mất bốn.', 'Hít vào bình an, thở ra deadline.', 'Tâm bất biến giữa dòng thông báo.'] },
+    { name: 'Bà Bán Trà', look: { g: 'nu', c: 10, h: 1 }, role: 'visitor', lines: ['Trà nóng đây, uống xong nóng lòng đi tu!', 'Chén trà không giải được deadline, nhưng uống ngon.', 'Ngồi nghỉ chút rồi hẵng làm đại hiệp.'] },
+    { name: 'Tiểu Đồng', look: { g: 'nam', c: 7, h: 2 }, role: 'visitor', lines: ['Sư phụ dặn quét sân, con đang quét bản đồ.', 'Ai thấy chổi của con chưa?', 'Con tu chưa cao, nhưng ngủ rất sâu.'] },
+    { name: 'Kiếm Khách Lắm Lời', look: { g: 'nam', c: 6, h: 3 }, role: 'sword', lines: ['Đao kiếm vô tình, đồng đội nhớ hồi máu!', 'Ta có bí kíp: thua thì bảo đang thử chiêu.', 'Đợi ta khởi động xong rồi hẵng luận võ.'] },
+    { name: 'Cô Nương Du Xuân', look: { g: 'nu', c: 7, h: 0, npcFashion: true }, role: 'lady', lines: ['Mình có thói quen cardio tại ban công.', 'Người đẹp vì lụa, ta đẹp nhờ ngủ đủ.', 'Duyên tới thì đón, dép mất thì tìm.'] }
   ];
-  const npcs = npcDefs.map((d, i) => ({ ...mk({ id: -100 - i, name: d.name + ' · NPC', look: d.look, x: d.x, z: d.z, scene: 'yard' }), npc: d, tx: d.x, tz: d.z, wait: 0 }));
-  let npcNextSpeech = 0;
+  let npcs = [], npcRefresh = 0, npcNextSpeech = 0, sweeper = null;
+  function randomizeNpcs(now) {
+    const pool = npcDefs.slice();
+    for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+    npcs = [];
+    ['hall', 'yard', 'library', 'arena'].forEach((place, n) => {
+      for (let i = 0; i < 2; i++) {
+        const def = pool[n * 2 + i], x = rand(0.18, 0.82), z = rand(0.48, 0.78);
+        const p = { ...mk({ id: -100 - n * 2 - i, name: def.name + ' · NPC', look: def.look, x, z, scene: place, at: place === 'arena' ? 'arena' : 'hall', mt: def.demon ? -1000 : 0 }), npc: def, tx: x, tz: z, wait: 0 };
+        npcs.push(p);
+      }
+    });
+    npcRefresh = now + rand(90000, 150000);
+  }
   function updateNpcs(now, dt) {
-    for (const p of npcs) {
+    if (!npcRefresh || now >= npcRefresh) randomizeNpcs(now);
+    const visible = npcs.filter(p => viewOf(p) === scene);
+    for (const p of visible) {
       if (reduceMotion) continue;
       if (now >= p.wait && Math.hypot(p.tx - p.x, p.tz - p.z) < 0.008) {
-        p.tx = clamp(p.npc.x + rand(-0.17, 0.17), 0.07, 0.93);
-        p.tz = clamp(p.npc.z + rand(-0.12, 0.12), 0.3, 0.86);
+        p.tx = clamp(p.x + rand(-0.18, 0.18), 0.12, 0.88);
+        p.tz = clamp(p.z + rand(-0.12, 0.12), 0.35, 0.82);
         p.wait = now + rand(2500, 6500);
       }
       if (now < p.wait) continue;
@@ -213,17 +243,21 @@
       if (dist > 0.001) { const step = Math.min(dist, dt * 0.000025); p.x += dx / dist * step; p.z += dz / dist * step; }
     }
     if (!npcNextSpeech) npcNextSpeech = now + 3500;
-    if (now >= npcNextSpeech) {
-      const p = npcs[Math.floor(Math.random() * npcs.length)];
+    if (visible.length && now >= npcNextSpeech) {
+      const p = visible[Math.floor(Math.random() * visible.length)];
       p.bubble = { text: p.npc.lines[Math.floor(Math.random() * p.npc.lines.length)], t: now };
       npcNextSpeech = now + rand(11000, 19000);
     }
+    return visible;
   }
   function drawNpcAccessory(g, role) {
     g.save(); g.lineCap = 'round';
     if (role === 'beggar') {
       g.fillStyle = '#705033'; g.beginPath(); g.ellipse(17, -33, 9, 4, 0, 0, TAU); g.fill();
       g.strokeStyle = '#d4b887'; g.lineWidth = 1; g.stroke();
+    } else if (role === 'sweeper') {
+      g.strokeStyle = '#94683e'; g.lineWidth = 2.5; g.beginPath(); g.moveTo(18, -80); g.lineTo(27, -5); g.stroke();
+      g.strokeStyle = '#d2ad70'; g.lineWidth = 5; g.beginPath(); g.moveTo(19, -9); g.lineTo(34, -2); g.stroke();
     } else if (role === 'wanderer') {
       g.fillStyle = '#ad8851'; g.beginPath(); g.moveTo(-23, -99); g.lineTo(0, -114); g.lineTo(23, -99); g.quadraticCurveTo(0, -94, -23, -99); g.fill();
       g.strokeStyle = '#735331'; g.lineWidth = 1.5; g.stroke();
@@ -942,7 +976,8 @@
     const k = 1 - Math.exp(-dt / 90);
     // mỗi người chỉ hiện ở đúng cảnh mình đang ở (chánh điện, sân chùa, Tàng Kinh Các, Sân đấu); ở Võ Học Các thì không hiện
     const list = [...players.values()].filter(p => viewOf(p) === scene);
-    if (scene === 'yard') { updateNpcs(now, dt); list.push(...npcs); }
+    list.push(...updateNpcs(now, dt));
+    if (scene === 'library' && sweeper && sweeper.until > serverNow()) list.push(sweeper);
     const kl = 1 - Math.exp(-dt / 80);
     for (const p of list) {
       const ox = p.dx, oz = p.dz;
@@ -979,7 +1014,7 @@
       }
       const aur = p.au && p.au.t && p.au.until > srvNow ? p.au : null;
       const aa = aur ? Math.min(1, (aur.until - srvNow) / 20000) : 0;   // mờ dần 20 giây cuối
-      const dm = root.MERIT ? root.MERIT.demonOf(p.mt) : null, rk = root.MERIT ? root.MERIT.rankOf(p.mt) : 0;
+      const dm = root.MERIT ? root.MERIT.visualDemonOf(p.mt) : null, rk = root.MERIT && p.mt !== 666 ? root.MERIT.rankOf(p.mt) : 0;
       if (dm) {                                               // quỷ lẽo đẽo theo sau, trễ một nhịp
         const [ox, oy] = demonOffset(dm.n), tx = sx + ox * s, ty = sy + oy * s + Math.sin(now / 520 + p.id) * 4 * s;
         if (!p.dmp) p.dmp = { x: tx, y: ty };
@@ -1750,13 +1785,14 @@
   }
   function onDown(e) {
     const [x, y] = point(e);
+    const clickedPlayer = personAt(x, y);
+    if (clickedPlayer) { handlers.person && handlers.person(clickedPlayer.id); return; }
     if (scene === 'arena') {
-      const p = personAt(x, y);
-      if (p) { handlers.person && handlers.person(p.id); return; }
       if (y > G.hb + 4 * u) walkTo(x, y);
       return;
     }
     if (scene === 'library') {
+      if (sweeper && sweeper.sx != null && sweeper.until > serverNow() && Math.abs(x - sweeper.sx) < 25 * sweeper.s + 12 && y > sweeper.sy - 120 * sweeper.s - 20 && y < sweeper.sy + 10) { handlers.sweeper && handlers.sweeper(sweeper.eventId); return; }
       const seat = seatAt(x, y);
       if (seat >= 0) { handlers.seat && handlers.seat(seat); return; }
       if (inRect(G.shelfL, x, y)) { handlers.read && handlers.read(); return; }
@@ -1781,7 +1817,7 @@
     hoverLib = scene === 'hall' && hitLib(x, y);
     hover = '';
     if (scene === 'library') { const st = seatAt(x, y); hover = st >= 0 ? 'seat' + st : inRect(G.shelfL, x, y) ? 'shelfL' : inRect(G.shelfR, x, y) ? 'shelfR' : ''; }
-    else if (scene === 'arena' && personAt(x, y)) hover = 'person';
+    if (personAt(x, y)) hover = 'person';
     cv.style.cursor = hover || (scene === 'hall' && (hitJar(x, y) || hitBowl(x, y) || hitStatue(x, y))) || (scene === 'yard' && hitReader(x, y)) || hoverLib ? 'pointer' : (y > G.hb ? 'crosshair' : 'default');
   }
   function viewOf(p) {
@@ -1812,6 +1848,11 @@
       requestAnimationFrame(frame);
     },
     setMe(id) { me = id; },
+    setSweeper(event) {
+      if (!event || !event.id || event.until <= serverNow()) { sweeper = null; return; }
+      sweeper = { ...mk({ id: -999, name: 'Tảo Địa Tăng · Chạm để trò chuyện', look: { g: 'nam', c: 8, h: 2 }, x: event.x, z: event.z, scene: 'library' }), eventId: event.id, until: event.until, npc: { role: 'sweeper' } };
+      sweeper.front = true;
+    },
     /** Tạm dừng vẽ khi người chơi đang ở nơi khác (đỡ tốn pin). */
     pause(on) { paused = !!on; if (!on) { last = 0; resize(); } },
     /** Vẽ cảnh lên một khung vẽ khác (Sân đấu có khung riêng trong màn hình của nó). Gọi lại với khung chánh điện để trả về. */

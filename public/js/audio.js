@@ -26,7 +26,7 @@
       const d = NOISE.getChannelData(0); for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
       loadBell();
     }
-    if (AC.state === 'suspended') AC.resume();
+    if (AC.state === 'suspended') AC.resume().catch(() => {});
     return AC;
   }
   const live = () => !!(AC && AC.state === 'running' && !muted);
