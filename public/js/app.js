@@ -36,7 +36,7 @@
   function openDlg(id) { const d = $('#dlg-' + id); if (!d.open) { if (d.showModal) d.showModal(); else d.setAttribute('open', ''); } }
   function closeDlg(id) { const d = $('#dlg-' + id); if (d.open) d.close(); }
   $$('dialog').forEach(d => {
-    d.addEventListener('click', e => { if (e.target === d && d.id !== 'dlg-join') d.close(); });
+    d.addEventListener('click', e => { if (e.target === d && d.id !== 'dlg-join' && d.id !== 'dlg-spar') d.close(); });
     $$('[data-close]', d).forEach(b => b.addEventListener('click', () => d.close()));
   });
   $('#dlg-join').addEventListener('cancel', e => { if (!joined) e.preventDefault(); });
@@ -55,6 +55,7 @@
   }
   $('#btnSound').addEventListener('click', () => { muted = !muted; store.set('ta-muted', muted ? '1' : '0'); SFX.unlock(); renderSound(); });
   document.addEventListener('pointerdown', () => SFX.unlock(), { once: true });
+  document.addEventListener('pointerdown', () => Voice.unlock());
 
   /* ---------- cảnh chánh điện ---------- */
   Hall.init($('#hall'), {
@@ -64,8 +65,17 @@
     library() { goScene('library'); },                     // chạm tủ Tàng Kinh Các: bước vào trong
     read() { act('read'); },                               // trong Tàng Kinh Các: chạm Kệ kinh để đọc kinh
     dojo() { act('dojo'); },                               // chạm kệ Võ học: sang Võ Học Các học chiêu
-    seat(i) { sitAt(i); },                                 // chạm bồ đoàn: đi tới, ngồi thiền
-    person(id) { if (window.Arena && Arena.pick) Arena.pick(id); },   // Sân đấu: chạm một người để mời luận võ
+    seat(i) { sitAt(i); },
+    sweeper(id) {
+      if (!joined) return;
+      socket.emit('sweeper:claim', { id }, r => {
+        if (!r) return toast('Chưa gặp được cao nhân, hãy thử lại.');
+        if (r.code === 'far') socket.emit('move', { x: r.x, z: r.z });
+        if (!r.ok) toast(r.reason || 'Chưa nhận được truyền thừa.');
+        else if (r.already) toast('Bạn đã nhận truyền thừa trong lần gặp này.');
+      });
+    },                                 // chạm bồ đoàn: đi tới, ngồi thiền
+    person(id) { openPerson(id); },
     fortune() { fortune.open('lot'); },
     reader(type) { fortune.open(type); }
   });
@@ -277,7 +287,7 @@
   $('#open-lot').addEventListener('click', () => fortune.open('lot'));
   $('#open-horoscope').addEventListener('click', () => fortune.open('horoscope'));
   $('#open-tarot').addEventListener('click', () => fortune.open('tarot'));
-  socket.on('pscene', d => Hall.playerScene(d));
+  socket.on('pscene', d => { Hall.playerScene(d); Voice.refresh(); });
   async function syncTime() {
     let best = null;
     for (let i = 0; i < 4; i++) {
@@ -316,7 +326,7 @@
     if (r.uid && r.uid !== uid) { uid = r.uid; store.set('ta-uid', uid); }
     if (!offset) { offset = r.serverTime - Date.now(); Hall.setOffset(offset); }
     $('#siteName').textContent = cfg.siteName; document.title = cfg.siteName + ' · Đi chùa online';
-    Hall.setMe(me); Hall.setPlayers(r.players); Hall.setIncense(r.incense); fortune.reset(r.fortuneQueue);
+    Hall.setMe(me); Hall.setPlayers(r.players); Hall.setSweeper(r.sweeper); Hall.setIncense(r.incense); fortune.reset(r.fortuneQueue);
     $('#feed').textContent = ''; r.chat.forEach(addMsg); scrollFeed(true);
     renderPrayers(r.prayers); renderBoard(r.board); renderDonations(r.donations, r.funds);
     setStats(r.today, r.online); setMerit(r.merit);
@@ -334,7 +344,7 @@
     if (authResult === 'ok') toast('Đã đăng nhập. Công đức và tiến độ của bạn được lưu vào tài khoản Google.');
     else if (authResult === 'error') toast('Chưa đăng nhập được Google. Bạn thử lại nhé.');
     else toast(`A Di Đà Phật. Chào ${myName}, mời bạn vào lễ Phật.`);
-    if (Voice.wanted && cfg.voice) startVoice(true);          // mất mạng rồi vào lại: nối lại tiếng
+    if (cfg.voice) startVoice(true);                         // vào game và nối lại đều tự tham gia để nghe
     if (Library.book) socket.emit('reading', { book: Library.book.id });
     previewCelebrate();
     const mc = cfg.martial || {};
@@ -365,7 +375,7 @@
   socket.on('pl', d => { Voice.drop(d.id); Hall.removePlayer(d.id); $('#online').textContent = NUM(Hall.count()); voiceUI(); });
   socket.on('pv', d => { Hall.setVoice(d.id, d.v); voiceUI(); });
   socket.on('prd', d => Hall.setReading(d.id, d.rd));
-  socket.on('pplace', d => Hall.setPlace(d.id, d.place, d.x, d.z));
+  socket.on('pplace', d => { Hall.setPlace(d.id, d.place, d.x, d.z); Voice.refresh(); });
   socket.on('psit', d => { Hall.setSit(d.id, d.sit, d.cm); if (d.id === me && !(d.sit >= 0)) Meditate.close(); });
   socket.on('pm', d => { Hall.setMerit(d.id, d.mt, d.up); if (d.id === me) renderRank(); });
   socket.on('penalty', d => Hall.penalty(d.pid, d.n));
@@ -380,7 +390,9 @@
   });
   socket.on('aura:me', aura => { myAura = aura; renderAura(); });
   socket.on('announce', d => announceQ(d));
-  socket.on('voice:kicked', d => { Voice.leave(); voiceUI(); toast(d.text); });
+  socket.on('sweeper:appear', event => Hall.setSweeper(event));
+  socket.on('martial:inheritance', d => { toast(`Tảo Địa Tăng truyền thừa: +${d.gain} công lực, lên cảnh giới ${d.level}!`); if (window.Dojo) Dojo.refresh(); });
+  socket.on('voice:kicked', d => { Voice.forceMute(); voiceUI(); toast(d.text); });
   socket.on('pu', d => Hall.updatePlayer(d));
   socket.on('p', arr => Hall.positions(arr));
   socket.on('chat', m => { addMsg(m); scrollFeed(); if (!m.sys && m.pid) Hall.bubble(m.pid, m.text); });
@@ -412,14 +424,14 @@
   socket.on('chant', setChant);
   socket.on('donation', d => { donations.unshift(d.d); renderDonations(null, d.funds); $('#donCard').hidden = false; });
   socket.on('donation:ok', d => {
-    if (d.merit) setTimeout(() => toast(`Cúng dường ${VND(d.amount)}: +${NUM(d.merit)} công đức.`), 1600);
+    if (d.merit) setTimeout(() => toast(`${d.test ? 'Cúng dường thử nghiệm' : 'Cúng dường'} ${VND(d.amount)}: +${NUM(d.merit)} công đức.`), 1600);
     if (d.aura) {
       myAura = d.aura; renderAura();
       if (d.aura.up && d.aura.t) setTimeout(() => toast(`Hào quang bừng sáng: bạn đã đột phá cảnh giới ${AURA.TIERS[d.aura.t - 1].name}!`), 3200);
     }
     if (pendingCode === d.code) {
       $('#dnQr').hidden = true; $('#dnDone').hidden = false;
-      $('#dnDoneText').textContent = `Nhà chùa đã nhận ${VND(d.amount)} cho quỹ “${d.fund}”. Cảm ơn tấm lòng của bạn.`;
+      $('#dnDoneText').textContent = d.test ? `Đã xác nhận thử nghiệm ${VND(d.amount)} cho quỹ “${d.fund}”. Không có giao dịch tiền thật.` : `Nhà chùa đã nhận ${VND(d.amount)} cho quỹ “${d.fund}”. Cảm ơn tấm lòng của bạn.`;
       pendingCode = null; SFX.bell(0.7);
     } else toast('Nhà chùa đã nhận tịnh tài của bạn. Tùy hỷ công đức.');
   });
@@ -540,7 +552,7 @@
       const li = document.createElement('li');
       const n = document.createElement('b'); n.textContent = d.name;
       const a = document.createElement('span'); a.className = 'amt'; a.textContent = d.amount == null ? 'Ẩn số tiền' : VND(d.amount);
-      const w = document.createElement('span'); w.className = 'what'; w.textContent = `Quỹ ${d.fund} · ${hhmm(d.t)}${d.note ? ' · “' + d.note + '”' : ''}`;
+      const w = document.createElement('span'); w.className = 'what'; w.textContent = `${d.test ? 'Thử nghiệm · ' : ''}Quỹ ${d.fund} · ${hhmm(d.t)}${d.note ? ' · “' + d.note + '”' : ''}`;
       li.append(n, a, w); ul.appendChild(li);
     });
   }
@@ -616,8 +628,7 @@
     SFX.unlock();
     switch (name) {
       case 'voice':
-        if (!Voice.active) startVoice(false);
-        else Voice.toggleMic().then(r => { if (typeof r === 'string') toast(MIC_ERR[r]); voiceUI(); });
+        toggleVoiceMic();
         pulse(btn); break;
       case 'library':                                          // nút Tàng Kinh Các: vào Tàng Kinh Các; đang ở trong rồi thì mở kệ kinh
         if (curScene !== 'library' && Places.current === 'hall') goScene('library'); else Library.open();
@@ -679,7 +690,8 @@
     $('#dnOff').hidden = on; $('#dnForm').hidden = !on; $('#dnQr').hidden = true; $('#dnDone').hidden = true; $('#dnWarn').hidden = true;
     if (on) {
       const d = cfg.donation;
-      $('#dnSub').textContent = `Tiền chuyển thẳng vào tài khoản ${d.bank} ${d.account}${d.accountName ? ' (' + d.accountName + ')' : ''}. Website không giữ tiền.`;
+      $('#dnSub').textContent = d.mode === 'test' ? 'Chế độ thử nghiệm: không chuyển tiền thật; tự xác nhận sau 10 giây.' : `Tiền chuyển thẳng vào tài khoản ${d.bank} ${d.account}${d.accountName ? ' (' + d.accountName + ')' : ''}. Website không giữ tiền.`;
+      $('#dnFormHint').textContent = d.mode === 'test' ? 'Sau 10 giây, game tự cấp công đức và hào quang theo số tiền thử nghiệm.' : 'Khi nhà chùa xác nhận đã nhận, nhân vật của bạn tỏa hào quang theo số tiền, cộng dồn qua nhiều lần cúng dường.';
       $('#dnFunds').innerHTML = cfg.donation.funds.map((f, i) => `<label class="opt"><input type="radio" name="fund" value="${f.id}"${i === 0 ? ' checked' : ''}><span><b></b></span></label>`).join('');
       $$('#dnFunds .opt b').forEach((b, i) => { b.textContent = cfg.donation.funds[i].name; });
       $('#dnName').value = myName;
@@ -700,9 +712,12 @@
       if (!r || !r.ok) { w.textContent = (r && r.reason) || 'Chưa tạo được mã.'; w.hidden = false; return; }
       pendingCode = r.code;
       $('#qrImg').src = r.qr;
+      $('#qrImg').alt = r.test ? 'Mã QR thử nghiệm, không dùng để chuyển tiền' : 'Mã VietQR để chuyển khoản cúng dường';
+      $$('.qr-live').forEach(el => { el.hidden = !!r.test; });
+      $('#qrHint').textContent = r.test ? 'Đây là mã thử nghiệm, không cần quét hoặc chuyển tiền. Hệ thống tự xác nhận sau 10 giây.' : 'Quét mã bằng app ngân hàng và kiểm tra tên chủ tài khoản trước khi chuyển. Giữ đúng nội dung chuyển khoản để được ghi nhận công đức.';
       $('#qrBank').textContent = r.bank; $('#qrAcc').textContent = r.account; $('#qrName').textContent = r.accountName || '—';
       $('#qrAmt').textContent = VND(r.amount); $('#qrCode').textContent = r.code; $('#qrFund').textContent = r.fund;
-      $('#qrStatus').textContent = r.auto ? 'Đang chờ ngân hàng báo đã nhận tiền. Trang sẽ tự cập nhật.' : 'Nhà chùa sẽ xác nhận và ghi công đức trong ngày.';
+      $('#qrStatus').textContent = r.test ? 'Đang chờ xác nhận thử nghiệm tự động…' : r.auto ? 'Đang chờ ngân hàng báo đã nhận tiền. Trang sẽ tự cập nhật.' : 'Nhà chùa sẽ xác nhận và ghi công đức trong ngày.';
       $('#dnForm').hidden = true; $('#dnQr').hidden = false;
     });
   });
@@ -710,7 +725,7 @@
   $('#qrCopy').addEventListener('click', () => {
     const t = $('#qrCode').textContent;
     const fallback = () => { const r = document.createRange(); r.selectNodeContents($('#qrCode')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast('Đã chọn nội dung, bấm sao chép trên máy của bạn.'); };
-    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(() => toast('Đã chép nội dung chuyển khoản.'), fallback); else fallback();
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(() => toast('Đã chép mã giao dịch.'), fallback); else fallback();
   });
 
   $('#dnAnon').addEventListener('change', e => { $('#dnAura').disabled = e.target.checked; if (e.target.checked) $('#dnAura').checked = false; });
@@ -729,23 +744,84 @@
     audioContext: () => SFX.context(),
     notice: t => toast(t),
     change: () => {
-      SFX.setAmbienceDuck('voice', Voice.active);
       voiceUI();
     }
   });
+  let voiceRetry = 0;
   async function startVoice(silent) {
-    if (Voice.joining) return;
+    if (Voice.joining) return false;
     voiceUI(true);
     const r = await Voice.join();
-    if (!r.ok) { if (!silent) toast(r.reason); voiceUI(); return; }
-    Voice.setMuted(muted); Voice.setDuck(chant ? 0.3 : 1);
-    if (!silent) {
-      if (r.listenOnly) toast(MIC_ERR[r.why] || MIC_ERR.nomic);
-      else if (store.get('ta-voice-tip') !== '1') { store.set('ta-voice-tip', '1'); toast('Đã bật micro. Đứng gần ai thì nghe người đó rõ. Đeo tai nghe để không bị vọng tiếng.'); }
-      else toast('Đã bật micro. Mời bạn trò chuyện.');
+    if (!r.ok) {
+      if (!silent) toast(r.reason);
+      if (joined && cfg && cfg.voice && Voice.supported) { clearTimeout(voiceRetry); voiceRetry = setTimeout(() => { if (joined && !Voice.active) startVoice(true); }, 5000); }
+      voiceUI(); return false;
     }
-    voiceUI();
+    clearTimeout(voiceRetry);
+    Voice.setMuted(muted); Voice.setDuck(chant ? 0.3 : 1);
+    voiceUI(); return true;
   }
+  let voiceMicBusy = false;
+  async function toggleVoiceMic() {
+    if (voiceMicBusy) return;
+    voiceMicBusy = true;
+    try {
+      if (!Voice.active && !(await startVoice(false))) return;
+      const result = await Voice.toggleMic();
+      if (typeof result === 'string') toast(MIC_ERR[result] || result);
+    } finally { voiceMicBusy = false; voiceUI(); }
+  }
+  let personId = null;
+  function openPerson(id) {
+    const p = Hall.player(id); if (!p) return;
+    personId = id;
+    $('#person-title').textContent = p.name;
+    const canChallenge = Places.current === 'arena';
+    $('#person-hint').textContent = canChallenge ? 'Chọn thao tác với người chơi này.' : 'Mời người này cùng ra Sân đấu để luận võ.';
+    $('#person-mute').textContent = Voice.isMuted(id) ? 'Bật tiếng người này' : 'Tắt tiếng người này';
+    $('#person-challenge').hidden = !(cfg && cfg.martial && cfg.martial.pk);
+    openDlg('person');
+  }
+  $('#person-mute').addEventListener('click', () => {
+    if (personId == null) return;
+    const off = !Voice.isMuted(personId); Voice.mute(personId, off);
+    toast(off ? 'Đã tắt tiếng người chơi này.' : 'Đã bật tiếng người chơi này.');
+    closeDlg('person'); voiceUI();
+  });
+  $('#person-challenge').addEventListener('click', () => {
+    const id = personId; closeDlg('person');
+    if (id == null) return;
+    if (Places.current === 'arena') { if (window.Arena && Arena.pick) Arena.pick(id); return; }
+    socket.emit('spar:invite', { toPid: id }, r => {
+      if (!r || !r.ok) { if (r && r.code === 'login') needLogin(r.reason); else toast((r && r.reason) || 'Chưa gửi được lời mời.'); return; }
+      toast('Đã gửi lời mời cùng ra Sân đấu.');
+    });
+  });
+  let sparOffer = null, sparTarget = null;
+  socket.on('spar:invited', d => {
+    if (!d || $('#dlg-spar').open) return;
+    sparOffer = d.id;
+    $('#spar-message').textContent = `${d.name} mời bạn cùng ra Sân đấu để luận võ. Bạn có đồng ý không?`;
+    openDlg('spar');
+  });
+  function respondSpar(accept) {
+    const id = sparOffer; sparOffer = null; closeDlg('spar');
+    if (!id) return;
+    socket.emit('spar:respond', { id, accept }, r => { if (!r || !r.ok) toast((r && r.reason) || 'Lời mời không còn hiệu lực.'); });
+  }
+  $('#spar-accept').addEventListener('click', () => respondSpar(true));
+  $('#spar-decline').addEventListener('click', () => respondSpar(false));
+  $('#dlg-spar').addEventListener('cancel', e => { e.preventDefault(); respondSpar(false); });
+  function openSparTarget() {
+    if (sparTarget == null || Places.current !== 'arena' || !window.Arena) return;
+    const target = sparTarget; sparTarget = null; Arena.pick(target);
+  }
+  socket.on('spar:declined', () => toast('Người chơi đã từ chối lời mời.'));
+  socket.on('spar:accepted', () => {
+    closeDlg('spar'); sparOffer = null;
+    Places.go('arena').then(ok => { if (ok) openSparTarget(); });
+  });
+  socket.on('spar:ready', d => { sparTarget = d.toPid; openSparTarget(); });
   let vuiT = 0;
   function voiceUI(joining) {
     if (vuiT && !joining) return;
@@ -756,21 +832,23 @@
     const on = Voice.active, b = $('#actVoice');
     b.classList.toggle('on', on && Voice.mic); b.classList.toggle('off', on && !Voice.mic);
     b.setAttribute('aria-pressed', String(on && Voice.mic));
-    $('#actVoiceLbl').textContent = joining || Voice.joining ? 'Đang bật…' : !on ? 'Nói chuyện' : Voice.mic ? 'Mic đang bật' : 'Mic đang tắt';
-    $('#voicebar').hidden = !on;
+    $('#actVoiceLbl').textContent = joining || Voice.joining ? 'Đang nối…' : Voice.mic ? 'Mic đang bật' : 'Nói chuyện';
+    $('#voicebar').hidden = !joined || !(cfg && cfg.voice);
     $('#stage').classList.toggle('voice-on', on);
-    if (!on) return;
+    if ($('#voicebar').hidden) return;
     const st = Voice.stats();
+    const anyTalking = Voice.mic || Voice.peers().some(p => p.level > 0.018 && !p.muted);
+    SFX.setAmbienceDuck('voice', on && anyTalking);
     $('#vbMic').setAttribute('aria-pressed', String(Voice.mic));
     $('#vbMic').classList.toggle('off', !Voice.mic);
-    $('#vbTitle').textContent = !Voice.hasMic ? 'Đang nghe' : Voice.mic ? 'Đang nói chuyện' : 'Đã tắt micro';
-    $('#vbSub').textContent = st.connected ? `${st.connected} người ở gần nghe được nhau`
+    $('#vbTitle').textContent = joining || Voice.joining ? 'Đang kết nối tiếng…' : !on ? 'Chưa kết nối tiếng' : Voice.mic ? 'Mic đang bật' : 'Đang nghe · mic tắt';
+    $('#vbSub').textContent = !on ? 'Chạm mic để thử kết nối và nói chuyện.' : Voice.audioBlocked ? 'Chạm màn hình để bật âm thanh.' : st.connected ? `${st.connected} người ở gần nghe được nhau`
       : st.peers ? 'Đang nối tiếng với người ở gần…' : 'Chưa có ai ở gần bật nói chuyện. Đi lại gần đạo hữu khác nhé.';
     if ($('#dlg-voice').open) renderVoiceList();
   }
   function renderVoiceList() {
     const box = $('#vcList'), mine = Hall.player(me), conn = new Map(Voice.peers().map(p => [p.pid, p]));
-    const list = Hall.list().filter(p => p.id !== me && p.v).map(p => ({ p, d: mine ? pdist(mine, p) : 9 })).sort((a, b) => a.d - b.d);
+    const list = Hall.list().filter(p => p.id !== me && p.v && Voice.sameRoom(mine, p)).map(p => ({ p, d: mine ? Voice.distance(mine, p) : 9 })).sort((a, b) => a.d - b.d);
     box.textContent = '';
     if (!list.length) { box.innerHTML = '<p class="empty">Chưa có ai khác bật nói chuyện.</p>'; return; }
     list.slice(0, 40).forEach(({ p, d }) => {
@@ -794,8 +872,7 @@
       box.appendChild(row);
     });
   }
-  $('#vbMic').addEventListener('click', () => Voice.toggleMic().then(r => { if (typeof r === 'string') toast(MIC_ERR[r]); voiceUI(); }));
-  $('#vbLeave').addEventListener('click', () => { Voice.leave(); voiceUI(); toast('Đã rời phần nói chuyện.'); });
+  $('#vbMic').addEventListener('click', toggleVoiceMic);
   $('#vbList').addEventListener('click', () => { renderVoiceList(); openDlg('voice'); });
   $('#vcVol').value = Math.round(Number(store.get('ta-voice-vol') || 1) * 100);
   Voice.setVolume($('#vcVol').value / 100);
@@ -827,8 +904,8 @@
     onChange(name) {
       Hall.pause(name === 'dojo'); Hall.setPlace(me, name);       // Sân đấu có khung vẽ riêng (Arena gắn cảnh vào đó)
       if (name !== 'hall') Meditate.close();
-      // nói chuyện chỉ ở chánh điện: sang nơi khác thì tắt micro, vì ở đó không có nút tắt và nhân vật đã biến mất khỏi chánh điện
-      if (name !== 'hall' && Voice.active) { Voice.leave(); voiceUI(); toast('Đã tắt nói chuyện khi rời chánh điện.'); }
+      // Voice tự chuyển phòng khi nơi của người chơi đổi; giữ trạng thái mic rõ ràng trên thanh điều khiển.
+      voiceUI();
     }
   });
   const martialHost = {
@@ -900,9 +977,10 @@
   let myTotal = 0;
   function renderRank() {
     const box = $('#rankNow'); if (!box) return;
-    const mt = myTotal, rk = MERIT.rankOf(mt), dm = MERIT.demonOf(mt), nx = MERIT.nextRank(mt);
+    const mt = myTotal, rk = mt === 666 ? 0 : MERIT.rankOf(mt), dm = MERIT.visualDemonOf(mt), nx = MERIT.nextRank(mt);
     box.className = 'rank-now' + (dm ? ' bad' : '');
-    if (dm) box.textContent = `${MERIT.DEMONS[dm.n - 1].name} đang theo sau bạn (công đức ${NUM(mt)}). Làm việc thiện để công đức về trên 0 thì quỷ tan.`;
+    if (mt === 666) box.textContent = 'Ma Vương xuất hiện ở đúng 666 công đức và ban buff quỷ cấp 4 trong phòng PK có buff. Khi công đức thay đổi, pháp tướng sẽ trở lại.';
+    else if (dm) box.textContent = `${MERIT.DEMONS[dm.n - 1].name} đang theo sau bạn (công đức ${NUM(mt)}). Làm việc thiện để công đức về trên 0 thì quỷ tan.`;
     else box.textContent = (rk ? `Pháp tướng: ${MERIT.RANKS[rk - 1].name}.` : 'Chưa có pháp tướng.') + (nx ? ` Thêm ${NUM(nx.need)} công đức để mở ${nx.rank.name}.` : ' Đã đạt pháp tướng cao nhất.');
   }
   (function buildRules() {

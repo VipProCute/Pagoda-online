@@ -1419,3 +1419,25 @@ test('phiếu tặng không bị nhân đôi dù dấu outcome của cúng dư�
   assert.equal(e.svc.profile('u1').vouchers.length, 1, 'tìm lại phiếu theo mã thay vì tặng thêm');
   assert.equal(d.voucherId, e.svc.profile('u1').vouchers[0].id);
 });
+
+test('Tảo Địa Tăng: truyền một cảnh giới, một lần mỗi lần gặp và giữ trần công lực', () => {
+  const e = env(), encounter = '1234567890abcdef12345678';
+  e.giveCongLuc('u1', 100);
+  const first = e.svc.inheritSweeper('u1', encounter);
+  assert.equal(first.ok, true);
+  assert.equal(first.gain, 50);
+  assert.equal(first.level, 3);
+  assert.equal(e.svc.profile('u1').congLuc, 150);
+  assert.equal(e.svc.inheritSweeper('u1', encounter).already, true);
+  assert.equal(e.svc.profile('u1').congLuc, 150);
+  assert.equal(e.svc.inheritSweeper('u2', encounter).level, 2);
+  e.giveCongLuc('max', 3000);
+  assert.equal(e.svc.inheritSweeper('max', encounter).code, 'max');
+  e.svc.profile('busy', true).activeMatch = 'match-1';
+  assert.equal(e.svc.inheritSweeper('busy', encounter).code, 'match');
+  assert.equal(e.svc.inheritSweeper('u1', '__proto__').ok, false);
+  const snapshot = JSON.parse(JSON.stringify(e.db));
+  const restored = createMartialService({ db: snapshot, store: { save() {} }, now: () => e.clock.t, config: {}, vnDay });
+  assert.equal(restored.inheritSweeper('u1', encounter).already, true);
+  assert.equal(restored.profile('u1').congLuc, 150);
+});

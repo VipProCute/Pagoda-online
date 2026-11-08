@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&family=Cormorant+Garamond:wght@500;600;700&display=swap">
-<link rel="stylesheet" href="/css/style.css?v=vohoc5">
+<link rel="stylesheet" href="/css/style.css?v=voice2">
 <link rel="stylesheet" href="/css/celebrate.css">
 <link rel="stylesheet" href="/css/account.css?v=vohoc5">
 <link rel="stylesheet" href="/css/places.css?v=vohoc5">
@@ -71,14 +71,6 @@
     </div>
     <div class="ticker" id="ticker" aria-live="polite"></div>
     <div class="today" id="todayStats"></div>
-    <div class="voicebar" id="voicebar" hidden>
-      <button type="button" class="vb-mic" id="vbMic" aria-pressed="true" title="Bật / tắt micro">
-        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" fill="currentColor"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/><path class="slash" d="M4 4l16 16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-      </button>
-      <div class="vb-text"><b id="vbTitle">Đang nói chuyện</b><span id="vbSub"></span></div>
-      <button type="button" class="btn small" id="vbList">Người gần</button>
-      <button type="button" class="btn small" id="vbLeave">Rời</button>
-    </div>
     <p class="stage-hint" id="stageHint">Chạm sàn để đi lại · chạm bát hương để thắp nhang · chạm tượng Phật để vái lạy · chạm tủ Tàng Kinh Các để vào trong</p>
   </section>
 
@@ -192,6 +184,15 @@
   <button type="button" class="act goto" data-act="dojo" id="actDojo" hidden title="Võ Học Các: tu luyện nội công, học chiêu"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5.5" r="2.4" fill="currentColor"/><path d="M12 9v5.5M5 13.5c2.2 1.1 4.6 1.6 7 1.6s4.8-.5 7-1.6M7.5 21c0-3.6 2-5.6 4.5-5.6s4.5 2 4.5 5.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Võ học các</span></button>
   <button type="button" class="act goto" data-act="arena" id="actArena" hidden title="Sân đấu: luận võ 1 đấu 1"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M7.5 7.5l9 9M16.5 7.5l-9 9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>Sân đấu</span></button>
 </nav>
+
+    <div class="voicebar" id="voicebar" hidden>
+      <button type="button" class="vb-mic" id="vbMic" aria-pressed="false" aria-label="Bật hoặc tắt micro" title="Bật / tắt micro">
+        <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" fill="currentColor"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/><path class="slash" d="M4 4l16 16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+      <div class="vb-text"><b id="vbTitle">Đang nói chuyện</b><span id="vbSub"></span></div>
+      <button type="button" class="btn small" id="vbList">Người gần</button>
+    </div>
+
 
 <!-- vào chùa / đổi trang phục -->
 <dialog class="dlg" id="dlg-join" aria-labelledby="join-title">
@@ -370,7 +371,7 @@
         <div class="grow"><label for="dnNote" class="lbl">Lời nhắn (không bắt buộc)</label><input type="text" class="field" id="dnNote" maxlength="120" placeholder="Hồi hướng cho…"></div>
       </div>
       <div class="checks"><label><input type="checkbox" id="dnAnon"> Ẩn danh</label><label><input type="checkbox" id="dnHide"> Không hiện số tiền</label><label><input type="checkbox" id="dnAura" checked> Hiện hào quang quanh nhân vật</label></div>
-      <p class="hint">Khi nhà chùa xác nhận đã nhận, nhân vật của bạn tỏa hào quang theo số tiền, cộng dồn qua nhiều lần cúng dường. <button type="button" class="linkbtn" data-open="aura">Xem 9 cảnh giới</button></p>
+      <p class="hint"><span id="dnFormHint">Khi nhà chùa xác nhận đã nhận, nhân vật của bạn tỏa hào quang theo số tiền, cộng dồn qua nhiều lần cúng dường.</span> <button type="button" class="linkbtn" data-open="aura">Xem 9 cảnh giới</button></p>
       <p class="warn" id="dnWarn" hidden></p>
       <div class="dlg-foot"><button type="button" class="btn" data-close>Để sau</button><button type="submit" class="btn primary">Tạo mã VietQR</button></div>
     </form>
@@ -378,15 +379,15 @@
       <div class="qr-box">
         <img id="qrImg" alt="Mã VietQR để chuyển khoản cúng dường" width="220" height="220">
         <dl class="kv">
-          <dt>Ngân hàng</dt><dd id="qrBank"></dd>
-          <dt>Số tài khoản</dt><dd id="qrAcc"></dd>
-          <dt>Chủ tài khoản</dt><dd id="qrName"></dd>
+          <dt class="qr-live">Ngân hàng</dt><dd class="qr-live" id="qrBank"></dd>
+          <dt class="qr-live">Số tài khoản</dt><dd class="qr-live" id="qrAcc"></dd>
+          <dt class="qr-live">Chủ tài khoản</dt><dd class="qr-live" id="qrName"></dd>
           <dt>Số tiền</dt><dd id="qrAmt"></dd>
-          <dt>Nội dung</dt><dd><span class="code" id="qrCode"></span> <button type="button" class="copy" id="qrCopy">Chép</button></dd>
+          <dt>Mã giao dịch</dt><dd><span class="code" id="qrCode"></span> <button type="button" class="copy" id="qrCopy">Chép</button></dd>
           <dt>Quỹ</dt><dd id="qrFund"></dd>
         </dl>
       </div>
-      <p class="hint">Quét mã bằng app ngân hàng và kiểm tra tên chủ tài khoản trước khi chuyển. Giữ đúng nội dung chuyển khoản để được ghi nhận công đức.</p>
+      <p class="hint" id="qrHint">Quét mã bằng app ngân hàng và kiểm tra tên chủ tài khoản trước khi chuyển. Giữ đúng nội dung chuyển khoản để được ghi nhận công đức.</p>
       <div class="waiting"><span class="spin"></span><span id="qrStatus">Đang chờ ngân hàng báo đã nhận tiền…</span></div>
       <div class="dlg-foot"><button type="button" class="btn" id="qrBack">Tạo mã khác</button><button type="button" class="btn" data-close>Đóng</button></div>
     </div>
@@ -426,11 +427,26 @@
   </div>
 </dialog>
 
+<!-- Tương tác với người chơi, dùng chung ở các cảnh -->
+<dialog class="dlg" id="dlg-person" aria-labelledby="person-title">
+  <div class="dlg-body">
+    <div class="dlg-head"><div><h2 id="person-title">Người chơi</h2><p id="person-hint"></p></div><button type="button" class="x" data-close aria-label="Đóng">×</button></div>
+    <div class="dlg-foot"><button type="button" class="btn" id="person-mute">Tắt tiếng người này</button><button type="button" class="btn gold" id="person-challenge">Thách đấu</button></div>
+  </div>
+</dialog>
+
+<dialog class="dlg" id="dlg-spar" aria-labelledby="spar-title">
+  <div class="dlg-body">
+    <div class="dlg-head"><div><h2 id="spar-title">Lời mời luận võ</h2><p id="spar-message"></p></div></div>
+    <div class="dlg-foot"><button type="button" class="btn" id="spar-decline">Từ chối</button><button type="button" class="btn gold" id="spar-accept">Cùng ra Sân đấu</button></div>
+  </div>
+</dialog>
+
 <!-- nói chuyện -->
 <dialog class="dlg" id="dlg-voice" aria-labelledby="vc-title">
   <div class="dlg-body">
     <div class="dlg-head">
-      <div><h2 id="vc-title">Nói chuyện</h2><p>Đứng gần ai thì nghe người đó rõ, đứng xa thì nhỏ dần. Đi lại trong chánh điện để đến gần đạo hữu muốn trò chuyện.</p></div>
+      <div><h2 id="vc-title">Nói chuyện</h2><p>Đứng gần ai thì nghe người đó rõ, đứng xa thì nhỏ dần. Mỗi khu có phòng riêng; đến gần đạo hữu để nghe rõ hơn.</p></div>
       <button type="button" class="x" data-close aria-label="Đóng">×</button>
     </div>
     <div class="vc-vol">
@@ -490,17 +506,17 @@
 <script src="/js/lunar.js"></script>
 <script src="/js/audio.js"></script>
 <script src="/js/aura.js"></script>
-<script src="/js/merit.js"></script>
+<script src="/js/merit.js?v=npc2"></script>
 <script src="/js/celebrate.js"></script>
-<script src="/js/hall.js?v=npc1"></script>
+<script src="/js/hall.js?v=voice2"></script>
 <script src="/js/fortune.js?v=vohoc5"></script>
-<script src="/js/voice.js"></script>
+<script src="/js/voice.js?v=voice2"></script>
 <script src="/js/library.js"></script>
 <script src="/js/martial.js?v=vohoc5"></script>
 <script src="/js/places.js?v=vohoc5"></script>
 <script src="/js/meditate.js?v=vohoc5"></script>
-<script src="/js/dojo.js?v=vohoc5"></script>
+<script src="/js/dojo.js?v=testdon1"></script>
 <script src="/js/arena.js?v=vohoc5"></script>
-<script src="/js/app.js?v=vohoc5"></script>
+<script src="/js/app.js?v=testdon1"></script>
 </body>
 </html>

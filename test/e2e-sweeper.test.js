@@ -1,0 +1,35 @@
+'use strict';
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const path = require('path');
+const { startServer } = require('./helpers/live');
+const { connect, call, join, sleep } = require('./helpers/client');
+
+test('gặp cao nhân: máy chủ kiểm tra vị trí, chống cộng trùng và giữ thưởng sau khởi động lại', async t => {
+  const srv = await startServer({ NODE_OPTIONS: '--require=' + path.join(__dirname, 'helpers', 'force-sweeper.js') });
+  t.after(() => srv.stop());
+  let a = await connect(srv.port); t.after(() => a.close());
+  const intro = await join(a, 'Nguoi Tu', 'sweeper-test-user-123');
+  assert.ok(intro.sweeper);
+  const id = intro.sweeper.id;
+  assert.equal((await call(a, 'sweeper:claim', { id: 'aaaaaaaaaaaaaaaaaaaaaaaa' })).ok, false);
+  assert.equal((await call(a, 'sweeper:claim', { id })).ok, false, 'ngoài Tàng Kinh Các');
+  assert.equal((await call(a, 'scene', 'library')).ok, true);
+  assert.equal((await call(a, 'sweeper:claim', { id })).code, 'far');
+  a.emit('move', { x: 0.5, z: 0.55 });
+  await sleep(1600);
+  const reward = await call(a, 'sweeper:claim', { id });
+  assert.equal(reward.ok, true, reward.reason);
+  assert.equal(reward.gain, 60);
+  assert.equal(reward.level, 2);
+  assert.equal((await call(a, 'sweeper:claim', { id })).already, true);
+  assert.equal((await call(a, 'martial:state', {})).profile.congLuc, 60);
+  a.close(); await srv.restart();
+  a = await connect(srv.port);
+  await join(a, 'Nguoi Tu', 'sweeper-test-user-123');
+  assert.equal((await call(a, 'martial:state', {})).profile.congLuc, 60);
+  await call(a, 'scene', 'library');
+  a.emit('move', { x: 0.5, z: 0.55 }); await sleep(1600);
+  assert.equal((await call(a, 'sweeper:claim', { id })).already, true);
+  assert.equal((await call(a, 'martial:state', {})).profile.congLuc, 60);
+});

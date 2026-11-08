@@ -7,6 +7,7 @@
 const path = require('path');
 const http = require('http');
 const crypto = require('crypto');
+const QRCode = require('qrcode');
 const express = require('express');
 const { Server } = require('socket.io');
 const store = require('./lib/store');
@@ -17,6 +18,7 @@ const MERITS = require('./public/js/merit');
 const announce = require('./lib/announce');
 const MARTIAL = require('./public/js/martial');
 const { createMartialService } = require('./lib/martial/service');
+const { createSweeper } = require('./lib/sweeper');
 const { mergeMartialGuest, donatedBy } = require('./lib/account');
 const { createArenaManager } = require('./lib/pk/manager');
 const fs = require('fs');
@@ -55,7 +57,10 @@ const BANK = {
   name: clean(process.env.BANK_ACCOUNT_NAME || '', 60),
   label: clean(process.env.BANK_LABEL || process.env.BANK_ID || '', 60)
 };
-const DONATION_ENABLED = !!(BANK.id && BANK.account);
+// Thử nghiệm là mặc định; chỉ bật nhận tiền thật khi chủ động đặt DONATION_MODE=live.
+const DONATION_TEST = String(process.env.DONATION_MODE || 'test').trim().toLowerCase() !== 'live';
+const DONATION_ENABLED = DONATION_TEST || !!(BANK.id && BANK.account);
+const TEST_DONATION_DELAY = 10000;
 // FUNDS="Tu sửa chánh điện|300000000;Bếp cơm từ thiện;Tùy nhà chùa sử dụng"  (mục tiêu là tùy chọn)
 const FUNDS = (process.env.FUNDS || 'Tùy nhà chùa sử dụng').split(';').map(s => s.trim()).filter(Boolean).slice(0, 8)
   .map((s, i) => { const [name, goal] = s.split('|'); return { id: 'q' + i, name: clean(name, 60), goal: Math.max(0, parseInt(goal, 10) || 0) }; });
@@ -89,7 +94,7 @@ const Z_MIN = 0.12, Z_MAX = 0.97, X_MIN = 0.03, X_MAX = 0.97;
 /* ----- nói chuyện bằng giọng (WebRTC) ----- */
 // Máy chủ chỉ chuyển lời mời kết nối giữa hai trình duyệt; tiếng nói đi thẳng giữa hai máy, không qua máy chủ.
 const VOICE_ENABLED = process.env.VOICE !== '0';
-const VOICE_MAX = Number(process.env.VOICE_MAX) || 150;
+const VOICE_MAX = Number(process.env.VOICE_MAX) || MAX_PLAYERS;
 const STUN_URLS = (process.env.STUN_URLS || 'stun:stun.l.google.com:19302,stun:stun.cloudflare.com:3478').split(',').map(s => s.trim()).filter(Boolean);
 const TURN = { urls: (process.env.TURN_URLS || '').split(',').map(s => s.trim()).filter(Boolean), username: process.env.TURN_USERNAME || '', credential: process.env.TURN_CREDENTIAL || '' };
 const CF_TURN = { id: (process.env.CF_TURN_KEY_ID || '').trim(), token: (process.env.CF_TURN_API_TOKEN || '').trim() };
@@ -135,6 +140,7 @@ async function iceServers() {
 
 /* ---------------- dữ liệu ---------------- */
 const db = store.get();    // cùng một object suốt vòng đời; main() gọi store.init() điền dữ liệu trước khi mở cổng
+const sweeper = createSweeper();
 let martial = null, arena = null;   // dịch vụ tu luyện và quản lý sân đấu, tạo trong main() sau khi dữ liệu đã nạp
 function rollDay() {
   const d = vnDay();
@@ -271,12 +277,12 @@ function activeIncense() { const t = now(); return db.incense.filter(s => s.unti
 function fundsSummary() {
   return FUNDS.map(f => ({
     id: f.id, name: f.name, goal: f.goal,
-    raised: db.donations.filter(d => d.status === 'confirmed' && d.fund === f.id).reduce((s, d) => s + d.amount, 0)
+    raised: db.donations.filter(d => d.status === 'confirmed' && d.mode !== 'test' && d.fund === f.id).reduce((s, d) => s + d.amount, 0)
   }));
 }
 const publicMsg = m => ({ id: m.id, pid: m.pid, name: m.name, c: m.c, text: m.text, t: m.t, mod: !!m.mod, sys: !!m.sys });
 const publicPrayer = p => ({ id: p.id, kind: p.kind, text: p.text, name: p.name, t: p.t, n: p.n });
-const publicDonation = d => ({ name: d.anon ? 'Ẩn danh' : d.name, amount: d.hide ? null : d.amount, fund: d.fundName, note: d.note, t: d.confirmedAt });
+const publicDonation = d => ({ name: d.anon ? 'Ẩn danh' : d.name, amount: d.hide ? null : d.amount, fund: d.fundName, note: d.note, t: d.confirmedAt, test: d.mode === 'test' });
 
 /* ---------------- máy chủ web ---------------- */
 const app = express();
@@ -344,7 +350,7 @@ function clientConfig() {
     memes: fx.memes,
     blessings: fx.blessings,
     incenseMinutes: INCENSE_MINUTES,
-    donation: DONATION_ENABLED ? { bank: BANK.label, account: BANK.account, accountName: BANK.name, funds: FUNDS.map(f => ({ id: f.id, name: f.name })) } : null,
+    donation: DONATION_ENABLED ? { mode: DONATION_TEST ? 'test' : 'live', bank: DONATION_TEST ? '' : BANK.label, account: DONATION_TEST ? '' : BANK.account, accountName: DONATION_TEST ? '' : BANK.name, funds: FUNDS.map(f => ({ id: f.id, name: f.name })) } : null,
     tracks: TRACKS,
     kinds: KINDS,
     voice: VOICE_ENABLED,
@@ -355,7 +361,8 @@ function clientConfig() {
 
 /* ----- bản ghi cúng dường + mã VietQR (dùng chung: cúng dường thường và hoàn thành tu luyện ngay) ----- */
 function addDonation(fields) {
-  const don = Object.assign({ code: makeCode(), status: 'pending', createdAt: now() }, fields);
+  const don = Object.assign({ code: makeCode(), status: 'pending', createdAt: now(), mode: DONATION_TEST ? 'test' : 'live' }, fields);
+  if (don.mode === 'test') don.confirmAt = don.createdAt + TEST_DONATION_DELAY;
   // đã xác nhận thì không bao giờ xóa: chỉ dọn lượt đã hủy / hết hạn cũ nhất khi quá nhiều
   db.donations.push(don);
   for (let i = 0; db.donations.length > 3000 && i < db.donations.length; ) {
@@ -365,8 +372,41 @@ function addDonation(fields) {
   return don;
 }
 function donationAck(don) {
-  const qr = `https://img.vietqr.io/image/${encodeURIComponent(BANK.id)}-${encodeURIComponent(BANK.account)}-compact2.png?amount=${don.amount}&addInfo=${encodeURIComponent(don.code)}&accountName=${encodeURIComponent(BANK.name)}`;
-  return { ok: true, code: don.code, amount: don.amount, fund: don.fundName, qr, bank: BANK.label, account: BANK.account, accountName: BANK.name, auto: !!SEPAY_API_KEY };
+  const test = don.mode === 'test';
+  const qr = test ? `/api/donation-qr/${encodeURIComponent(don.code)}.svg`
+    : `https://img.vietqr.io/image/${encodeURIComponent(BANK.id)}-${encodeURIComponent(BANK.account)}-compact2.png?amount=${don.amount}&addInfo=${encodeURIComponent(don.code)}&accountName=${encodeURIComponent(BANK.name)}`;
+  return { ok: true, code: don.code, amount: don.amount, fund: don.fundName, qr, test, confirmAt: test ? don.confirmAt : null,
+    bank: test ? '' : BANK.label, account: test ? '' : BANK.account, accountName: test ? '' : BANK.name, auto: test || !!SEPAY_API_KEY };
+}
+
+// QR thử nghiệm chỉ mã hóa mã giao dịch nội bộ, không chứa thông tin chuyển khoản.
+app.get('/api/donation-qr/:code.svg', async (req, res) => {
+  const code = String(req.params.code || '').toUpperCase();
+  if (!/^CD[A-Z0-9]{6}$/.test(code)) return res.sendStatus(404);
+  const d = await adoptDonation(code);
+  if (!d || d.mode !== 'test') return res.sendStatus(404);
+  try {
+    const svg = await QRCode.toString(`CHUA TAM AN - THU NGHIEM - ${code}`, { type: 'svg', margin: 2, errorCorrectionLevel: 'M' });
+    res.type('image/svg+xml').set('Cache-Control', 'no-store').send(svg);
+  } catch (e) { res.sendStatus(500); }
+});
+const testDonationTimers = new Map();
+// Sau khi mã được lưu, tính lại hạn từ lúc chuẩn bị trả QR cho người chơi.
+function armNewTestDonation(d) {
+  if (d.mode !== 'test') return;
+  d.confirmAt = now() + TEST_DONATION_DELAY;
+  store.save();
+  store.flush().catch(e => console.error('[donation test]', e.message));
+}
+function scheduleTestDonation(d) {
+  if (!DONATION_TEST || !d || d.mode !== 'test' || d.status !== 'pending' || !Number.isFinite(d.confirmAt) || testDonationTimers.has(d.code)) return;
+  const timer = setTimeout(() => {
+    testDonationTimers.delete(d.code);
+    if (d.status !== 'pending' || d.mode !== 'test') return;
+    confirmDonation(d, { amount: d.amount, ref: d.code, source: 'simulation' });
+    store.flush().catch(e => console.error('[donation test]', e.message));
+  }, Math.max(0, d.confirmAt - now()));
+  testDonationTimers.set(d.code, timer);
 }
 
 /* Render chạy bản cũ chồng bản mới vài chục giây lúc deploy: lượt cúng dường tạo ở bản kia chưa có trong RAM của bản này.
@@ -402,7 +442,7 @@ async function syncDonations() {
 
 /* ----- webhook SePay: tự xác nhận khi tài khoản chùa nhận tiền ----- */
 app.post('/api/webhooks/sepay', async (req, res) => {
-  if (!SEPAY_API_KEY) return res.status(404).json({ success: false });
+  if (DONATION_TEST || !SEPAY_API_KEY) return res.status(404).json({ success: false });
   const lock = 'sepay:' + req.ip;
   if (failLock(lock)) return res.status(429).json({ success: false });
   const key = String(req.get('authorization') || '').replace(/^Apikey\s+/i, '').trim();
@@ -422,7 +462,7 @@ app.post('/api/webhooks/sepay', async (req, res) => {
   if (!d && seen && seen.status === 'confirmed' && seen.source === 'sepay' && seen.ref === ref) {
     return (await store.flush()) ? res.json({ success: true, matched: true, duplicate: true }) : res.status(503).json({ success: false });
   }
-  if (!d) return res.json({ success: true, matched: false });
+  if (!d || d.mode === 'test') return res.json({ success: true, matched: false });
   if (amount < d.amount) return res.json({ success: true, matched: false, reason: 'amount_too_low' });
   if (d.purpose === 'speedup') {   // hoàn thành tu luyện ngay chỉ xong khi Ban điều hành bấm xác nhận: ngân hàng báo thì chỉ đánh dấu
     d.bank = { at: now(), amount, ref };
@@ -463,7 +503,7 @@ const speedupView = x => {
 app.get('/api/admin/summary', admin, async (req, res) => {
   await syncDonations();
   res.json({
-    online: players.size, today: db.today, total: db.total, funds: fundsSummary(), donationEnabled: DONATION_ENABLED,
+    online: players.size, today: db.today, total: db.total, funds: fundsSummary(), donationEnabled: DONATION_ENABLED, donationMode: DONATION_TEST ? 'test' : 'live',
     donations: db.donations.slice(-300).reverse().map(x => (x.purpose === 'speedup' ? { ...x, speedup: speedupView(x) } : x)),
     martial: { profiles: Object.keys(db.martial.profiles).length, activeSessions: Object.values(db.martial.sessions).filter(x => x.status === 'active').length, pendingSpeedups: db.donations.filter(x => x.purpose === 'speedup' && x.status === 'pending').length, matches: db.martial.matches.length, arena: arena ? arena.stats() : null },
     db: store.status(),
@@ -553,6 +593,19 @@ auth.mount(app, {
 });
 
 const publicPlayer = p => ({ id: p.id, name: p.name, look: p.look, x: +p.x.toFixed(3), z: +p.z.toFixed(3), mod: p.mod, scene: p.scene || 'hall', v: p.v || 0, rd: p.rd || '', au: auraOf(p.uid), mt: meritTotal(p.uid), at: p.place && p.place !== 'hall' ? p.place : undefined, sit: p.sit >= 0 ? p.sit : undefined, cm: p.sit >= 0 && p.cm ? p.cm : undefined });
+const voiceRoomOf = p => p.place && p.place !== 'hall' ? p.place : p.scene || 'hall';
+// Lời mời gặp ở Sân đấu: cả hai tự đồng ý, rồi dùng quy trình mời PK hiện có.
+const sparOffers = new Map();
+function pruneSparOffers() { for (const [id, o] of sparOffers) if (o.until <= now() || !players.has(o.from) || !players.has(o.to)) sparOffers.delete(id); }
+function sparReady() {
+  pruneSparOffers();
+  for (const [id, o] of sparOffers) {
+    const a = players.get(o.from), b = players.get(o.to);
+    if (o.accepted && a && b && a.place === 'arena' && b.place === 'arena') {
+      sparOffers.delete(id); a.socket.emit('spar:ready', { toPid: b.id });
+    }
+  }
+}
 const voiceCount = () => { let n = 0; for (const p of players.values()) if (p.v) n++; return n; };
 function sys(text) {
   const m = { id: store.nextId(), pid: 0, name: '', c: 0, text, t: now(), sys: true };
@@ -572,7 +625,7 @@ function hideMessage(id) {
 }
 function confirmDonation(d, info) {
   const uid = accountOf(d.uid);
-  d.status = 'confirmed'; d.confirmedAt = now(); d.paidAmount = info.amount; d.ref = info.ref; d.source = info.source;
+  d.status = 'confirmed'; d.confirmedAt = now(); d.paidAmount = d.mode === 'test' ? 0 : info.amount; d.ref = info.ref; d.source = d.mode === 'test' ? 'simulation' : info.source;
   if (info.amount > d.amount) d.amount = info.amount;
   // Hào quang: cộng dồn theo người cúng dường (ẩn danh hoặc tự tắt thì không hiện)
   let aura = null;
@@ -587,14 +640,15 @@ function confirmDonation(d, info) {
   if (gain > 0) { addMeritUid(uid, d.name, gain, true); d.merit = gain; }
   store.save();
   io.emit('donation', { d: publicDonation(d), funds: fundsSummary() });
-  sys(`${d.anon ? 'Một Phật tử ẩn danh' : d.name} vừa cúng dường tịnh tài cho quỹ “${d.fundName}”. Tùy hỷ công đức.`);
+  sys(`${d.mode === 'test' ? '[Thử nghiệm] ' : ''}${d.anon ? 'Một Phật tử ẩn danh' : d.name} vừa cúng dường tịnh tài cho quỹ “${d.fundName}”. Tùy hỷ công đức.`);
   for (const p of players.values()) {
     if (p.uid !== uid) continue;
-    p.socket.emit('donation:ok', { code: d.code, amount: d.amount, fund: d.fundName, merit: gain, aura: aura && { ...myAura(uid), up: aura.up } });
+    p.socket.emit('donation:ok', { code: d.code, amount: d.amount, fund: d.fundName, test: d.mode === 'test', merit: gain, aura: aura && { ...myAura(uid), up: aura.up } });
     if (aura) io.emit('aura', { pid: p.id, au: auraOf(p.uid), up: aura.up });
   }
   // Đọc thông báo: soạn câu, nhờ VieNeu đọc (nếu có), rồi phát cho cả chánh điện
   const msg = announce.compose(d, aura, tierInfo);
+  if (d.mode === 'test') { msg.text = '[Thử nghiệm] ' + msg.text; msg.speak = 'Thông báo thử nghiệm. ' + msg.speak; }
   const base = { text: msg.text, speak: msg.speak, tier: aura && aura.up ? aura.tier : 0 };
   announce.speak(msg.speak).then(r => io.emit('announce', { ...base, audio: r.audio }));
   // Cúng dường để hoàn thành tu luyện ngay: chỉ tới đây (Ban điều hành đã xác nhận) phiên mới được hoàn thành, và chỉ một lần.
@@ -736,7 +790,7 @@ io.on('connection', socket => {
       today: db.today, total: db.total, online: players.size,
       board: board(), merit: meritOf(uid), aura: myAura(uid), hasMatch: !!(arena && arena.hasMatch(uid)),
       donations: db.donations.filter(d => d.status === 'confirmed').slice(-20).map(publicDonation),
-      funds: fundsSummary(), chant, fortuneQueue: fortuneQueue.snapshot()
+      funds: fundsSummary(), chant, fortuneQueue: fortuneQueue.snapshot(), sweeper: sweeper.current()
     });
     socket.broadcast.emit('pj', publicPlayer(p));
     if (players.size <= 80) socket.broadcast.emit('ticker', { text: `${p.name} vừa vào chánh điện` });
@@ -941,7 +995,9 @@ io.on('connection', socket => {
     if (d.name && String(d.name).trim()) { const nm = checkName(d.name, p.mod); if (!nm.ok) return ack(nm); name = nm.name; }
     const don = addDonation({ amount, fund: fund.id, fundName: fund.name, name, anon: !!d.anon, hide: !!d.hide, aura: !d.anon && d.aura !== false, note, uid: p.uid });
     // mã đã có trong sổ chùa rồi mới đưa cho người cúng dường, để webhook / admin tìm thấy được
-    if (!(await store.flush())) return ack({ ok: false, reason: 'Chưa lưu được mã cúng dường. Bạn thử lại sau ít giây nhé.' });
+    if (!(await store.flush())) { if (don.mode === 'test') { don.status = 'cancelled'; store.save(); } return ack({ ok: false, reason: 'Chưa lưu được mã cúng dường. Bạn thử lại sau ít giây nhé.' }); }
+    armNewTestDonation(don);
+    scheduleTestDonation(don);
     ack(donationAck(don));
   });
 
@@ -960,7 +1016,7 @@ io.on('connection', socket => {
   socket.on('voice:join', async (d, ack) => {
     if (!p || typeof ack !== 'function') return;
     if (!VOICE_ENABLED) return ack({ ok: false, reason: 'Nhà chùa chưa mở nói chuyện bằng giọng.' });
-    if (p.voiceBanUntil > now()) return ack({ ok: false, reason: `Bạn đang bị khóa mic thêm ${Math.ceil((p.voiceBanUntil - now()) / 60e3)} phút.` });
+    if (d && d.mic && p.voiceBanUntil > now()) return ack({ ok: false, reason: 'Micro của bạn đang bị khóa, bạn vẫn có thể nghe.' });
     if (!p.v && voiceCount() >= VOICE_MAX) return ack({ ok: false, reason: 'Đang có quá nhiều người nói chuyện. Bạn đợi ít phút nhé.' });
     if (!bucket('voiceJoin', 0.2, 3)) return ack({ ok: false, reason: 'Đợi vài giây rồi thử lại nhé.' });
     const me = p;
@@ -970,16 +1026,19 @@ io.on('connection', socket => {
     io.emit('pv', { id: p.id, v: p.v });
     ack({ ok: true, ice });
   });
-  socket.on('voice:mic', d => {
-    if (!p || !p.v || !d || !bucket('voiceMic', 2, 6)) return;
+  socket.on('voice:mic', (d, ack) => {
+    const reply = r => { if (typeof ack === 'function') ack(r); };
+    if (!p || !p.v || !d || !bucket('voiceMic', 2, 6)) return reply({ ok: false, reason: 'Chưa thể đổi micro, hãy thử lại.' });
+    if (d.on && p.voiceBanUntil > now()) return reply({ ok: false, reason: `Micro đang bị khóa thêm ${Math.ceil((p.voiceBanUntil - now()) / 60e3)} phút.` });
     const v = d.on ? 2 : 1;
-    if (v !== p.v) { p.v = v; io.emit('pv', { id: p.id, v }); }
+    if (v !== p.v) { p.v = v; io.emit('pv', { id: p.id, v: p.v }); }
+    reply({ ok: true });
   });
   socket.on('voice:leave', () => { if (p && p.v) { p.v = 0; io.emit('pv', { id: p.id, v: 0 }); } });
   socket.on('voice:signal', d => {
     if (!p || !p.v || !d || typeof d !== 'object' || !bucket('signal', 40, 160)) return;
     const t = players.get(Number(d.to)), s = d.s;
-    if (!t || t === p || !t.v || !s || typeof s !== 'object') return;
+    if (!t || t === p || !t.v || voiceRoomOf(p) !== voiceRoomOf(t) || !s || typeof s !== 'object') return;
     if (!['offer', 'answer', 'ice', 'bye'].includes(s.type)) return;
     let size = 0;
     try { size = JSON.stringify(s).length; } catch (e) { return; }
@@ -992,7 +1051,7 @@ io.on('connection', socket => {
     if (!t || t.mod) return;
     t.voiceBanUntil = now() + 10 * 60e3;
     t.socket.emit('voice:kicked', { text: 'Ban điều hành đã khóa mic của bạn 10 phút. Mời bạn giữ lời nói hiền hòa nơi cửa Phật.' });
-    if (t.v) { t.v = 0; io.emit('pv', { id: t.id, v: 0 }); }
+    if (t.v) { t.v = 1; io.emit('pv', { id: t.id, v: 1 }); }
   });
 
   /* ----- các nơi: chánh điện, Võ Học Các, Sân đấu ----- */
@@ -1023,6 +1082,7 @@ io.on('connection', socket => {
       p.tx = p.x; p.tz = p.z; p.dirty = true;
     }
     p.place = place;
+    sparReady();
     io.emit('pplace', { id: p.id, place, x: +p.x.toFixed(3), z: +p.z.toFixed(3) });
     ack(info);
   });
@@ -1070,6 +1130,16 @@ io.on('connection', socket => {
     const st = martial.state(p.uid);
     ack({ ...st, login: { required: auth.enabled, signedIn: !!auth.sessionFor(p.socket.data.authKey) } });
   });
+  socket.on('sweeper:claim', martialOnly(async (d, ack) => {
+    const event = sweeper.current();
+    if (!event || event.id !== d.id) return ack({ ok: false, reason: 'Tảo Địa Tăng đã rời đi, hãy chờ cơ duyên khác.' });
+    if (p.scene !== 'library' || (p.place && p.place !== 'hall')) return ack({ ok: false, reason: 'Hãy vào Tàng Kinh Các để gặp cao nhân.' });
+    if (Math.hypot((p.x - event.x) * X_WEIGHT, p.z - event.z) > 0.22) return ack({ ok: false, code: 'far', x: event.x, z: event.z, reason: 'Hãy đến gần Tảo Địa Tăng rồi trò chuyện.' });
+    const result = martial.inheritSweeper(p.uid, event.id);
+    if (result.ok && !(await store.flush())) return ack({ ok: false, reason: 'Chưa lưu được truyền thừa, hãy thử lại sau ít giây.', updates: result.updates });
+    if (result.ok && !result.already) emitToUid(p.uid, 'martial:inheritance', { level: result.level, gain: result.gain });
+    ack(result);
+  }));
   socket.on('tu:start', martialOnly(async (d, ack) => {
     const r = martial.start(p.uid, String(d.methodId || ''), String(d.duration || ''));
     ack(r);
@@ -1083,7 +1153,9 @@ io.on('connection', socket => {
   socket.on('tu:speedup', martialOnly(async (d, ack) => {
     const r = martial.speedup(p.uid, String(d.sessionId || ''), { anon: !!d.anon, name: p.name });
     if (!r.ok) return ack(r);
-    await store.flush();
+    if (!(await store.flush())) { if (!r.existing && r.donation.mode === 'test') martial.cancelSpeedup(p.uid, r.donation.code); return ack({ ok: false, reason: 'Chưa lưu được yêu cầu, bạn thử lại nhé.', updates: r.updates }); }
+    if (!r.existing) armNewTestDonation(r.donation);
+    scheduleTestDonation(r.donation);
     const sess = db.martial.sessions[r.donation.sessionId] || {};
     ack({ ...donationAck(r.donation), existing: !!r.existing, methodName: (MARTIAL.METHODS[r.donation.methodId] || {}).name || '', durationKey: r.donation.durationKey, endsAt: sess.endsAt || null, updates: r.updates });
   }));
@@ -1098,6 +1170,37 @@ io.on('connection', socket => {
   socket.on('martial:seen', martialOnly((d, ack) => { martial.markSeen(p.uid, Array.isArray(d.ids) ? d.ids.slice(0, 20).map(String) : []); ack({ ok: true }); }));
   socket.on('vo:learn', martialOnly((d, ack) => { const r = martial.learn(p.uid, String(d.skillId || '')); if (r.ok) store.save(); ack(r); }));
   socket.on('vo:loadout', martialOnly((d, ack) => { const r = martial.setLoadout(p.uid, Array.isArray(d.skills) ? d.skills.slice(0, 8).map(String) : []); if (r.ok) store.save(); ack(r); }));
+
+  // Từ các cảnh trong chùa, mời người cùng khu ra sân. Lời mời PK vẫn do Arena xử lý.
+  socket.on('spar:invite', (d, ack) => {
+    if (!p || typeof ack !== 'function') return;
+    if (!PK_ENABLED) return ack({ ok: false, reason: 'Sân đấu chưa mở.' });
+    if (!accountReady(p)) return ack({ ok: false, code: 'login', reason: LOGIN_MSG });
+    if (!bucket('spar', 0.05, 1)) return ack({ ok: false, reason: 'Bạn mời hơi nhanh, hãy đợi một chút.' });
+    pruneSparOffers();
+    const target = players.get(Number(d && d.toPid));
+    if (!target || target === p || target.uid === p.uid || voiceRoomOf(target) !== voiceRoomOf(p)) return ack({ ok: false, reason: 'Không thấy người này ở cùng khu.' });
+    if (!accountReady(target)) return ack({ ok: false, reason: 'Người này cần đăng nhập để ra Sân đấu.' });
+    const profile = martial.profile(target.uid, false);
+    if ((profile && (profile.dnd || profile.blocked.some(b => b.uid === p.uid))) || arena.hasMatch(target.uid)) return ack({ ok: false, reason: 'Người này không nhận lời mời lúc này.' });
+    if ([...sparOffers.values()].some(o => o.from === p.id || o.to === p.id || o.from === target.id || o.to === target.id)) return ack({ ok: false, reason: 'Một trong hai đang có lời mời chờ trả lời.' });
+    const id = crypto.randomBytes(12).toString('hex'), until = now() + 60000;
+    sparOffers.set(id, { from: p.id, to: target.id, until, accepted: false });
+    target.socket.emit('spar:invited', { id, name: p.name, until });
+    ack({ ok: true });
+  });
+  socket.on('spar:respond', (d, ack) => {
+    if (!p || typeof ack !== 'function') return;
+    pruneSparOffers();
+    const o = sparOffers.get(String(d && d.id || ''));
+    if (!o || o.to !== p.id || o.accepted) return ack({ ok: false, reason: 'Lời mời đã hết hạn.' });
+    const from = players.get(o.from);
+    if (!d.accept) { sparOffers.delete(d.id); if (from) from.socket.emit('spar:declined'); return ack({ ok: true }); }
+    if (!from || !accountReady(p) || !accountReady(from) || voiceRoomOf(p) !== voiceRoomOf(from)) { sparOffers.delete(d.id); return ack({ ok: false, reason: 'Người mời đã rời khu hoặc không còn sẵn sàng.' }); }
+    o.accepted = true; o.until = now() + 60000;
+    from.socket.emit('spar:accepted'); p.socket.emit('spar:accepted');
+    ack({ ok: true });
+  });
 
   /* ----- Sân đấu: danh sách người, mời, vào trận (chỉ người đang ở sân) ----- */
   const inArena = fn => (d, ack) => {
@@ -1169,6 +1272,8 @@ setInterval(() => {
     if (arr.length) io.volatile.emit('p', arr);
   }
   if (tick % 20 === 0) {
+    const encounter = sweeper.tick();
+    if (encounter.changed) io.emit('sweeper:appear', encounter.event);
     for (const p of players.values()) {
       const authKey = p.socket.data.authKey;
       if (authKey && !auth.sessionFor(authKey)) { p.socket.disconnect(true); continue; }
@@ -1179,6 +1284,7 @@ setInterval(() => {
     if (statsDirty) { statsDirty = false; io.emit('stats', { today: db.today, online: players.size }); }
   }
   if (tick % 100 === 0) {
+    pruneSparOffers();
     rollDay();
     const b = JSON.stringify(board());
     if (b !== lastBoard) { lastBoard = b; io.emit('board', JSON.parse(b)); }
@@ -1249,6 +1355,7 @@ async function main() {
     log: (...a) => console.error('[arena]', ...a),
     config: { enabled: PK_ENABLED, maxMatches: PK_MAX_MATCHES, timeScale: PK_TIME_SCALE }
   });
+  for (const d of db.donations) scheduleTestDonation(d);
   startLoops();
   server.listen(PORT, () => {
     console.log(`${SITE_NAME} đang chạy tại http://localhost:${PORT}`);

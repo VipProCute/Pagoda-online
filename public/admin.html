@@ -48,7 +48,7 @@
     </section>
     <section>
       <h2>Cúng dường tịnh tài</h2>
-      <p class="hint">Lượt “chờ” là người đã tạo mã nhưng nhà chùa chưa thấy tiền. Nếu chưa bật SePay, đối chiếu sao kê rồi bấm Xác nhận. Bấm Xác nhận xong, chánh điện đọc thông báo và người cúng dường được hào quang theo số tiền (cộng dồn).</p>
+      <p class="hint" id="donationModeHelp">Đang tải chế độ cúng dường…</p>
       <p class="warn" id="confirmMsg" hidden style="color:var(--jade)"></p>
       <div class="tbl"><table><thead><tr><th>Mã</th><th>Loại</th><th>Thời gian</th><th>Tên</th><th>Số tiền</th><th>Quỹ</th><th>Lời nhắn</th><th>Trạng thái</th><th></th></tr></thead><tbody id="dons"></tbody></table></div>
     </section>
@@ -89,17 +89,20 @@
       $('#stats').innerHTML = `<span>Đang có mặt: <b>${NUM(d.online)}</b></span><span>Nhang hôm nay: <b>${NUM(d.today.incense)}</b></span><span>Lượt vào hôm nay: <b>${NUM(d.today.visits)}</b></span><span>Tịnh tài: <b>${d.donationEnabled ? 'đang bật' : 'đang tắt'}</b></span><span>Đang nói chuyện: <b>${NUM(d.voice)}</b></span><span>Giọng đọc thông báo: <b>${d.tts ? 'VieNeu “' + d.tts.replace(/[<>&]/g, '') + '”' : 'trình duyệt tự đọc'}</b></span>` +
         d.funds.map(f => `<span>${f.name.replace(/[<>&]/g, '')}: <b>${NUM(f.raised)}đ</b></span>`).join('');
       const tb = $('#dons'); tb.textContent = '';
+      $('#donationModeHelp').textContent = d.donationMode === 'test' ? 'Chế độ thử nghiệm: QR không chuyển tiền, tự xác nhận sau 10 giây. Tiền giả không cộng vào tổng thực nhận.' : 'Chế độ nhận tiền thật: đối chiếu ngân hàng hoặc SePay trước khi xác nhận.';
       d.donations.forEach(x => {
         const tr = document.createElement('tr');
         const sp = x.purpose === 'speedup' ? x.speedup || {} : null;
-        cell(tr, x.code, 'code'); cell(tr, sp ? 'Hoàn thành tu luyện' : 'Cúng dường'); cell(tr, t(x.createdAt)); cell(tr, x.name + (x.anon ? ' (ẩn danh)' : ''));
+        cell(tr, x.code, 'code'); cell(tr, (sp ? 'Hoàn thành tu luyện' : 'Cúng dường') + (x.mode === 'test' ? ' · thử nghiệm' : '')); cell(tr, t(x.createdAt)); cell(tr, x.name + (x.anon ? ' (ẩn danh)' : ''));
         cell(tr, NUM(x.amount) + 'đ' + (x.hide ? ' (ẩn)' : '')); cell(tr, x.fundName);
         cell(tr, sp ? `${sp.methodName} (${sp.durationKey}) · phiên ${SESS[sp.sessionStatus] || sp.sessionStatus}` + (sp.bankReported ? ' · ngân hàng đã báo nhận' : '') + (x.note ? ' · ' + x.note : '') : x.note || '');
         cell(tr, ST[x.status] + (x.source ? ' · ' + x.source : '') + (x.outcome ? ' · ' + (OUT[x.outcome] || x.outcome) : ''), 'st-' + x.status);
         const a = cell(tr, '');
-        if (x.status === 'pending') {
+        if (x.status === 'pending' && x.mode === 'test') {
+          a.textContent = 'Tự xác nhận sau 10 giây';
+        } else if (x.status === 'pending') {
           a.append(btn(sp ? 'Xác nhận và hoàn thành' : 'Xác nhận', () => confirm2(x.code, 'confirm', sp), 'btn small gold'), ' ', btn(sp ? 'Từ chối' : 'Hủy', () => confirm2(x.code, 'cancel', sp)));
-        } else if (sp && (x.status === 'cancelled' || x.status === 'expired')) {
+        } else if (sp && x.mode !== 'test' && (x.status === 'cancelled' || x.status === 'expired')) {
           // tiền tới trễ sau khi yêu cầu đã hủy / hết hạn: xác nhận có chủ đích, người chơi nhận phiếu dùng cho phiên sau
           a.append(btn('Tiền tới trễ: xác nhận', () => confirm2(x.code, 'confirm', sp)));
         }

@@ -1,5 +1,5 @@
 /*
- * Công đức: pháp tướng sau lưng khi công đức cao, quỷ theo sau khi công đức âm.
+ * Công đức: pháp tướng khi công đức cao; quỷ khi công đức âm hoặc đúng 666.
  * Dùng chung cho máy chủ (khi nào báo cho mọi người) và trình duyệt (vẽ, bảng luật).
  * Tính theo công đức TẤT CẢ (tổng), không phải công đức hôm nay.
  *
@@ -29,19 +29,24 @@
 
   function rankOf(mt) { let r = 0; for (const x of RANKS) if (mt >= x.min) r = x.n; return r; }
   function demonOf(mt) {
+    // Easter egg: đúng 666 công đức cũng sở hữu Ma Vương cấp 4, gồm cả buff PK.
+    if (mt === 666) return { n: 4, alpha: 1 };
     if (!(mt < 0)) return null;
     let n = 1; for (const d of DEMONS) if (mt <= d.at) n = d.n;
     return { n, alpha: Math.max(0.12, Math.min(1, 0.12 + 0.88 * (-mt) / 100)) };   // −100 là rõ hẳn
   }
+  // Hình ảnh và cấp quỷ dùng trong PK phải khớp nhau.
+  function visualDemonOf(mt) { return demonOf(mt); }
   /** Khóa hình ảnh: chỉ báo cho cả chánh điện khi khóa này đổi (đỡ tốn băng thông). */
   function visualKey(mt) {
+    if (mt === 666) return 'd4:secret666';
     if (mt >= 0) return 'r' + rankOf(mt);
     const d = demonOf(mt);
     return 'd' + d.n + ':' + Math.min(10, Math.ceil(-mt / 10));
   }
   function nextRank(mt) { const r = RANKS.find(x => x.min > mt); return r ? { rank: r, need: r.min - mt } : null; }
 
-  const api = { RANKS, DEMONS, EARN, rankOf, demonOf, visualKey, nextRank };
+  const api = { RANKS, DEMONS, EARN, rankOf, demonOf, visualDemonOf, visualKey, nextRank };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.MERIT = api;
 })(this);

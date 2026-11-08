@@ -26,7 +26,7 @@ async function startServer(env = {}) {
   const dataFile = env.DATA_FILE || path.join(dir, 'db.json');
   const base = {
     PATH: process.env.PATH, PORT: String(port), ADMIN_KEY: 'khoa-quan-tri-thu', TRUST_PROXY: '0', DATA_FILE: dataFile,
-    MARTIAL_SWEEP_MS: '100', SITE_NAME: 'Chua Thu', NODE_ENV: 'test'
+    MARTIAL_SWEEP_MS: '100', SITE_NAME: 'Chua Thu', NODE_ENV: 'test', DONATION_MODE: 'live'
   };
   const state = { logs: [], child: null };
   async function launch() {

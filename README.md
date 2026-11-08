@@ -2,6 +2,12 @@
 
 Chánh điện trực tuyến cho nhiều người cùng lúc. Mỗi người vào chùa là một nhân vật mặc áo dài, có tên trên đầu, đi lại trong chánh điện và thấy nhau theo thời gian thực.
 
+## Chế độ cúng dường thử nghiệm
+
+Mặc định `DONATION_MODE=test`: game tạo QR nội bộ không chứa tài khoản ngân hàng và tự xác nhận lượt thử nghiệm sau 10 giây, kể cả yêu cầu hoàn thành tu luyện. Không cần quét mã hay chuyển tiền. Các lượt giả lập được đánh dấu `mode=test`, `source=simulation`, không cộng vào tổng tiền cúng dường thật hoặc số tiền quỹ thực nhận; công đức, hào quang và tiến độ game vẫn được cấp để chơi thử. Mã chuyển khoản thật đang chờ từ trước sẽ không tự được xác nhận.
+
+Khi chuẩn bị nhận tiền thật, cấu hình `DONATION_MODE=live`, tài khoản ngân hàng và quy trình đối soát/SePay; kiểm tra toàn bộ luồng thật trước khi mở. Phần thưởng game của các lượt thử nghiệm đã cấp sẽ vẫn nằm trong dữ liệu người chơi, cần quyết định cách xử lý trước khi chuyển production. Máy chủ cần lưu dữ liệu bền vững để khôi phục các lượt thử nghiệm đang chờ sau khi khởi động lại.
+
 ## Tính năng
 
 | Nhóm | Có gì |

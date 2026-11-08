@@ -1,5 +1,5 @@
 /*
- * Nói chuyện bằng giọng trong chánh điện (WebRTC: tiếng nói đi thẳng giữa các trình duyệt).
+ * Voice theo từng khu (WebRTC: tiếng nói đi thẳng giữa các trình duyệt).
  *
  * Giống đi chùa thật:
  *  - Đứng gần nghe rõ, đứng xa nghe nhỏ dần rồi im hẳn; người bên trái nghe ở tai trái.
@@ -15,7 +15,8 @@
   const MAX_PEERS = 8, HARD_MAX = 12;
   const CONNECT_TIMEOUT = 20000;
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-  const dist = (a, b) => (a.scene || 'hall') !== (b.scene || 'hall') ? Infinity : Math.hypot((a.x - b.x) * XW, a.z - b.z);
+  const roomOf = p => (p.place && p.place !== 'hall') ? p.place : (p.scene || 'hall');
+  const dist = (a, b) => roomOf(a) !== roomOf(b) ? Infinity : roomOf(a) === 'dojo' ? 0 : Math.hypot((a.x - b.x) * XW, a.z - b.z);
 
   let sock = null, H = {};
   let active = false, joining = false, wanted = false;
@@ -39,7 +40,7 @@
       bus = AC.createGain(); bus.connect(AC.destination);
       applyBus();
     }
-    if (AC.state === 'suspended') AC.resume();
+    if (AC.state === 'suspended') AC.resume().catch(() => {});
     return AC;
   }
   function applyBus() { if (bus) bus.gain.setTargetAtTime(muted ? 0 : volume * duck, AC.currentTime, 0.12); }
@@ -108,6 +109,8 @@
   }
   function onSignal(from, s) {
     if (!active || !s) return;
+    const mine = H.player(H.myId()), other = H.player(from);
+    if (!mine || !other || dist(mine, other) === Infinity) return;
     let peer = peers.get(from);
     if (s.type === 'bye') { if (peer) close(peer, false); return; }
     if (s.type === 'offer') {
@@ -242,19 +245,20 @@
     if (!supported()) return { ok: false, reason: 'Trình duyệt này chưa hỗ trợ nói chuyện bằng giọng. Bạn thử Chrome, Safari hoặc Firefox bản mới nhé.' };
     joining = true;
     ctx();
-    let why = '';
-    if (!stream) { try { useStream(await getMic()); } catch (e) { why = micError(e); } }
-    const r = await new Promise(res => sock.timeout(10000).emit('voice:join', { mic: !!track }, (err, x) => res(err ? null : x)));
+    // Tự vào chỉ để nghe. Không xin quyền hay mở micro nếu người chơi chưa chủ động bật.
+    const resumeMic = !!(track && micOn);
+    const r = await new Promise(res => sock.timeout(10000).emit('voice:join', { mic: resumeMic }, (err, x) => res(err ? null : x)));
     joining = false;
     if (!r || !r.ok) { stopStream(); return { ok: false, reason: (r && r.reason) || 'Máy chủ chưa trả lời. Thử lại nhé.' }; }
     ice = Array.isArray(r.ice) ? r.ice : [];
-    active = true; wanted = true; micOn = !!track;
-    if (track) track.enabled = true;
+    active = true; wanted = true; micOn = resumeMic;
+    if (track) track.enabled = micOn;
     clearInterval(loopT); clearInterval(levelT);
     loopT = setInterval(loop, 800); levelT = setInterval(levels, 100);
     loop(); changed();
-    return { ok: true, listenOnly: !track, why };
+    return { ok: true, listenOnly: !micOn };
   }
+
   function leave(keepWanted) {
     if (sock && active && sock.connected) sock.emit('voice:leave');
     active = false; wanted = !!keepWanted;
@@ -267,15 +271,19 @@
   async function setMic(on) {
     if (!active) return false;
     if (on && !track) {
-      try { useStream(await getMic()); } catch (e) { return micError(e); }
+      try { useStream(await getMic()); if (track) track.enabled = false; } catch (e) { return micError(e); }
       for (const peer of peers.values()) {
         const tr = peer.pc.getTransceivers()[0];
         if (tr && tr.sender) tr.sender.replaceTrack(track).catch(() => {});
       }
     }
-    micOn = !!(on && track);
+    const desired = !!(on && track);
+    // Bật track sau khi máy chủ chấp nhận, tránh phát tiếng trong lúc bị khóa mic.
+    if (track) track.enabled = false;
+    const result = await new Promise(res => sock.timeout(10000).emit('voice:mic', { on: desired }, (err, value) => res(err ? null : value)));
+    if (!result || !result.ok) { micOn = false; changed(); return result && result.reason ? result.reason : 'Chưa đổi được micro, hãy thử lại.'; }
+    micOn = desired;
     if (track) track.enabled = micOn;
-    sock.emit('voice:mic', { on: micOn });
     changed();
     return true;
   }
@@ -293,6 +301,12 @@
     get mic() { return micOn; },
     get hasMic() { return !!track; },
     join, leave: () => leave(false), setMic,
+    forceMute() { micOn = false; if (track) track.enabled = false; changed(); },
+    unlock() { if (AC && AC.state === 'suspended') AC.resume().catch(() => {}); },
+    get audioBlocked() { return !!(AC && AC.state !== 'running'); },
+    sameRoom(a, b) { return !!a && !!b && roomOf(a) === roomOf(b); },
+    distance: dist,
+    refresh() { if (active) { loop(); levels(); } },
     toggleMic() { return setMic(!micOn); },
     drop(pid) { const p = peers.get(pid); if (p) close(p, false); },
     mute(pid, on) { if (on) blocked.add(pid); else blocked.delete(pid); changed(); },
