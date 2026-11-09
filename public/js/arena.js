@@ -739,6 +739,7 @@
   function go(screen) {
     const ui = S.ui;
     S.screen = screen;
+    if (S.visible && root.SFX) root.SFX.setMusicScene(screen === 'match' ? 'battle' : 'arena');
     ui.roster.sec.hidden = screen !== 'roster'; ui.lobby.hidden = screen !== 'lobby'; ui.match.hidden = screen !== 'match'; ui.end.hidden = screen !== 'end';
     ui.sub.textContent = { roster: 'Luận võ 1 đấu 1', lobby: 'Sảnh chọn bộ chiêu', match: 'Đang đấu', end: 'Kết quả' }[screen];
     ui.invites.hidden = screen === 'lobby' || screen === 'match';
@@ -1982,6 +1983,7 @@
   function show(info) {
     if (!S.mounted) return;
     S.visible = true;
+    if (root.SFX) root.SFX.setMusicScene(S.screen === 'match' ? 'battle' : 'arena');
     const a = (info && info.arena) || {}, cfg = S.host.cfg ? S.host.cfg() : {}, mc = (cfg && cfg.martial) || {};
     // vào lại / mất mạng rồi nối lại: làm mới danh sách, bỏ lời mời cũ (máy chủ đã quên)
     S.players.clear();
@@ -2006,6 +2008,7 @@
   }
   function hide() {
     S.visible = false; S.resuming = false;
+    if (root.SFX) root.SFX.setMusicScene('temple');
     yardOn(false);
     clearInterval(S.tick); S.tick = 0; stopPaint();
     clearMatchTimers();
