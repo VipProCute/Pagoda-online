@@ -54,7 +54,11 @@
   const nowMs = () => S.host.serverNow();
   const toast = t => { try { S.host.toast(t); } catch (e) { /* bỏ qua */ } };
   const canSend = () => S.connected && !!S.sock;
-  const skillOf = id => M.SKILLS[id] || M.SPECIAL[id] || null;
+  const HIDDEN_SKILLS = {
+    'tau-vi-thuong-sach': { name: 'Tẩu Vi Thượng Sách', kind: 'rest', mana: 0, short: 'Cưỡng chế hòa trận', desc: 'Kết thúc trận với kết quả hòa. Mỗi trận một lần.' },
+    'nhu-lai-than-chuong': { name: 'Như Lai Thần Chưởng', kind: 'atk', mana: 30, hits: [{ base: 180, spd: 20 }], short: 'Chưởng xuyên thủ', desc: 'Tung ngay sát thương chuẩn, không thể né. Mỗi trận một lần.' }
+  };
+  const skillOf = id => M.SKILLS[id] || M.SPECIAL[id] || HIDDEN_SKILLS[id] || null;
   const skillName = id => (skillOf(id) || {}).name || String(id || '');
   const branchOf = s => (s && M.BRANCHES[s.branch]) || null;
   const lookOf = l => (l && typeof l === 'object' ? l : DEF_LOOK);
@@ -1238,11 +1242,14 @@
       U.cards[id] = c; grid.appendChild(c);
     }
     const act = h('div', 'ar-act');
+    U.secrets = h('div', 'ar-act');
+    U.kamui = btn('btn small', 'Kamui: Tắt'); U.kamui.hidden = true;
+    U.kamui.addEventListener('click', () => { if (!m.locked && !m.pending) { m.kamui = !m.kamui; renderPickCtl(); } });
     U.rest = skillCard(M.REST_ID); U.rest.classList.add('ar-pk', 'ar-rest'); U.rest.addEventListener('click', () => choose(M.REST_ID));
     U.lock = btn('btn primary ar-lockbtn', 'Chọn một chiêu'); U.lock.addEventListener('click', lockPick);
     add(act, U.rest, U.lock);
     U.status = h('p', 'ar-status', null, { role: 'status' });
-    add(ui_, grid, act, U.status);
+    add(ui_, grid, U.secrets, U.kamui, act, U.status);
     // lật chiêu
     const rv = U.rv = { root: h('div', 'ar-reveal', null, { 'aria-label': 'Lật chiêu' }) };
     rv.root.hidden = true;
@@ -1317,6 +1324,9 @@
     U.lock.hidden = m.locked;
     U.lock.disabled = frozen || !m.sel;
     U.lock.textContent = m.pending ? 'Đang khóa…' : m.sel ? `Khóa: ${skillName(m.sel)}` : 'Chọn một chiêu';
+    U.kamui.textContent = `Kamui: ${m.kamui ? 'Bật' : 'Tắt'}`;
+    U.kamui.disabled = frozen;
+    U.kamui.setAttribute('aria-pressed', String(!!m.kamui));
     // dòng trạng thái
     clear(U.status);
     U.status.className = 'ar-status';
@@ -1337,7 +1347,8 @@
     const m = S.m;
     if (!m || m.phase !== 'choosing' || m.locked || m.pending || !m.sel) return;
     if (!canSend()) { renderPickCtl(); return; }
-    const turn = m.turn, id = m.sel;
+    const turn = m.turn, id = m.kamui ? 'kamui:' + m.sel : m.sel;
+    if (!m.legal.includes(id)) { m.msg = 'Không thể kết hợp Kamui với chiêu này.'; renderPickCtl(); return; }
     m.pending = true; m.msg = ''; renderPickCtl();
     S.sock.emit('pk:pick', { matchId: m.id, turn, skillId: id }, ack => {
       if (S.m !== m || m.turn !== turn) return;
@@ -1365,9 +1376,16 @@
     for (const f of [U.rv.flipYou, U.rv.flipOp]) { f.w.classList.remove('on'); f.nm.textContent = f.kd.textContent = f.sb.textContent = ''; f.front.setAttribute('aria-hidden', 'true'); f.w.setAttribute('aria-label', f.side === 'you' ? 'Chiêu của bạn' : 'Chiêu của đối thủ'); }
     m.phase = 'choosing'; m.turn = d.turn; m.deadline = num(d.deadlineAt); m.turnTotal = Math.max(5000, m.deadline - nowMs()); m.forced = d.forced || null;
     m.legal = Array.isArray(d.legal) ? d.legal : []; m.state = d.state;
+    clear(U.secrets);
+    for (const id of ['tau-vi-thuong-sach', 'nhu-lai-than-chuong']) {
+      delete U.cards[id];
+      if (m.legal.includes(id)) { const card = skillCard(id); card.classList.add('ar-pk'); card.addEventListener('click', () => choose(id)); U.cards[id] = card; U.secrets.appendChild(card); }
+    }
+    U.kamui.hidden = !m.legal.some(id => id.startsWith('kamui:'));
+    m.kamui = !!(o.myPick && o.myPick.startsWith('kamui:'));
     if (d.loadouts) { m.loadouts = d.loadouts; renderOpLoadout(); }
     // đang tụ lực thì máy chủ tự khóa, không cần gửi gì
-    m.sel = o.myPick || m.forced || null; m.locked = !!(o.myPick || m.forced); m.pending = false; m.timeUp = false; m.msg = ''; m.opLocked = !!o.opLocked;
+    m.sel = (m.kamui ? o.myPick.slice(6) : o.myPick) || m.forced || null; m.locked = !!(o.myPick || m.forced); m.pending = false; m.timeUp = false; m.msg = ''; m.opLocked = !!o.opLocked;
     S.hold = { you: d.state.you.charging ? 'charge' : null, op: d.state.op.charging ? 'charge' : null };
     S.fx.length = 0;
     setFighter('you', d.state.you); setFighter('op', d.state.op);
@@ -1388,7 +1406,7 @@
   function stanceOf(pk, op) {
     if (!pk) return 'idle';
     if (pk.skill === M.REST_ID) return 'rest';
-    const s = M.SKILLS[pk.skill];
+    const s = skillOf(pk.skill);
     if (!s) return 'idle';
     if (pk.phase === 'release') return 'release';
     if (pk.phase === 'charge') return 'charge';
@@ -1401,6 +1419,7 @@
     const P = rev.picks || {}, out = [], S_ = s => (s === 'you' ? 'Bạn' : 'Đối thủ'), tg = s => (s === 'you' ? 'bạn' : 'đối thủ'), nth = e => (e.of > 1 ? ` nhịp ${e.idx}/${e.of}` : ' nhịp 1');
     for (const e of rev.events || []) {
       switch (e.k) {
+        case 'kamui': out.push({ who: e.side, text: 'dùng Kamui, miễn nhiễm sát thương trong lượt', fx: [['float', e.side, 'Kamui!', 'good']] }); break;
         case 'guard': out.push({ who: e.side, text: `thủ, giảm ${pc(e.red)}% sát thương`, hold: [e.side, 'guard'] }); break;
         case 'charge': out.push({ who: e.side, text: 'bắt đầu tụ lực, lượt sau tự tung đòn', hold: [e.side, 'charge'] }); break;
         case 'release': out.push({ who: e.side, text: 'tung đòn đã tụ lực', hold: [e.side, 'release'] }); break;
@@ -1426,7 +1445,8 @@
         case 'exposed': out.push({ who: e.side, text: `sơ hở: lượt sau nhận thêm ${EXPOSED_PCT}% sát thương`, fx: [['float', e.side, 'Sơ hở', 'warn']] }); break;
         case 'kc': out.push({ who: e.side, text: `nhận Kim Chung: trong ${KC_TURNS} lượt tới, đòn công đầu tiên mạnh thêm ${KC_PCT}%`, fx: [['float', e.side, 'Kim Chung', 'gold']] }); break;
         case 'sudden':
-          out.push({ who: 'both', text: `Suy kiệt: cả hai mất ${e.dmg}`, plain: true, fx: [['hp', 'you', e.dmg], ['hp', 'op', e.dmg], ['float', 'you', '−' + e.dmg, 'warn'], ['float', 'op', '−' + e.dmg, 'warn']] });
+          { const affected = ['you', 'op'].filter(side => !(e.immune || []).includes(side));
+            out.push({ who: 'both', text: `Suy kiệt: ${affected.length === 2 ? 'cả hai' : affected.length === 1 ? (affected[0] === 'you' ? 'bạn' : 'đối thủ') : 'không ai'} mất ${affected.length ? e.dmg : 0}`, plain: true, fx: affected.flatMap(side => [['hp', side, e.dmg], ['float', side, '-' + e.dmg, 'warn']]) }); }
           break;
         default: break;                                           // pick, rage, end: thể hiện bằng thẻ lật, thanh nộ và màn kết thúc
       }
