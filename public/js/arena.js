@@ -795,7 +795,7 @@
   }
   function updRow(r, p) {
     r.li.dataset.pid = p.pid;
-    r.name.textContent = p.name; r.meta.textContent = `Cấp ${num(p.lv, 1)} · ${num(p.wins)} thắng · ${num(p.losses)} thua`;
+    r.name.textContent = p.name; r.meta.textContent = `${M.pkTitle(p.wins, p.draws).name} · ${M.realmName(p.lv)} · ${num(p.wins)} thắng · ${num(p.losses)} thua`;
     const st = ST[p.st] || ST.free;
     r.st.textContent = st[0]; r.st.className = 'ar-st ar-st-' + st[1];
     r.inv.hidden = p.st !== 'free';
@@ -1807,6 +1807,8 @@
     if (d.record) {
       const r = d.record, delta = info.cls === 'win' ? ' (thắng +1)' : info.cls === 'lose' ? ' (thua +1)' : info.cls === 'draw' ? ' (hòa +1)' : ' (không đổi)';
       fact('Thành tích', `Thắng ${num(r.wins)} · Thua ${num(r.losses)} · Hòa ${num(r.draws)}${delta}`);
+      const title = M.pkTitle(r.wins, r.draws);
+      fact('Danh hiệu PK', `${title.name} · ${title.points} điểm chiến tích`);
     }
     card.appendChild(facts);
     const act = h('div', 'ar-eact'), again = btn('btn primary big', 'Về sân'), hall = btn('btn big', 'Về chánh điện');
