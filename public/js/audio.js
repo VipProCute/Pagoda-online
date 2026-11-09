@@ -37,6 +37,20 @@
   let ambience = null, ambienceGain = null, ambienceSource = null, ambienceLevel = null;
   let musicBlocked = false, musicTimer = 0, musicTime = -1, musicProgress = 0, musicRepair = 0;
   let duckUntil = 0, duckTimer = null;
+  const MUSIC = Object.freeze({ temple: '/audio/ambience-thien-am.mp3', arena: '/audio/arena-idle.mp3', battle: '/audio/pk-battle.mp3' });
+  let musicScene = 'temple';
+  function setMusicScene(scene) {
+    if (!Object.prototype.hasOwnProperty.call(MUSIC, scene) || scene === musicScene) return;
+    musicScene = scene;
+    musicBlocked = false; musicTime = -1; musicProgress = Date.now();
+    if (ambience) {
+      ambience.pause();
+      ambience.src = MUSIC[scene];
+      ambience.load();
+      updateAmbience();
+      playAmbience();
+    } else if (AC) startAmbience();
+  }
 
   function updateAmbience() {
     if (!ambience) return;
@@ -90,7 +104,7 @@
   function startAmbience() {
     if (muted || (root.document && document.hidden)) return;
     if (!ambience) {
-      ambience = new Audio('/audio/ambience-thien-am.mp3');
+      ambience = new Audio(MUSIC[musicScene]);
       ambience.loop = true; ambience.preload = 'auto';
       ambience.setAttribute('playsinline', '');
       // iOS phát nhạc nền bằng media player trực tiếp, tránh đường resampling Web Audio gây rè/lặp mẫu.
@@ -312,7 +326,7 @@
       if (!muted && AC) startAmbience();
     },
     setVolume(v) { volume = v; if (OUT && !muted) OUT.gain.setTargetAtTime(volume, AC.currentTime, 0.05); if (chEl) chEl.volume = v; updateAmbience(); },
-    mo: () => mo(), bell, ting, pop, setAmbienceDuck, recover: recoverAudio,
+    mo: () => mo(), bell, ting, pop, setAmbienceDuck, setMusicScene, recover: recoverAudio,
     chime: () => chime(), scare: () => scare(), playClip, preloadClip, stopClip,
     startChant, stopChant, syncChant
   };
