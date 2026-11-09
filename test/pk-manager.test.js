@@ -114,6 +114,21 @@ function duel(e, mode = 'balanced', la = LA, lb = LB, fa = {}, fb = {}) {
   lockBoth(e, A, B, mid, la, lb);
   return { A, B, mid };
 }
+test('bí kíp chỉ gửi riêng chủ nhân và không rò rỉ trước khi ra chiêu', () => {
+  const e = env();
+  const { A, B, mid } = duel(e, 'balanced', LA, LB, { secretSkills: ['nhu-lai-than-chuong', 'kamui'] });
+  assert.ok(turnOf(e, 'A').legal.includes('nhu-lai-than-chuong'));
+  assert.ok(turnOf(e, 'A').legal.includes('kamui:trong-quyen'));
+  assert.ok(!JSON.stringify(e.to('B', 'pk:lobby')).includes('kamui'));
+  assert.ok(!JSON.stringify(turnOf(e, 'B')).includes('nhu-lai-than-chuong'));
+  assert.ok(!JSON.stringify(e.mgr.resume('B').snapshot).includes('kamui'));
+  assert.equal(pickFor(e, B, mid, 'nhu-lai-than-chuong').ok, false);
+  assert.equal(pickFor(e, A, mid, 'kamui:trong-quyen').ok, true);
+  assert.ok(!JSON.stringify(e.lastOf('B', 'pk:locked')).includes('kamui'));
+  assert.equal(e.mgr.resume('A').snapshot.myPick, 'kamui:trong-quyen');
+  assert.equal(pickFor(e, B, mid, 'tat-phong-quyen').ok, true);
+  assert.equal(e.lastOf('A', 'pk:reveal').state.you.hp, R.HP);
+});
 const turnOf = (e, uid) => e.lastOf(uid, 'pk:turn');
 const pickFor = (e, P, mid, skill) => e.mgr.pick(P.uid, mid, turnOf(e, P.uid).turn, skill);
 
@@ -161,11 +176,11 @@ function playOut(e, A, B, mid, rnd = lcg(7)) {
 test('sân: join / leave / dnd phát arena:add, arena:upd, arena:del đúng hình dạng hàng', () => {
   const e = env();
   const a = e.player('A', { level: 4, wins: 2, losses: 1 });
-  assert.deepEqual(a.row.row, { pid: a.pid, name: 'ten-A', look: { g: 'nam', c: 1, h: 0 }, lv: 4, wins: 2, losses: 1, st: 'free' });
+  assert.deepEqual(a.row.row, { pid: a.pid, name: 'ten-A', look: { g: 'nam', c: 1, h: 0 }, lv: 4, wins: 2, losses: 1, draws: 0, st: 'free' });
   assert.deepEqual(e.roomEv('arena:add'), [a.row.row]);
   const b = e.player('B');
   assert.equal(e.mgr.list().length, 2);
-  assert.deepEqual(Object.keys(e.mgr.rowOf('B')).sort(), ['look', 'losses', 'lv', 'name', 'pid', 'st', 'wins']);
+  assert.deepEqual(Object.keys(e.mgr.rowOf('B')).sort(), ['draws', 'look', 'losses', 'lv', 'name', 'pid', 'st', 'wins']);
   assert.equal(e.mgr.rowOf('khong-co'), null);
   assert.equal(e.mgr.setDnd('A', true).ok, true);
   assert.deepEqual(e.roomEv('arena:upd').pop(), { pid: a.pid, st: 'dnd' });

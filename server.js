@@ -1127,6 +1127,19 @@ io.on('connection', socket => {
     if (result.ok && !result.already) emitToUid(p.uid, 'martial:inheritance', { level: result.level, gain: result.gain });
     ack(result);
   }));
+  socket.on('martial:secret-encounter', martialOnly(async (d, ack) => {
+    const locations = {
+      beggar: { scene: 'hall', x: 0.68, z: 0.67 },
+      wanderer: { scene: 'yard', x: 0.32, z: 0.67 },
+      obito: { scene: 'library', x: 0.76, z: 0.68 }
+    };
+    const loc = Object.prototype.hasOwnProperty.call(locations, d.role) && locations[d.role];
+    if (!loc || p.scene !== loc.scene || (p.place && p.place !== 'hall')) return ack({ ok: false, reason: 'Không tìm thấy người này tại đây.' });
+    if (Math.hypot((p.x - loc.x) * X_WEIGHT, p.z - loc.z) > 0.22) return ack({ ok: false, code: 'far', x: loc.x, z: loc.z, reason: 'Hãy đến gần rồi trò chuyện lại.' });
+    const result = martial.claimSecret(p.uid, d.role);
+    if (result.ok && !(await store.flush())) return ack({ ok: false, reason: 'Chưa lưu được cơ duyên, hãy thử lại sau ít giây.', updates: result.updates });
+    ack(result);
+  }));
   socket.on('tu:start', martialOnly(async (d, ack) => {
     const r = martial.start(p.uid, String(d.methodId || ''), String(d.duration || ''), d.skillId == null || d.skillId === '' ? null : String(d.skillId));
     ack(r);
