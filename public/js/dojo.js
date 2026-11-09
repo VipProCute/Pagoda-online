@@ -406,6 +406,7 @@
             h('span', { class: 'dj-cl-v' }, h('b', null, NUM(p.congLuc)), max ? '' : ' / ' + NUM(p.levelTo))),
           bar(max ? 1 : p.pct, max ? 'Công lực đã viên mãn' : `Công lực tới cấp ${p.level + 1}`, null, true),
           h('p', { class: 'dj-cl-note' }, max ? h('b', { class: 'dj-full' }, 'Viên mãn') : `Còn ${NUM(p.levelTo - p.congLuc)} để lên cấp ${p.level + 1}`))),
+      h('p', { class: 'dj-line' }, 'Cảnh giới: ', h('b', null, M.realmName(p.level))),
       h('p', { class: 'dj-line' }, 'Nội lực tối đa trong trận ', h('b', null, String(p.manaMax))),
       h('ul', { class: 'dj-tam', 'aria-label': 'Tâm đắc ba nhánh' }, M.BRANCH_ORDER.map(b => {
         const br = M.BRANCHES[b], v = (p.tam && p.tam[b]) || 0;
@@ -414,6 +415,8 @@
           h('b', null, `${v}/${M.TAM_MAX}`),
           bar(v / M.TAM_MAX, `Tâm đắc ${br.name} ${v} trên ${M.TAM_MAX}`, br.color));
       })),
+      h('p', { class: 'dj-line dj-rec' }, 'Danh hiệu PK: ', h('b', null, M.pkTitle(p.wins, p.draws).name), ' · ', String(M.pkTitle(p.wins, p.draws).points), ' điểm chiến tích'),
+      h('p', { class: 'dj-line dj-rec' }, M.pkTitle(p.wins, p.draws).next ? 'Mốc tiếp theo: ' + M.pkTitle(p.wins, p.draws).next.name + ' · ' + M.pkTitle(p.wins, p.draws).next.points + ' điểm' : 'Đã đạt danh hiệu cao nhất'),
       h('p', { class: 'dj-line dj-rec' }, 'Thắng ', h('b', null, String(p.wins || 0)), ' · Thua ', h('b', null, String(p.losses || 0)), ' · Hòa ', h('b', null, String(p.draws || 0)))]);
   }
 
@@ -759,7 +762,7 @@
   /* ----- luật tu luyện ----- */
   function rulesNode() {
     const prices = M.METHOD_LIST.map(m => m.price);
-    const lv = M.LEVEL_AT.map((c, i) => h('tr', null, h('td', null, String(i + 1)), h('td', null, NUM(c)), h('td', null, String(M.manaMaxOf(i + 1)))));
+    const lv = M.LEVEL_AT.map((c, i) => h('tr', null, h('td', null, `${i + 1} · ${M.realmName(i + 1)}`), h('td', null, NUM(c)), h('td', null, String(M.manaMaxOf(i + 1)))));
     const req = [1, 2, 3, 4].map(t => h('tr', null, h('td', null, M.TIER_NAMES[t]), h('td', null, `Cấp ${M.TIER_REQ[t].level}`), h('td', null, t === 1 ? 'Không cần' : `${M.TIER_REQ[t].tam} tâm đắc nhánh đó`)));
     return h('details', { class: 'card dj-rules' },
       h('summary', null, 'Luật tu luyện'),
@@ -770,6 +773,9 @@
         h('p', null, `Công lực có trần ${NUM(M.CONG_LUC_MAX)}. Đủ mốc thì lên cấp (tối đa cấp ${M.LEVEL_MAX}). Mỗi cấp thêm 4% lực đánh và 1,5% giảm sát thương nhận. Nội lực tối đa: ${M.MANA_BASE} ở cấp 1, thêm ${M.MANA_PER_LEVEL} mỗi cấp.`),
         h('table', { class: 'dj-tbl' }, h('caption', { class: 'sr' }, 'Cấp nội công, công lực cần có và nội lực tối đa'),
           h('thead', null, h('tr', null, h('th', { scope: 'col' }, 'Cấp'), h('th', { scope: 'col' }, 'Công lực từ'), h('th', { scope: 'col' }, 'Nội lực tối đa'))), h('tbody', null, lv)),
+        h('h4', null, 'Danh hiệu PK'),
+        h('p', null, 'Thắng được 3 điểm chiến tích, hòa được 1 điểm, thua không cộng điểm. Trận bị hủy không tính. Điểm được tính từ toàn bộ thành tích đã ghi nhận; danh hiệu không ảnh hưởng sức mạnh.'),
+        h('table', { class: 'dj-tbl' }, h('thead', null, h('tr', null, h('th', { scope: 'col' }, 'Danh hiệu'), h('th', { scope: 'col' }, 'Điểm từ'))), h('tbody', null, M.PK_TITLES.map(t => h('tr', null, h('td', null, t.name), h('td', null, String(t.points)))))),
         h('h4', null, 'Tâm đắc'),
         h('p', null, `Mỗi nhánh (Cương, Tốc, Nhu) có điểm tâm đắc riêng, tối đa ${M.TAM_MAX}. Công pháp thuộc nhánh nào thì cộng tâm đắc nhánh đó; công pháp thông cả ba nhánh cộng cho cả ba.`),
         h('h4', null, 'Học chiêu'),

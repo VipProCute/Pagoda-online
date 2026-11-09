@@ -136,6 +136,22 @@
 
   /* Cấp nội công theo công lực (mốc từng cấp, cấp 1 từ 0) */
   const LEVEL_AT = [0, 60, 150, 300, 500, 800, 1200, 1700, 2300, 3000];
+  const REALM_NAMES = Object.freeze(['Sơ Nhập Võ Đạo', 'Khí Tụ Đan Điền', 'Khai Thông Kinh Mạch', 'Nội Lực Tiểu Thành', 'Nội Lực Đại Thành', 'Chân Khí Hộ Thể', 'Phản Phác Quy Chân', 'Thiên Nhân Hợp Nhất', 'Đại Thừa', 'Trấn Thước Cổ Kim']);
+  const PK_TITLES = Object.freeze([
+    { points: 0, name: 'Tay Mơ Tập Võ' }, { points: 9, name: 'Gà Mờ Giang Hồ' },
+    { points: 30, name: 'Có Số Có Má' }, { points: 75, name: 'Cao Thủ' },
+    { points: 150, name: 'Đại Cao Thủ' }, { points: 300, name: 'Võ Lâm Kỳ Hiệp' },
+    { points: 600, name: 'Nhất Đại Tông Sư' }, { points: 1200, name: 'Vô Địch Thiên Hạ' },
+    { points: 2400, name: 'Độc Cô Cầu Bại' }
+  ].map(Object.freeze));
+  function realmName(level) { return REALM_NAMES[Math.max(1, Math.min(REALM_NAMES.length, Math.floor(Number(level) || 1))) - 1]; }
+  function pkTitle(wins, draws) {
+    const count = n => Number.isFinite(Number(n)) ? Math.max(0, Math.floor(Number(n))) : 0;
+    const points = count(wins) * 3 + count(draws);
+    let index = 0;
+    for (let i = 1; i < PK_TITLES.length; i++) if (points >= PK_TITLES[i].points) index = i;
+    return { points, name: PK_TITLES[index].name, rank: index + 1, next: PK_TITLES[index + 1] || null };
+  }
   const LEVEL_MAX = LEVEL_AT.length, CONG_LUC_MAX = LEVEL_AT[LEVEL_AT.length - 1], TAM_MAX = 300;
   const MANA_BASE = 80, MANA_PER_LEVEL = 4;
 
@@ -318,7 +334,7 @@
   const api = {
     BRANCHES, BRANCH_ORDER, TIER_REQ, TIER_NAMES, SKILLS, SKILL_LIST, SKILL_ORDER, STARTERS, SPECIAL, REST_ID, IDLE_ID,
     METHODS, METHOD_LIST, METHOD_ORDER, LEVEL_AT, LEVEL_MAX, CONG_LUC_MAX, TAM_MAX, MANA_BASE, MANA_PER_LEVEL, KIND_NAMES, PK,
-    levelOf, levelInfo, manaMaxOf, combatPower, rewardOf, clampReward, canLearn, canCultivate,
+    levelOf, levelInfo, realmName, REALM_NAMES, PK_TITLES, pkTitle, manaMaxOf, combatPower, rewardOf, clampReward, canLearn, canCultivate,
     MASTERY_AT, MASTERY_NAMES, MASTERY_MAX, masteryXP, masteryInfo, masteryMap, practiceXP, combatSkill,
     isDamaging, isAttacking, loadoutWarnings, validateLoadout, statsLine
   };
