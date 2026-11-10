@@ -27,7 +27,7 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 ## Đang làm / Sẵn sàng
 
 ### T-001 · Chốt một trong hai nhánh Obito trùng nhau
-- **Trạng thái**: ✅ Xong (2026-11-10). Chủ dự án chọn bản giao diện Obito chibi. Đã lấy `codex/obito-bi-kip-an` (đủ `?v=` và sửa test `secretSkills`), thay sprite bằng bản chibi 62 KB (256×371) của nhánh kia, thêm `lib/martial/secrets.js` vào `check`, ghi NOTICE mục 3c. Nhánh `claude/T-001-obito-chibi`. Test thuần 291/291 đạt; test e2e chưa chạy (máy chưa `npm ci`). **Còn mở 👤:** quyền dùng hình Obito (nhân vật có bản quyền); xoá hai nhánh `codex/*obito*`.
+- **Trạng thái**: ✅ Xong (2026-11-10). Chủ dự án chọn bản giao diện Obito chibi. Đã lấy `codex/obito-bi-kip-an` (đủ `?v=` và sửa test `secretSkills`), thay sprite bằng bản chibi 62 KB (256×371) của nhánh kia, thêm `lib/martial/secrets.js` vào `check`, ghi NOTICE mục 3c. Đã merge qua PR #21. Test thuần 291/291 đạt; test e2e chưa chạy (máy chưa `npm ci`). **Còn mở 👤:** quyền dùng hình Obito (nhân vật có bản quyền); xoá các nhánh `codex/bi-kip-an-obito`, `codex/obito-bi-kip-an`, `claude/T-001-obito-chibi`.
 - **Ưu tiên**: P0
 - **Gói ngữ cảnh**: CORE + PK + HALL + MARTIAL
 - **Khu vực chạm**: lib/martial/secrets.js, lib/martial/service.js, lib/pk/engine.js, lib/pk/manager.js, public/img/obito-sprite.png, public/index.html, public/js/app.js, public/js/arena.js, public/js/hall.js, server.js, test/hall-npcs.test.js, test/martial-service.test.js, test/pk-manager.test.js, test/secret-skills.test.js
@@ -180,7 +180,7 @@ Lấy từ README "Việc nên làm tiếp" và lúc rà repo. Điều phối vi
 
 | Thẻ | Việc | Ngày | PR / commit |
 |---|---|---|---|
-| T-001 | NPC Obito chibi và bí kíp ẩn (gộp từ `codex/obito-bi-kip-an`, sprite 62 KB) | 2026-11-10 | nhánh `claude/T-001-obito-chibi` |
+| T-001 | NPC Obito chibi và bí kíp ẩn (gộp từ `codex/obito-bi-kip-an`, sprite 62 KB) | 2026-11-10 | PR #21 (merge `80f4250`) |
 | T-000 | Chuẩn hóa context cho agent: `AGENTS.md`, `CLAUDE.md`, `docs/agents/{ARCHITECTURE,CONTEXT-PACKS,ORCHESTRATION}.md`, `task.md` | 2026-11-10 | commit trên `main` ("Chuẩn hóa context cho agent…") |
 
 ---
