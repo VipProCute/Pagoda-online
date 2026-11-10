@@ -10,7 +10,7 @@
 
 | Thẻ | Việc | Trạng thái | Ưu tiên | Gói | Người làm |
 |---|---|---|---|---|---|
-| T-001 | Chốt một trong hai nhánh Obito trùng nhau | 🔴 Bị chặn 👤 | P0 | CORE + PK + HALL | — |
+| T-001 | Chốt một trong hai nhánh Obito trùng nhau | ✅ Xong | P0 | CORE + PK + HALL | Claude |
 | T-002 | Kiểm và dọn các nhánh đã merge | 🔵 Sẵn sàng 👤 | P1 | CORE + OPS | — |
 | T-003 | Ghi baseline test trên Node 22 | 🔵 Sẵn sàng | P0 | CORE + OPS | — |
 | T-004 | `npm run check` tự quét file, không liệt kê tay | 🔵 Sẵn sàng | P1 | CORE + OPS | — |
@@ -20,14 +20,14 @@
 | T-008 | Lệnh chạy ui-harness có sẵn trong package.json | ⚪ Hộp thư đến | P2 | CORE + OPS + PK | — |
 | T-009 | Rà các bản làm việc rời trên máy | 🔵 Sẵn sàng 👤 | P2 | CORE | — |
 
-Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạm `package.json`). **T-005**, **T-007**, **T-002** làm song song được với nhóm trên. **T-001** chờ chủ dự án quyết.
+Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạm `package.json`). **T-005**, **T-007**, **T-002** làm song song được với nhóm trên.
 
 ---
 
 ## Đang làm / Sẵn sàng
 
 ### T-001 · Chốt một trong hai nhánh Obito trùng nhau
-- **Trạng thái**: 🔴 Bị chặn 👤 (cần chủ dự án chọn nhánh)
+- **Trạng thái**: ✅ Xong (2026-11-10). Chủ dự án chọn bản giao diện Obito chibi. Đã lấy `codex/obito-bi-kip-an` (đủ `?v=` và sửa test `secretSkills`), thay sprite bằng bản chibi 62 KB (256×371) của nhánh kia, thêm `lib/martial/secrets.js` vào `check`, ghi NOTICE mục 3c. Nhánh `claude/T-001-obito-chibi`. Test thuần 291/291 đạt; test e2e chưa chạy (máy chưa `npm ci`). **Còn mở 👤:** quyền dùng hình Obito (nhân vật có bản quyền); xoá hai nhánh `codex/*obito*`.
 - **Ưu tiên**: P0
 - **Gói ngữ cảnh**: CORE + PK + HALL + MARTIAL
 - **Khu vực chạm**: lib/martial/secrets.js, lib/martial/service.js, lib/pk/engine.js, lib/pk/manager.js, public/img/obito-sprite.png, public/index.html, public/js/app.js, public/js/arena.js, public/js/hall.js, server.js, test/hall-npcs.test.js, test/martial-service.test.js, test/pk-manager.test.js, test/secret-skills.test.js
@@ -180,6 +180,7 @@ Lấy từ README "Việc nên làm tiếp" và lúc rà repo. Điều phối vi
 
 | Thẻ | Việc | Ngày | PR / commit |
 |---|---|---|---|
+| T-001 | NPC Obito chibi và bí kíp ẩn (gộp từ `codex/obito-bi-kip-an`, sprite 62 KB) | 2026-11-10 | nhánh `claude/T-001-obito-chibi` |
 | T-000 | Chuẩn hóa context cho agent: `AGENTS.md`, `CLAUDE.md`, `docs/agents/{ARCHITECTURE,CONTEXT-PACKS,ORCHESTRATION}.md`, `task.md` | 2026-11-10 | commit trên `main` ("Chuẩn hóa context cho agent…") |
 
 ---

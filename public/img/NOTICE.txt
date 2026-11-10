@@ -58,6 +58,14 @@ HÌNH ẢNH TRONG THƯ MỤC NÀY — NGUỒN GỐC VÀ GIẤY PHÉP
    quang bối vàng kim, rồi nén sang WebP. Không dùng ảnh người thật, logo hay nhân vật có bản quyền.
    Giấy phép: giống mục 3, tuân theo điều khoản của Canva (https://www.canva.com/trust/legal/).
 
+3c) NPC Obito trong Tàng Kinh Các (public/img/obito-sprite.png, 256×371, dáng chibi)
+   Hình nhân vật Obito (mặt nạ xoắn cam, áo choàng mây đỏ) thuộc bộ truyện Naruto của Masashi Kishimoto
+   (© Masashi Kishimoto / Shueisha). Đây là nhân vật CÓ BẢN QUYỀN, khác các mục trên.
+   Nguồn của tệp ảnh: chưa ghi (được thêm vào cùng nhánh codex/obito-bi-kip-an).
+   Giấy phép: KHÔNG phải CC0 và chưa có giấy phép sử dụng. Chủ dự án cần xác nhận quyền dùng hoặc thay
+   bằng nhân vật tự thiết kế trước khi phát hành rộng hay dùng cho mục đích thương mại.
+   Thiếu ảnh hoặc ảnh lỗi thì hall.js tự vẽ nhân vật áo dài thường thay thế.
+
 4) Thêm meme của riêng bạn
    Chỉ cần thả ảnh (jpg, jpeg, png, webp, gif, avif) vào public/img/memes/ — máy chủ tự liệt kê và
    hiệu ứng chúc mừng sẽ bốc ngẫu nhiên cả ảnh mới. Nên dùng ảnh vuông ~720 px, dưới ~110 KB, và chỉ
