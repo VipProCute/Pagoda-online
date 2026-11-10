@@ -6,29 +6,44 @@ const fs = require('node:fs');
 const merit = require('../public/js/merit');
 
 test('vẽ NPC ở từng khu và chạm Tảo Địa Tăng trong thư viện', () => {
-  let nextFrame, tapped = null, picked = null;
+  let nextFrame, tapped = null, picked = null, secret = null;
   const labels = [];
+  const labelPositions = new Map();
+  const images = [];
   const gradient = { addColorStop() {} };
   const ctx = new Proxy({}, { get(target, key) {
     if (key in target) return target[key];
     if (key === 'measureText') return text => ({ width: String(text).length * 6 });
-    if (key === 'fillText') return text => labels.push(text);
+    if (key === 'fillText') return (text, x, y) => { labels.push(text); labelPositions.set(text, [x, y]); };
+    if (key === 'drawImage') return image => { if (image && image.src) images.push(image.src); };
     if (key === 'createLinearGradient' || key === 'createRadialGradient') return () => gradient;
     return () => {};
   }, set(target, key, value) { target[key] = value; return true; } });
   const canvas = { width: 960, height: 600, style: {}, listeners: {}, getContext: () => ctx,
     getBoundingClientRect: () => ({ width: 960, height: 600, left: 0, top: 0 }),
     addEventListener(type, fn) { this.listeners[type] = fn; } };
-  class FakeImage { constructor() { this.complete = false; this.naturalWidth = 0; } }
+  class FakeImage {
+    constructor() { this.complete = false; this.naturalWidth = 0; }
+    set src(v) { this._src = v; if (v === '/img/obito-sprite.png') { this.complete = true; this.naturalWidth = 1024; } }
+    get src() { return this._src; }
+  }
   const sandbox = { Math, Date, Image: FakeImage, MERIT: merit, devicePixelRatio: 1,
     matchMedia: () => ({ matches: false }), addEventListener() {}, performance: { now: () => 1000 },
     document: { hidden: false, createElement: () => ({ width: 0, height: 0, getContext: () => ctx }) },
     requestAnimationFrame: fn => { nextFrame = fn; } };
   vm.runInNewContext(fs.readFileSync(require.resolve('../public/js/hall.js'), 'utf8'), sandbox);
-  sandbox.Hall.init(canvas, { sweeper: id => { tapped = id; }, person: id => { picked = id; } });
+  sandbox.Hall.init(canvas, { sweeper: id => { tapped = id; }, person: id => { picked = id; }, secretNpc: role => { secret = role; } });
   for (const scene of ['hall', 'yard', 'library', 'arena']) {
     labels.length = 0; sandbox.Hall.setScene(scene); nextFrame(1000);
-    assert.equal(labels.filter(s => s.endsWith(' · NPC')).length, 2, scene);
+    assert.equal(labels.filter(s => s.endsWith(' · NPC')).length, scene === 'arena' ? 2 : 3, scene);
+    const name = { hall: 'Lão Ăn Mày · NPC', yard: 'Vạn Lý Độc Hành · NPC', library: 'Obito · NPC' }[scene];
+    if (name) {
+      assert.ok(labelPositions.has(name), name);
+      const [x, y] = labelPositions.get(name);
+      canvas.listeners.pointerdown({ clientX: x, clientY: y + 25 });
+      assert.equal(secret, { hall: 'beggar', yard: 'wanderer', library: 'obito' }[scene]);
+      if (scene === 'library') assert.ok(images.includes('/img/obito-sprite.png'), 'sprite Obito được vẽ lên NPC');
+    }
   }
   sandbox.Hall.setScene('library');
   sandbox.Hall.setSweeper({ id: 'test-id', x: 0.5, z: 0.55, until: Date.now() + 60000 });

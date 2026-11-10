@@ -216,7 +216,7 @@
   ];
   let npcs = [], npcRefresh = 0, npcNextSpeech = 0, sweeper = null;
   function randomizeNpcs(now) {
-    const pool = npcDefs.slice();
+    const pool = npcDefs.filter(d => d.role !== 'beggar' && d.role !== 'wanderer');
     for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
     npcs = [];
     ['hall', 'yard', 'library', 'arena'].forEach((place, n) => {
@@ -226,6 +226,13 @@
         npcs.push(p);
       }
     });
+    // These three encounters have stable server-validated positions.
+    const special = [
+      { place: 'hall', x: 0.68, z: 0.67, def: npcDefs.find(d => d.role === 'beggar') },
+      { place: 'yard', x: 0.32, z: 0.67, def: npcDefs.find(d => d.role === 'wanderer') },
+      { place: 'library', x: 0.76, z: 0.68, def: { name: 'Obito', role: 'obito', look: { g: 'nam', c: 11, h: 2 }, lines: ['Không gian này có những bí mật riêng.'] } }
+    ];
+    special.forEach((v, i) => npcs.push({ ...mk({ id: -300 - i, name: v.def.name + ' · NPC', look: v.def.look, x: v.x, z: v.z, scene: v.place, at: 'hall', mt: 0 }), npc: v.def, tx: v.x, tz: v.z, wait: Infinity, secretEncounter: true }));
     npcRefresh = now + rand(90000, 150000);
   }
   function updateNpcs(now, dt) {
@@ -250,6 +257,8 @@
     }
     return visible;
   }
+  const obitoArt = root.Image ? new Image() : null;
+  if (obitoArt) obitoArt.src = '/img/obito-sprite.png';
   function drawNpcAccessory(g, role) {
     g.save(); g.lineCap = 'round';
     if (role === 'beggar') {
@@ -1036,8 +1045,13 @@
       } else {
       if (rk) meritHalo(g, rk, t + p.id * 0.3, aur && aa > 0.3 ? tierColor(aur.t) : null);
       if (aur) aura(g, aur.t, t, aa, p.id * 1.7, false);
-      drawAvatar(g, p.look, p.front, t + p.id, bow, p.walking);
-      if (p.npc) drawNpcAccessory(g, p.npc.role);
+      if (p.npc && p.npc.role === 'obito' && obitoArt && obitoArt.complete && obitoArt.naturalWidth) {
+        g.fillStyle = 'rgba(0,0,0,.32)'; g.beginPath(); g.ellipse(0, 0, 17, 4.5, 0, 0, TAU); g.fill();
+        g.drawImage(obitoArt, -34, -104, 68, 104);
+      } else {
+        drawAvatar(g, p.look, p.front, t + p.id, bow, p.walking);
+        if (p.npc) drawNpcAccessory(g, p.npc.role);
+      }
       if (aur) aura(g, aur.t, t, aa, p.id * 1.7, true);
       }
       if (p.rburst) {                                         // vừa lên mốc pháp tướng
@@ -1787,6 +1801,8 @@
     const [x, y] = point(e);
     const clickedPlayer = personAt(x, y);
     if (clickedPlayer) { handlers.person && handlers.person(clickedPlayer.id); return; }
+    const specialNpc = npcs.find(p => p.secretEncounter && viewOf(p) === scene && p.sx != null && Math.abs(x - p.sx) < 25 * p.s + 12 && y > p.sy - 120 * p.s - 20 && y < p.sy + 10);
+    if (specialNpc) { handlers.secretNpc && handlers.secretNpc(specialNpc.npc.role); return; }
     if (scene === 'arena') {
       if (y > G.hb + 4 * u) walkTo(x, y);
       return;

@@ -75,6 +75,15 @@
         else if (r.already) toast('Bạn đã nhận truyền thừa trong lần gặp này.');
       });
     },                                 // chạm bồ đoàn: đi tới, ngồi thiền
+    secretNpc(role) {
+      if (!joined) return;
+      socket.emit('martial:secret-encounter', { role }, r => {
+        if (!r) return toast('Chưa thể trò chuyện, hãy thử lại.');
+        if (r.code === 'far') socket.emit('move', { x: r.x, z: r.z });
+        if (!r.ok) return toast(r.reason || 'Cơ duyên chưa tới.');
+        toast(r.already ? `Bạn đã lĩnh ngộ ${r.name}.` : `Cơ duyên xuất hiện! Bạn lĩnh ngộ ${r.name}.`);
+      });
+    },
     person(id) { openPerson(id); },
     fortune() { fortune.open('lot'); },
     reader(type) { fortune.open(type); }
