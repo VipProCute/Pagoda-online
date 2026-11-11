@@ -8,7 +8,7 @@ Tài liệu kỹ thuật cho phần tu luyện, học chiêu và luận võ. Đ�
 |---|---|---|
 | `hall` Chánh điện | Nơi cúng và tương tác chính. **Không có đánh nhau.** | Mọi người |
 | `dojo` Võ Học Các | Tu luyện nội công, học chiêu, chọn bộ 4 chiêu | Người tự đến |
-| `arena` Sân đấu | Danh sách người đang ở sân, mời và đấu | Người tự ra sân |
+| `arena` Sân đấu | Danh sách người đang ở sân, mời và đấu | Người ra sân bằng thanh đổi map (mời được cả từ chánh điện) |
 
 Quy tắc cứng:
 

@@ -373,8 +373,9 @@
     if (Library.book) socket.emit('reading', { book: Library.book.id });
     previewCelebrate();
     const mc = cfg.martial || {};
-    $('#actDojo').hidden = !mc.enabled; $('#actArena').hidden = !mc.pk;
-    Places.resume();                                          // mất mạng rồi nối lại: báo lại cho máy chủ biết đang ở nơi nào
+    $$('[data-place-card]').forEach(c => { c.hidden = !(c.dataset.placeCard === 'dojo' ? mc.enabled : c.dataset.placeCard === 'arena' ? mc.pk : true); });
+    syncMapBar();
+    Places.resume();                                         // mất mạng rồi nối lại: báo lại cho máy chủ biết đang ở nơi nào
     if (r.hasMatch && Places.current === 'hall' && mc.pk) {   // tải lại trang giữa trận: vào lại Sân đấu để tiếp tục, kẻo bị xử thua vì quá giờ
       toast('Bạn đang có một trận dở, đang đưa bạn về Sân đấu…');
       setTimeout(() => { if (Places.current === 'hall') Places.go('arena'); }, 600);
@@ -428,7 +429,7 @@
     if (d.type === 'heart') Hall.heart(d.pid);
     else if (d.type === 'bow') Hall.bow(d.pid);
   });
-  socket.on('bell', d => { SFX.bell(); Hall.bell(); ticker(`${d.pid === me ? 'Bạn' : d.name} vừa thỉnh một tiếng chuông`); });
+  socket.on('bell', d => { SFX.bell(); Hall.bell(); if (d.pid === me && altarNote()) toast(altarNote().trim()); ticker(`${d.pid === me ? 'Bạn' : d.name} vừa thỉnh một tiếng chuông`); });
   socket.on('incense', d => {
     Hall.addIncense(d.sticks);
     if (d.pid === me) { Hall.floater(`${d.sticks.length} nén nhang · ${d.kind}`); SFX.ting(); }
@@ -648,6 +649,8 @@
   let moCount = 0;
   setInterval(() => { if (moCount && joined) { socket.emit('mo', { n: Math.min(5, moCount) }); moCount = 0; } }, 1000);
   function pulse(btn) { if (!btn) return; btn.classList.remove('hit'); void btn.offsetWidth; btn.classList.add('hit'); setTimeout(() => btn.classList.remove('hit'), 160); }
+  /** Lễ (thắp nhang, dâng hoa, thỉnh chuông) luôn dâng ở bàn thờ chánh điện, dù đang đứng ở map nào: báo rõ để không ai ngỡ lễ bị mất. */
+  function altarNote() { return curScene !== 'hall' ? ' Lễ đã dâng lên bàn thờ ở chánh điện.' : ''; }
   function act(name, btn, walk) {
     if (!joined) { openDlg('join'); return; }
     SFX.unlock();
@@ -655,16 +658,17 @@
       case 'voice':
         toggleVoiceMic();
         pulse(btn); break;
-      case 'library':                                          // nút Tàng Kinh Các: vào Tàng Kinh Các; đang ở trong rồi thì mở kệ kinh
+      case 'library':                                          // thẻ Khám phá: vào Tàng Kinh Các; đang ở trong rồi thì mở kệ kinh
         if (curScene !== 'library' && Places.current === 'hall') goScene('library'); else Library.open();
         break;
+      case 'yard': goMap('yard'); break;                       // thẻ Khám phá: ra Sân chùa
       case 'read': Library.open(); break;
       case 'incense': $('#incWarn').hidden = true; openDlg('incense'); break;
       case 'flower': closeDlg('donate'); openDlg('flower'); break;
       case 'heart': socket.emit('emote', { type: 'heart' }); SFX.pop(); pulse(btn); break;
       case 'bow': socket.emit('emote', { type: 'bow' }); SFX.ting(); pulse(btn); break;
       case 'mo': SFX.mo(); moCount++; pulse(btn); break;
-      case 'bell': socket.emit('bell'); pulse(btn); break;
+      case 'bell': socket.emit('bell'); pulse(btn); break;      // báo "lễ đã dâng" chờ máy chủ chấp nhận (sự kiện 'bell' của chính mình)
       case 'chant':
         if (chant) { if (!SFX.ready || muted) $('#cbJoin').click(); else toast('Đang có khóa tụng chung. Mời bạn tụng cùng.'); }
         else openDlg('chant');
@@ -690,13 +694,14 @@
     }, r => {
       if (!r || !r.ok) { w.textContent = (r && r.reason) || 'Chưa thắp được.'; w.hidden = false; return; }
       $('#incText').value = ''; closeDlg('incense');
-      toast('Đã thắp nhang. Chắp tay, tâm niệm lời nguyện của bạn.');
+      toast('Đã thắp nhang. Chắp tay, tâm niệm lời nguyện của bạn.' + altarNote());
     });
   });
   $$('.offer').forEach(b => b.addEventListener('click', () => {
     socket.emit('offer', { item: b.dataset.item }, r => {
       if (r && !r.ok) { toast(r.reason); return; }
       closeDlg('flower');
+      if (altarNote()) toast(altarNote().trim());
     });
   }));
   $('#trackList').addEventListener('click', e => {
@@ -867,10 +872,21 @@
     $('#vbMic').setAttribute('aria-pressed', String(Voice.mic));
     $('#vbMic').classList.toggle('off', !Voice.mic);
     $('#vbTitle').textContent = joining || Voice.joining ? 'Đang kết nối tiếng…' : !on ? 'Chưa kết nối tiếng' : Voice.mic ? 'Mic đang bật' : 'Đang nghe · mic tắt';
-    $('#vbSub').textContent = !on ? 'Chạm mic để thử kết nối và nói chuyện.' : Voice.audioBlocked ? 'Chạm màn hình để bật âm thanh.' : st.connected ? `${st.connected} người ở gần nghe được nhau`
+    $('#vbSub').textContent = !on ? (['dojo', 'arena'].includes(document.body.dataset.place) ? 'Chạm mic để thử kết nối và nói chuyện.' : 'Bấm Nói chuyện ở thanh dưới để thử kết nối.') : Voice.audioBlocked ? 'Chạm màn hình để bật âm thanh.' : st.connected ? `${st.connected} người ở gần nghe được nhau`
       : st.peers ? 'Đang nối tiếng với người ở gần…' : 'Chưa có ai ở gần bật nói chuyện. Đi lại gần đạo hữu khác nhé.';
     if ($('#dlg-voice').open) renderVoiceList();
+    // Hộp nổi tự thu nhỏ thành chấm trạng thái sau 6 giây không đổi; có thay đổi thì mở lại
+    const place = document.body.dataset.place || '';
+    const sig = $('#vbTitle').textContent + '|' + $('#vbSub').textContent;
+    if (sig !== vbSig || place !== vbPlace) { vbSig = sig; vbPlace = place; vbExpand(); }
   }
+  let vbSig = '', vbPlace = '', vbTimer = 0;
+  function vbExpand() {
+    const vb = $('#voicebar'); vb.classList.remove('mini');
+    clearTimeout(vbTimer);
+    vbTimer = setTimeout(() => vb.classList.add('mini'), 6000);
+  }
+  $('#voicebar').addEventListener('click', e => { if ($('#voicebar').classList.contains('mini') && !e.target.closest('.vb-mic')) vbExpand(); });
   function renderVoiceList() {
     const box = $('#vcList'), mine = Hall.player(me), conn = new Map(Voice.peers().map(p => [p.pid, p]));
     const list = Hall.list().filter(p => p.id !== me && p.v && Voice.sameRoom(mine, p)).map(p => ({ p, d: mine ? Voice.distance(mine, p) : 9 })).sort((a, b) => a.d - b.d);

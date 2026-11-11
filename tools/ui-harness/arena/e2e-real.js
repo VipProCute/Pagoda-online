@@ -66,10 +66,10 @@ async function enterHall(page, srv, name) {
   await page.waitForSelector('#jName');
   if (!(await page.inputValue('#jName'))) await page.fill('#jName', name);
   await page.click('#joinBtn');
-  await page.waitForSelector('#actArena:not([hidden])', { timeout: 10000 });
+  await page.waitForSelector('.mapbar-btn[data-map="arena"]:not([hidden])', { timeout: 10000 });
 }
 async function goArena(page) {
-  await page.click('#actArena');
+  await page.click('.mapbar-btn[data-map="arena"]');
   await page.waitForSelector('#place-arena:not([hidden]) .ar-root');
   await page.waitForSelector('.ar-screen:not([hidden])');
 }
@@ -297,7 +297,7 @@ async function t(name, fn) {
     await call(bot.socket, 'pk:loadout', { matchId: bot.lobby.matchId, skills: BOT_LOADOUT });
     await page.waitForSelector('.ar-ready:not([hidden])');
     await page.reload({ waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('#jName'); await page.click('#joinBtn'); await page.waitForSelector('#actArena:not([hidden])');
+    await page.waitForSelector('#jName'); await page.click('#joinBtn'); await page.waitForSelector('.mapbar-btn[data-map="arena"]:not([hidden])');
     await goArena(page);
     await page.waitForSelector('.ar-lobby:not([hidden])', { timeout: 8000 });
     assert.ok(await vis(page, '.ar-ready'), 'vào lại sảnh: đối thủ đã sẵn sàng');
@@ -311,7 +311,7 @@ async function t(name, fn) {
     await call(bot.socket, 'pk:pick', { matchId: bot.lobby.matchId, turn: 1, skillId: 'nhu-van-bo' });
     await page.waitForSelector('.ar-lockb.on');
     await page.reload({ waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('#jName'); await page.click('#joinBtn'); await page.waitForSelector('#actArena:not([hidden])');
+    await page.waitForSelector('#jName'); await page.click('#joinBtn'); await page.waitForSelector('.mapbar-btn[data-map="arena"]:not([hidden])');
     await goArena(page);
     await page.waitForSelector('.ar-matchbox:not([hidden])', { timeout: 8000 });
     assert.match(await page.$eval('.ar-turn', e => e.textContent), /Lượt 1/);
@@ -322,7 +322,7 @@ async function t(name, fn) {
     await page.click('.ar-pk[data-skill="trong-quyen"]'); await page.click('.ar-lockbtn');
     await page.waitForSelector('.ar-reveal:not([hidden])', { timeout: 5000 });
     await page.reload({ waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('#jName'); await page.click('#joinBtn'); await page.waitForSelector('#actArena:not([hidden])');
+    await page.waitForSelector('#jName'); await page.click('#joinBtn'); await page.waitForSelector('.mapbar-btn[data-map="arena"]:not([hidden])');
     await goArena(page);
     await page.waitForSelector('.ar-matchbox:not([hidden])', { timeout: 8000 });
     await page.waitForFunction(() => document.querySelectorAll('.ar-lines li').length >= 1 || !document.querySelector('.ar-pickui').hidden, null, { timeout: 6000 });
