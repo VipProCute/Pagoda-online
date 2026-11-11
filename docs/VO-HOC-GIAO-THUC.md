@@ -197,6 +197,6 @@ Dojo.show(info) / Dojo.hide()        vào / rời nơi này (làm mới dữ li�
 Arena.show(info) / Arena.hide()      info là ack của `place:set` (với sân đấu có `info.arena.players`)
 ```
 `Places.go(name)` gửi `place:set`, rồi gọi `show(info)` của nơi đó. Khi mất mạng rồi nối lại, trang gọi lại `place:set` và `show(info)` cho nơi đang ở, nên `Arena.show` luôn phải tự gọi `pk:resume` để vào lại trận đang dở.
-Trong lúc có trận, nút "Về chánh điện" của sân đấu hỏi xác nhận ("Rời trận nghĩa là bỏ cuộc"), đồng ý thì gửi `pk:forfeit` rồi mới `goto('hall')`.
+Trong lúc có trận, bấm map khác trên thanh đổi map ở đầu Sân đấu thì hỏi xác nhận ("Rời trận nghĩa là bỏ cuộc"), đồng ý thì gửi `pk:forfeit` rồi mới sang map đã chọn (không chọn được thì `goto('hall')`). Bấm chính nút Sân đấu thì không làm gì.
 Sân đấu cung cấp thêm `Arena.inMatch()` (có trận đang diễn ra hay không).
 Module tự đăng ký `socket.on(...)` của mình trong `init`. Chữ trong giao diện: tiếng Việt, ngắn gọn, đúng phong cách các màn hình hiện có. Mọi chữ do người dùng hoặc máy chủ gửi phải gán bằng `textContent`, không `innerHTML`.

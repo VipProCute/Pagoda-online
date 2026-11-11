@@ -20,7 +20,7 @@
       const m = reg[cur] && reg[cur].mod;
       if (m && m.inMatch && m.inMatch()) {   // đang đấu: Back không được âm thầm bỏ cuộc
         try { history.pushState({ place: cur }, ''); } catch (e) { /* bỏ qua */ }
-        if (host.toast) host.toast('Đang có trận. Muốn rời thì bấm "Về chánh điện" trong sân đấu (rời trận là bỏ cuộc).');
+        if (host.toast) host.toast('Đang có trận. Muốn rời thì bấm map khác trên thanh đầu Sân đấu (rời trận là bỏ cuộc).');
         return;
       }
       go('hall', { fromHistory: true });

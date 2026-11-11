@@ -4,7 +4,13 @@
 .ar-root .btn { min-height: 44px; }
 .ar-root .btn.big { padding: 10px 18px; }
 .ar-head { position: relative; flex: none; display: flex; align-items: center; gap: 10px; padding: 6px 12px; border-bottom: 1px solid var(--line); background: var(--surface); }
-.ar-back { padding: 8px 12px; white-space: nowrap; flex: none; }
+.ar-head > .mapbar { flex: none; }
+.ar-head .mapbar-btn { background: var(--surface); }
+.ar-head .mapbar-btn.on { background: var(--gold); }
+@media (max-width: 900px) {
+  .ar-head { flex-wrap: wrap; row-gap: 4px; }
+  .ar-head > .mapbar { flex: 1 0 100%; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); }
+}
 .ar-ttl { min-width: 0; display: grid; line-height: 1.15; }
 .ar-ttl h2 { margin: 0; font-family: var(--font-display); font-size: 24px; font-weight: 600; }
 .ar-sub { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

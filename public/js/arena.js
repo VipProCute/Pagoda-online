@@ -607,7 +607,7 @@
     const ui = S.ui = { dlgs: [] }, wrap = h('div', 'ar-root');
     ui.root = wrap;
     // đầu trang
-    const head = h('header', 'ar-head'), back = btn('btn ar-back', '← Về chánh điện'), tt = h('div', 'ar-ttl');
+    const head = h('header', 'ar-head'), tt = h('div', 'ar-ttl');
     ui.sub = h('span', 'ar-sub', 'Luận võ 1 đấu 1');
     add(tt, h('h2', null, 'Sân đấu'), ui.sub);
     // trong trận: số lượt, giờ còn lại, thanh đếm giờ nằm ngay trên đầu trang (đỡ chỗ cho sân khấu)
@@ -615,9 +615,10 @@
     ui.turn = h('b', 'ar-turn'); ui.tsec = h('span', 'ar-tsec', null, { role: 'timer' });
     add(ui.hturn, ui.turn, ui.tsec);
     ui.hbar = h('div', 'ar-hbar'); ui.hfill = h('i'); ui.hbar.appendChild(ui.hfill); ui.hbar.hidden = true;
-    add(head, back, tt, ui.hturn, ui.hbar);
-    back.addEventListener('click', onBack);
-    ui.back = back;
+    // thanh đổi map dùng chung (Sân đấu sáng); thay nút "← Về chánh điện" cũ
+    ui.mapbar = root.MapBar ? root.MapBar.mount(head) : null;
+    if (ui.mapbar) ui.mapbar.addEventListener('click', onMapBar, true);   // bắt ở pha capture để chặn khi đang có trận
+    add(head, tt, ui.hturn, ui.hbar);
     ui.off = h('p', 'ar-off', 'Mất kết nối. Các nút gửi tạm khóa, đang thử nối lại…', { role: 'status' }); ui.off.hidden = true;
     ui.live = h('div', 'sr', null, { 'aria-live': 'polite' });
     const main = h('div', 'ar-main');
@@ -736,6 +737,7 @@
     stay.addEventListener('click', () => d4.dlg.close()); quit.addEventListener('click', doLeave);
     add(d4.foot, quit, stay); add(d4.body, d4.warn, d4.foot);
     d4.quit = quit;
+    d4.dlg.addEventListener('close', () => { S.leaveTo = null; });
     for (const d of ui.dlgs) wrap.appendChild(d);
   }
 
@@ -767,18 +769,34 @@
   /** Đang ở sảnh / trận, hoặc đang chờ máy chủ cho biết có trận dở không (rời sân lúc đó cũng là bỏ cuộc). */
   const inMatch = () => S.resuming || (!!S.m && (S.screen === 'lobby' || S.screen === 'match'));
 
-  function onBack() {
-    if (inMatch()) { S.ui.dLeave.warn.hidden = true; openDlg(S.ui.dLeave.dlg); return; }
+  /* Thanh đổi map: bấm Sân đấu (đang ở đây) thì không làm gì; bấm map khác khi không có trận → để app.js đi thẳng;
+     có trận → hỏi rời trận, đồng ý rồi mới phát lại cú bấm (leaveTo). */
+  let replaying = false;
+  function onMapBar(e) {
+    const b = e.target.closest && e.target.closest('.mapbar-btn');
+    if (!b || replaying) return;
+    if (b.dataset.map === 'arena') { e.stopPropagation(); return; }
+    if (!inMatch()) return;
+    e.stopPropagation();
+    S.leaveTo = b;
+    const lb = b.dataset.map === 'hall' ? 'chánh điện' : (b.getAttribute('aria-label') || 'map khác');
+    S.ui.dLeave.quit.textContent = 'Bỏ cuộc, sang ' + lb;
+    S.ui.dLeave.warn.hidden = true; openDlg(S.ui.dLeave.dlg);
+  }
+  /** Đã rời được trận: đi tới map người chơi đã chọn (phát lại cú bấm trên thanh), không chọn thì về chánh điện. */
+  function leaveDone() {
+    const b = S.leaveTo; S.leaveTo = null;
+    if (b && b.isConnected) { replaying = true; try { b.click(); } finally { replaying = false; } return; }
     S.host.goto('hall');
   }
   function doLeave() {
     const m = S.m, d = S.ui.dLeave;
-    if (!m) { d.dlg.close(); S.host.goto('hall'); return; }
+    if (!m) { d.dlg.close(); leaveDone(); return; }
     if (!canSend()) { d.warn.textContent = 'Mất kết nối, chưa bỏ cuộc được. Đợi nối lại rồi thử nhé.'; d.warn.hidden = false; return; }
     d.quit.disabled = true;
     S.sock.emit('pk:forfeit', { matchId: m.id }, ack => {
       d.quit.disabled = false;
-      if (ack && ack.ok) { d.dlg.close(); S.host.goto('hall'); return; }
+      if (ack && ack.ok) { d.dlg.close(); leaveDone(); return; }
       d.warn.textContent = (ack && ack.reason) || 'Chưa bỏ cuộc được, thử lại nhé.'; d.warn.hidden = false;
       resumeMatch();                                              // có thể trận đã kết thúc: đồng bộ lại với máy chủ
     });

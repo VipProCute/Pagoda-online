@@ -35,6 +35,10 @@
     login() { H.loginClicks++; },
     me: () => ME, meritTotal: () => 1234, vnd: n => n + 'đ'
   };
+  // thanh đổi map: máy chủ giả chỉ có chánh điện và Sân đấu; map nào khác cũng về "chánh điện" (nút Sân đấu thì ở yên)
+  // H.mapLog ghi lại các id được gọi để ui-check kiểm đúng map đích
+  const mapLog = [];
+  if (window.MapBar) { MapBar.configure({ go: id => { mapLog.push(id); if (id !== 'arena') Places.go('hall'); } }); MapBar.setCurrent('arena'); }
 
   /* ---------- trận giả ---------- */
   function newMatch(name, o) {
@@ -206,6 +210,7 @@
       end(Object.assign({ turns: (m && m.cur && m.cur.turn) || 5, state: { you: Object.assign({}, st.you, { hp: k.result === 'lose' ? 0 : 54 }), op: Object.assign({}, st.op, { hp: k.result === 'win' ? 0 : 88 }) }, record: rec }, k));
     }
   };
+  H.mapLog = mapLog;
   H.loginClicks = 0; H.loginRequired = !!q.get('login');
 
   /* ---------- khởi động ---------- */

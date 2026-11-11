@@ -218,15 +218,15 @@ const waitReveal = pg => pg.waitForFunction(() => { const r = document.querySele
     await waitText(pg, 'dialog[open] .warn', 'vừa vào trận khác');
     assert.ok(await vis(pg, 'dialog[open]'), 'hộp phải còn mở khi lỗi');
   });
-  await t('Lời mời đến (cân bằng): thẻ nổi, đếm ngược, không che nút Về chánh điện, nhận / từ chối', 'mobile', async pg => {
+  await t('Lời mời đến (cân bằng): thẻ nổi, đếm ngược, không che nút Chánh điện, nhận / từ chối', 'mobile', async pg => {
     await rows(pg);
     const id = await pg.evaluate(() => H.invite({ mode: 'balanced', from: { name: 'Quảng Đức' } }));
     await pg.waitForSelector('.ar-ic');
     const c = await text(pg, '.ar-ic');
     assert.ok(c.includes('Quảng Đức') && c.includes('Phòng cân bằng') && /còn \d+s/.test(c));
     assert.equal(await count(pg, '.ar-bt'), 0, 'chế độ cân bằng không có bảng buff');
-    const hit = await pg.evaluate(() => { const b = document.querySelector('.ar-back').getBoundingClientRect(), e = document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2); return !!e.closest('.ar-back'); });
-    assert.ok(hit, 'thẻ lời mời che nút Về chánh điện');
+    const hit = await pg.evaluate(() => { const b = document.querySelector('.ar-head .mapbar-btn[data-map="hall"]').getBoundingClientRect(), e = document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2); return !!e.closest('.ar-head .mapbar-btn[data-map="hall"]'); });
+    assert.ok(hit, 'thẻ lời mời che nút Chánh điện');
     const w1 = await pg.$eval('.ar-ic-bar i', e => parseFloat(e.style.width));
     await pg.waitForTimeout(1200);
     const w2 = await pg.$eval('.ar-ic-bar i', e => parseFloat(e.style.width));
@@ -258,8 +258,8 @@ const waitReveal = pg => pg.waitForFunction(() => { const r = document.querySele
     assert.match((await toasts(pg)).pop(), /Lời mời của Tuệ Minh đã hết hạn/);
     await pg.evaluate(() => { for (let i = 0; i < 3; i++) H.invite({ mode: i === 1 ? 'buff' : 'balanced', from: { name: 'Khách ' + i, pid: 400 + i } }); });
     await pg.waitForFunction(() => document.querySelectorAll('.ar-ic').length === 3);
-    const back = await pg.evaluate(() => { const b = document.querySelector('.ar-back').getBoundingClientRect(), e = document.elementFromPoint(b.left + 20, b.top + 20); return !!e.closest('.ar-back'); });
-    assert.ok(back, '3 thẻ che nút Về chánh điện');
+    const back = await pg.evaluate(() => { const b = document.querySelector('.ar-head .mapbar-btn[data-map="hall"]').getBoundingClientRect(), e = document.elementFromPoint(b.left + 20, b.top + 20); return !!e.closest('.ar-head .mapbar-btn[data-map="hall"]'); });
+    assert.ok(back, '3 thẻ che nút Chánh điện');
     await pg.waitForTimeout(500);
     await noOverflow(pg, '3 lời mời'); await shot(pg, 'invite-three');
   });
@@ -586,18 +586,18 @@ const waitReveal = pg => pg.waitForFunction(() => { const r = document.querySele
   }, '&jump=A:choosing:6');
 
   /* ===== rời trận, nút Back, hide ===== */
-  await t('Về chánh điện: không có trận thì đi luôn; có trận thì hỏi xác nhận, đồng ý thì pk:forfeit rồi về', 'mobile', async pg => {
+  await t('Nút Chánh điện trên thanh đổi map: không có trận thì đi luôn; có trận thì hỏi xác nhận, đồng ý thì pk:forfeit rồi về', 'mobile', async pg => {
     await rows(pg);
-    await pg.click('.ar-back');
+    await pg.click('.ar-head .mapbar-btn[data-map="hall"]');
     await pg.waitForFunction(() => Places.current === 'hall');
     assert.equal((await sent(pg, 'pk:forfeit')).length, 0);
     await pg.click('#goArena'); await pg.waitForFunction(() => Places.current === 'arena');
     await rows(pg);
     assert.ok(await vis(pg, '#place-arena'));
   });
-  await t('Có trận: Về chánh điện hỏi xác nhận; Ở lại đóng hộp; Bỏ cuộc gửi pk:forfeit rồi về chánh điện', 'mobile', async pg => {
+  await t('Có trận: nút Chánh điện hỏi xác nhận; Ở lại đóng hộp; Bỏ cuộc gửi pk:forfeit rồi về chánh điện', 'mobile', async pg => {
     await waitTurn(pg, 2);
-    await pg.click('.ar-back');
+    await pg.click('.ar-head .mapbar-btn[data-map="hall"]');
     await pg.waitForSelector('dialog[open]');
     assert.match(await text(pg, 'dialog[open]'), /Rời trận nghĩa là bỏ cuộc/);
     await noOverflow(pg, 'hộp rời trận'); await shot(pg, 'dlg-leave');
@@ -605,7 +605,7 @@ const waitReveal = pg => pg.waitForFunction(() => { const r = document.querySele
     await pg.waitForSelector('dialog[open]', { state: 'detached' });
     assert.equal(await pg.evaluate(() => Places.current), 'arena');
     assert.equal((await sent(pg, 'pk:forfeit')).length, 0);
-    await pg.click('.ar-back'); await pg.click('dialog[open] .btn:has-text("Bỏ cuộc")');
+    await pg.click('.ar-head .mapbar-btn[data-map="hall"]'); await pg.click('dialog[open] .btn:has-text("Bỏ cuộc")');
     await pg.waitForFunction(() => Places.current === 'hall');
     const f = await sent(pg, 'pk:forfeit');
     assert.equal(f.length, 1); assert.equal(f[0].matchId, await pg.evaluate(() => H.state.match.id));
@@ -614,6 +614,38 @@ const waitReveal = pg => pg.waitForFunction(() => { const r = document.querySele
     await pg.waitForTimeout(300);
     assert.deepEqual(await pg.evaluate(() => ({ iv: window.__iv.size, raf: window.__raf.size })), { iv: 0, raf: 0 }, 'còn hẹn giờ / vòng vẽ chạy sau khi rời sân');
   }, '&jump=A:choosing:2');
+  await t('Thanh đổi map: nút Sân đấu sáng (aria-current), bấm không mở hộp, không pk:forfeit, không gọi go', 'mobile', async pg => {
+    await waitTurn(pg, 2);
+    const cur = '.ar-head .mapbar-btn[data-map="arena"]';
+    assert.equal(await pg.getAttribute(cur, 'aria-current'), 'page');
+    await pg.click(cur);
+    assert.equal(await pg.locator('dialog[open]').count(), 0, 'bấm Sân đấu không được mở hộp');
+    assert.equal((await sent(pg, 'pk:forfeit')).length, 0);
+    assert.deepEqual(await pg.evaluate(() => H.mapLog), []);
+  }, '&jump=A:choosing:2');
+  await t('Có trận: bấm Sân chùa → hộp ghi đúng đích; Ở lại không đi; Bỏ cuộc gửi pk:forfeit 1 lần rồi go(yard)', 'mobile', async pg => {
+    await waitTurn(pg, 2);
+    const yard = '.ar-head .mapbar-btn[data-map="yard"]';
+    await pg.click(yard);
+    await pg.waitForSelector('dialog[open]');
+    assert.match(await text(pg, 'dialog[open] .btn:has-text("Bỏ cuộc")'), /Bỏ cuộc, sang Sân chùa/);
+    await pg.click('dialog[open] .btn.primary');
+    await pg.waitForSelector('dialog[open]', { state: 'detached' });
+    assert.deepEqual(await pg.evaluate(() => H.mapLog), []);
+    assert.equal((await sent(pg, 'pk:forfeit')).length, 0);
+    await pg.click(yard); await pg.click('dialog[open] .btn:has-text("Bỏ cuộc")');
+    await pg.waitForFunction(() => H.mapLog.length > 0);
+    assert.equal((await sent(pg, 'pk:forfeit')).length, 1);
+    assert.deepEqual(await pg.evaluate(() => H.mapLog), ['yard']);
+  }, '&jump=A:choosing:2');
+  await t('Không có trận: bấm Tàng Kinh Các đi thẳng, không hộp, không pk:forfeit', 'mobile', async pg => {
+    await rows(pg);
+    await pg.click('.ar-head .mapbar-btn[data-map="library"]');
+    await pg.waitForFunction(() => H.mapLog.length > 0);
+    assert.deepEqual(await pg.evaluate(() => H.mapLog), ['library']);
+    assert.equal(await pg.locator('dialog[open]').count(), 0);
+    assert.equal((await sent(pg, 'pk:forfeit')).length, 0);
+  });
   await t('Nút Back của điện thoại bị chặn khi đang có trận (Places.popstate + inMatch)', 'mobile', async pg => {
     await waitTurn(pg, 2);
     await pg.evaluate(() => history.back());
@@ -623,7 +655,7 @@ const waitReveal = pg => pg.waitForFunction(() => { const r = document.querySele
   }, '&jump=A:choosing:2');
   await t('Sau khi rời sân: sự kiện pk:* muộn không được vẽ gì', 'mobile', async pg => {
     await waitTurn(pg, 2);
-    await pg.click('.ar-back'); await pg.click('dialog[open] .btn:has-text("Bỏ cuộc")');
+    await pg.click('.ar-head .mapbar-btn[data-map="hall"]'); await pg.click('dialog[open] .btn:has-text("Bỏ cuộc")');
     await pg.waitForFunction(() => Places.current === 'hall');
     await pg.evaluate(() => { H.sendEnd('forfeit-you'); H.send('pk:turn', { matchId: 'zzz', turn: 1 }); });
     await pg.waitForTimeout(300);

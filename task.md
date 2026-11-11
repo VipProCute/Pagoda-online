@@ -23,7 +23,7 @@
 | **Đợt 2026-11** | | | | | |
 | T-010 | Làm thanh đổi map đồng bộ (4 nút), bỏ nút Xin xăm | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + NAV + HALL | Claude Sonnet 5.5 |
 | T-011 | Gọn thanh dưới còn 9 nút lễ Phật, tab Khám phá | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + NAV | Claude Sonnet 5.5 |
-| T-012 | Thanh đổi map trong Sân đấu | ⏳ T-010, T-011 | P1 | CORE + NAV + PK | — |
+| T-012 | Thanh đổi map trong Sân đấu | ✅ Gộp tích hợp (chờ PR) | P1 | CORE + NAV + PK | Claude Sonnet 5.5 |
 | T-020 | Chốt giao thức Kỳ Đạo | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + KYDAO + DOCS | Claude Sonnet 5.5 |
 | T-021 | Luật cờ vua thuần, kiểm perft | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + KYDAO | Claude Sonnet 5.5 + Codex terra 6.1 |
 | T-022 | Luật cờ tướng thuần, perft, ký hiệu Việt | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + KYDAO | Codex terra 6.1 + Claude Sonnet 5.5 |
@@ -263,13 +263,13 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: thêm nút mới ở thanh dưới; đổi luật công đức.
 
 ### T-012 · Thanh đổi map trong Sân đấu
-- **Trạng thái**: ⏳ Chờ T-010, T-011
+- **Trạng thái**: ✅ Gộp vào nhánh tích hợp (chờ PR). Thợ: Claude Sonnet 5.5 (qua proxy). Soát: Opus 5.5 thay Argon, Sol 6.1. Điều phối chạy thật: vào Sân đấu, thanh 4 nút với Sân đấu sáng, không lỗi console. ui-harness arena cần Playwright, chưa chạy.
 - **Ưu tiên**: P1 · **Đợt**: 3
 - **Gói ngữ cảnh**: CORE + NAV + PK
 - **Khu vực chạm**: public/js/arena.js (đầu màn, nút "← Về chánh điện", hộp rời trận), public/css/arena.css, public/index.html (`?v=`), tools/ui-harness/arena/* (nếu cần)
 - **Phụ thuộc**: T-010 (`MapBar.configure/mount`), T-011 (đã sửa `e2e-real.js`)
 - **Thợ**: Sonnet 5.5 (high) · **Soát**: Gemini Argon + Sol 6.1
-- **Người làm**: — · **Nhánh**: —
+- **Người làm**: Claude Sonnet 5.5 · **Nhánh**: `claude/T-012-thanh-map-san-dau`
 - **Thiết kế**: KH §4.3
 - **Mục tiêu**: Sân đấu có cùng thanh đổi map như các map khác (Sân đấu sáng), thay nút "← Về chánh điện".
 - **Tiêu chí xong**:
