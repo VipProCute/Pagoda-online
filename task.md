@@ -25,7 +25,7 @@
 | T-011 | Gọn thanh dưới còn 9 nút lễ Phật, tab Khám phá | ⏳ T-010 | P0 | CORE + NAV | — |
 | T-012 | Thanh đổi map trong Sân đấu | ⏳ T-010, T-011 | P1 | CORE + NAV + PK | — |
 | T-020 | Chốt giao thức Kỳ Đạo | 🔵 Sẵn sàng | P0 | CORE + KYDAO + DOCS | — |
-| T-021 | Luật cờ vua thuần, kiểm perft | ⏳ T-004 | P0 | CORE + KYDAO | — |
+| T-021 | Luật cờ vua thuần, kiểm perft | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + KYDAO | Claude Sonnet 5.5 + Codex terra 6.1 |
 | T-022 | Luật cờ tướng thuần, perft, ký hiệu Việt | ⏳ T-004 | P0 | CORE + KYDAO | — |
 | T-023 | Nghiên cứu luật cờ tướng úp (揭棋) | 🔵 Sẵn sàng | P1 | CORE + KYDAO + DOCS | — |
 | T-024 | Biến thể cờ tướng úp | ⏳ T-022, T-023 | P1 | CORE + KYDAO | — |
@@ -299,13 +299,13 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: viết mã.
 
 ### T-021 · Viết luật cờ vua thuần và kiểm perft
-- **Trạng thái**: ⏳ Chờ T-004
+- **Trạng thái**: ✅ Gộp vào nhánh tích hợp (chờ PR). Thợ: Claude Sonnet 5.5 viết bản đầu, Codex terra 6.1 (gpt-6.1-terra) sửa 2 vòng. Soát: Sol 6.1 còn 2 điểm sau 2 vòng; Điều phối xét: perft d4 cả 5 thế đã chạy đúng (Điều phối chạy, 0,5 giây); nhận diện thế cờ chết có hàng rào Tốt là ngoài phạm vi thẻ (chỉ khiến ván không tự hòa, người chơi vẫn xin hòa được) → chấp nhận, ghi vào Hộp thư đến.
 - **Ưu tiên**: P0 · **Đợt**: 1
 - **Gói ngữ cảnh**: CORE + KYDAO
 - **Khu vực chạm**: public/js/kydao/chess.js (mới), test/kydao-chess.test.js (mới)
 - **Phụ thuộc**: T-004. Giao diện module theo KH §5.3 (làm song song với T-020; lệch thì báo Điều phối)
 - **Thợ**: Codex terra 6.1 · **Soát**: Sol 6.1
-- **Người làm**: — · **Nhánh**: —
+- **Người làm**: Claude Sonnet 5.5 + Codex terra 6.1 · **Nhánh**: `claude/T-021-luat-co-vua`
 - **Thiết kế**: KH §5.3, §5.4 "Cờ vua", Phụ lục A
 - **Mục tiêu**: luật cờ vua đầy đủ, đúng tuyệt đối, dùng chung máy chủ và trình duyệt.
 - **Tiêu chí xong**:
@@ -971,6 +971,7 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 
 Lấy từ README "Việc nên làm tiếp" và lúc rà repo. Điều phối viết lại thành thẻ đủ trường khi muốn làm.
 
+- ⚪ Cờ vua: nhận diện thế cờ chết tổng quát (hàng rào Tốt khóa có Tốt phụ, ví dụ FEN `4k3/8/8/p1p1p1p1/P1P1P1P1/P7/8/4K3 w - - 0 1`); hiện chỉ có 4 ca thiếu quân + một mẫu hàng rào đúng khớp. Đổi tên biến tiếng Việt (`ten`, `ca`, `ds`) trong test sang tiếng Anh. Gói: KYDAO. (Soát T-021, 2026-11-11.)
 - ⚪ Chưa có test nào cho `lib/moderation.js` (`checkMessage`, `checkName`, `clean`), trong khi đây là bất biến AGENTS.md §3.6 (chặn link, dãy số chống lừa đảo). Thêm test cả ca dương và ca âm ("chim cút", "đi ngủ" không bị bắt). Gói: SOCIAL. (Soát T-003 phát hiện 2026-11-11.)
 - 👤 Thu âm bài tụng thật của chư tăng chùa đối tác (có sự đồng ý), thay giọng tổng hợp. Gói: CHANT.
 - Chuyển trạng thái sang Redis để chạy nhiều máy chủ. Gói: STORE + OPS. Cần thiết kế trước (dùng skill/ADR), thẻ lớn.
