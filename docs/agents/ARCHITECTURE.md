@@ -101,6 +101,8 @@ Hợp đồng chi tiết của võ học và PK (payload, thứ tự gói tin): 
 
 ## 6. Điểm phải đồng bộ bằng tay
 
+Test `test/sync-constants.test.js` (T-005) tự kiểm: bồ đoàn, hằng số PK (`rules.js` ↔ `MARTIAL.PK` ↔ đầu `arena.js`), danh sách nơi. Thêm điểm đồng bộ mới thì thêm ca vào test đó (helper đọc mã nguồn nằm sẵn trong file; khi nhiều file cần dùng thì chuyển sang `test/helpers/source.js`).
+
 | Giá trị | Nơi 1 | Nơi 2 (và 3) |
 |---|---|---|
 | Bồ đoàn | `LIB_SEATS` trong `server.js` | `LIB_SEATS` trong `public/js/hall.js` |
