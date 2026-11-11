@@ -1,3 +1,12 @@
-tarot.vi.json — nội dung 78 lá tarot tiếng Việt.
-Nguồn ý nghĩa: A. E. Waite, "The Pictorial Key to the Tarot" (1910), thuộc phạm vi công cộng.
-Lời văn tiếng Việt do dự án viết mới, không sao chép từ trang tarot hiện đại nào. Chỉ để tham khảo, suy ngẫm.
+public/data/ · Nguồn và giấy phép
+
+tarot.vi.json
+  Nội dung 78 lá tarot tiếng Việt (T-052).
+  Nguồn ý nghĩa: A. E. Waite, "The Pictorial Key to the Tarot" (1910), thuộc phạm vi công cộng.
+  Lời văn tiếng Việt do dự án viết mới, không sao chép từ trang tarot hiện đại nào. Chỉ để tham khảo, suy ngẫm.
+
+tuvi.vi.json
+  Lời luận giải Tử Vi Đẩu Số bằng tiếng Việt, do dự án Chùa Tâm An viết mới (T-056).
+  Không chép nguyên văn từ sách hay trang web nào. Tên sao, tên cung và tên cách cục là
+  thuật ngữ chung của bộ môn; sách của các tác giả khác chỉ được dùng để tra quy tắc, không chép câu chữ.
+  Giấy phép: cùng giấy phép của dự án. Nội dung chỉ để tham khảo và chiêm nghiệm.
