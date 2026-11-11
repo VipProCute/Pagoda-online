@@ -53,7 +53,7 @@
 | T-055 | Đối chiếu bảng tử vi, lập lá số mẫu 👤 | 🔵 Sẵn sàng | P0 | CORE + FORTUNE + DOCS | — |
 | T-056 | Nội dung luận giải tử vi | 🔵 Sẵn sàng | P1 | CORE + FORTUNE | — |
 | T-057 | Giao diện lá số tử vi | ⏳ T-054, T-056, T-053 | P1 | CORE + FORTUNE | — |
-| T-060 | Quy tắc chữ, bảng thuật ngữ, danh sách bí mật | 🔵 Sẵn sàng | P0 | CORE + GUIDE + DOCS | — |
+| T-060 | Quy tắc chữ, bảng thuật ngữ, danh sách bí mật | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + GUIDE + DOCS | Claude Sonnet 5.5 (thay Gemini Flash) |
 | T-061 | Sổ tay trong game (nút "?") | ⏳ T-060, T-011 | P1 | CORE + GUIDE + NAV | — |
 | T-062 | Gợi ý lần đầu, nhãn tên không đè nhau | ⏳ T-061, T-043 | P1 | CORE + GUIDE + HALL | — |
 | T-063 | Viết lại chữ Võ Học Các | ⏳ T-060, T-061 | P1 | CORE + GUIDE + MARTIAL | — |
@@ -814,13 +814,13 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 ### Epic HD · Hướng dẫn cho người mới
 
 ### T-060 · Viết quy tắc chữ, bảng thuật ngữ và danh sách bí mật
-- **Trạng thái**: 🔵 Sẵn sàng
+- **Trạng thái**: ✅ Gộp vào nhánh tích hợp (chờ PR). Thợ: Claude Sonnet 5.5 (làm trước khi chuyển sang proxy; sửa bằng Sonnet vì kênh Gemini đang hết hạn mức). Soát: Opus 5.5 thay Gemini Argon (kênh Antigravity hết hạn mức), PASS vòng 3.
 - **Ưu tiên**: P0 · **Đợt**: 1
 - **Gói ngữ cảnh**: CORE + GUIDE + DOCS
 - **Khu vực chạm**: docs/HUONG-DAN-VIET.md (mới)
 - **Phụ thuộc**: không
 - **Thợ**: Gemini Flash · **Soát**: Gemini Argon (+ Điều phối đọc duyệt)
-- **Người làm**: — · **Nhánh**: —
+- **Người làm**: Claude Sonnet 5.5 (thay Gemini Flash) · **Nhánh**: `claude/T-060-quy-tac-chu`
 - **Thiết kế**: KH §8.2, §8.3, §8.5, §2.1
 - **Mục tiêu**: luật viết chung cho mọi thẻ chữ.
 - **Tiêu chí xong**:
