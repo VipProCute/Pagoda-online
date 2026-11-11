@@ -61,6 +61,7 @@
 | T-065 | Viết lại chữ chánh điện, công đức, cúng dường | ⏳ T-060, T-011, T-061, T-044 | P1 | CORE + GUIDE + RITUAL | — |
 | T-066 | Bài kiểm người mới (25 câu) | ⏳ T-067 (và mọi thẻ T-010 → T-065) | P1 | CORE + GUIDE | — |
 | T-067 | Cập nhật README và tài liệu người chơi | ⏳ T-010 → T-065 | P2 | CORE + DOCS | — |
+| T-068 | Cho máy chủ thử tắt êm trên Windows (3 test e2e) | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + STORE + OPS | Claude Sonnet 5.5 |
 
 Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạm `package.json`). **T-005**, **T-007**, **T-002** làm song song được với nhóm trên.
 Đợt 2026-11: làm **T-003, T-004, T-006** trước (T-004 gỡ nút thắt `package.json` cho mọi thẻ thêm file JS; T-006 là cổng "CI xanh"). Sau đó theo lịch 6 đợt ở [docs/KE-HOACH-DOT-2026-11.md §10.3](docs/KE-HOACH-DOT-2026-11.md#103-lịch-theo-đợt-và-khóa-vùng-nóng).
@@ -949,13 +950,13 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 ### Phát sinh trong đợt
 
 ### T-068 · Cho máy chủ thử tắt êm trên Windows để 3 test e2e hết trượt
-- **Trạng thái**: ⏳ Chờ T-051 (thứ tự `server.js`)
+- **Trạng thái**: ✅ Gộp vào nhánh tích hợp (chờ PR). Thợ: Claude Sonnet 5.5 (qua proxy). Soát: Sol 6.1 PASS. Sau khi gộp: npm test 588 test, 585 đạt, 0 trượt, 3 bỏ qua (PostgreSQL) trên Windows/Node v25.
 - **Ưu tiên**: P0 · **Đợt**: 2
 - **Gói ngữ cảnh**: CORE + STORE + OPS
 - **Khu vực chạm**: test/helpers/live.js (`restart`/`stop`: gửi thông điệp IPC `'shutdown'` rồi chờ tiến trình tự thoát, chỉ `kill` khi quá hạn), server.js (khi chạy có kênh IPC, `process.on('message')` nhận `'shutdown'` thì gọi đúng hàm tắt của `SIGTERM`)
 - **Phụ thuộc**: T-051 (thứ tự `server.js`)
 - **Thợ**: Sonnet 5.5 (high) · **Soát**: Sol 6.1 (dự phòng Opus 5.5)
-- **Người làm**: — · **Nhánh**: —
+- **Người làm**: Claude Sonnet 5.5 · **Nhánh**: `claude/T-068-tat-em-windows`
 - **Mục tiêu**: trên Windows, `child.kill('SIGTERM')` giết tiến trình ngay nên `store.flush` khi tắt không chạy. Vì vậy 3 test trượt cố định ở baseline: `e2e-auth` (dòng 98), `e2e-donation-test-mode` (dòng 52), `e2e-martial` (dòng 156). Sửa để `npm test` xanh cả trên Windows.
 - **Tiêu chí xong**:
   - [ ] 3 test trên xanh trên Windows (Node v25 ở máy) và không làm hỏng CI Linux
