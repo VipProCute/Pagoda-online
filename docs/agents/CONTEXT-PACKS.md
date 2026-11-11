@@ -30,6 +30,11 @@
 | `ADMIN` | Trang quản trị | `/admin.html`, API admin, nhật ký |
 | `OPS` | Triển khai, CI, công cụ | Render, Docker, `package.json`, GitHub Actions |
 | `DOCS` | Tài liệu | README, docs/, context cho agent |
+| `NAV` | Thanh đổi map, thanh lễ Phật, tab Khám phá | nút điều hướng, thanh dưới, đổi map/nơi |
+| `KYDAO` | Kỳ Đạo: bàn cờ ở Sân chùa | luật cờ, bộ quản lý ván, Elo, bảng bàn cờ |
+| `RANK` | Danh hiệu, Bảng Vàng, màn đối đầu | người giữ danh hiệu, mùa, bảng xếp hạng |
+| `FORTUNE` | Bói toán, lịch âm | xin xăm, tarot, tử vi, `lunar.js` |
+| `GUIDE` | Hướng dẫn người mới | Sổ tay, gợi ý lần đầu, viết lại chữ giao diện |
 
 ---
 
@@ -140,3 +145,38 @@
 
 - **Đọc kỹ**: tài liệu sẽ sửa; `docs/agents/*` nếu đổi quy trình agent.
 - **Bẫy**: tiếng Việt có dấu, câu ngắn; README là tài liệu cho người vận hành, chi tiết kỹ thuật để ở `docs/`; đổi cấu trúc mã thì cập nhật `ARCHITECTURE.md` và ngày cập nhật ở đầu file.
+
+## `NAV` · Thanh đổi map, thanh lễ Phật, tab Khám phá
+
+- **Đọc kỹ**: `docs/KE-HOACH-DOT-2026-11.md` §4; `public/js/mapbar.js` (khi đã có); trong `public/index.html` các khối `nav.scene-nav` / `.mapbar`, `nav.actions`, tab "Nơi khác"/"Khám phá", `#voicebar`; trong `public/js/app.js` các hàm `applyScene`, `goScene`, `act`, `welcome`, `renderVoice`, `showTab`.
+- **Tra khi cần**: `public/js/places.js`, `public/css/style.css` (`.actions`, `.scene-nav`, `.voicebar`, khối `@media`), `public/css/places.css`, phần đầu màn của `public/js/arena.js`.
+- **Test**: `test/e2e-scene.test.js`, `test/hall-npcs.test.js`; `tools/ui-harness/arena/e2e-real.js` (bấm nút vào Sân đấu); ảnh chụp 375×812, 768×1024, 1280×800.
+- **Bẫy**: `app.js` đọc nhiều id **không kiểm null** (`#actVoice`, `#actDojo`, `#actArena`, các id scene-nav trong `applyScene` và `welcome()`): xóa thẻ HTML là phải sửa JS cùng lúc, không thì hỏng cả lúc vào chùa; lúc vào chùa `applyScene` chỉ chạy qua `fortune.reset → setScene('hall')` (`fortune.js`), sửa `fortune.js` mà bỏ đường này thì thanh đổi map không sáng; bộ bắt `[data-act]` là ủy quyền nên nút `data-act` ở nơi khác vẫn chạy; `act('arena')`/`act('dojo')` có `needLogin`; không thêm nút trò phụ vào thanh dưới; map mới phải thêm vào `MapBar.MAPS`.
+
+## `KYDAO` · Kỳ Đạo: bàn cờ ở Sân chùa
+
+- **Đọc kỹ**: `docs/KY-DAO-GIAO-THUC.md` (sau T-020; trước đó đọc `docs/KE-HOACH-DOT-2026-11.md` §5); module luật của môn mình làm trong `public/js/kydao/`; `lib/kydao/manager.js` nếu đụng luồng ván.
+- **Tra khi cần**: `lib/pk/manager.js` (khuôn manager: `arm/disarm`, `finish` idempotent, `resume`, `safe`), `test/pk-manager.test.js` (`makeClock`, env giả), `lib/pk/rng.js` (`makeRng`, `newSeed`), handler `sit` và `inArena`/`martialOnly` trong `server.js`, `ARENA_PROPS`/`seatAt`/`onDown` trong `public/js/hall.js`.
+- **Test**: `test/kydao-*.test.js`, `test/e2e-kydao.test.js`; perft sâu với `PERFT_DEEP=1`; giao diện: `tools/ui-harness/kydao/`.
+- **Bẫy**: máy chủ luôn kiểm lại nước đi (trình duyệt chỉ gợi ý); `ply` phải khớp; **không bao giờ** gửi danh tính quân úp chưa lật (kể cả cho chính người chơi và người xem); không gửi uid; module luật là UMD không DOM; `play` không sửa state cũ; `YARD_TABLES` phải khớp `server.js` ↔ `hall.js`; nhãn bàn không kết thúc bằng `' · NPC'`; ván cờ không cộng công đức.
+
+## `RANK` · Danh hiệu, Bảng Vàng, màn đối đầu
+
+- **Đọc kỹ**: `docs/KE-HOACH-DOT-2026-11.md` §6; `lib/records.js` (sau T-040).
+- **Tra khi cần**: `addMeritUid`, `board`, `publicPlayer` trong `server.js`; `pkTitle` trong `public/js/martial.js`; `norm`/`recordResult` trong `lib/martial/service.js`; `lib/account.js` (gộp khách); `public/js/celebrate.js` (khuôn lớp phủ toàn màn); nhãn tên và "tagger" trong `drawPlayers` của `public/js/hall.js`.
+- **Test**: `test/records.test.js`, `test/e2e-titles.test.js`, `test/e2e-security.test.js`, `test/legend.test.js`.
+- **Bẫy**: danh hiệu gắn theo `pid`/tên, **không uid**; mùa = tháng âm theo giờ Việt Nam (UTC+7); hòa điểm thì ai đạt trước giữ; danh hiệu chỉ để trưng, không thưởng; màn đối đầu tự vẽ, không dùng hình tác phẩm có bản quyền, không giải thích trong Sổ tay.
+
+## `FORTUNE` · Bói toán và lịch âm
+
+- **Đọc kỹ**: `docs/KE-HOACH-DOT-2026-11.md` §7; `public/js/fortune.js`; `public/js/lunar.js`; với tử vi: `docs/TU-VI-QUY-UOC.md` và Phụ lục B của kế hoạch.
+- **Tra khi cần**: handler `fortune:join`/`fortune:leave`/`tarot:draw` trong `server.js`, `lib/fortune-queue.js`, khối `#dlg-fortune` trong `public/index.html`, `drawReaders`/`drawFortuneJar` trong `public/js/hall.js`, `public/data/*.json`.
+- **Test**: `test/lunar.test.js`, `test/tuvi.test.js`, `test/tarot-data.test.js`, `test/tuvi-data.test.js`, `test/e2e-fortune.test.js`, `test/e2e-scene.test.js` (xin xăm chỉ ở chánh điện).
+- **Bẫy**: tử vi tính trên trình duyệt, **ngày giờ sinh không được gửi đi** (lời hứa đang hiện cho người dùng); xin xăm và rút tarot do máy chủ quyết; nội dung viết mới, không chép web/sách còn bản quyền, ghi nguồn vào `public/data/NOTICE.txt`; lịch âm dùng UTC+8 trước 1968; giữ API cũ của `Lunar` vì đầu trang đang dùng.
+
+## `GUIDE` · Hướng dẫn người mới
+
+- **Đọc kỹ**: `docs/HUONG-DAN-VIET.md` (sau T-060; trước đó `docs/KE-HOACH-DOT-2026-11.md` §8); bảng bí mật ở §8.5.
+- **Tra khi cần**: màn mình viết lại (`dojo.js`, `arena.js`, `index.html`, `app.js`); `MERIT.EARN` (`public/js/merit.js`), `MARTIAL.PK` (`public/js/martial.js`) để lấy số liệu thật.
+- **Test**: test của khu vực bị sửa chữ; ảnh chụp; bài kiểm người mới (T-066).
+- **Bẫy**: **không giải thích bí mật** (666, NPC bí mật, chiêu ẩn, Tảo Địa Tăng, màn đối đầu); số liệu lấy từ mã, không gõ tay; một khái niệm một tên theo bảng thuật ngữ; thẻ viết chữ không đổi logic hay số liệu.

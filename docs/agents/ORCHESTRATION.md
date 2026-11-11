@@ -12,6 +12,8 @@
 | **Thợ** (worker) | agent | làm **một** thẻ trên nhánh riêng, test, bàn giao | làm ngoài phạm vi thẻ, merge, xoá nhánh |
 | **Soát** (reviewer) | agent khác thợ | soát PR theo checklist §7, chạy lại test | sửa thẳng trên nhánh của thợ (ghi nhận xét thôi) |
 
+> **Ngoại lệ cho đợt 2026-11** (chủ dự án yêu cầu ngày 2026-11-11: "tiến hành commit, push, merge từng PR của từng chức năng cụ thể"): Điều phối (Opus) được merge PR khi qua đủ cổng ở `docs/KE-HOACH-DOT-2026-11.md` §10.4, trừ thẻ ghi "👤 chủ dự án bấm merge". Thợ và Soát vẫn **không** merge. Hết đợt thì ngoại lệ hết hiệu lực.
+
 ## 2. Vòng đời một thẻ
 
 ```
@@ -77,6 +79,7 @@ Lịch sử repo đã có hai agent làm cùng một tính năng trên hai nhán
    | `task.md` | ngoại lệ: ai cũng sửa được, nhưng **chỉ sửa thẻ của mình** và kéo bản mới trước khi sửa |
 
    Hai thẻ cùng cần một file nóng thì xếp nối tiếp (đặt `Phụ thuộc`) hoặc gộp thành một thẻ.
+   **Ngoại lệ đợt 2026-11:** `public/index.html` và `public/js/app.js` khóa **theo vùng** (thẻ ghi rõ vùng chạm); hai thẻ song song không chạm cùng vùng; xung đột dòng `?v=` thì lấy giá trị mới nhất. Chi tiết và thứ tự các file nóng khác: `docs/KE-HOACH-DOT-2026-11.md` §10.3.
 3. **Mỗi thợ một bản làm việc riêng**: git worktree (`git worktree add ../Pagoda-online-T0XX -b <nhánh> origin/main`) hoặc một bản clone riêng. Không để hai agent cùng sửa một thư mục làm việc. Claude Code có thể dùng `.claude/worktrees/` (đã được `.gitignore`).
 4. **Luôn tách nhánh từ `origin/main` mới nhất**; trước khi mở PR, gộp `main` vào nhánh của mình và chạy lại test.
 5. **Thứ tự merge** khi có nhiều PR cùng chờ: PR sửa dữ liệu/giao thức (`store-sections`, `martial.js`, giao thức) trước, giao diện sau; PR nhỏ trước PR lớn.
