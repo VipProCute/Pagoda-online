@@ -47,7 +47,7 @@
 | T-044 | Màn "Kẻ mạnh nhất lịch sử… đối đầu kẻ mạnh nhất hiện tại" | ⏳ T-041, T-030 | P1 | CORE + RANK + PK + KYDAO | — |
 | T-050 | Viết lại lịch âm (UTC+8 trước 1968, can chi đủ) | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + FORTUNE | Codex terra 6.1 + Claude Sonnet 5.5 |
 | T-051 | Máy chủ: rút tarot theo hạt giống, giới hạn xin xăm | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + FORTUNE | Claude Sonnet 5.5 |
-| T-052 | Nội dung 78 lá tarot theo 8 chủ đề | 🔵 Sẵn sàng | P1 | CORE + FORTUNE | — |
+| T-052 | Nội dung 78 lá tarot theo 8 chủ đề | ✅ Gộp tích hợp (chờ PR) | P1 | CORE + FORTUNE | Claude Sonnet 5.5 (thay Gemini Flash) |
 | T-053 | Giao diện tarot theo chủ đề | ⏳ T-051, T-052, T-010 | P1 | CORE + FORTUNE | — |
 | T-054 | Bộ máy an sao Tử Vi | ⏳ T-050 | P0 | CORE + FORTUNE | — |
 | T-055 | Đối chiếu bảng tử vi, lập lá số mẫu 👤 | 🔵 Sẵn sàng | P0 | CORE + FORTUNE + DOCS | — |
@@ -703,13 +703,13 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: giao diện (T-053).
 
 ### T-052 · Viết nội dung 78 lá tarot theo 8 chủ đề
-- **Trạng thái**: 🔵 Sẵn sàng
+- **Trạng thái**: ✅ Gộp vào nhánh tích hợp (chờ PR). Thợ: Claude Sonnet 5.5 thay Gemini Flash (kênh Antigravity hết hạn mức). Soát: Opus 5.5 thay Argon/Sol; sau 2 vòng còn câu Ẩn phụ ghép khuôn gây sợ → giao viết lại riêng 99 câu cho các lá nặng.
 - **Ưu tiên**: P1 · **Đợt**: 1
 - **Gói ngữ cảnh**: CORE + FORTUNE
 - **Khu vực chạm**: public/data/tarot.vi.json (mới), public/data/NOTICE.txt (mới), test/tarot-data.test.js (mới), AGENTS.md (§3.14: thêm `public/data/NOTICE.txt` vào danh sách nơi ghi nguồn, một dòng)
 - **Phụ thuộc**: không
 - **Thợ**: Gemini Flash · **Soát**: Gemini Argon (nội dung) + Sol 6.1 (định dạng, an toàn)
-- **Người làm**: — · **Nhánh**: —
+- **Người làm**: Claude Sonnet 5.5 (thay Gemini Flash) · **Nhánh**: `claude/T-052-noi-dung-tarot`
 - **Thiết kế**: KH §7.2 "Nội dung"
 - **Mục tiêu**: nội dung tiếng Việt đầy đủ, đúng tinh thần tarot truyền thống, viết mới.
 - **Tiêu chí xong**:
