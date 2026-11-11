@@ -13,7 +13,7 @@
 |---|---|---|---|---|---|
 | T-001 | Chốt một trong hai nhánh Obito trùng nhau | ✅ Xong | P0 | CORE + PK + HALL | Claude |
 | T-002 | Kiểm và dọn các nhánh đã merge | 🔵 Sẵn sàng 👤 | P1 | CORE + OPS | — |
-| T-003 | Ghi baseline test trên Node 22 | 🔵 Sẵn sàng | P0 | CORE + OPS | — |
+| T-003 | Ghi baseline test trên Node 22 | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + OPS | Claude Haiku (thay GLM Flash) |
 | T-004 | `npm run check` tự quét file, không liệt kê tay | 🔵 Sẵn sàng | P1 | CORE + OPS | — |
 | T-005 | Test chống lệch các hằng số dùng chung | 🔵 Sẵn sàng | P1 | CORE + PK + HALL | — |
 | T-006 | CI GitHub Actions chạy check + test | 🔵 Sẵn sàng | P1 | CORE + OPS | — |
@@ -106,13 +106,13 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: tự xoá nhánh, force-push.
 
 ### T-003 · Ghi baseline test trên Node 22
-- **Trạng thái**: 🔵 Sẵn sàng
+- **Trạng thái**: ✅ Gộp vào nhánh tích hợp `claude/mini-game-development-plan-b7e553` (chờ PR vào `main`). Soát (Opus thay Sol): PASS vòng 1. Baseline ghi trên Node v25 vì máy không có Node 22; Node 22 do CI (T-006) chạy. 3 test trượt cố định trên Windows → thẻ T-068.
 - **Ưu tiên**: P0
 - **Gói ngữ cảnh**: CORE + OPS
 - **Khu vực chạm**: task.md, docs/agents/ARCHITECTURE.md (mục 7 nếu cần)
 - **Phụ thuộc**: không
-- **Người làm**: —
-- **Nhánh**: `<agent>/T-003-baseline-test`
+- **Người làm**: Claude Haiku 5.5 (thay GLM Flash)
+- **Nhánh**: `claude/T-003-baseline-test`
 - **Mục tiêu**: biết chắc `main` hiện tại có xanh không, mất bao lâu, test nào chậm/chập chờn, để các thẻ sau so được. (Lúc dựng bộ tài liệu này chưa chạy được `npm ci`; trên Node v25 của máy, 124 test thuần của `pk-engine`, `hall-npcs`, `martial-data` đạt hết trong ~5 giây.)
 - **Tiêu chí xong**:
   - [ ] `npm ci` + `npm run check` + `npm test` trên Node 22 (giống production); ghi số đạt/bỏ qua/trượt và thời gian
@@ -946,12 +946,32 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
   - [ ] Không lộ bí mật mới (màn đối đầu)
 - **Ngoài phạm vi**: viết lại các mục vận hành.
 
+### Phát sinh trong đợt
+
+### T-068 · Cho máy chủ thử tắt êm trên Windows để 3 test e2e hết trượt
+- **Trạng thái**: ⏳ Chờ T-051 (thứ tự `server.js`)
+- **Ưu tiên**: P0 · **Đợt**: 2
+- **Gói ngữ cảnh**: CORE + STORE + OPS
+- **Khu vực chạm**: test/helpers/live.js (`restart`/`stop`: gửi thông điệp IPC `'shutdown'` rồi chờ tiến trình tự thoát, chỉ `kill` khi quá hạn), server.js (khi chạy có kênh IPC, `process.on('message')` nhận `'shutdown'` thì gọi đúng hàm tắt của `SIGTERM`)
+- **Phụ thuộc**: T-051 (thứ tự `server.js`)
+- **Thợ**: Sonnet 5.5 (high) · **Soát**: Sol 6.1 (dự phòng Opus 5.5)
+- **Người làm**: — · **Nhánh**: —
+- **Mục tiêu**: trên Windows, `child.kill('SIGTERM')` giết tiến trình ngay nên `store.flush` khi tắt không chạy. Vì vậy 3 test trượt cố định ở baseline: `e2e-auth` (dòng 98), `e2e-donation-test-mode` (dòng 52), `e2e-martial` (dòng 156). Sửa để `npm test` xanh cả trên Windows.
+- **Tiêu chí xong**:
+  - [ ] 3 test trên xanh trên Windows (Node v25 ở máy) và không làm hỏng CI Linux
+  - [ ] `npm test` toàn bộ xanh, trừ 2 test PostgreSQL bỏ qua khi không có `TEST_DATABASE_URL`
+  - [ ] Hành vi production không đổi: không có IPC thì không đăng ký lắng nghe; `SIGTERM` vẫn như cũ
+  - [ ] Nếu một test vẫn đỏ vì lý do khác (không phải flush khi tắt): ghi rõ nguyên nhân, mở thẻ ⚪ mới, không sửa logic nghiệp vụ trong thẻ này
+- **Ngoài phạm vi**: sửa logic tu luyện, cúng dường, đăng nhập.
+- **Ghi chú**: phát hiện ở T-003 (2026-11-11). Soát T-003 thử hạ thời gian ghi JSON xuống 200 ms thì `e2e-donation-test-mode` xanh, hai test kia vẫn đỏ.
+
 ---
 
 ## Hộp thư đến (ý tưởng, chưa đủ để giao)
 
 Lấy từ README "Việc nên làm tiếp" và lúc rà repo. Điều phối viết lại thành thẻ đủ trường khi muốn làm.
 
+- ⚪ Chưa có test nào cho `lib/moderation.js` (`checkMessage`, `checkName`, `clean`), trong khi đây là bất biến AGENTS.md §3.6 (chặn link, dãy số chống lừa đảo). Thêm test cả ca dương và ca âm ("chim cút", "đi ngủ" không bị bắt). Gói: SOCIAL. (Soát T-003 phát hiện 2026-11-11.)
 - 👤 Thu âm bài tụng thật của chư tăng chùa đối tác (có sự đồng ý), thay giọng tổng hợp. Gói: CHANT.
 - Chuyển trạng thái sang Redis để chạy nhiều máy chủ. Gói: STORE + OPS. Cần thiết kế trước (dùng skill/ADR), thẻ lớn.
 - Chia phòng "Chánh điện 1, 2…" khi quá 300 người. Gói: HALL + PLACE + SOCIAL. Cần thiết kế trước.
@@ -988,4 +1008,19 @@ Lấy từ README "Việc nên làm tiếp" và lúc rà repo. Điều phối vi
 
 ## Baseline
 
-_(T-003 điền: ngày, commit, phiên bản Node, số test đạt/bỏ qua/trượt, thời gian, test chập chờn.)_
+**Ngày**: 2026-11-11 · **Cơ sở**: `c7a50ac` (nhánh `claude/T-003-baseline-test`) · **Máy**: Windows 11, **Node v25.0.0**, npm 11.6.2. Không có Node 22 trên máy nên các số dưới đây **không phải Node 22**; baseline Node 22 sẽ do CI (T-006) chạy.
+
+| Lệnh | Kết quả | Thời gian |
+|---|---|---|
+| `npm ci` | thành công, 0 lỗ hổng, không đổi `package-lock.json` | — |
+| `npm run check` | đạt, exit 0 | ~4 giây |
+| `npm test` (lần 1) | 355 đạt · 3 trượt · 2 bỏ qua / 360 test (exit 1) | ~72 giây |
+| `npm test` (lần 2) | 355 đạt · 3 trượt · 2 bỏ qua / 360 test (exit 1) | ~72 giây |
+
+- **Test trượt** (giống hệt ở cả hai lần, nên tính là trượt thật, chưa rõ nguyên nhân; đã ghi vào Hộp thư đến):
+  - `test/e2e-auth.test.js:19`: phiên tu không còn sau khi khởi động lại (dòng 98).
+  - `test/e2e-donation-test-mode.test.js:10`: hoàn thành ngay tự xác nhận, trạng thái `confirmed` thay vì `cancelled` (dòng 52).
+  - `test/e2e-martial.test.js:80`: congLuc 145 thay vì 195 sau khi khởi động lại (dòng 156).
+- **Bỏ qua** (2, cùng lý do): test PostgreSQL vì không nối được `127.0.0.1:5432` (ECONNREFUSED). Chưa có PostgreSQL cục bộ.
+- **Chập chờn**: không thấy trong 2 lần chạy. Số đạt/trượt/bỏ qua và danh sách test trượt giống nhau. `e2e-sweeper` đạt cả hai lần. Ba test trượt ở trên là trượt cố định, không phải chập chờn.
+- **Ghi chú**: `npm run check` vẫn thiếu `lib/sweeper.js` trong danh sách viết tay (đã nằm trong thẻ T-004). Không sửa test trong thẻ này.
