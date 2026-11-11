@@ -1,0 +1,57 @@
+# CI: kiểm cú pháp + chạy toàn bộ test cho mỗi PR và mỗi lần đẩy vào main.
+# Không cần secret, không deploy. Người dùng/mật khẩu PostgreSQL dưới đây chỉ dùng trong CI.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check-test:
+    name: check + test (Node 22)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: pagoda
+          POSTGRES_PASSWORD: pagoda
+          POSTGRES_DB: pagoda_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U pagoda -d pagoda_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      # Có biến này thì test PostgreSQL chạy thật, không bị bỏ qua.
+      TEST_DATABASE_URL: postgres://pagoda:pagoda@localhost:5432/pagoda_test?sslmode=disable
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Cài gói
+        run: npm ci
+
+      - name: Kiểm cú pháp
+        run: npm run check
+
+      - name: Chạy test
+        run: npm test
