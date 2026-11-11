@@ -29,7 +29,7 @@
 | T-022 | Luật cờ tướng thuần, perft, ký hiệu Việt | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + KYDAO | Codex terra 6.1 + Claude Sonnet 5.5 |
 | T-023 | Nghiên cứu luật cờ tướng úp (揭棋) | 🔵 Sẵn sàng | P1 | CORE + KYDAO + DOCS | — |
 | T-024 | Biến thể cờ tướng úp | ⏳ T-022, T-023 | P1 | CORE + KYDAO | — |
-| T-025 | Luật cờ vây thuần | ⏳ T-004 | P1 | CORE + KYDAO | — |
+| T-025 | Luật cờ vây thuần | ✅ Gộp tích hợp (chờ PR) | P1 | CORE + KYDAO | Codex terra 6.1 + Claude Sonnet 5.5 |
 | T-026 | Luật cờ caro thuần | ✅ Gộp tích hợp (chờ PR) | P1 | CORE + KYDAO | Claude Haiku 5.5 (thay GLM Flash) |
 | T-027 | Tính Elo và điều kiện xếp hạng | ⏳ T-004 | P0 | CORE + KYDAO | — |
 | T-028 | Bộ quản lý ván cờ | ⏳ T-020, T-021, T-022, T-027 | P0 | CORE + KYDAO + PK | — |
@@ -371,13 +371,13 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: giao diện (T-033).
 
 ### T-025 · Viết luật cờ vây thuần
-- **Trạng thái**: ⏳ Chờ T-004
+- **Trạng thái**: ✅ Gộp vào nhánh tích hợp (chờ PR). Thợ: Codex terra 6.1 (gpt-6.1-terra), sửa bằng Claude Sonnet 5.5 (kênh Codex hết hạn mức). Soát: Opus 5.5 thay Sol/Argon. Sau 2 vòng, Điều phối quyết: chấp nhận 5 thế mẫu tự dựng (soát đã tính lại, ghi nguồn luật tính diện tích) và bắt thêm test chống bấm 'Đồng ý' hai lần (Điều phối thử làm hỏng: đỏ).
 - **Ưu tiên**: P1 · **Đợt**: 1
 - **Gói ngữ cảnh**: CORE + KYDAO
 - **Khu vực chạm**: public/js/kydao/go.js (mới), test/kydao-go.test.js (mới)
 - **Phụ thuộc**: T-004
 - **Thợ**: Codex terra 6.1 · **Soát**: Sol 6.1 + Gemini Argon
-- **Người làm**: — · **Nhánh**: —
+- **Người làm**: Codex terra 6.1 + Claude Sonnet 5.5 · **Nhánh**: `claude/T-025-luat-co-vay`
 - **Thiết kế**: KH §5.4 "Cờ vây", D9
 - **Mục tiêu**: cờ vây 9/13/19, luật Trung Quốc, tính điểm tự động sau khi hai bên thống nhất quân chết.
 - **Tiêu chí xong**:
