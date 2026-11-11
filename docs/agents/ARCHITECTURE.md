@@ -65,7 +65,7 @@ Ack chuẩn: `{ ok:true, … }` hoặc `{ ok:false, reason, code? }`. Sự kiệ
 | Nhóm | Sự kiện |
 |---|---|
 | Lõi | `time`, `join`, `scene`, `profile`, `move`, `place:set`, `account:summary` |
-| Tàng Kinh Các, xin xăm | `sit`, `stand`, `reading`, `fortune:join`, `fortune:leave` |
+| Tàng Kinh Các, xin xăm, tarot | `sit`, `stand`, `reading`, `fortune:join`, `fortune:leave`, `tarot:draw` (rút 5 lá theo hạt giống trong ngày, `lib/tarot-draw.js`) |
 | Chat, kiểm duyệt | `chat`, `report`, `mod:hide`, `mod:mute`, `mod:voice` |
 | Lễ Phật | `emote`, `mo`, `bell`, `incense`, `offer`, `rejoice`, `chant:start`, `chant:stop`, `donate` |
 | Giọng nói | `voice:join`, `voice:mic`, `voice:leave`, `voice:signal` |
