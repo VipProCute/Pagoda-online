@@ -22,6 +22,11 @@ index.html ─ nạp script theo thứ tự cố định         server.js  Expr
 admin.html (trang quản trị, script nội tuyến)          └─ lib/store.js ─┬─ file JSON (data/db.json)
                                                                         └─ lib/store-pg.js (PostgreSQL/Neon)
                                                                             lib/store-sections.js (hình dạng dữ liệu)
+
+Kỳ Đạo (năm môn cờ ở Sân chùa; hợp đồng: docs/KY-DAO-GIAO-THUC.md; mã do thẻ T-021 → T-035 thêm dần)
+  public/js/kydao/*.js (UMD luật: chess, xiangqi[+jieqi], go, gomoku) ◄── require ── lib/kydao/registry.js · elo.js · manager.js
+  public/js/kydao-ui.js · kydao-draw.js (bảng bàn cờ) ◄─ socket kd:* ─► server.js (kydaoOnly) ── db.kydao (ratings, games, active, pairs)
+  hall.js: YARD_TABLES (4 bàn đá) ◄── đồng bộ ──► server.js: YARD_TABLES
 ```
 
 ## 2. server.js theo khối (đọc từ trên xuống)
@@ -72,6 +77,7 @@ Ack chuẩn: `{ ok:true, … }` hoặc `{ ok:false, reason, code? }`. Sự kiệ
 | Võ học (bọc `martialOnly`) | `martial:state`, `sweeper:claim`, `tu:start`, `tu:cancel`, `tu:speedup`, `tu:speedup:cancel`, `tu:voucher`, `martial:seen`, `vo:learn`, `vo:loadout` |
 | Spar | `spar:invite`, `spar:respond` |
 | Sân đấu (bọc `inArena`) | `arena:dnd`, `arena:blocks`, `pk:block`, `pk:unblock`, `pk:invite`, `pk:invite:cancel`, `pk:respond`, `pk:loadout`, `pk:pick`, `pk:forfeit`, `pk:resume` |
+| Kỳ Đạo (bọc `kydaoOnly`; sẽ có từ T-030) | `kd:tables`, `kd:sit`, `kd:setup`, `kd:ready`, `kd:stand`, `kd:invite`, `kd:invite:cancel`, `kd:respond`, `kd:move`, `kd:draw`, `kd:resign`, `kd:mark`, `kd:agree`, `kd:resume-play`, `kd:watch`, `kd:unwatch`, `kd:resume` |
 
 **Máy chủ → trình duyệt**
 
@@ -86,8 +92,9 @@ Ack chuẩn: `{ ok:true, … }` hoặc `{ ok:false, reason, code? }`. Sự kiệ
 | Võ học | `tu:update`, `martial:inheritance` |
 | Spar | `spar:invited`, `spar:accepted`, `spar:declined`, `spar:ready` |
 | Sân đấu | `arena:add`, `arena:del`, `arena:upd`, `pk:invited`, `pk:invite:closed`, `pk:lobby`, `pk:lobby:status`, `pk:turn`, `pk:locked`, `pk:reveal`, `pk:end` |
+| Kỳ Đạo (sẽ có từ T-030) | `kd:table`, `kd:invited`, `kd:invite:closed`, `kd:start`, `kd:moved`, `kd:offer`, `kd:marks`, `kd:end` |
 
-Hợp đồng chi tiết của võ học và PK (payload, thứ tự gói tin): **`docs/VO-HOC-GIAO-THUC.md`**. Đổi giao thức thì sửa tài liệu đó cùng PR.
+Hợp đồng chi tiết của võ học và PK (payload, thứ tự gói tin): **`docs/VO-HOC-GIAO-THUC.md`**. Của Kỳ Đạo: **`docs/KY-DAO-GIAO-THUC.md`**. Đổi giao thức thì sửa tài liệu đó cùng PR.
 
 ## 5. Phía trình duyệt
 
@@ -114,6 +121,8 @@ Test `test/sync-constants.test.js` (T-005) tự kiểm: bồ đoàn, hằng số
 | Độ dài URL meme | `MAX_URL` (300) trong `server.js` | `safeUrl` trong `public/js/celebrate.js` |
 | Ảnh hào quang | `public/js/celebrate.js` | `public/css/celebrate.css` |
 | Giao thức võ học | `server.js`, `lib/pk/manager.js`, `dojo.js`, `arena.js` | `docs/VO-HOC-GIAO-THUC.md`; giả lập `tools/ui-harness/dojo/sim.js` |
+| Bàn đá Sân chùa (Kỳ Đạo, sẽ có từ T-031) | `YARD_TABLES` trong `server.js` | `YARD_TABLES` trong `public/js/hall.js` (toạ độ bàn/ghế, id 1–4; xem `docs/KY-DAO-GIAO-THUC.md` §4); mở rộng `test/sync-constants.test.js` |
+| Giao thức Kỳ Đạo | `server.js`, `lib/kydao/manager.js`, `public/js/kydao-ui.js`, module luật `public/js/kydao/*` | `docs/KY-DAO-GIAO-THUC.md`; hằng số nhịp/Elo/regex nước đi ở `lib/kydao/registry.js`, `elo.js` |
 | Fixture sân đấu | `lib/pk/*`, `martial.js` | chạy lại `node tools/ui-harness/arena/gen-fixtures.js` |
 | Cache trình duyệt | file trong `public/js`, `public/css` | `?v=` trong `public/index.html` |
 | Khóa dữ liệu cấp cao | `db.*` mới | `fresh()` + `SECTIONS` + `adopt()` trong `lib/store-sections.js` |

@@ -155,7 +155,7 @@
 
 ## `KYDAO` · Kỳ Đạo: bàn cờ ở Sân chùa
 
-- **Đọc kỹ**: `docs/KY-DAO-GIAO-THUC.md` (sau T-020; trước đó đọc `docs/KE-HOACH-DOT-2026-11.md` §5); module luật của môn mình làm trong `public/js/kydao/`; `lib/kydao/manager.js` nếu đụng luồng ván.
+- **Đọc kỹ**: `docs/KY-DAO-GIAO-THUC.md` (hợp đồng đã chốt ở T-020; lý do thiết kế ở `docs/KE-HOACH-DOT-2026-11.md` §5); module luật của môn mình làm trong `public/js/kydao/`; `lib/kydao/manager.js` nếu đụng luồng ván.
 - **Tra khi cần**: `lib/pk/manager.js` (khuôn manager: `arm/disarm`, `finish` idempotent, `resume`, `safe`), `test/pk-manager.test.js` (`makeClock`, env giả), `lib/pk/rng.js` (`makeRng`, `newSeed`), handler `sit` và `inArena`/`martialOnly` trong `server.js`, `ARENA_PROPS`/`seatAt`/`onDown` trong `public/js/hall.js`.
 - **Test**: `test/kydao-*.test.js`, `test/e2e-kydao.test.js`; perft sâu với `PERFT_DEEP=1`; giao diện: `tools/ui-harness/kydao/`.
 - **Bẫy**: máy chủ luôn kiểm lại nước đi (trình duyệt chỉ gợi ý); `ply` phải khớp; **không bao giờ** gửi danh tính quân úp chưa lật (kể cả cho chính người chơi và người xem); không gửi uid; module luật là UMD không DOM; `play` không sửa state cũ; `YARD_TABLES` phải khớp `server.js` ↔ `hall.js`; nhãn bàn không kết thúc bằng `' · NPC'`; ván cờ không cộng công đức.
