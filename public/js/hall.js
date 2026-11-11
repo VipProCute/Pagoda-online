@@ -215,6 +215,7 @@
     { name: 'Cô Nương Du Xuân', look: { g: 'nu', c: 7, h: 0, npcFashion: true }, role: 'lady', lines: ['Mình có thói quen cardio tại ban công.', 'Người đẹp vì lụa, ta đẹp nhờ ngủ đủ.', 'Duyên tới thì đón, dép mất thì tìm.'] }
   ];
   let npcs = [], npcRefresh = 0, npcNextSpeech = 0, sweeper = null;
+  const specialPos = {};    // vị trí NPC cơ duyên do máy chủ mô phỏng gửi về, giữ lại khi bốc lại khách vãng lai
   function randomizeNpcs(now) {
     const pool = npcDefs.filter(d => d.role !== 'beggar' && d.role !== 'wanderer');
     for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
@@ -226,13 +227,17 @@
         npcs.push(p);
       }
     });
-    // These three encounters have stable server-validated positions.
+    // These three encounters have server-simulated positions; giữ vị trí máy chủ gửi lần gần nhất qua các đợt ngẫu nhiên lại
     const special = [
       { place: 'hall', x: 0.68, z: 0.67, def: npcDefs.find(d => d.role === 'beggar') },
       { place: 'yard', x: 0.32, z: 0.67, def: npcDefs.find(d => d.role === 'wanderer') },
       { place: 'library', x: 0.76, z: 0.68, def: { name: 'Obito', role: 'obito', look: { g: 'nam', c: 11, h: 2 }, lines: ['Không gian này có những bí mật riêng.'] } }
     ];
-    special.forEach((v, i) => npcs.push({ ...mk({ id: -300 - i, name: v.def.name + ' · NPC', look: v.def.look, x: v.x, z: v.z, scene: v.place, at: 'hall', mt: 0 }), npc: v.def, tx: v.x, tz: v.z, wait: Infinity, secretEncounter: true }));
+    special.forEach((v, i) => {
+      const saved = specialPos[v.def.role];                   // chưa nhận được vị trí nào thì đứng ở toạ độ gốc
+      const x = saved ? saved[0] : v.x, z = saved ? saved[1] : v.z;
+      npcs.push({ ...mk({ id: -300 - i, name: v.def.name + ' · NPC', look: v.def.look, x, z, scene: v.place, at: 'hall', mt: 0 }), npc: v.def, tx: x, tz: z, wait: Infinity, secretEncounter: true });
+    });
     npcRefresh = now + rand(90000, 150000);
   }
   function updateNpcs(now, dt) {
@@ -1792,6 +1797,15 @@
     }
     return best;
   }
+  function npcAt(x, y) {
+    let best = null;
+    for (const p of npcs) {
+      if (p.sx == null || viewOf(p) !== scene) continue;
+      const w = 25 * p.s + 12, hh = 120 * p.s;      // hộp bấm rộng rãi như hộp của NPC cơ duyên trước đây
+      if (Math.abs(x - p.sx) < w && y > p.sy - hh - 20 && y < p.sy + 10 && (!best || p.dz > best.dz)) best = p;
+    }
+    return best;
+  }
   function walkTo(x, y) {
     const [wx, wz] = unproj(x, y);
     clickMark = { x, y, t: performance.now() };
@@ -1801,14 +1815,18 @@
     const [x, y] = point(e);
     const clickedPlayer = personAt(x, y);
     if (clickedPlayer) { handlers.person && handlers.person(clickedPlayer.id); return; }
-    const specialNpc = npcs.find(p => p.secretEncounter && viewOf(p) === scene && p.sx != null && Math.abs(x - p.sx) < 25 * p.s + 12 && y > p.sy - 120 * p.s - 20 && y < p.sy + 10);
-    if (specialNpc) { handlers.secretNpc && handlers.secretNpc(specialNpc.npc.role); return; }
+    if (scene !== 'library') {                            // Tàng Kinh Các xét riêng sau Tảo Địa Tăng
+      const clickedNpc = npcAt(x, y);
+      if (clickedNpc) { handlers.npc && handlers.npc(clickedNpc.npc); return; }
+    }
     if (scene === 'arena') {
       if (y > G.hb + 4 * u) walkTo(x, y);
       return;
     }
     if (scene === 'library') {
       if (sweeper && sweeper.sx != null && sweeper.until > serverNow() && Math.abs(x - sweeper.sx) < 25 * sweeper.s + 12 && y > sweeper.sy - 120 * sweeper.s - 20 && y < sweeper.sy + 10) { handlers.sweeper && handlers.sweeper(sweeper.eventId); return; }
+      const clickedNpc = npcAt(x, y);                     // NPC đứng sau Tảo Địa Tăng: sự kiện hiếm được ưu tiên trước
+      if (clickedNpc) { handlers.npc && handlers.npc(clickedNpc.npc); return; }
       const seat = seatAt(x, y);
       if (seat >= 0) { handlers.seat && handlers.seat(seat); return; }
       if (inRect(G.shelfL, x, y)) { handlers.read && handlers.read(); return; }
@@ -1816,6 +1834,8 @@
       if (y > G.hb + 4 * u) walkTo(x, y);
       return;
     }
+    const clickedNpc = npcAt(x, y);
+    if (clickedNpc) { handlers.npc && handlers.npc(clickedNpc.npc); return; }
     if (scene === 'hall' && hitJar(x, y)) { handlers.fortune && handlers.fortune(); return; }
     if (scene === 'yard' && hitReader(x, y)) { handlers.reader && handlers.reader(x < W / 2 ? 'horoscope' : 'tarot'); return; }
     if (scene === 'yard') { if (y > G.hb) { const [wx, wz] = unproj(x, y); handlers.floor && handlers.floor(clamp(wx, 0.03, 0.97), clamp(wz, 0.12, 0.97)); } return; }
@@ -1834,6 +1854,7 @@
     hover = '';
     if (scene === 'library') { const st = seatAt(x, y); hover = st >= 0 ? 'seat' + st : inRect(G.shelfL, x, y) ? 'shelfL' : inRect(G.shelfR, x, y) ? 'shelfR' : ''; }
     if (personAt(x, y)) hover = 'person';
+    if (!hover && npcAt(x, y)) hover = 'npc';
     cv.style.cursor = hover || (scene === 'hall' && (hitJar(x, y) || hitBowl(x, y) || hitStatue(x, y))) || (scene === 'yard' && hitReader(x, y)) || hoverLib ? 'pointer' : (y > G.hb ? 'crosshair' : 'default');
   }
   function viewOf(p) {
@@ -1896,6 +1917,19 @@
     removePlayer(id) { players.delete(id); },
     updatePlayer(d) { const p = players.get(d.id); if (p) { p.name = d.name; p.look = d.look; } },
     positions(arr) { for (const [id, x, z] of arr) { const p = players.get(id); if (p) { p.x = x / 1000; p.z = z / 1000; } } },
+    npcPos(arr) {                                          // vị trí NPC cơ duyên máy chủ vừa phát: [role, x‰, z‰]
+      for (const [role, x, z] of arr) {
+        const p = npcs.find(n => n.secretEncounter && n.npc.role === role);
+        if (p) { p.x = x / 1000; p.z = z / 1000; specialPos[role] = [p.x, p.z]; }
+      }
+    },
+    setNpcs(list) {                                        // vị trí ban đầu trong gói join, định dạng như npcPos
+      for (const [role, x, z] of list) specialPos[role] = [x / 1000, z / 1000];
+      for (const p of npcs) {
+        if (!p.secretEncounter || !specialPos[p.npc.role]) continue;
+        p.x = specialPos[p.npc.role][0]; p.z = specialPos[p.npc.role][1];
+      }
+    },
     player(id) { return players.get(id); },
     list() { return [...players.values()]; },
     count() { return players.size; },

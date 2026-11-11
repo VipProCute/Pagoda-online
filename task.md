@@ -19,6 +19,7 @@
 | T-007 | Sửa mục "Cấu trúc mã" trong README | 🔵 Sẵn sàng | P2 | CORE + DOCS | — |
 | T-008 | Lệnh chạy ui-harness có sẵn trong package.json | ⚪ Hộp thư đến | P2 | CORE + OPS + PK | — |
 | T-009 | Rà các bản làm việc rời trên máy | 🔵 Sẵn sàng 👤 | P2 | CORE | — |
+| T-010 | NPC cơ duyên đi lại ngẫu nhiên + bảng tương tác NPC | 🟡 Đang làm | P1 | CORE + HALL | OpenCode |
 
 Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạm `package.json`). **T-005**, **T-007**, **T-002** làm song song được với nhóm trên.
 
@@ -160,6 +161,31 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
   - [ ] So từng thư mục với `main` (bỏ qua `node_modules`), liệt kê file khác và đánh giá: đã có trong main / cũ hơn main / có việc chưa đưa lên
   - [ ] Phần "có việc chưa đưa lên" thì mở thẻ mới ở Hộp thư đến
   - [ ] Không xoá, không chép gì vào repo
+
+---
+
+## Đang làm / Sẵn sàng (chi tiết)
+
+### T-010 · NPC cơ duyên đi lại ngẫu nhiên + bảng tương tác NPC
+- **Trạng thái**: 🟣 Chờ soát (2026-11-12)
+- **Ưu tiên**: P1
+- **Gói ngữ cảnh**: CORE + HALL
+- **Khu vực chạm**: lib/hall-npcs.js (mới), server.js, public/js/hall.js, public/js/app.js, public/index.html, package.json, test/hall-npc-sim.test.js (mới), test/hall-npcs.test.js, README.md, docs/agents/ARCHITECTURE.md
+- **Phụ thuộc**: không
+- **Người làm**: OpenCode (GLM)
+- **Nhánh**: `opencode/T-010-npc-di-chuyen-tuong-tac`
+- **Yêu cầu của chủ dự án**: 3 NPC cơ duyên (Lão Ăn Mày, Vạn Lý Độc Hành, Obito) đi lại ngẫu nhiên trong map; bấm NPC mở bảng tương tác 1 nút "Trò chuyện" giống bảng tương tác người chơi; chốt thêm: khách vãng lai thường cũng bấm được.
+- **Đã làm**:
+  - `lib/hall-npcs.js`: mô phỏng thuần 3 NPC (tiêm rng), cùng tốc độ và nhịp nghỉ như NPC phía trình duyệt cũ; xuất `SEED`, `BOUNDS`, `createHallNpcs`.
+  - `server.js`: chạy `hallNpcs.step(dt)` trong vòng lặp 50ms sẵn có, phát `io.volatile.emit('npc', …)` 100ms/lần như người chơi; gói `join` thêm `npcs`; `martial:secret-encounter` kiểm khoảng cách theo vị trí mô phỏng (không còn toạ độ cứng).
+  - `hall.js`: NPC cơ duyên nhận vị trí máy chủ (`Hall.npcPos`, `Hall.setNpcs`, giữ `specialPos` qua các đợt bốc lại khách); mọi NPC bấm được (`npcAt`, chọn NPC sâu nhất); trong Tàng Kinh Các Tảo Địa Tăng ưu tiên trước NPC; con trỏ chỉ tay khi rê NPC.
+  - `app.js`: handler `secretNpc(role)` đổi thành `npc(def)` mở dialog `#dlg-npc` (1 nút "Trò chuyện"); NPC cơ duyên chạy luồng nhận bí kíp như cũ; khách vãng lai NPC phán 1 câu ngẫu nhiên (không gọi máy chủ).
+  - `index.html`: thêm `#dlg-npc`; tăng `?v=` hall.js/app.js lên `npc-move1`.
+  - Docs: README (mục Nhân vật, Cấu trúc mã), ARCHITECTURE §5 (sự kiện `npc`) và §6 (điểm đồng bộ `SEED` ↔ `special`).
+- **Kiểm chứng**: `npm run check` sạch; `test/hall-npc-sim.test.js` (7 test) + `test/hall-npcs.test.js` (deterministic, seed LCG) 8/8 đạt; `npm test` 367 test, 3 trượt — **trượt y hệt trên `main`** (đối chứng bằng worktree sạch): `e2e-auth`, `e2e-donation-test-mode`, `e2e-martial` (đúng nhóm nghi ngờ của T-003; nghi do môi trường Node 25 máy local, production là Node 22).
+- **Đã chạy ui-harness**: chưa (thẻ chỉ chạm chánh điện/Tàng Kinh Các, không đụng Võ Học Các/Sân đấu).
+- **Ngoài phạm vi**: đổi luật cơ duyên, cân bằng số liệu.
+- **Ghi chú**: lần đầu điều 2 subagent Gemini (3.8 Flash, 3.5 Flash Lite) qua OpenRouter nhưng cả hai dừng với lỗi "Missing Authentication header" — cần kiểm tra API key OpenRouter trong cấu hình; sau đó tự làm toàn bộ.
 
 ---
 

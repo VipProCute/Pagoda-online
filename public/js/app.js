@@ -75,15 +75,7 @@
         else if (r.already) toast('Bạn đã nhận truyền thừa trong lần gặp này.');
       });
     },                                 // chạm bồ đoàn: đi tới, ngồi thiền
-    secretNpc(role) {
-      if (!joined) return;
-      socket.emit('martial:secret-encounter', { role }, r => {
-        if (!r) return toast('Chưa thể trò chuyện, hãy thử lại.');
-        if (r.code === 'far') socket.emit('move', { x: r.x, z: r.z });
-        if (!r.ok) return toast(r.reason || 'Cơ duyên chưa tới.');
-        toast(r.already ? `Bạn đã lĩnh ngộ ${r.name}.` : `Cơ duyên xuất hiện! Bạn lĩnh ngộ ${r.name}.`);
-      });
-    },
+    npc(def) { openNpc(def); },                            // bấm NPC: mở bảng tương tác giống như bấm người chơi
     person(id) { openPerson(id); },
     fortune() { fortune.open('lot'); },
     reader(type) { fortune.open(type); }
@@ -336,7 +328,9 @@
     if (r.uid && r.uid !== uid) { uid = r.uid; store.set('ta-uid', uid); }
     if (!offset) { offset = r.serverTime - Date.now(); Hall.setOffset(offset); }
     $('#siteName').textContent = cfg.siteName; document.title = cfg.siteName + ' · Đi chùa online';
-    Hall.setMe(me); Hall.setPlayers(r.players); Hall.setSweeper(r.sweeper); Hall.setIncense(r.incense); fortune.reset(r.fortuneQueue);
+    Hall.setMe(me); Hall.setPlayers(r.players); Hall.setSweeper(r.sweeper); Hall.setIncense(r.incense);
+    if (r.npcs) Hall.setNpcs(r.npcs);                      // vị trí ban đầu của NPC cơ duyên do máy chủ mô phỏng
+    fortune.reset(r.fortuneQueue);
     $('#feed').textContent = ''; r.chat.forEach(addMsg); scrollFeed(true);
     renderPrayers(r.prayers); renderBoard(r.board); renderDonations(r.donations, r.funds);
     setStats(r.today, r.online); setMerit(r.merit);
@@ -400,11 +394,11 @@
   });
   socket.on('aura:me', aura => { myAura = aura; renderAura(); });
   socket.on('announce', d => announceQ(d));
-  socket.on('sweeper:appear', event => Hall.setSweeper(event));
-  socket.on('martial:inheritance', d => { toast(`Tảo Địa Tăng truyền thừa: +${d.gain} công lực, lên cảnh giới ${d.level}!`); if (window.Dojo) Dojo.refresh(); });
+  socket.on('sweeper:appear', event => Hall.setSweeper(event));  socket.on('martial:inheritance', d => { toast(`Tảo Địa Tăng truyền thừa: +${d.gain} công lực, lên cảnh giới ${d.level}!`); if (window.Dojo) Dojo.refresh(); });
   socket.on('voice:kicked', d => { Voice.forceMute(); voiceUI(); toast(d.text); });
   socket.on('pu', d => Hall.updatePlayer(d));
   socket.on('p', arr => Hall.positions(arr));
+  socket.on('npc', arr => Hall.npcPos(arr));
   socket.on('chat', m => { addMsg(m); scrollFeed(); if (!m.sys && m.pid) Hall.bubble(m.pid, m.text); });
   socket.on('chat:hide', d => { const el = $(`#feed [data-id="${d.id}"]`); if (el) el.remove(); });
   socket.on('ticker', d => ticker(d.text));
@@ -805,6 +799,32 @@
     socket.emit('spar:invite', { toPid: id }, r => {
       if (!r || !r.ok) { if (r && r.code === 'login') needLogin(r.reason); else toast((r && r.reason) || 'Chưa gửi được lời mời.'); return; }
       toast('Đã gửi lời mời cùng ra Sân đấu.');
+    });
+  });
+  /* ---------- tương tác NPC: một nút "Trò chuyện", NPC cơ duyên thì gọi máy chủ lĩnh bí kíp ---------- */
+  let npcDef = null;
+  const SECRET_ROLES = { beggar: 1, wanderer: 1, obito: 1 };
+  function openNpc(def) {
+    if (!def) return;
+    npcDef = def;
+    $('#npc-title').textContent = def.name;
+    $('#npc-hint').textContent = SECRET_ROLES[def.role] ? 'Cơ duyên ẩn giấu trong người này.' : 'Chọn thao tác với NPC này.';
+    openDlg('npc');
+  }
+  $('#npc-chat').addEventListener('click', () => {
+    const def = npcDef; npcDef = null; closeDlg('npc');
+    if (!def) return;
+    if (!SECRET_ROLES[def.role]) {          // khách vãng lai: NPC tự phán một câu, không cần máy chủ
+      const line = def.lines && def.lines[Math.floor(Math.random() * def.lines.length)];
+      if (line) toast(line);
+      return;
+    }
+    if (!joined) return;
+    socket.emit('martial:secret-encounter', { role: def.role }, r => {
+      if (!r) return toast('Chưa thể trò chuyện, hãy thử lại.');
+      if (r.code === 'far') socket.emit('move', { x: r.x, z: r.z });
+      if (!r.ok) return toast(r.reason || 'Cơ duyên chưa tới.');
+      toast(r.already ? `Bạn đã lĩnh ngộ ${r.name}.` : `Cơ duyên xuất hiện! Bạn lĩnh ngộ ${r.name}.`);
     });
   });
   let sparOffer = null, sparTarget = null;

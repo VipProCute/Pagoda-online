@@ -18,6 +18,7 @@ const announce = require('./lib/announce');
 const MARTIAL = require('./public/js/martial');
 const { createMartialService } = require('./lib/martial/service');
 const { createSweeper } = require('./lib/sweeper');
+const { createHallNpcs } = require('./lib/hall-npcs');
 const { mergeMartialGuest, donatedBy } = require('./lib/account');
 const { createArenaManager } = require('./lib/pk/manager');
 const fs = require('fs');
@@ -140,6 +141,7 @@ async function iceServers() {
 /* ---------------- dữ liệu ---------------- */
 const db = store.get();    // cùng một object suốt vòng đời; main() gọi store.init() điền dữ liệu trước khi mở cổng
 const sweeper = createSweeper();
+const hallNpcs = createHallNpcs();    // 3 NPC cơ duyên đi lại trong chùa, máy chủ tự mô phỏng và phát vị trí cho mọi client
 let martial = null, arena = null;   // dịch vụ tu luyện và quản lý sân đấu, tạo trong main() sau khi dữ liệu đã nạp
 function rollDay() {
   const d = vnDay();
@@ -777,7 +779,8 @@ io.on('connection', socket => {
       today: db.today, total: db.total, online: players.size,
       board: board(), merit: meritOf(uid), aura: myAura(uid), hasMatch: !!(arena && arena.hasMatch(uid)),
       donations: db.donations.filter(d => d.status === 'confirmed').slice(-20).map(publicDonation),
-      funds: fundsSummary(), chant, fortuneQueue: fortuneQueue.snapshot(), sweeper: sweeper.current()
+      funds: fundsSummary(), chant, fortuneQueue: fortuneQueue.snapshot(), sweeper: sweeper.current(),
+      npcs: hallNpcs.all()
     });
     socket.broadcast.emit('pj', publicPlayer(p));
     if (players.size <= 80) socket.broadcast.emit('ticker', { text: `${p.name} vừa vào chánh điện` });
@@ -1128,12 +1131,8 @@ io.on('connection', socket => {
     ack(result);
   }));
   socket.on('martial:secret-encounter', martialOnly(async (d, ack) => {
-    const locations = {
-      beggar: { scene: 'hall', x: 0.68, z: 0.67 },
-      wanderer: { scene: 'yard', x: 0.32, z: 0.67 },
-      obito: { scene: 'library', x: 0.76, z: 0.68 }
-    };
-    const loc = Object.prototype.hasOwnProperty.call(locations, d.role) && locations[d.role];
+    // vị trí hiện tại của NPC do máy chủ mô phỏng; người chơi phải đến gần NPC ở vị trí thật
+    const loc = hallNpcs.locate(d && d.role);
     if (!loc || p.scene !== loc.scene || (p.place && p.place !== 'hall')) return ack({ ok: false, reason: 'Không tìm thấy người này tại đây.' });
     if (Math.hypot((p.x - loc.x) * X_WEIGHT, p.z - loc.z) > 0.22) return ack({ ok: false, code: 'far', x: loc.x, z: loc.z, reason: 'Hãy đến gần rồi trò chuyện lại.' });
     const result = martial.claimSecret(p.uid, d.role);
@@ -1257,6 +1256,7 @@ let tick = 0, lastBoard = '';
 function startLoops() {
 setInterval(() => {
   const dt = 0.05;
+  hallNpcs.step(dt);                                        // NPC cơ duyên tự đi lại, mọi người nhìn thấy cùng một vị trí
   for (const p of players.values()) {
     const dx = p.tx - p.x, dz = p.tz - p.z, dist = Math.hypot(dx * X_WEIGHT, dz);
     if (dist > 0.001) {
@@ -1270,6 +1270,8 @@ setInterval(() => {
     const arr = [];
     for (const p of players.values()) if (p.dirty) { arr.push([p.id, Math.round(p.x * 1000), Math.round(p.z * 1000)]); p.dirty = false; }
     if (arr.length) io.volatile.emit('p', arr);
+    const npcArr = hallNpcs.positions();                     // NPC cơ duyên: cùng nhịp phát như người chơi
+    if (npcArr.length) io.volatile.emit('npc', npcArr);
   }
   if (tick % 20 === 0) {
     const encounter = sweeper.tick();

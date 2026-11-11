@@ -13,7 +13,7 @@ Hoàn thành tu luyện nhanh không giới hạn lượt mỗi ngày. Mọi tr�
 | Nhóm | Có gì |
 |---|---|
 | Chánh điện | Ba tôn tượng, bàn thờ, bát hương, nến, đèn lồng, tủ Tàng Kinh Các. Chạm sàn (hoặc phím mũi tên / WASD) để đi lại. Chạm bát hương để thắp nhang, chạm tượng để vái lạy, chạm tủ kinh để bước vào Tàng Kinh Các. |
-| Nhân vật | Tên hoặc pháp danh, giới tính, 4 kiểu tóc (có khăn vấn), 12 màu áo dài (có áo tràng lam, áo tràng nâu). |
+| Nhân vật | Tên hoặc pháp danh, giới tính, 4 kiểu tóc (có khăn vấn), 12 màu áo dài (có áo tràng lam, áo tràng nâu). Các NPC (khách vãng lai và 3 NPC cơ duyên Lão Ăn Mày, Vạn Lý Độc Hành, Obito) tự đi lại trong cảnh; chạm vào NPC mở bảng "Trò chuyện" — với NPC cơ duyên sẽ lĩnh bí kíp ẩn nếu đứng đủ gần, với khách vãng lai thì NPC phán một câu ngẫu nhiên. |
 | Lễ Phật | Thắp 1 hoặc 3 nén nhang kèm lời nguyện (nhang cháy 30 phút, khói bay, ai cũng thấy). Dâng hoa sen, hoa hồng, đèn dầu, mâm ngũ quả (hiện lên bàn thờ). Thả tim. Vái lạy (nhân vật cúi người). Gõ mõ. Thỉnh chuông (cả chánh điện cùng nghe). |
 | Tụng kinh chung | Bát Nhã Tâm Kinh, Chú Đại Bi, Kinh Dược Sư (Chú Dược Sư), Niệm Phật A Di Đà, Niệm Quán Thế Âm, Chuông mõ ngồi thiền. Giọng VieNeu-TTS v3 Turbo đọc liền câu, mõ và chuông theo nghi thức (vào mõ, kết mõ). Mọi người nghe cùng một chữ (đồng bộ theo giờ máy chủ), chữ sáng lên theo tiếng mõ. Người vào muộn nghe đúng đoạn đang tụng. |
 | Tàng Kinh Các | Một cảnh đi lại được như sân chùa (chạm tủ kinh ở chánh điện hoặc nút Tàng Kinh Các): cửa sổ trăng nhìn ra rừng trúc, Kệ kinh, kệ Võ học, lư trầm và **8 bồ đoàn**. Chạm bồ đoàn để đi tới ngồi thiền; ngồi rồi chọn công pháp để **tu luyện nội công ngay trên bồ đoàn**, linh khí xoáy quanh người theo màu công pháp và ai trong Tàng Kinh Các cũng thấy. Mỗi bồ đoàn một người; đi chỗ khác là đứng dậy, phiên tu vẫn chạy. Chạm kệ Võ học để sang Võ Học Các học chiêu. Kệ kinh: Dịch Cân Kinh (đủ 12 thức, 59 hình minh họa, lời thơ gốc kèm phiên âm Hán Việt), Cửu Âm Chân Kinh, Quỳ Hoa Bảo Điển, Bát Nhã Tâm Kinh. Đọc theo chương, mục lục, đổi cỡ chữ, nền giấy / nền tối, nhớ chỗ đọc dở. Ai đang đọc thì có biểu tượng sách cạnh tên. |
@@ -345,6 +345,7 @@ lib/martial/service.js tu luyện, học chiêu, bộ chiêu, hoàn thành ngay 
 lib/pk/engine.js       luật luận võ so chiêu đồng thời (thuần, dùng chung với tools/pk-sim)
 lib/pk/manager.js      sân đấu: người ở sân, lời mời, sảnh, vòng lượt, giờ, vào lại
 lib/pk/buffs.js        buff pháp tướng / quỷ / hào quang cho phòng có buff; rules.js, rng.js
+lib/hall-npcs.js       mô phỏng 3 NPC cơ duyên đi lại trong chùa (thuần, máy chủ chạy và phát vị trí)
 public/js/martial.js   3 nhánh, 15 chiêu, 6 công pháp, cấp nội công (dùng chung máy chủ và trình duyệt)
 public/js/places.js    chuyển giữa các nơi (chánh điện, Võ Học Các, Sân đấu); dojo.js, arena.js là giao diện hai nơi sau
 public/js/hall.js      vẽ chánh điện, sân chùa, Tàng Kinh Các, Sân đấu, nhân vật (đứng, ngồi thiền), hào quang, pháp tướng, quỷ (Canvas 2D)

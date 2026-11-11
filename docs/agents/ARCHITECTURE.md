@@ -82,7 +82,7 @@ Ack chuẩn: `{ ok:true, … }` hoặc `{ ok:false, reason, code? }`. Sự kiệ
 | Nội dung | `chat`, `chat:hide`, `prayer`, `prayer:n`, `prayer:hide`, `incense`, `offer`, `emote`, `bell`, `chant` |
 | Cúng dường | `donation`, `donation:ok`, `aura`, `aura:me`, `announce` |
 | Giọng nói | `voice:signal`, `voice:kicked` |
-| Xin xăm, NPC | `fortune:queue`, `fortune:result`, `sweeper:appear` |
+| Xin xăm, NPC | `fortune:queue`, `fortune:result`, `sweeper:appear`, `npc` (lô vị trí NPC cơ duyên, volatile, ×1000, định dạng `[role, x, z]`) |
 | Võ học | `tu:update`, `martial:inheritance` |
 | Spar | `spar:invited`, `spar:accepted`, `spar:declined`, `spar:ready` |
 | Sân đấu | `arena:add`, `arena:del`, `arena:upd`, `pk:invited`, `pk:invite:closed`, `pk:lobby`, `pk:lobby:status`, `pk:turn`, `pk:locked`, `pk:reveal`, `pk:end` |
@@ -104,6 +104,7 @@ Hợp đồng chi tiết của võ học và PK (payload, thứ tự gói tin): 
 | Giá trị | Nơi 1 | Nơi 2 (và 3) |
 |---|---|---|
 | Bồ đoàn | `LIB_SEATS` trong `server.js` | `LIB_SEATS` trong `public/js/hall.js` |
+| NPC cơ duyên | `SEED` trong `lib/hall-npcs.js` (role, cảnh, toạ độ gốc) | danh sách `special` trong `randomizeNpcs()` của `public/js/hall.js` |
 | Danh sách nơi | `PLACES` trong `server.js` | vòng lặp gọi `Places.register(name, …)` trong `public/js/app.js` (danh sách `[['dojo', …], ['arena', …]]`; `hall` là mặc định) |
 | Cảnh | `SCENES` trong `server.js` | hàm vẽ cảnh trong `hall.js`, `goScene` trong `app.js` |
 | Hằng số PK | `lib/pk/rules.js` (`RAGE_MAX`, `EXPOSED_PCT`, `KC_BONUS`, `KC_TURNS`…) | `MARTIAL.PK` trong `public/js/martial.js`; `RAGE_MAX`, `EXPOSED_PCT`, `KC_PCT`, `KC_TURNS` đầu `public/js/arena.js` (ở đây ghi phần trăm nguyên: `KC_PCT = 25` ↔ `KC_BONUS: 0.25`) |
