@@ -54,6 +54,7 @@
     SFX.setMuted(muted); Voice.setMuted(muted); updateChantJoin();
   }
   $('#btnSound').addEventListener('click', () => { muted = !muted; store.set('ta-muted', muted ? '1' : '0'); SFX.unlock(); renderSound(); });
+  if (window.Guide) Guide.mount($('#dlg-guide'), $('#btnGuide'));   // nút "?" mở Sổ tay (public/js/guide.js)
   document.addEventListener('pointerdown', () => SFX.unlock(), { once: true });
   document.addEventListener('pointerdown', () => Voice.unlock());
 
@@ -347,6 +348,7 @@
     joined = true; editing = false; me = r.you; cfg = r.config;
     myAura = r.aura; renderAura();
     if (window.Celebrate) Celebrate.configure(cfg, { toast });
+    if (window.Guide) Guide.configure(cfg);
     if (r.auth) renderAuth(r.auth);
     if (r.uid && r.uid !== uid) { uid = r.uid; store.set('ta-uid', uid); }
     if (!offset) { offset = r.serverTime - Date.now(); Hall.setOffset(offset); }

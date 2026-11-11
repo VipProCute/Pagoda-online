@@ -100,8 +100,9 @@ Hợp đồng chi tiết của võ học và PK (payload, thứ tự gói tin): 
 
 ## 5. Phía trình duyệt
 
-- **Thứ tự nạp** (`public/index.html`, cuối `<body>`): `socket.io` → `lunar` → `audio` → `aura` → `merit` → `celebrate` → `hall` → `fortune` → `voice` → `library` → `martial` → `places` → `meditate` → `dojo` → `arena` → `app.js`. Mỗi file có `?v=…` để phá cache.
+- **Thứ tự nạp** (`public/index.html`, cuối `<body>`): `socket.io` → `lunar` → `audio` → `aura` → `merit` → `celebrate` → `hall` → `fortune` → `voice` → `library` → `martial` → `places` → `meditate` → `dojo` → `arena` → `guide` → `app.js`. Mỗi file có `?v=…` để phá cache.
 - **Biến toàn cục**: `Lunar`, `SFX`, `AURA`, `MERIT`, `MARTIAL`, `Celebrate`, `Hall`, `Fortune`, `Voice`, `Library`, `Places`, `Meditate`, `Dojo`, `Arena`. `app.js` không xuất gì, là nơi nối mọi thứ (một `socket` toàn cục).
+- **Sổ tay** (nút "?" ở thanh trên): `public/js/guide.js` (global `Guide`, nạp trước `app.js`) dựng hộp `#dlg-guide` từ `public/data/so-tay.vi.json`. Số liệu viết bằng chỗ giữ chỗ `{EARN.x}`, `{PK.x}`, `{MARTIAL.x}`… lấy từ `MERIT`/`MARTIAL`/`AURA`/`/api/config`; mục/đoạn có `needs`/`needsNot` ẩn theo tính năng. Tính năng chưa có phía trình duyệt (`titles`, `bangvang`, `tuvi5`, `tarot5`…) mặc định tắt, thẻ làm ra nó gọi `Guide.setFeature('tên', true)`. Test: `test/guide.test.js`.
 - **Nơi (place)** = màn hình riêng: `Places.register(name, { el, mod })`, `mod` có `init(host)`, `mount(el)`, `show(info)`, `hide()`. `Places.go()` gửi `place:set`, chỉ chuyển màn khi ack `ok`. Đăng ký ở `app.js` qua object `martialHost`.
 - **Cảnh (scene)** = cùng một canvas `#hall`: `hall`, `yard`, `library` (và `arena` qua `Hall.attach(canvas)`). Luồng: `goScene` → `socket.emit('scene')` → `applyScene` → `Hall.setScene`.
 - **Vẽ**: `hall.js` `frame()` chọn hàm vẽ theo cảnh (`drawBg`, `drawYard`, `drawLibrary`, `drawArenaYard`), toạ độ sàn 0..1, sprite `.webp` là tùy chọn (thiếu thì vẽ bằng mã). `arena.js` có sân khấu canvas riêng (`paintLoop`); `dojo.js` dựng DOM bằng `h()`.

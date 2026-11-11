@@ -1,0 +1,267 @@
+{
+  "version": 1,
+  "note": "Chữ Sổ tay (T-061). Số liệu viết bằng chỗ giữ chỗ {EARN.x} {PK.x} {MARTIAL.x} {MERIT.x} {AURA.x} {CFG.x}, guide.js thay lúc hiện. needs: tên tính năng, tắt thì ẩn. Viết theo docs/HUONG-DAN-VIET.md; không nhắc bí mật.",
+  "sections": [
+    {
+      "id": "start",
+      "title": "Bắt đầu",
+      "blocks": [
+        { "type": "p", "text": "Chùa Tâm An là chánh điện online. Nhiều đạo hữu cùng vào chùa, cùng lễ Phật và trò chuyện." },
+        { "type": "h", "text": "Đi lại" },
+        { "type": "p", "text": "Chạm xuống sàn để nhân vật đi tới đó. Trên máy tính, bạn cũng đi được bằng phím mũi tên hoặc W, A, S, D." },
+        { "type": "h", "text": "Đổi map" },
+        { "type": "p", "text": "Map là khu vực đi lại được. Chạm một nút trên thanh đổi map để sang map đó. Nút của map bạn đang đứng sáng lên." },
+        { "type": "h", "text": "Thanh lễ Phật" },
+        { "type": "p", "text": "Thanh nút dưới cùng là các việc lễ Phật: thắp nhang, dâng hoa, thả tim, vái lạy, gõ mõ, thỉnh chuông, tụng kinh, cúng dường. Mỗi việc cho công đức." },
+        { "type": "h", "text": "Khung bên phải" },
+        { "type": "ul", "items": [
+          "Trò chuyện: nói chuyện chữ với mọi người.",
+          "Lời nguyện: lời nguyện của các đạo hữu vừa thắp nhang.",
+          "Công đức: công đức của bạn, bảng công đức hôm nay, luật công đức.",
+          "Khám phá: những nơi bạn có thể đến trong chùa."
+        ] },
+        { "type": "note", "text": "Giang hồ còn nhiều cơ duyên chưa kể." }
+      ]
+    },
+    {
+      "id": "merit",
+      "title": "Lễ Phật và công đức",
+      "blocks": [
+        { "type": "p", "text": "Công đức là điểm bạn tích được khi lễ Phật, tụng kinh và cúng dường. Công đức có hai số: \"hôm nay\" và \"tổng\"." },
+        { "type": "ul", "items": [
+          "Số \"hôm nay\" ở thanh trên cùng. Sang ngày mới, số này về 0.",
+          "Số \"tổng\" cộng dồn từ đầu và có thể âm. Pháp tướng và quỷ ám tính theo số này."
+        ] },
+        { "type": "h", "text": "Được cộng bao nhiêu" },
+        { "type": "ul", "items": [
+          "Thắp nhang: +{EARN.incense}.",
+          "Cùng tụng kinh đến hết bài: +{EARN.chantJoin}.",
+          "Dâng hoa, đèn, mâm quả: +{EARN.offer}.",
+          "Khởi tụng một khóa kinh: +{EARN.chantStart}.",
+          "Thỉnh chuông: +{EARN.bell}.",
+          "Vái lạy: +{EARN.bow}.",
+          "Gõ mõ: +{EARN.mo} mỗi lần.",
+          "Thả tim: +{EARN.heart} mỗi lần.",
+          "Tùy hỷ lời nguyện: +{EARN.rejoice}. Mỗi lời nguyện tùy hỷ được một lần."
+        ] },
+        { "type": "p", "text": "Cúng dường tịnh tài: +1 cho mỗi {EARN.perVnd}đ, khi nhà chùa đã xác nhận.", "needs": ["donation"] },
+        { "type": "p", "text": "Mỗi việc có thời gian chờ ngắn. Bấm quá nhanh thì lần đó chưa được tính." },
+        { "type": "h", "text": "Pháp tướng" },
+        { "type": "p", "text": "Pháp tướng là vầng hình hiện sau lưng khi tổng công đức đạt mốc. Có {MERIT.RANKS} mốc. Chạm nút \"Công đức\" ở thanh trên để xem từng mốc." },
+        { "type": "h", "text": "Quỷ ám" },
+        { "type": "p", "text": "Quỷ ám đi theo khi tổng công đức âm. Làm việc thiện để công đức về từ 0 trở lên thì quỷ tan." },
+        { "type": "h", "text": "Bị trừ khi nào" },
+        { "type": "p", "text": "Nói lời tục tĩu trong tin nhắn hoặc lời nguyện sẽ bị trừ công đức. Lời tục đi kèm danh hiệu Phật, Bồ Tát hay chư Tăng bị trừ nặng hơn. Bảng trừ chi tiết nằm trong \"Luật công đức\"." },
+        { "type": "h", "text": "Mốc chúc mừng" },
+        { "type": "p", "text": "Khi công đức hôm nay chạm mốc, màn hình có hiệu ứng chúc mừng. Đây chỉ là hiệu ứng, không có thưởng. Bạn tắt được trong tab Công đức." }
+      ]
+    },
+    {
+      "id": "chant",
+      "title": "Tụng kinh chung",
+      "blocks": [
+        { "type": "p", "text": "Một người khởi tụng, mọi người trong chùa cùng nghe và cùng tụng một bài kinh." },
+        { "type": "steps", "items": [
+          "Chạm \"Tụng kinh\" ở thanh lễ Phật.",
+          "Chọn một bài kinh rồi khởi tụng. Người khởi tụng được +{EARN.chantStart} công đức.",
+          "Mọi người có mặt nghe chung. Chạm \"Bật tiếng để tụng cùng\" nếu máy đang tắt tiếng."
+        ] },
+        { "type": "p", "text": "Bài tụng kết thúc, mỗi người có mặt đến hết bài được +{EARN.chantJoin} công đức." },
+        { "type": "p", "text": "Sau mỗi khóa kinh, chùa nghỉ ít giây rồi mới cho khởi tụng khóa mới. Mỗi người cũng phải đợi một lúc giữa hai lần khởi tụng." }
+      ]
+    },
+    {
+      "id": "donate",
+      "title": "Cúng dường và hào quang",
+      "needs": ["donation"],
+      "blocks": [
+        { "type": "p", "text": "Cúng dường là gửi tịnh tài cho nhà chùa bằng chuyển khoản. Chạm \"Cúng dường\" ở thanh lễ Phật, chọn quỹ và số tiền. Rồi quét mã QR bằng ứng dụng ngân hàng." },
+        { "type": "ul", "items": [
+          "Mỗi lần cúng dường tối thiểu 10.000đ. Thấp hơn thì chùa báo ngay và chưa tạo mã.",
+          "Nhà chùa xác nhận đã nhận tịnh tài thì công đức và hào quang mới được tính.",
+          "Nhà chùa có thể đang chạy thử: khi đó chùa tự xác nhận để bạn xem. Chế độ thật thì chờ nhà chùa xác nhận.",
+          "Chưa xác nhận thì chưa cộng gì. Bạn cứ đợi, hoặc liên hệ nhà chùa."
+        ] },
+        { "type": "h", "text": "Hào quang" },
+        { "type": "p", "text": "Hào quang là vòng sáng quanh người vừa cúng dường. Có {AURA.TIERS} tầng. Tầng 1 bắt đầu từ {AURA.MIN1}đ. Tầng càng cao, hào quang sáng càng lâu." },
+        { "type": "p", "text": "Cúng dường thêm khi hào quang còn sáng thì tiền cộng dồn để lên tầng cao hơn. Hào quang tắt thì tính lại từ đầu." },
+        { "type": "p", "text": "Chọn ẩn danh thì không hiện hào quang." }
+      ]
+    },
+    {
+      "id": "voice",
+      "title": "Nói chuyện bằng giọng và chat",
+      "blocks": [
+        { "type": "h", "text": "Chat chữ" },
+        { "type": "p", "text": "Viết vào ô ở tab Trò chuyện rồi chạm Gửi. Các nút nhanh bên trên gửi sẵn lời chào." },
+        { "type": "p", "text": "Chùa chặn số tài khoản và đường link trong tin nhắn, để tránh kẻ giả danh nhà chùa lừa đảo. Tin có những thứ này sẽ không gửi được." },
+        { "type": "p", "text": "Tin nhắn tục tĩu bị trừ công đức. Xem mục Lễ Phật và công đức." },
+        { "type": "h", "text": "Nói chuyện bằng giọng", "needs": ["voice"] },
+        { "type": "p", "text": "Vào chùa là bạn nghe được những người đứng gần. Bạn chỉ nghe, chưa bật micro.", "needs": ["voice"] },
+        { "type": "p", "text": "Muốn nói, chạm \"Nói chuyện\" rồi bật micro. Đứng gần thì nghe rõ, đứng xa thì nhỏ dần. Chạm \"Người gần\" để xem ai đang ở gần bạn.", "needs": ["voice"] }
+      ]
+    },
+    {
+      "id": "yard",
+      "title": "Sân chùa",
+      "blocks": [
+        { "type": "p", "text": "Sân chùa là khoảng sân ngoài chánh điện. Chọn \"Sân chùa\" ở thanh đổi map để ra đó." },
+        { "type": "p", "text": "Chạm thầy Tử vi, nhập ngày sinh. Thầy đối chiếu địa chi năm sinh với ba tháng âm lịch sắp tới. Chưa lập lá số hay an sao. Chỉ để chiêm nghiệm.", "needs": ["tuvi"], "needsNot": ["tuvi5"] },
+        { "type": "p", "text": "Chạm thầy Tử vi để xem lá số. Lá số tính ngay trên máy bạn, ngày giờ sinh không gửi đi đâu.", "needs": ["tuvi", "tuvi5"] },
+        { "type": "p", "text": "Chạm thầy Tarot để rút ba lá bài: quá khứ, hiện tại và khả năng sắp tới. Chỉ để suy ngẫm.", "needs": ["tarot"], "needsNot": ["tarot5"] },
+        { "type": "p", "text": "Chạm thầy Tarot để trải 5 lá bài theo chủ đề và khung thời gian bạn chọn.", "needs": ["tarot", "tarot5"] },
+        { "type": "p", "text": "Ở chánh điện có hũ xăm. Chạm hũ để xếp hàng xin xăm, mỗi lúc một người. Quẻ do chùa gieo, chỉ để tham khảo.", "needs": ["fortune"] },
+        { "type": "p", "text": "Chạm bàn đá để ngồi chơi cờ. Xem mục Bàn cờ.", "needs": ["kydao"] },
+        { "type": "p", "text": "Bảng Vàng ghi tên những người đang giữ danh hiệu. Xem mục Chiến tích và danh hiệu.", "needs": ["bangvang"] }
+      ]
+    },
+    {
+      "id": "kydao",
+      "title": "Bàn cờ (Kỳ Đạo)",
+      "needs": ["kydao"],
+      "blocks": [
+        { "type": "p", "text": "Kỳ Đạo gồm 5 môn cờ, đánh ở bàn đá ngoài Sân chùa." },
+        { "type": "steps", "items": [
+          "Ra Sân chùa, chạm một ghế trống ở bàn đá để ngồi.",
+          "Đợi một đạo hữu ngồi ghế đối diện, hoặc gửi lời mời cho người khác.",
+          "Chọn ván xếp hạng hoặc ván giao hữu, rồi bắt đầu."
+        ] },
+        { "type": "ul", "items": [
+          "Người khác có thể đứng xem ván cờ.",
+          "Ván xếp hạng tính Elo. Ván giao hữu thì không.",
+          "Elo là điểm sức cờ từng môn. Thắng người mạnh hơn được cộng nhiều.",
+          "Mỗi ván có đồng hồ cho từng bên. Hết giờ thì thua.",
+          "Ván xếp hạng kết thúc quá sớm thì bị hủy và không tính Elo."
+        ] },
+        { "type": "p", "text": "Ván cờ không cộng công đức." }
+      ]
+    },
+    {
+      "id": "library",
+      "title": "Tàng Kinh Các",
+      "blocks": [
+        { "type": "p", "text": "Tàng Kinh Các là nơi đọc kinh. Chọn \"Kinh Các\" ở thanh đổi map để vào." },
+        { "type": "ul", "items": [
+          "Chạm kệ kinh để mở sách và đọc.",
+          "Chạm bồ đoàn để ngồi thiền. Ngồi thiền ở đây là tu luyện nội công, xem mục Võ Học Các."
+        ] }
+      ]
+    },
+    {
+      "id": "dojo",
+      "title": "Võ Học Các",
+      "needs": ["martial"],
+      "blocks": [
+        { "type": "p", "text": "Võ Học Các là nơi tu luyện nội công và học chiêu. Cần đăng nhập Google, vì tiến độ gắn với tài khoản của bạn.", "needs": ["login"] },
+        { "type": "p", "text": "Võ Học Các là nơi tu luyện nội công và học chiêu. Tiến độ của bạn được lưu lại.", "needsNot": ["login"] },
+        { "type": "h", "text": "Tu luyện" },
+        { "type": "p", "text": "Ở tab Tâm pháp, chọn một công pháp và thời gian tu. Tu xong, bạn nhận công lực. Đang tu cứ đóng web, máy chủ tự tính." },
+        { "type": "p", "text": "Công lực là điểm kinh nghiệm nội công. Đủ công lực thì lên cấp, tối đa cấp {MARTIAL.LEVEL_MAX}. Mỗi cấp có một tên gọi là cảnh giới." },
+        { "type": "h", "text": "Học chiêu" },
+        { "type": "p", "text": "Chiêu là một đòn võ. Tài khoản mới đã biết sẵn {MARTIAL.STARTERS} chiêu. Chiêu khó hơn cần đủ cấp nội công và tâm đắc." },
+        { "type": "p", "text": "Võ công có ba nhánh. Cương: mạnh và chịu đòn. Tốc: nhanh và né. Nhu: mềm và phản đòn." },
+        { "type": "p", "text": "Tâm đắc là điểm hiểu biết của từng nhánh. Công pháp nhập môn chỉ tăng công lực. Công pháp của một nhánh cộng thêm tâm đắc cho nhánh đó. Công pháp thông cả ba nhánh thì cộng cả ba. Học chiêu không tốn gì và không phải chờ." },
+        { "type": "p", "text": "Mỗi chiêu có mức thành thạo, cao nhất là \"Đại viên mãn\"." },
+        { "type": "h", "text": "Bộ chiêu" },
+        { "type": "p", "text": "Bộ chiêu là 4 chiêu bạn mang vào trận. Chọn bộ chiêu trước khi đấu." },
+        { "type": "h", "text": "Hoàn thành ngay", "needs": ["speedup"] },
+        { "type": "p", "text": "Hoàn thành ngay là cúng dường để phiên tu đang chạy xong sớm. Công lực vẫn không vượt trần.", "needs": ["speedup"] },
+        { "type": "p", "text": "Chùa chỉ cho xong sớm khi nhà chùa đã xác nhận tịnh tài. Chuyển khoản xong chưa chắc xong ngay.", "needs": ["speedup"] },
+        { "type": "note", "text": "Giang hồ còn nhiều cơ duyên chưa kể." }
+      ]
+    },
+    {
+      "id": "arena",
+      "title": "Sân đấu",
+      "needs": ["pk"],
+      "blocks": [
+        { "type": "p", "text": "Sân đấu là nơi luận võ (PK) một đối một. Chọn \"Sân đấu\" ở thanh đổi map để vào. Cần đăng nhập Google.", "needs": ["login"] },
+        { "type": "p", "text": "Sân đấu là nơi luận võ (PK) một đối một. Chọn \"Sân đấu\" ở thanh đổi map để vào.", "needsNot": ["login"] },
+        { "type": "h", "text": "Mời và nhận lời" },
+        { "type": "p", "text": "Chạm một đạo hữu rồi gửi lời mời. Người kia có ít giây để nhận lời. Bạn cũng mời được từ chánh điện, nhưng trận chỉ diễn ra ở Sân đấu." },
+        { "type": "p", "text": "Không muốn bị mời, bạn chặn người đó trong hộp người chơi." },
+        { "type": "h", "text": "Một trận diễn ra thế nào" },
+        { "type": "steps", "items": [
+          "Trước trận, mỗi bên có {PK.LOADOUT_SECONDS} giây để chọn bộ chiêu.",
+          "Mỗi lượt, hai bên chọn kín một chiêu trong {PK.TURN_SECONDS} giây. Không ai thấy chiêu của người kia.",
+          "Cả hai chọn xong, hoặc hết giờ, thì hai chiêu lật ra cùng lúc. Không chọn kịp thì bạn đứng yên lượt đó.",
+          "Mỗi bên có {PK.HP} máu. Hết máu là thua."
+        ] },
+        { "type": "h", "text": "Những thanh bạn cần biết" },
+        { "type": "ul", "items": [
+          "Máu: về 0 là thua.",
+          "Nội lực: mỗi chiêu tốn nội lực, mỗi lượt hồi một ít. Chọn Điều tức để nghỉ một lượt và hồi thêm nội lực.",
+          "Nộ: nhận sát thương thì nộ tăng dần. Càng nhiều nộ, đòn công kế tiếp càng mạnh, tối đa thêm 30%. Tung đòn công thì nộ về 0.",
+          "Sơ hở: đòn của bạn bị né hoặc đỡ hết, lượt sau bạn nhận thêm sát thương."
+        ] },
+        { "type": "h", "text": "Khi trận kéo dài" },
+        { "type": "p", "text": "Từ lượt {PK.SUDDEN_FROM_TURN}, cả hai cùng mất máu mỗi lượt. Nếu nhiều lượt liền không ai mất máu, việc này đến sớm hơn. Số máu mất tăng dần theo từng lượt, gọi là suy kiệt." },
+        { "type": "p", "text": "Trận dài tối đa {PK.MAX_TURNS} lượt. Hết lượt mà chưa ai ngã, người còn nhiều máu hơn thắng. Bằng máu thì hòa." },
+        { "type": "h", "text": "Bỏ lượt và rời trận" },
+        { "type": "p", "text": "Bỏ lỡ {PK.IDLE_FORFEIT_TURNS} lượt liên tiếp là thua. Bỏ cuộc giữa trận cũng tính là thua. Rời đi lúc còn đang chọn bộ chiêu thì trận hủy, không ai thua." },
+        { "type": "p", "text": "Cả hai cùng bỏ lỡ {PK.IDLE_FORFEIT_TURNS} lượt liên tiếp thì trận hủy, không ai thua." },
+        { "type": "p", "text": "Trận thắng và hòa cho điểm chiến tích. Xem mục Chiến tích và danh hiệu." }
+      ]
+    },
+    {
+      "id": "titles",
+      "title": "Chiến tích và danh hiệu",
+      "blocks": [
+        { "type": "p", "text": "Điểm chiến tích là {MARTIAL.WIN_POINTS} điểm cho mỗi trận thắng, cộng {MARTIAL.DRAW_POINTS} điểm cho mỗi trận hòa ở Sân đấu.", "needs": ["pk"] },
+        { "type": "p", "text": "Điểm chiến tích xếp bạn vào {MARTIAL.PK_TITLES} bậc chiến tích. Thấp nhất là {MARTIAL.PK_TITLE_FIRST}, cao nhất là {MARTIAL.PK_TITLE_LAST}.", "needs": ["pk"] },
+        { "type": "p", "text": "Danh hiệu là tên dành cho người đứng đầu. Có danh hiệu \"lịch sử\" cho người từng đạt đỉnh, và danh hiệu \"hiện tại\" cho người đang đứng đầu. Danh hiệu chỉ để trưng, không có thưởng.", "needs": ["titles"] },
+        { "type": "p", "text": "Danh hiệu hiện tại tính theo mùa. Một mùa là một tháng âm lịch, từ mùng 1 đến cuối tháng.", "needs": ["titles"] }
+      ]
+    },
+    {
+      "id": "account",
+      "title": "Tài khoản",
+      "needs": ["login"],
+      "blocks": [
+        { "type": "p", "text": "Bạn vào chùa và lễ Phật được ngay, không cần tài khoản. Khi đó công đức chỉ nằm trên trình duyệt này." },
+        { "type": "p", "text": "Đổi máy hoặc xóa dữ liệu trình duyệt thì mất công đức đó." },
+        { "type": "h", "text": "Đăng nhập Google để giữ" },
+        { "type": "ul", "items": [
+          "Công đức và hào quang. Đổi máy vẫn còn.",
+          "Tiến độ tu luyện nội công và các chiêu đã học.",
+          "Điểm chiến tích và các trận luận võ."
+        ] },
+        { "type": "p", "text": "Tịnh tài đã cúng dường cũng được giữ theo tài khoản.", "needs": ["donation"] },
+        { "type": "p", "text": "Công đức đang có trên máy này được chuyển vào tài khoản ngay lần đăng nhập đầu tiên." },
+        { "type": "p", "text": "Tu luyện và luận võ cần đăng nhập Google." }
+      ]
+    },
+    {
+      "id": "glossary",
+      "title": "Bảng thuật ngữ",
+      "blocks": [
+        { "type": "terms", "items": [
+          { "term": "Công đức", "def": "Điểm tích được khi lễ Phật, tụng kinh, cúng dường. Có số hôm nay và số tổng." },
+          { "term": "Pháp tướng", "def": "Vầng hình hiện sau lưng khi tổng công đức đạt mốc." },
+          { "term": "Quỷ ám", "def": "Hình quỷ đi theo khi tổng công đức âm." },
+          { "term": "Hào quang", "def": "Vòng sáng quanh người vừa cúng dường. Có nhiều tầng, sáng trong vài phút.", "needs": ["donation"] },
+          { "term": "Tịnh tài", "def": "Tiền cúng dường." },
+          { "term": "Tùy hỷ", "def": "Vui theo việc lành của người khác. Chạm \"Tùy hỷ\" dưới lời nguyện." },
+          { "term": "Đạo hữu", "def": "Người cùng vào chùa." },
+          { "term": "Map", "def": "Khu vực đi lại được: Chánh điện, Sân chùa, Tàng Kinh Các và Sân đấu." },
+          { "term": "Nội công", "def": "Hệ thống tu luyện ở Võ Học Các. Có cấp từ 1 tới {MARTIAL.LEVEL_MAX}.", "needs": ["martial"] },
+          { "term": "Công lực", "def": "Điểm kinh nghiệm nội công. Đủ thì lên cấp.", "needs": ["martial"] },
+          { "term": "Cảnh giới", "def": "Tên của một cấp nội công. Chỉ dùng cho nội công.", "needs": ["martial"] },
+          { "term": "Tâm đắc", "def": "Điểm hiểu biết từng nhánh Cương, Tốc, Nhu. Cần để học chiêu khó.", "needs": ["martial"] },
+          { "term": "Cương · Tốc · Nhu", "def": "Ba nhánh võ: mạnh và chịu đòn, nhanh và né, mềm và phản đòn.", "needs": ["martial"] },
+          { "term": "Chiêu · Bộ chiêu", "def": "Một đòn võ. Bộ chiêu là 4 chiêu mang vào trận.", "needs": ["martial"] },
+          { "term": "Thành thạo", "def": "Mức luyện một chiêu, cao nhất là \"Đại viên mãn\".", "needs": ["martial"] },
+          { "term": "Nội lực", "def": "Thanh năng lượng trong trận. Mỗi chiêu tốn nội lực.", "needs": ["pk"] },
+          { "term": "Luận võ (PK)", "def": "Đấu một đối một ở Sân đấu.", "needs": ["pk"] },
+          { "term": "Điểm chiến tích", "def": "{MARTIAL.WIN_POINTS} điểm mỗi trận thắng, {MARTIAL.DRAW_POINTS} điểm mỗi trận hòa ở Sân đấu.", "needs": ["pk"] },
+          { "term": "Bậc chiến tích", "def": "Bậc xếp theo điểm chiến tích.", "needs": ["pk"] },
+          { "term": "Danh hiệu", "def": "Tên dành cho người đứng đầu, theo lịch sử hoặc hiện tại.", "needs": ["titles"] },
+          { "term": "Mùa", "def": "Một tháng âm lịch, từ mùng 1 đến cuối tháng.", "needs": ["titles"] },
+          { "term": "Kỳ Đạo", "def": "Năm môn cờ đánh ở bàn đá ngoài Sân chùa.", "needs": ["kydao"] },
+          { "term": "Elo", "def": "Điểm sức cờ từng môn. Thắng người mạnh hơn được cộng nhiều.", "needs": ["kydao"] },
+          { "term": "Ván xếp hạng · giao hữu", "def": "Ván có tính Elo và ván không tính Elo.", "needs": ["kydao"] }
+        ] }
+      ]
+    }
+  ]
+}

@@ -54,7 +54,7 @@
 | T-056 | Nội dung luận giải tử vi | ✅ Gộp tích hợp (chờ PR) | P1 | CORE + FORTUNE | Claude Sonnet 5.5 (thay Gemini Flash) |
 | T-057 | Giao diện lá số tử vi | ⏳ T-054, T-056, T-053 | P1 | CORE + FORTUNE | — |
 | T-060 | Quy tắc chữ, bảng thuật ngữ, danh sách bí mật | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + GUIDE + DOCS | Claude Sonnet 5.5 (thay Gemini Flash) |
-| T-061 | Sổ tay trong game (nút "?") | ⏳ T-060, T-011 | P1 | CORE + GUIDE + NAV | — |
+| T-061 | Sổ tay trong game (nút "?") | ✅ Gộp tích hợp (chờ PR) | P1 | CORE + GUIDE + NAV | Claude Sonnet 5.5 |
 | T-062 | Gợi ý lần đầu, nhãn tên không đè nhau | ⏳ T-061, T-043 | P1 | CORE + GUIDE + HALL | — |
 | T-063 | Viết lại chữ Võ Học Các | ⏳ T-060, T-061 | P1 | CORE + GUIDE + MARTIAL | — |
 | T-064 | Viết lại chữ Sân đấu | ⏳ T-012, T-060, T-061 | P1 | CORE + GUIDE + PK | — |
@@ -832,13 +832,13 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: sửa mã.
 
 ### T-061 · Làm Sổ tay trong game (nút "?")
-- **Trạng thái**: ⏳ Chờ T-060, T-011
+- **Trạng thái**: ✅ Gộp vào nhánh tích hợp (chờ PR). Thợ: Claude Sonnet 5.5 (dựng + viết nội dung thay Gemini Flash). Soát: Sol PASS; Opus 5.5 thay Argon còn 2 câu sai với mã sau 2 vòng → giao sửa. Điều phối chạy thật: nút '?' mở Sổ tay 10 mục, không lỗi console.
 - **Ưu tiên**: P1 · **Đợt**: 2
 - **Gói ngữ cảnh**: CORE + GUIDE + NAV
 - **Khu vực chạm**: public/js/guide.js (mới, global `Guide`), public/data/so-tay.vi.json (mới), public/css/guide.css (mới, tiền tố `gd-`), public/index.html (nút "?" ở `header.top`, `#dlg-guide`, `<script>`, `<link>`, `?v=`), public/js/app.js (vùng thanh trên: gắn nút), public/js/martial.js (chỉ thêm `IDLE_FORFEIT_TURNS` vào `MARTIAL.PK`), test/sync-constants.test.js (ca `IDLE_FORFEIT_TURNS` khớp `lib/pk/rules.js`)
 - **Phụ thuộc**: T-060, T-011
 - **Thợ**: Sonnet 5.5 (high) dựng + Gemini Flash viết `so-tay.vi.json` · **Soát**: Gemini Argon + Sol 6.1
-- **Người làm**: — · **Nhánh**: —
+- **Người làm**: Claude Sonnet 5.5 · **Nhánh**: `claude/T-061-so-tay`
 - **Thiết kế**: KH §8.4, D15
 - **Mục tiêu**: một chỗ đọc đủ mọi cơ chế, viết cho người mới.
 - **Tiêu chí xong**:
