@@ -49,7 +49,7 @@
 | T-051 | Máy chủ: rút tarot theo hạt giống, giới hạn xin xăm | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + FORTUNE | Claude Sonnet 5.5 |
 | T-052 | Nội dung 78 lá tarot theo 8 chủ đề | ✅ Gộp tích hợp (chờ PR) | P1 | CORE + FORTUNE | Claude Sonnet 5.5 (thay Gemini Flash) |
 | T-053 | Giao diện tarot theo chủ đề | ✅ Gộp tích hợp (chờ PR) | P1 | CORE + FORTUNE | Claude Sonnet 5.5 |
-| T-054 | Bộ máy an sao Tử Vi | ⏳ T-050 | P0 | CORE + FORTUNE | — |
+| T-054 | Bộ máy an sao Tử Vi | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + FORTUNE | Claude Sonnet 5.5 (thay Codex terra 6.1) |
 | T-055 | Đối chiếu bảng tử vi, lập lá số mẫu 👤 | 🔵 Sẵn sàng | P0 | CORE + FORTUNE + DOCS | — |
 | T-056 | Nội dung luận giải tử vi | ✅ Gộp tích hợp (chờ PR) | P1 | CORE + FORTUNE | Claude Sonnet 5.5 (thay Gemini Flash) |
 | T-057 | Giao diện lá số tử vi | ⏳ T-054, T-056, T-053 | P1 | CORE + FORTUNE | — |
@@ -741,13 +741,13 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: ảnh lá bài.
 
 ### T-054 · Viết bộ máy an sao Tử Vi
-- **Trạng thái**: ⏳ Chờ T-050
+- **Trạng thái**: ✅ Gộp vào nhánh tích hợp (chờ PR). Thợ: Claude Sonnet 5.5 thay Codex terra 6.1 (kênh Codex hết hạn mức giữa chừng). Soát: Opus 5.5 thay Sol/Argon, PASS vòng 2. Điều phối kiểm tay: 10/2/1995 giờ Tý nam → Mệnh Dần, Mậu Dần Thành Đầu Thổ, Thổ ngũ cục; 4 ms/lá số. Phần so 12 lá số mẫu tự bỏ qua tới khi T-055 có fixture.
 - **Ưu tiên**: P0 · **Đợt**: 2
 - **Gói ngữ cảnh**: CORE + FORTUNE
 - **Khu vực chạm**: public/js/tuvi.js (mới, UMD `TUVI`), test/tuvi.test.js (mới), tools/tuvi-crosscheck/ (mới, chỉ dùng khi phát triển, không thêm vào `package.json`)
 - **Phụ thuộc**: T-050; bảng và lá số mẫu từ T-055 (gộp test khi T-055 xong)
 - **Thợ**: Codex terra 6.1 · **Soát**: Sol 6.1 + Gemini Argon
-- **Người làm**: — · **Nhánh**: —
+- **Người làm**: Claude Sonnet 5.5 (thay Codex terra 6.1) · **Nhánh**: `claude/T-054-may-an-sao`
 - **Thiết kế**: KH §7.3, Phụ lục B, D11, `docs/TU-VI-QUY-UOC.md`
 - **Mục tiêu**: lập lá số Tử Vi Đẩu Số đúng trường phái Việt, tính trên trình duyệt.
 - **Tiêu chí xong**:
