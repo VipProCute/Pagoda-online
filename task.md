@@ -45,7 +45,7 @@
 | T-042 | Hiện danh hiệu trên đầu, hộp người chơi, Sân đấu | ⏳ T-041, T-031, T-034, T-064 | P1 | CORE + RANK + HALL | — |
 | T-043 | Bia Bảng Vàng ở Sân chùa | ⏳ T-042 | P1 | CORE + RANK + HALL | — |
 | T-044 | Màn "Kẻ mạnh nhất lịch sử… đối đầu kẻ mạnh nhất hiện tại" | ⏳ T-041, T-030 | P1 | CORE + RANK + PK + KYDAO | — |
-| T-050 | Viết lại lịch âm (UTC+8 trước 1968, can chi đủ) | ⏳ T-004 | P0 | CORE + FORTUNE | — |
+| T-050 | Viết lại lịch âm (UTC+8 trước 1968, can chi đủ) | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + FORTUNE | Codex terra 6.1 + Claude Sonnet 5.5 |
 | T-051 | Máy chủ: rút tarot theo hạt giống, giới hạn xin xăm | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + FORTUNE | Claude Sonnet 5.5 |
 | T-052 | Nội dung 78 lá tarot theo 8 chủ đề | 🔵 Sẵn sàng | P1 | CORE + FORTUNE | — |
 | T-053 | Giao diện tarot theo chủ đề | ⏳ T-051, T-052, T-010 | P1 | CORE + FORTUNE | — |
@@ -666,13 +666,13 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 ### Epic BT · Bói toán
 
 ### T-050 · Viết lại lịch âm (UTC+8 trước 1968, can chi đủ)
-- **Trạng thái**: ⏳ Chờ T-004
+- **Trạng thái**: ✅ Gộp vào nhánh tích hợp (chờ PR). Thợ: Codex terra 6.1 (gpt-6.1-terra), sửa vòng 1 bằng Claude Sonnet 5.5. Soát: Sol 6.1 (vòng 1), Opus 5.5 thay Sol/Argon (vòng 2) PASS. Điều phối kiểm tay: 10/2/1995 → 11/1/1995, Tết 1968 → 29/1, 28/1/1903 → 30/12/1902 (UTC+8). Còn mở 👤: có đổi 1900–1928 sang giờ Bắc Kinh không (ghi đầu lunar.js).
 - **Ưu tiên**: P0 · **Đợt**: 1
 - **Gói ngữ cảnh**: CORE + FORTUNE
 - **Khu vực chạm**: public/js/lunar.js, test/lunar.test.js (mới), public/index.html (thêm `?v=` cho `lunar.js`)
 - **Phụ thuộc**: T-004; D12 (mặc định: viết lại độc lập)
 - **Thợ**: Codex terra 6.1 · **Soát**: Sol 6.1 + Gemini Argon (mốc múi giờ, bảng Tết)
-- **Người làm**: — · **Nhánh**: —
+- **Người làm**: Codex terra 6.1 + Claude Sonnet 5.5 · **Nhánh**: `claude/T-050-lich-am`
 - **Thiết kế**: KH §7.3 "Lịch âm", §2.3
 - **Mục tiêu**: lịch âm đúng mọi năm 1900–2100 và đủ hàm cho tử vi, mùa, lễ hội.
 - **Tiêu chí xong**:
