@@ -27,7 +27,7 @@
 | T-020 | Chốt giao thức Kỳ Đạo | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + KYDAO + DOCS | Claude Sonnet 5.5 |
 | T-021 | Luật cờ vua thuần, kiểm perft | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + KYDAO | Claude Sonnet 5.5 + Codex terra 6.1 |
 | T-022 | Luật cờ tướng thuần, perft, ký hiệu Việt | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + KYDAO | Codex terra 6.1 + Claude Sonnet 5.5 |
-| T-023 | Nghiên cứu luật cờ tướng úp (揭棋) | 🔵 Sẵn sàng | P1 | CORE + KYDAO + DOCS | — |
+| T-023 | Nghiên cứu luật cờ tướng úp (揭棋) | ✅ Gộp tích hợp (chờ PR) | P1 | CORE + KYDAO + DOCS | GLM Flash + Claude Sonnet 5.5 |
 | T-024 | Biến thể cờ tướng úp | ⏳ T-022, T-023 | P1 | CORE + KYDAO | — |
 | T-025 | Luật cờ vây thuần | ✅ Gộp tích hợp (chờ PR) | P1 | CORE + KYDAO | Codex terra 6.1 + Claude Sonnet 5.5 |
 | T-026 | Luật cờ caro thuần | ✅ Gộp tích hợp (chờ PR) | P1 | CORE + KYDAO | Claude Haiku 5.5 (thay GLM Flash) |
@@ -337,13 +337,13 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: cờ úp (T-024), giao diện.
 
 ### T-023 · Nghiên cứu luật cờ tướng úp (揭棋)
-- **Trạng thái**: 🔵 Sẵn sàng
+- **Trạng thái**: ✅ Gộp vào nhánh tích hợp (chờ PR). Thợ: GLM Flash (glm-4.5-flash) 2 vòng chưa đạt; Điều phối giao Claude Sonnet 5.5 viết lại. Soát: Opus 5.5 thay Gemini Argon. Luật theo D7; các điểm 👤 ở §7 của tài liệu (hòa 40 hồi hay 60 nước, lặp thế, ăn quân úp chỉ bên ăn biết).
 - **Ưu tiên**: P1 · **Đợt**: 1
 - **Gói ngữ cảnh**: CORE + KYDAO + DOCS
 - **Khu vực chạm**: docs/ky-dao/CO-TUONG-UP.md (mới)
 - **Phụ thuộc**: không
 - **Thợ**: GLM Flash · **Soát**: Gemini Argon
-- **Người làm**: — · **Nhánh**: —
+- **Người làm**: GLM Flash + Claude Sonnet 5.5 · **Nhánh**: `claude/T-023-nghien-cuu-co-up`
 - **Thiết kế**: KH §5.4 "Cờ tướng úp", D7
 - **Mục tiêu**: bộ luật cờ úp rõ ràng, có nguồn, để T-024 làm không phải đoán.
 - **Tiêu chí xong**:
