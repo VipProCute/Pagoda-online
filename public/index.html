@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&family=Cormorant+Garamond:wght@500;600;700&display=swap">
-<link rel="stylesheet" href="/css/style.css?v=voice2">
+<link rel="stylesheet" href="/css/style.css?v=mapbar3">
 <link rel="stylesheet" href="/css/celebrate.css">
 <link rel="stylesheet" href="/css/account.css?v=vohoc5">
 <link rel="stylesheet" href="/css/places.css?v=vohoc5">
@@ -43,17 +43,7 @@
 <main class="layout">
   <section class="stage" id="stage" aria-label="Chánh điện">
     <canvas id="hall" role="img" aria-label="Chánh điện: tượng Phật, bàn thờ, bát hương và những người đang lễ Phật"></canvas>
-    <nav class="scene-nav" aria-label="Di chuyển và xem bói">
-      <button type="button" class="btn small gold" id="go-yard">Ra sân chùa →</button>
-      <button type="button" class="btn small gold" id="go-hall" hidden>← Vào chánh điện</button>
-      <button type="button" class="btn small" id="go-library">Tàng Kinh Các</button>
-      <button type="button" class="btn small" id="open-lot">Xin xăm</button>
-      <button type="button" class="btn small" id="open-horoscope" hidden>Thầy tử vi</button>
-      <button type="button" class="btn small" id="open-tarot" hidden>Thầy Tarot</button>
-      <button type="button" class="btn small gold" id="lib-sit" hidden>Ngồi thiền</button>
-      <button type="button" class="btn small" id="lib-read" hidden>Đọc kinh</button>
-      <button type="button" class="btn small" id="lib-dojo" hidden>Học võ</button>
-    </nav>
+    <!-- thanh đổi map: MapBar.mount() dựng nút vào đây (public/js/mapbar.js) -->
     <div class="medi" id="medi" hidden></div>
     <div class="conn" id="conn" hidden>Mất kết nối, đang thử lại…</div>
     <div class="chantbar" id="chantbar" hidden>
@@ -71,7 +61,7 @@
     </div>
     <div class="ticker" id="ticker" aria-live="polite"></div>
     <div class="today" id="todayStats"></div>
-    <p class="stage-hint" id="stageHint">Chạm sàn để đi lại · chạm bát hương để thắp nhang · chạm tượng Phật để vái lạy · chạm tủ Tàng Kinh Các để vào trong</p>
+    <p class="stage-hint" id="stageHint"><span id="stageHintText">Chạm sàn để đi lại · chạm bát hương để thắp nhang · chạm tượng Phật để vái lạy · chạm tủ Tàng Kinh Các để vào trong</span><button type="button" class="hint-x" id="stageHintX" aria-label="Đóng gợi ý">✕</button></p>
   </section>
 
   <aside class="side" aria-label="Cộng đồng">
@@ -508,8 +498,9 @@
 <script src="/js/aura.js"></script>
 <script src="/js/merit.js?v=npc2"></script>
 <script src="/js/celebrate.js"></script>
-<script src="/js/hall.js?v=secret-npc1"></script>
-<script src="/js/fortune.js?v=vohoc5"></script>
+<script src="/js/hall.js?v=mapbar3"></script>
+<script src="/js/mapbar.js?v=mapbar1"></script>
+<script src="/js/fortune.js?v=mapbar2"></script>
 <script src="/js/voice.js?v=pkprod1"></script>
 <script src="/js/library.js"></script>
 <script src="/js/martial.js?v=pk-titles1"></script>
@@ -517,6 +508,6 @@
 <script src="/js/meditate.js?v=vohoc5"></script>
 <script src="/js/dojo.js?v=pk-titles1"></script>
 <script src="/js/arena.js?v=secret-pk1"></script>
-<script src="/js/app.js?v=secret-npc1"></script>
+<script src="/js/app.js?v=mapbar4"></script>
 </body>
 </html>

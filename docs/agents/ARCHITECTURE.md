@@ -108,13 +108,14 @@ Hợp đồng chi tiết của võ học và PK (payload, thứ tự gói tin): 
 
 ## 6. Điểm phải đồng bộ bằng tay
 
-Test `test/sync-constants.test.js` (T-005) tự kiểm: bồ đoàn, hằng số PK (`rules.js` ↔ `MARTIAL.PK` ↔ đầu `arena.js`), danh sách nơi. Thêm điểm đồng bộ mới thì thêm ca vào test đó (helper đọc mã nguồn nằm sẵn trong file; khi nhiều file cần dùng thì chuyển sang `test/helpers/source.js`).
+Test `test/sync-constants.test.js` (T-005) tự kiểm: bồ đoàn, hằng số PK (`rules.js` ↔ `MARTIAL.PK` ↔ đầu `arena.js`), danh sách nơi, `MapBar.MAPS` ↔ `SCENES`/`PLACES`. Thêm điểm đồng bộ mới thì thêm ca vào test đó (helper đọc mã nguồn nằm sẵn trong file; khi nhiều file cần dùng thì chuyển sang `test/helpers/source.js`).
 
 | Giá trị | Nơi 1 | Nơi 2 (và 3) |
 |---|---|---|
 | Bồ đoàn | `LIB_SEATS` trong `server.js` | `LIB_SEATS` trong `public/js/hall.js` |
 | Danh sách nơi | `PLACES` trong `server.js` | vòng lặp gọi `Places.register(name, …)` trong `public/js/app.js` (danh sách `[['dojo', …], ['arena', …]]`; `hall` là mặc định) |
 | Cảnh | `SCENES` trong `server.js` | hàm vẽ cảnh trong `hall.js`, `goScene` trong `app.js` |
+| Thanh đổi map | `MapBar.MAPS` trong `public/js/mapbar.js` (nơi duy nhất khai báo map; app.js chỉ gọi `MapBar.configure({ go })` một lần rồi `MapBar.mount(el)`) | mỗi map `kind:'scene'` phải có trong `SCENES` (đúng thứ tự), mỗi map `kind:'place'` phải có trong `PLACES` (`server.js`); map mới thêm cả hàm vẽ ở `hall.js` |
 | Hằng số PK | `lib/pk/rules.js` (`RAGE_MAX`, `EXPOSED_PCT`, `KC_BONUS`, `KC_TURNS`…) | `MARTIAL.PK` trong `public/js/martial.js`; `RAGE_MAX`, `EXPOSED_PCT`, `KC_PCT`, `KC_TURNS` đầu `public/js/arena.js` (ở đây ghi phần trăm nguyên: `KC_PCT = 25` ↔ `KC_BONUS: 0.25`) |
 | Bậc quỷ ↔ PK | `public/js/merit.js` | `lib/pk/buffs.js` |
 | Bảng điểm công đức | `MERITS.EARN` trong `merit.js` | README "Công đức", bảng luật trong giao diện |

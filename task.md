@@ -21,7 +21,7 @@
 | T-008 | Lệnh chạy ui-harness có sẵn trong package.json | ⚪ Hộp thư đến | P2 | CORE + OPS + PK | — |
 | T-009 | Rà các bản làm việc rời trên máy | 🔵 Sẵn sàng 👤 | P2 | CORE | — |
 | **Đợt 2026-11** | | | | | |
-| T-010 | Làm thanh đổi map đồng bộ (4 nút), bỏ nút Xin xăm | ⏳ T-004 | P0 | CORE + NAV + HALL | — |
+| T-010 | Làm thanh đổi map đồng bộ (4 nút), bỏ nút Xin xăm | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + NAV + HALL | Claude Sonnet 5.5 |
 | T-011 | Gọn thanh dưới còn 9 nút lễ Phật, tab Khám phá | ⏳ T-010 | P0 | CORE + NAV | — |
 | T-012 | Thanh đổi map trong Sân đấu | ⏳ T-010, T-011 | P1 | CORE + NAV + PK | — |
 | T-020 | Chốt giao thức Kỳ Đạo | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + KYDAO + DOCS | Claude Sonnet 5.5 |
@@ -217,13 +217,13 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 ### Epic UI · Giao diện điều hướng
 
 ### T-010 · Làm thanh đổi map đồng bộ (4 nút), bỏ nút Xin xăm
-- **Trạng thái**: ⏳ Chờ T-004
+- **Trạng thái**: ✅ Gộp vào nhánh tích hợp (chờ PR). Thợ: Claude Sonnet 5.5 (qua proxy). Soát: Sol 6.1 vòng 1 (2 lỗi), Opus 5.5 thay Sol/Argon các vòng sau (kênh Codex và Antigravity hết hạn mức). Điều phối tự chạy thật: đổi map 10 lần không lỗi console, 375×812 bốn nút 83×44px một hàng, dải gợi ý có ✕; test chọn bồ đoàn gần nhất được giao viết lại thành test hành vi (Điều phối thử làm hỏng: đỏ).
 - **Ưu tiên**: P0 · **Đợt**: 1
 - **Gói ngữ cảnh**: CORE + NAV + HALL
 - **Khu vực chạm**: public/js/mapbar.js (mới), public/index.html (khối `nav.scene-nav`, `<script>`, `?v=`), public/js/app.js (`SCENE_HINT`, `applyScene`, `goScene`, các listener của scene-nav, `sitAt`), public/js/fortune.js (chỗ gắn `#go-yard`/`#go-hall`), public/css/style.css (`.scene-nav` → `.mapbar`, `.stage-hint` trên điện thoại), test/sync-constants.test.js (ca `MapBar.MAPS` ↔ `SCENES`/`PLACES`, nếu T-005 đã có file), docs/agents/ARCHITECTURE.md (§6: dòng `MapBar.MAPS`), README.md (dòng "chạm nút ở thanh dưới…"), docs/VO-HOC.md (dòng 13)
 - **Phụ thuộc**: T-004 (đã xong: `npm run check` tự quét, không cần sửa `package.json`)
 - **Thợ**: Sonnet 5.5 (high) · **Soát**: Sol 6.1 + Gemini Argon
-- **Người làm**: — · **Nhánh**: —
+- **Người làm**: Claude Sonnet 5.5 · **Nhánh**: `claude/T-010-thanh-doi-map`
 - **Thiết kế**: KH §4.1, quyết định D2
 - **Mục tiêu**: một thanh 4 nút cùng kiểu (Chánh điện · Sân chùa · Tàng Kinh Các · Sân đấu) ở mọi map, chỉ để đổi map. Bỏ nút "Xin xăm" và các nút việc trên cảnh; việc làm bằng chạm vật trong cảnh (xin xăm chỉ bằng hũ xăm trên bàn thờ).
 - **Tiêu chí xong**:
