@@ -311,7 +311,7 @@
 
   /* ---------- kết nối ---------- */
   const socket = io({ transports: ['websocket', 'polling'] });
-  const fortune = Fortune.init({ socket, getMe: () => me, getJoined: () => joined, setScene: applyScene, getScene: () => curScene, toast });
+  const fortune = Fortune.init({ socket, getMe: () => me, getJoined: () => joined, setScene: applyScene, getScene: () => curScene, toast, getNow: serverNow });
   socket.on('pscene', d => { Hall.playerScene(d); Voice.refresh(); });
   async function syncTime() {
     let best = null;

@@ -42,7 +42,7 @@ Thử nhanh trên máy: `CULTIVATION_TIME_SCALE=0.001`, `PK_TIME_SCALE=0.05`, `M
 **Kiến trúc**
 8. Socket handler trả lỗi nghiệp vụ bằng `ack({ ok:false, reason:'…tiếng Việt…', code? })`, **không ném lỗi**. `code:'login'` để giao diện mời đăng nhập.
 9. Logic thuần (`lib/martial/service.js`, `lib/pk/engine.js`, `buffs.js`, `rules.js`) không đụng socket, timer, I/O. Thời gian và rng được tiêm vào (`now`, `setTimer`, `rng`) để test được.
-10. File dùng chung Node + trình duyệt (`public/js/martial.js`, `aura.js`, `merit.js`, `chants.js`, `lunar.js`) giữ dạng IIFE/UMD, không phụ thuộc gì, không đụng DOM ở mức module.
+10. File dùng chung Node + trình duyệt (`public/js/martial.js`, `aura.js`, `merit.js`, `chants.js`, `lunar.js`, `tarot.js`) giữ dạng IIFE/UMD, không phụ thuộc gì, không đụng DOM ở mức module.
 11. **Thêm trường lưu bền:** trường lồng trong section có sẵn thì tự lưu (nhớ thêm bước mặc định cho dữ liệu cũ, ví dụ `norm()` trong service.js). **Thêm khóa cấp cao mới** trong `db` (hoặc trong `db.martial`) thì phải thêm vào `fresh()` + `SECTIONS` + `adopt()` ở `lib/store-sections.js`, nếu không PostgreSQL âm thầm bỏ mất.
 12. **Những chỗ phải sửa đồng bộ bằng tay** (sửa một nơi là sửa cả nơi kia, danh sách đầy đủ ở ARCHITECTURE.md §6): `LIB_SEATS` (server.js ↔ hall.js) · `PLACES`/`SCENES` (server.js ↔ đăng ký phía trình duyệt) · hằng số PK (`lib/pk/rules.js` ↔ `MARTIAL.PK` trong martial.js ↔ đầu `arena.js`) · giao thức võ học (mã ↔ `docs/VO-HOC-GIAO-THUC.md`) · fixture `tools/ui-harness/arena` sau khi đổi engine.
 13. Sửa file JS/CSS trong `public/` thì **tăng `?v=` tương ứng** trong `public/index.html` (static cache 10 phút).
