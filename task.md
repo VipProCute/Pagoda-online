@@ -30,7 +30,7 @@
 | T-023 | Nghiên cứu luật cờ tướng úp (揭棋) | 🔵 Sẵn sàng | P1 | CORE + KYDAO + DOCS | — |
 | T-024 | Biến thể cờ tướng úp | ⏳ T-022, T-023 | P1 | CORE + KYDAO | — |
 | T-025 | Luật cờ vây thuần | ⏳ T-004 | P1 | CORE + KYDAO | — |
-| T-026 | Luật cờ caro thuần | ⏳ T-004 | P1 | CORE + KYDAO | — |
+| T-026 | Luật cờ caro thuần | ✅ Gộp tích hợp (chờ PR) | P1 | CORE + KYDAO | Claude Haiku 5.5 (thay GLM Flash) |
 | T-027 | Tính Elo và điều kiện xếp hạng | ⏳ T-004 | P0 | CORE + KYDAO | — |
 | T-028 | Bộ quản lý ván cờ | ⏳ T-020, T-021, T-022, T-027 | P0 | CORE + KYDAO + PK | — |
 | T-029 | Lưu bền dữ liệu Kỳ Đạo và kỷ lục 👤 merge | ⏳ T-020 | P0 | CORE + STORE | — |
@@ -388,13 +388,13 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: chấp quân, giao diện.
 
 ### T-026 · Viết luật cờ caro thuần
-- **Trạng thái**: ⏳ Chờ T-004
+- **Trạng thái**: ✅ Gộp vào nhánh tích hợp (chờ PR). Thợ: Claude Haiku 5.5 (làm trước khi chuyển sang proxy). Soát: Sol 6.1 (gpt-6.1-sol) PASS vòng 1.
 - **Ưu tiên**: P1 · **Đợt**: 1
 - **Gói ngữ cảnh**: CORE + KYDAO
 - **Khu vực chạm**: public/js/kydao/gomoku.js (mới), test/kydao-gomoku.test.js (mới)
 - **Phụ thuộc**: T-004
 - **Thợ**: GLM Flash · **Soát**: Sol 6.1
-- **Người làm**: — · **Nhánh**: —
+- **Người làm**: Claude Haiku 5.5 (thay GLM Flash) · **Nhánh**: `claude/T-026-luat-caro`
 - **Thiết kế**: KH §5.4 "Cờ caro", D8
 - **Mục tiêu**: caro 15×15 luật "chặn hai đầu".
 - **Tiêu chí xong**:
