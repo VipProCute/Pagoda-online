@@ -43,7 +43,7 @@
 - **Đọc kỹ**: `AGENTS.md` (tự nạp với Codex; Claude nạp qua `CLAUDE.md`), thẻ việc của mình trong `task.md`.
 - **Tra khi cần**: `docs/agents/ARCHITECTURE.md` (mục liên quan), `package.json` (scripts), `.env.example`.
 - **Test**: `npm run check`.
-- **Bẫy**: PowerShell 5.1 làm hỏng dấu tiếng Việt khi đọc/ghi; file JS mới phải thêm vào `check`; sửa `public/` phải tăng `?v=`.
+- **Bẫy**: PowerShell 5.1 làm hỏng dấu tiếng Việt khi đọc/ghi; `npm run check` tự quét file JS (`tools/check.js`), không thêm tay; sửa `public/` phải tăng `?v=`.
 
 ## `HALL` · Chánh điện và Canvas
 
@@ -57,7 +57,7 @@
 - **Đọc kỹ**: `public/js/places.js`, đoạn `Places.register` và `martialHost` trong `public/js/app.js`, `docs/VO-HOC-GIAO-THUC.md` §1 và §6 (hợp đồng module), `public/css/places.css`.
 - **Tra khi cần**: `server.js` (`PLACES`, handler `place:set`, phát `pplace`), một nơi mẫu (`public/js/dojo.js` phần `init`/`mount`/`show`/`hide`), `public/index.html` (khung `<main class="place" id="place-…" hidden>` và thứ tự script).
 - **Test**: thêm test e2e theo mẫu `test/e2e-scene.test.js`.
-- **Bẫy**: không đụng chánh điện; thêm tên vào `PLACES`; thêm `<script>` đúng thứ tự (trước `app.js`) và vào `check`; module tự đăng ký `socket.on` trong `init`.
+- **Bẫy**: không đụng chánh điện; thêm tên vào `PLACES`; thêm `<script>` đúng thứ tự (trước `app.js`); module tự đăng ký `socket.on` trong `init`.
 
 ## `RITUAL` · Lễ Phật, công đức, mốc, hiệu ứng
 

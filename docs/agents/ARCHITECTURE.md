@@ -113,7 +113,6 @@ Hợp đồng chi tiết của võ học và PK (payload, thứ tự gói tin): 
 | Ảnh hào quang | `public/js/celebrate.js` | `public/css/celebrate.css` |
 | Giao thức võ học | `server.js`, `lib/pk/manager.js`, `dojo.js`, `arena.js` | `docs/VO-HOC-GIAO-THUC.md`; giả lập `tools/ui-harness/dojo/sim.js` |
 | Fixture sân đấu | `lib/pk/*`, `martial.js` | chạy lại `node tools/ui-harness/arena/gen-fixtures.js` |
-| Kiểm cú pháp | file JS mới | danh sách `check` trong `package.json` (hiện **thiếu** `lib/sweeper.js`) |
 | Cache trình duyệt | file trong `public/js`, `public/css` | `?v=` trong `public/index.html` |
 | Khóa dữ liệu cấp cao | `db.*` mới | `fresh()` + `SECTIONS` + `adopt()` trong `lib/store-sections.js` |
 
