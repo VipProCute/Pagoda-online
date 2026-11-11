@@ -36,7 +36,7 @@
 | T-029 | Lưu bền dữ liệu Kỳ Đạo và kỷ lục 👤 merge | ✅ Gộp tích hợp (chờ PR, 👤 merge) | P0 | CORE + STORE | Claude Sonnet 5.5 |
 | T-030 | Nối Kỳ Đạo vào máy chủ | ⏳ T-028, T-029, T-031, T-051 | P0 | CORE + KYDAO + HALL + AUTH | — |
 | T-031 | Vẽ bàn đá và ghế ở Sân chùa | ⏳ T-020 | P0 | CORE + HALL + KYDAO | — |
-| T-032 | Bảng bàn cờ: khung, cờ vua, cờ tướng | ⏳ T-020, T-021, T-022 | P0 | CORE + KYDAO | — |
+| T-032 | Bảng bàn cờ: khung, cờ vua, cờ tướng | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + KYDAO | Claude Sonnet 5.5 |
 | T-033 | Bảng bàn cờ: cờ vây, caro, cờ úp | ⏳ T-032, T-024, T-025, T-026 | P1 | CORE + KYDAO | — |
 | T-034 | Nối bảng cờ vào chùa | ⏳ T-030, T-031, T-032 | P0 | CORE + KYDAO + NAV | — |
 | T-035 | ui-harness cho bàn cờ | ⏳ T-032, T-033 | P1 | CORE + KYDAO + OPS | — |
@@ -505,13 +505,13 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: socket, bảng bàn cờ.
 
 ### T-032 · Bảng bàn cờ: khung, đồng hồ, cờ vua, cờ tướng
-- **Trạng thái**: ⏳ Chờ T-020, T-021, T-022
+- **Trạng thái**: ✅ Gộp vào nhánh tích hợp (chờ PR). Thợ: Claude Sonnet 5.5 (qua proxy). Soát: Opus 5.5 thay Argon/Sol, PASS vòng 2. Điều phối xem trang thử: cờ tướng (chữ Hán, sông, cung) và cờ vua 375×812 vừa màn, nút 44px, không lỗi console.
 - **Ưu tiên**: P0 · **Đợt**: 2
 - **Gói ngữ cảnh**: CORE + KYDAO
 - **Khu vực chạm**: public/js/kydao-ui.js (mới), public/js/kydao-draw.js (mới), public/css/kydao.css (mới), tools/ui-harness/kydao/index.html (trang thử tối thiểu), public/img/NOTICE.txt (nếu dùng bộ quân cburnett)
 - **Phụ thuộc**: T-020, T-021, T-022
 - **Thợ**: Sonnet 5.5 (high) · **Soát**: Gemini Argon + Sol 6.1
-- **Người làm**: — · **Nhánh**: —
+- **Người làm**: Claude Sonnet 5.5 · **Nhánh**: `claude/T-032-bang-ban-co`
 - **Thiết kế**: KH §5.9
 - **Mục tiêu**: bảng bàn cờ dùng được trên điện thoại và máy bàn (chưa nối vào `index.html`; T-034 nối).
 - **Tiêu chí xong**:
