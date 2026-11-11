@@ -16,7 +16,7 @@
 | T-003 | Ghi baseline test trên Node 22 | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + OPS | Claude Haiku (thay GLM Flash) |
 | T-004 | `npm run check` tự quét file, không liệt kê tay | ✅ Gộp tích hợp (chờ PR) | P1 | CORE + OPS | Claude Sonnet (thay Codex) |
 | T-005 | Test chống lệch các hằng số dùng chung | ✅ Gộp tích hợp (chờ PR) | P1 | CORE + PK + HALL | Claude Sonnet (thay Codex) |
-| T-006 | CI GitHub Actions chạy check + test | 🔵 Sẵn sàng | P1 | CORE + OPS | — |
+| T-006 | CI GitHub Actions chạy check + test | ✅ Gộp tích hợp (chờ PR) | P1 | CORE + OPS | Claude Sonnet |
 | T-007 | Sửa mục "Cấu trúc mã" trong README | 🔵 Sẵn sàng | P2 | CORE + DOCS | — |
 | T-008 | Lệnh chạy ui-harness có sẵn trong package.json | ⚪ Hộp thư đến | P2 | CORE + OPS + PK | — |
 | T-009 | Rà các bản làm việc rời trên máy | 🔵 Sẵn sàng 👤 | P2 | CORE | — |
@@ -158,7 +158,7 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ghi chú (đợt 2026-11)**: Thợ Codex terra 6.1, Soát Sol 6.1. Sau khi T-010 và T-031 xong sẽ có thêm hai điểm đồng bộ: `MapBar.MAPS` (`public/js/mapbar.js`) ↔ `SCENES`/`PLACES` của `server.js`, và `YARD_TABLES` (`server.js` ↔ `public/js/hall.js`). Thẻ nào xong sau thì thêm ca kiểm vào `test/sync-constants.test.js`.
 
 ### T-006 · CI GitHub Actions chạy check + test
-- **Trạng thái**: 🔵 Sẵn sàng
+- **Trạng thái**: ✅ Gộp vào nhánh tích hợp (chờ PR). Soát (Opus thay Sol): PASS vòng 1. Chưa chạy thật trên GitHub Actions; lần chạy đầu sẽ cho baseline Node 22 + PostgreSQL. Nếu 3 test của T-068 cũng đỏ trên Linux thì CI đỏ cho tới khi T-068 xong. Người làm: Claude Sonnet 5.5, nhánh `claude/T-006-ci`.
 - **Ưu tiên**: P1
 - **Gói ngữ cảnh**: CORE + OPS
 - **Khu vực chạm**: .github/workflows/ci.yml (mới)

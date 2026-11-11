@@ -133,6 +133,7 @@ Thợ viết ở cuối PR (và tóm tắt 1–2 dòng vào trường `Ghi chú`
 - [ ] Không lộ bí mật, không có số tài khoản/điện thoại thật, không có giọng mẫu cá nhân.
 - [ ] Bất biến ở `AGENTS.md` §3 còn nguyên (máy chủ trọng tài, cúng dường, `textContent`, moderation, rate limit).
 - [ ] Các điểm đồng bộ (`ARCHITECTURE.md` §6) đã sửa cả hai phía; `?v=` đã tăng nếu sửa `public/`.
+- [ ] **CI xanh** (`.github/workflows/ci.yml`: `npm run check` + `npm test`, có PostgreSQL 16) là điều kiện để soát; CI đỏ thì trả về cho thợ, chưa soát.
 - [ ] `npm run check` và test của gói chạy lại **trên máy soát** đều sạch; test mới thực sự kiểm hành vi mới (thử làm hỏng mã thì test phải đỏ).
 - [ ] Giao thức đổi thì `docs/VO-HOC-GIAO-THUC.md` đổi theo; số liệu đổi thì có kết quả `pk-sim`.
 - [ ] Chữ giao diện tiếng Việt có dấu, đúng giọng; có xử lý `prefers-reduced-motion` nếu thêm chuyển động.
