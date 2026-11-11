@@ -11,7 +11,8 @@ Trình duyệt (public/, JS thuần)                    Máy chủ (một tiến
 index.html ─ nạp script theo thứ tự cố định         server.js  Express + Socket.IO, luật chơi, timer
   app.js  (điều khiển chính, nạp CUỐI)  ◄─ socket ─►   ├─ lib/auth.js        Google OIDC, phiên cookie
   places.js (hall | dojo | arena)                      ├─ lib/account.js     gộp dữ liệu khách → tài khoản
-  hall.js (Canvas 2D: chánh điện, sân chùa,            ├─ lib/moderation.js  lọc chat/tên, trừ công đức
+  hall.js (Canvas 2D: chánh điện, sân chùa,            ├─ lib/records.js     tính người giữ 14 danh hiệu, điểm mùa (thuần)
+                                                       ├─ lib/moderation.js  lọc chat/tên, trừ công đức
            Tàng Kinh Các, sân đấu, nhân vật)           ├─ lib/announce.js    câu thông báo + gọi TTS VieNeu
   dojo.js (Võ Học Các) · arena.js (Sân đấu)            ├─ lib/fortune-queue.js  hàng đợi xin xăm
   audio.js · voice.js (WebRTC) · celebrate.js          ├─ lib/sweeper.js     sự kiện Tảo Địa Tăng

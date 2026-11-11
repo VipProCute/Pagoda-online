@@ -1420,3 +1420,62 @@ test('Tảo Địa Tăng: truyền một cảnh giới, một lần mỗi lần 
   assert.equal(restored.inheritSweeper('u1', encounter).already, true);
   assert.equal(restored.profile('u1').congLuc, 150);
 });
+
+/* ---------- điểm mùa PK và tên (T-040) ---------- */
+const { seasonKey } = require('../lib/records');
+
+test('recordResult: cộng điểm mùa (3 × thắng + hòa), đếm trận, ghi pkAt', () => {
+  const e = env();
+  e.svc.recordResult('u1', 'win');
+  e.svc.recordResult('u1', 'draw');
+  e.svc.recordResult('u1', 'loss');
+  const p = e.svc.profile('u1');
+  assert.equal(p.season.key, seasonKey(T0));
+  assert.equal(p.season.pts, 4);
+  assert.equal(p.season.n, 3);
+  assert.equal(p.pkAt, T0);
+  assert.equal(p.ptsAt, T0);
+});
+
+test('recordResult: thua chỉ cập nhật pkAt, không đổi ptsAt', () => {
+  const e = env();
+  e.svc.recordResult('u1', 'loss');
+  const p = e.svc.profile('u1');
+  assert.equal(p.pkAt, T0);
+  assert.equal(p.ptsAt, null);
+});
+
+test('norm: hồ sơ cũ thiếu season, name, pkAt được bù mặc định', () => {
+  const e = env();
+  e.db.martial.profiles.u1 = { uid: 'u1', congLuc: 5, wins: 2 };
+  const p = e.svc.profile('u1');
+  assert.equal(p.name, '');
+  assert.equal(p.pkAt, null);
+  assert.deepEqual(p.season, { key: seasonKey(T0), pts: 0, n: 0, at: null });
+});
+
+test('điểm mùa reset lười khi sang mùa mới, thắng/thua tích lũy giữ nguyên', () => {
+  const e = env();
+  e.svc.recordResult('u1', 'win');
+  e.clock.t += 40 * DAY; // chắc chắn sang tháng âm khác
+  assert.notEqual(seasonKey(e.clock.t), seasonKey(T0));
+  const p = e.svc.profile('u1');
+  assert.equal(p.season.pts, 0);
+  assert.equal(p.season.n, 0);
+  assert.equal(p.season.key, seasonKey(e.clock.t));
+  assert.equal(p.wins, 1);
+});
+
+test('setName: ghi tên gần nhất, cắt 60 ký tự, bỏ qua tên rỗng / uid lạ / hồ sơ chưa có', () => {
+  const e = env();
+  assert.equal(e.svc.setName('u1', 'Minh'), false); // chưa có hồ sơ: không tự tạo
+  e.svc.profile('u1', true);
+  assert.equal(e.svc.setName('u1', '  Minh Tâm  '), true);
+  assert.equal(e.svc.profile('u1').name, 'Minh Tâm');
+  assert.equal(e.svc.setName('u1', ''), false);
+  assert.equal(e.svc.setName('u1', 42), false);
+  assert.equal(e.svc.setName('__proto__', 'x'), false);
+  assert.equal(e.svc.profile('u1').name, 'Minh Tâm');
+  e.svc.setName('u1', 'a'.repeat(100));
+  assert.equal(e.svc.profile('u1').name.length, 60);
+});
