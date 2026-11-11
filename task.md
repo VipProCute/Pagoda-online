@@ -34,7 +34,7 @@
 | T-027 | Tính Elo và điều kiện xếp hạng | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + KYDAO | Claude Haiku 5.5 + GLM Flash + Claude Sonnet 5.5 |
 | T-028 | Bộ quản lý ván cờ | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + KYDAO + PK | Codex terra 6.1 + Claude Sonnet 5.5 |
 | T-029 | Lưu bền dữ liệu Kỳ Đạo và kỷ lục 👤 merge | ✅ Gộp tích hợp (chờ PR, 👤 merge) | P0 | CORE + STORE | Claude Sonnet 5.5 |
-| T-030 | Nối Kỳ Đạo vào máy chủ | ⏳ T-028, T-029, T-031, T-051 | P0 | CORE + KYDAO + HALL + AUTH | — |
+| T-030 | Nối Kỳ Đạo vào máy chủ | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + KYDAO + HALL + AUTH | Claude Sonnet 5.5 |
 | T-031 | Vẽ bàn đá và ghế ở Sân chùa | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + HALL + KYDAO | Claude Sonnet 5.5 |
 | T-032 | Bảng bàn cờ: khung, cờ vua, cờ tướng | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + KYDAO | Claude Sonnet 5.5 |
 | T-033 | Bảng bàn cờ: cờ vây, caro, cờ úp | ⏳ T-032, T-024, T-025, T-026 | P1 | CORE + KYDAO | — |
@@ -464,13 +464,13 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: logic ván, logic danh hiệu, sửa `server.js`.
 
 ### T-030 · Nối Kỳ Đạo vào máy chủ
-- **Trạng thái**: ⏳ Chờ T-028, T-029, T-031, T-051
+- **Trạng thái**: ✅ Gộp vào nhánh tích hợp (chờ PR). Thợ: Claude Sonnet 5.5 (qua proxy). Soát: Opus 5.5 thay Sol, PASS vòng 2. Sau gộp: npm test 702 test, 698 đạt, 0 trượt, 4 bỏ qua (PostgreSQL).
 - **Ưu tiên**: P0 · **Đợt**: 3
 - **Gói ngữ cảnh**: CORE + KYDAO + HALL + AUTH
 - **Khu vực chạm**: server.js (cấu hình `KYDAO_*`, `YARD_TABLES`, `kydaoOnly`, handler `kd:*`, tạo manager trong `main()`, `shutdown`, rời bàn khi đổi cảnh/place/ngắt kết nối, `linkGuest` gọi `mergeKydaoGuest` kể cả đường hoàn tác, `/api/config` thêm `kydao`), test/e2e-kydao.test.js (mới), test/sync-constants.test.js (thêm ca `YARD_TABLES`), docs/agents/ARCHITECTURE.md (§2, §4: chỉ thêm dòng của mình), README.md (biến môi trường)
 - **Phụ thuộc**: T-028, T-029, T-031 (`YARD_TABLES` phía `hall.js` có trước), T-051 (thứ tự `server.js`)
 - **Thợ**: Sonnet 5.5 (high) · **Soát**: Sol 6.1
-- **Người làm**: — · **Nhánh**: —
+- **Người làm**: Claude Sonnet 5.5 · **Nhánh**: `claude/T-030-noi-ky-dao-may-chu`
 - **Thiết kế**: KH §5.7, `docs/KY-DAO-GIAO-THUC.md`
 - **Mục tiêu**: chơi được cờ qua socket thật, máy chủ trọng tài.
 - **Tiêu chí xong**:

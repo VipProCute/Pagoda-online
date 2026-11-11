@@ -99,6 +99,14 @@ test('Bồ đoàn: LIB_SEATS của server.js khớp public/js/hall.js', () => {
   same(server, hall, 'LIB_SEATS (server.js)', 'LIB_SEATS (public/js/hall.js)');
 });
 
+/* ---------- bàn đá Kỳ Đạo ---------- */
+test('Bàn đá Kỳ Đạo: YARD_TABLES của server.js khớp public/js/hall.js', () => {
+  const server = readConst('server.js', 'YARD_TABLES');
+  const hall = readConst('public/js/hall.js', 'YARD_TABLES');
+  assert.ok(Array.isArray(server) && server.length === 4, 'YARD_TABLES trong server.js phải có 4 bàn');
+  same(server, hall, 'YARD_TABLES (server.js)', 'YARD_TABLES (public/js/hall.js)');
+});
+
 /* ---------- hằng số PK ---------- */
 test('Hằng số PK: đầu arena.js khớp lib/pk/rules.js (arena.js ghi phần trăm nguyên)', () => {
   const R = require('../lib/pk/rules');
