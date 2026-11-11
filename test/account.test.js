@@ -1,7 +1,7 @@
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { mergeMartialGuest, donatedBy } = require('../lib/account');
+const { mergeMartialGuest, mergeKydaoGuest, donatedBy } = require('../lib/account');
 const M = require('../public/js/martial');
 
 const tam = (c = 0, t = 0, n = 0) => ({ cuong: c, toc: t, nhu: n });
@@ -95,4 +95,72 @@ test('tịnh tài đã cúng dường: chỉ tính lượt đã xác nhận, g�
   assert.deepEqual(donatedBy(db, 'google:abc', accountOf), { count: 2, total: 75000, lastAt: 300 });
   assert.deepEqual(donatedBy(db, 'chua-ai', accountOf), { count: 0, total: 0, lastAt: null });
   assert.equal(donatedBy(db, 'khach-0001').total, 25000, 'không có accountOf thì tính theo uid gốc');
+});
+
+/* ---- Kỳ Đạo ---- */
+const stat = (n, r) => ({ r, peak: n >= 20 ? r : null, peakAt: n >= 20 ? 1 : null, n, w: n, l: 0, d: 0, last: 1 });
+const mkkd = () => ({ kydao: { ratings: {}, games: [], active: {} } });
+
+test('Kỳ Đạo: khách không có gì thì không gộp; uid xấu bị chặn', () => {
+  assert.equal(mergeKydaoGuest(mkkd(), 'khach-1', 'google:a'), null);
+  assert.equal(mergeKydaoGuest(mkkd(), 'google:a', 'google:a'), null);
+  assert.equal(mergeKydaoGuest(mkkd(), '__proto__', 'google:a'), null);
+  assert.equal(mergeKydaoGuest({}, 'khach-1', 'google:a'), null);
+});
+
+test('Kỳ Đạo: tài khoản chưa có Elo thì nhận nguyên bản của khách', () => {
+  const db = mkkd();
+  db.kydao.ratings['khach-1'] = { name: 'K', chess: stat(5, 1100) };
+  assert.equal(typeof mergeKydaoGuest(db, 'khach-1', 'google:a'), 'function');
+  assert.equal(db.kydao.ratings['khach-1'], undefined);
+  assert.equal(db.kydao.ratings['google:a'].chess.r, 1100);
+});
+
+test('Kỳ Đạo: mỗi môn lấy bản nhiều ván hơn, bằng nhau giữ tài khoản; hoàn tác trả lại như cũ', () => {
+  const db = mkkd();
+  db.kydao.ratings['google:a'] = { name: 'A', chess: stat(30, 1300), go: stat(3, 1000), gomoku: stat(4, 1010) };
+  db.kydao.ratings['khach-1'] = { name: 'K', chess: stat(10, 1500), go: stat(8, 1200), xiangqi: stat(6, 1111), gomoku: stat(4, 1999) };
+  db.kydao.active['khach-1'] = 77;
+  const before = clone(db);
+  const undo = mergeKydaoGuest(db, 'khach-1', 'google:a');
+  const a = db.kydao.ratings['google:a'];
+  assert.equal(a.name, 'A');
+  assert.equal(a.chess.r, 1300, 'tài khoản nhiều ván hơn');
+  assert.equal(a.go.r, 1200, 'khách nhiều ván hơn');
+  assert.equal(a.xiangqi.r, 1111, 'môn tài khoản chưa có');
+  assert.equal(a.gomoku.r, 1010, 'bằng ván: giữ tài khoản');
+  assert.equal(db.kydao.ratings['khach-1'], undefined);
+  assert.equal(db.kydao.active['google:a'], 77, 'ván dở chuyển sang tài khoản');
+  assert.equal(db.kydao.active['khach-1'], undefined);
+  undo();
+  assert.deepEqual(clone(db), before);
+});
+
+test('Kỳ Đạo: merge → tài khoản chơi xong ván → undo không xóa kết quả mới', () => {
+  const db = mkkd();
+  db.kydao.ratings['google:a'] = { name: 'A', chess: stat(30, 1300) };
+  db.kydao.ratings['khach-1'] = { name: 'K', go: stat(8, 1200) };
+  db.kydao.active['khach-1'] = 77;
+  const undo = mergeKydaoGuest(db, 'khach-1', 'google:a');
+  // sau khi gộp: tài khoản kết thúc ván 77 (Elo đổi, hết ván dở)
+  db.kydao.ratings['google:a'].chess = stat(31, 1310);
+  delete db.kydao.active['google:a'];
+  db.kydao.games.push({ id: 77 });
+  undo();
+  assert.equal(db.kydao.ratings['google:a'].chess.n, 31);
+  assert.equal(db.kydao.ratings['google:a'].chess.r, 1310);
+  assert.equal(db.kydao.active['google:a'], undefined);
+  assert.equal(db.kydao.active['khach-1'], undefined, 'ván đã xong không dựng lại');
+  assert.equal(db.kydao.ratings['google:a'].go, undefined, 'môn do gộp thêm được hoàn tác');
+  assert.equal(db.kydao.ratings['khach-1'].go.r, 1200, 'hồ sơ khách được trả lại');
+});
+
+test('Kỳ Đạo: tài khoản đã có ván dở thì ván dở của khách bị bỏ, hoàn tác giữ nguyên cả hai', () => {
+  const db = mkkd();
+  db.kydao.active['google:a'] = 1; db.kydao.active['khach-1'] = 2;
+  const before = clone(db);
+  const undo = mergeKydaoGuest(db, 'khach-1', 'google:a');
+  assert.deepEqual(db.kydao.active, { 'google:a': 1 });
+  undo();
+  assert.deepEqual(clone(db), before);
 });

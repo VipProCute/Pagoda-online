@@ -61,10 +61,15 @@ function fill(db) {
   db.martial.ledger['session:5'] = { uid: 'u_a', at: 1, congLuc: 2, tam: {} };
   db.martial.matches.push({ id: 14, at: 1, a: { uid: 'u_a' }, b: { uid: 'u_b' }, result: 'a' });
   db.martial.audit.push({ id: 15, at: 1, actor: 'admin', action: 'x', target: '', detail: null });
+  db.kydao.ratings.u_a = { name: 'Ánh', chess: { r: 1230, peak: 1250, peakAt: 5, n: 22, w: 12, l: 8, d: 2, last: 6 } };
+  db.kydao.games.push({ id: 16, at: 1, game: 'chess', a: { uid: 'u_a' }, b: { uid: 'u_b' }, result: 'a' });
+  db.kydao.active.u_a = 16;
+  db.kydao.pairs['2026-11-11|u_a|u_b|chess'] = 3;
+  db.records.log.push({ id: 17, at: 1, cat: 'xiangqi.now', kind: 'season', name: 'Ánh', v: 1300, season: '2026-10' });
   db.seq = 200;
   return db;
 }
-const v1Of = db => { const o = JSON.parse(JSON.stringify(db)); o.version = 1; delete o.martial; return o; };
+const v1Of = db => { const o = JSON.parse(JSON.stringify(db)); o.version = 1; delete o.martial; delete o.kydao; delete o.records; return o; };
 const kind = sql => (/^BEGIN/.test(sql) ? 'BEGIN' : sql === 'COMMIT' ? 'COMMIT' : sql === 'ROLLBACK' ? 'ROLLBACK' : /^INSERT INTO docs/.test(sql) ? 'UPSERT' : /^DELETE FROM docs/.test(sql) ? 'DELETE' : sql.slice(0, 24));
 
 /** Bọc pool để ghi lại mọi câu lệnh (cả của kết nối mượn qua pool.connect), có thể gắn hook để ép lỗi. */
@@ -307,10 +312,11 @@ test('PostgreSQL: kho dữ liệu', async t => {
     delete db.merit.g_b; delete db.linkedGuests.g_b; delete db.authSessions.hash1; delete db.auras.u_a;
     delete db.martial.profiles.u_a; delete db.martial.sessions[5]; delete db.martial.ledger['session:5'];
     db.chat.shift(); db.prayers.pop(); db.incense.length = 0; db.donations.pop(); db.martial.matches.length = 0; db.martial.audit.length = 0;
+    delete db.kydao.ratings.u_a; delete db.kydao.active.u_a; db.kydao.pairs = {}; db.kydao.games.length = 0; db.records.log.length = 0;
     a.save();
     assert.equal(await a.flush(), true);
     assert.equal(await cnt('merit'), 1);
-    for (const sec of ['linkedGuests', 'authSessions', 'auras', 'martial.profiles', 'martial.sessions', 'martial.ledger', 'incense', 'martial.matches', 'martial.audit']) assert.equal(await cnt(sec), 0, sec);
+    for (const sec of ['linkedGuests', 'authSessions', 'auras', 'martial.profiles', 'martial.sessions', 'martial.ledger', 'incense', 'martial.matches', 'martial.audit', 'kydao.ratings', 'kydao.active', 'kydao.pairs', 'kydao.games', 'records.log']) assert.equal(await cnt(sec), 0, sec);
     assert.equal(await cnt('chat'), 1);
     assert.equal(await cnt('prayers'), 2);
     assert.equal(await cnt('donations'), 1);
@@ -538,6 +544,8 @@ test('PostgreSQL: kho dữ liệu', async t => {
     const db = a.get();
     assert.equal(db.version, 2);
     assert.deepEqual(db.martial, S.fresh().martial);
+    assert.deepEqual(db.kydao, S.fresh().kydao);
+    assert.deepEqual(db.records, S.fresh().records);
     const expected = S.counts(S.adopt({}, raw));
     assert.deepEqual(S.counts(db), expected);
     assert.equal(Object.keys(db.merit).length, 2);
