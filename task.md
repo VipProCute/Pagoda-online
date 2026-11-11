@@ -35,7 +35,7 @@
 | T-028 | Bộ quản lý ván cờ | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + KYDAO + PK | Codex terra 6.1 + Claude Sonnet 5.5 |
 | T-029 | Lưu bền dữ liệu Kỳ Đạo và kỷ lục 👤 merge | ✅ Gộp tích hợp (chờ PR, 👤 merge) | P0 | CORE + STORE | Claude Sonnet 5.5 |
 | T-030 | Nối Kỳ Đạo vào máy chủ | ⏳ T-028, T-029, T-031, T-051 | P0 | CORE + KYDAO + HALL + AUTH | — |
-| T-031 | Vẽ bàn đá và ghế ở Sân chùa | ⏳ T-020 | P0 | CORE + HALL + KYDAO | — |
+| T-031 | Vẽ bàn đá và ghế ở Sân chùa | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + HALL + KYDAO | Claude Sonnet 5.5 |
 | T-032 | Bảng bàn cờ: khung, cờ vua, cờ tướng | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + KYDAO | Claude Sonnet 5.5 |
 | T-033 | Bảng bàn cờ: cờ vây, caro, cờ úp | ⏳ T-032, T-024, T-025, T-026 | P1 | CORE + KYDAO | — |
 | T-034 | Nối bảng cờ vào chùa | ⏳ T-030, T-031, T-032 | P0 | CORE + KYDAO + NAV | — |
@@ -486,13 +486,13 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: giao diện.
 
 ### T-031 · Vẽ bàn đá và ghế ở Sân chùa
-- **Trạng thái**: ⏳ Chờ T-020
+- **Trạng thái**: ✅ Gộp vào nhánh tích hợp (chờ PR). Thợ: Claude Sonnet 5.5 (qua proxy). Soát: Opus 5.5 thay Argon/Sol; sau 2 vòng còn lỗi chạm thầy bói mở nhầm bàn ở cỡ canvas thật → giao sửa (thầy bói ưu tiên, test dùng cỡ canvas thật).
 - **Ưu tiên**: P0 · **Đợt**: 2
 - **Gói ngữ cảnh**: CORE + HALL + KYDAO
 - **Khu vực chạm**: public/js/hall.js (`YARD_TABLES`, vẽ bàn/ghế, `tableAt`, hover, `personAt` bỏ qua người đang ngồi bàn, tư thế ngồi bàn, biển tên, biểu tượng bàn cờ nhỏ trên đầu người chơi "bàn trong", `Hall.setTables`), test/hall-npcs.test.js (thêm ca nếu cần), test/hall-tables.test.js (mới), public/index.html (`?v=` của hall.js)
 - **Phụ thuộc**: T-020
 - **Thợ**: Sonnet 5.5 (high) · **Soát**: Gemini Argon + Sol 6.1
-- **Người làm**: — · **Nhánh**: —
+- **Người làm**: Claude Sonnet 5.5 · **Nhánh**: `claude/T-031-ban-da-san-chua`
 - **Thiết kế**: KH §5.2
 - **Mục tiêu**: 4 bàn đá có ghế ở Sân chùa, chạm được, hiện trạng thái bàn.
 - **Tiêu chí xong**:

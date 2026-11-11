@@ -214,8 +214,8 @@ Câu hỏi phụ (không chặn việc): đổi "9 cảnh giới hào quang" th�
 
 | Bàn | Tâm bàn (x; z) | Ghế bên A / bên B | Ghi chú |
 |---|---|---|---|
-| 1 | (0,25; 0,50) | (0,19; 0,50) / (0,31; 0,50) | ngoài vùng chạm thầy tử vi (z ≤ 0,39) |
-| 2 | (0,75; 0,50) | (0,69; 0,50) / (0,81; 0,50) | ngoài vùng chạm thầy Tarot |
+| 1 | (0,17; 0,50) | (0,125; 0,50) / (0,215; 0,50) | ngoài vùng chạm thầy tử vi; dịch trái (đề xuất cũ 0,25 làm ghế B nằm trong vùng chạm NPC bí mật), chỉnh ở T-031 |
+| 2 | (0,83; 0,50) | (0,785; 0,50) / (0,875; 0,50) | ngoài vùng chạm thầy Tarot; đối xứng bàn 1 |
 | 3 | (0,18; 0,76) | (0,12; 0,76) / (0,24; 0,76) | cách NPC bí mật (0,32; 0,67) đủ xa; còn thấy trên điện thoại dọc |
 | 4 | (0,82; 0,76) | (0,76; 0,76) / (0,88; 0,76) | |
 

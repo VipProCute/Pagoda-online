@@ -15,6 +15,7 @@
   const HAIRS = ['Tóc dài', 'Búi tóc', 'Tóc ngắn', 'Khăn vấn'];
   const SKIN = '#f0c9a4', HAIR = '#1f1612';
   const reduceMotion = root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const coarsePointer = !!(root.matchMedia && root.matchMedia('(pointer: coarse)').matches);   // cảm ứng: nới vùng chạm bàn
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const rand = (a, b) => a + Math.random() * (b - a);
 
@@ -996,14 +997,18 @@
       if (p.walking) { p.idleT = now; if (vz > 0.0004) p.front = true; else if (vz < -0.0004) p.front = false; }
       else if (now - (p.idleT || 0) > 700) p.front = false;
       // tới bồ đoàn thì ngồi xuống
-      const st = scene === 'library' && p.sit >= 0 ? LIB_SEATS[p.sit] : null;
+      // (Sân chùa: ghế bàn đá lấy từ Hall.setTables, là nguồn duy nhất của tư thế ngồi bàn)
+      const tb = scene === 'yard' ? seatIndex.get(p.id) : null;
+      const st = scene === 'library' && p.sit >= 0 ? LIB_SEATS[p.sit] : tb ? [tb.x, tb.z] : null;
       p.seated = !!st && Math.hypot((p.dx - st[0]) * 1.6, p.dz - st[1]) < 0.025;
+      p.onTable = p.seated && !!tb;
       if (p.seated) { p.dx = st[0]; p.dz = st[1]; p.walking = false; if (!p.sitT) p.sitT = now; } else p.sitT = 0;
       p.hy = p.seated ? 104 - SIT_LIFT : 104;
       p.lift = (p.lift || 0) + ((scene === 'arena' && onPlat(p.dx, p.dz) ? platH(p.dz) : 0) - (p.lift || 0)) * kl;   // bước lên võ đài
     }
     const items = list.map(p => ({ z: p.dz, p }));
     if (scene === 'arena') for (const pr of ARENA_PROPS) items.push({ z: pr.z, pr });
+    else if (scene === 'yard') for (const pr of YARD_PROPS) items.push({ z: pr.z, pr });
     items.sort((a, b) => a.z - b.z);
     const t = now / 1000, srvNow = serverNow();
     for (const it of items) {
@@ -1077,6 +1082,7 @@
     // tên + bong bóng chat vẽ sau cùng để không bị che
     const fs = Math.round(clamp(8 + 4 * au, 10, 13));
     g.textAlign = 'center'; g.textBaseline = 'middle';
+    if (scene === 'yard') drawTableSigns(fs);
     for (const p of list) {
       const top = p.sy - (p.hy || 104) * p.s;
       g.font = `600 ${fs}px "Be Vietnam Pro", system-ui, sans-serif`;
@@ -1115,6 +1121,10 @@
         g.fillStyle = '#f6eddc'; g.fillText(tg.text, p.sx + 3, ty2 + 0.5);
         g.font = `600 ${fs}px "Be Vietnam Pro", system-ui, sans-serif`;
         up = th + 2;
+      }
+      if (innerPids.has(p.id)) {                            // đang đánh cờ ở "bàn trong": biểu tượng bàn cờ nhỏ trên đầu
+        const br = Math.max(6, fs * 0.62), by0 = y - h / 2 - br - 3 - up;
+        boardBadge(p.sx, by0, br); up += br * 2 + 5;
       }
       if (p.bubble) {
         const age = now - p.bubble.t;
@@ -1738,6 +1748,176 @@
     }
   }
 
+  /* ================= Bàn đá Kỳ Đạo ở Sân chùa (cảnh 'yard') ================= */
+  // Toạ độ sàn 0..1. Phải khớp YARD_TABLES trong server.js và docs/KY-DAO-GIAO-THUC.md §4.1.
+  // seats[0] là ghế bên A, seats[1] ghế bên B.
+  const YARD_TABLES = [
+    { id: 1, x: 0.17, z: 0.50, seats: [[0.125, 0.50], [0.215, 0.50]] },   // lệch trái để ghế B tránh vùng chạm NPC đứng ở sân (xem tableAt, chạy sau NPC bí mật)
+    { id: 2, x: 0.83, z: 0.50, seats: [[0.785, 0.50], [0.875, 0.50]] },
+    { id: 3, x: 0.18, z: 0.76, seats: [[0.12, 0.76], [0.24, 0.76]] },
+    { id: 4, x: 0.82, z: 0.76, seats: [[0.76, 0.76], [0.88, 0.76]] }
+  ];
+  const KD_GAMES = { chess: 'Cờ vua', xiangqi: 'Cờ tướng', jieqi: 'Cờ tướng úp', go: 'Cờ vây', gomoku: 'Caro' };
+  const KD_STATUS = ['free', 'waiting', 'playing'];
+  const hasOwn = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
+  const tableState = new Map();                              // id bàn (1–4) → T đã làm sạch
+  const innerGames = new Map();                              // gameId → T của "bàn trong"
+  let seatIndex = new Map();                                 // pid → { id, i, x, z }: ai đang ngồi ghế nào
+  let innerPids = new Set();                                 // pid đang đánh ở bàn trong
+  let hoverTable = null;
+  const signRects = new Map();                               // id bàn → khung biển tên ở khung hình gần nhất (cũng là vùng chạm của bàn)
+  const yardGeo = new Map();                                // vị trí màn hình của bàn/ghế ở khung hình gần nhất (để chạm)
+
+  // Làm sạch một T của kd:table; chỉ giữ trường cần để vẽ, không giữ chữ do máy chủ gửi.
+  function cleanTable(raw) {
+    if (!raw || typeof raw !== 'object') return null;
+    const inner = raw.table === null;
+    if (inner ? typeof raw.gameId !== 'string' || !raw.gameId || raw.gameId.length > 64 : !Number.isInteger(raw.table) || raw.table < 1 || raw.table > YARD_TABLES.length) return null;
+    const seats = [0, 1].map(i => { const s = Array.isArray(raw.seats) ? raw.seats[i] : null; return s && Number.isFinite(s.pid) ? { pid: s.pid } : null; });
+    return {
+      table: inner ? null : raw.table, gameId: inner ? raw.gameId : '',
+      status: KD_STATUS.includes(raw.status) ? raw.status : 'free',
+      game: typeof raw.game === 'string' && hasOwn(KD_GAMES, raw.game) ? raw.game : '',
+      size: raw.size === 13 || raw.size === 19 ? raw.size : 9,
+      watchers: Number.isFinite(raw.watchers) ? clamp(Math.floor(raw.watchers), 0, 999) : 0,
+      seats
+    };
+  }
+  function reindexTables() {
+    seatIndex = new Map(); innerPids = new Set();
+    for (const [id, T] of tableState) T.seats.forEach((s, i) => { if (s) seatIndex.set(s.pid, { id, i, x: YARD_TABLES[id - 1].seats[i][0], z: YARD_TABLES[id - 1].seats[i][1] }); });
+    for (const T of innerGames.values()) T.seats.forEach(s => { if (s) innerPids.add(s.pid); });
+  }
+  // list: mảng T (ack kd:tables, thay toàn bộ) hoặc, với partial, vài T của kd:table (gộp vào trạng thái cũ).
+  function applyTables(list, partial) {
+    if (!Array.isArray(list)) return;
+    if (!partial) { tableState.clear(); innerGames.clear(); }
+    for (const raw of list) {
+      const T = cleanTable(raw); if (!T) continue;
+      if (T.table) tableState.set(T.table, T);
+      else if (T.status === 'free') innerGames.delete(T.gameId);
+      else innerGames.set(T.gameId, T);
+    }
+    reindexTables();
+  }
+  function tableLabel(id, short) {
+    const T = tableState.get(id), parts = ['Bàn ' + id];
+    if (!T || T.status === 'free') { parts.push('trống'); return parts.join(' · '); }
+    if (T.game) parts.push(KD_GAMES[T.game]);
+    if (short) { if (!T.game) parts.push('chờ người'); return parts.join(' · '); }   // màn hẹp: bỏ trạng thái và số người xem
+    parts.push(T.status === 'playing' ? 'đang đấu' : 'chờ người');
+    if (T.status === 'playing' && T.watchers > 0) parts.push(T.watchers + ' người xem');
+    return parts.join(' · ');
+  }
+  // Mặt bàn: toạ độ đã ép dẹt (bán kính 34, ô cờ nửa cạnh 20). Vẽ ô thu nhỏ của môn đang chơi.
+  function tableTop(c, T) {
+    c.fillStyle = '#9b9283'; c.beginPath(); c.arc(0, 0, 34, 0, TAU); c.fill();
+    c.strokeStyle = '#6a6156'; c.lineWidth = 2; c.stroke();
+    const game = T && T.status !== 'free' ? T.game : '';
+    const lines = (nx, ny, hx, hy) => {                       // lưới nx × ny đường, nửa cạnh hx × hy
+      c.beginPath();
+      for (let i = 0; i < nx; i++) { const x = -hx + i * 2 * hx / (nx - 1); c.moveTo(x, -hy); c.lineTo(x, hy); }
+      for (let j = 0; j < ny; j++) { const y = -hy + j * 2 * hy / (ny - 1); c.moveTo(-hx, y); c.lineTo(hx, y); }
+      c.stroke();
+    };
+    if (game === 'chess') {
+      for (let r = 0; r < 8; r++) for (let q = 0; q < 8; q++) { c.fillStyle = (r + q) & 1 ? '#7c5a3a' : '#e2d0a8'; c.fillRect(-20 + q * 5, -20 + r * 5, 5, 5); }
+    } else if (game === 'xiangqi' || game === 'jieqi') {
+      c.fillStyle = '#dcbd7e'; c.fillRect(-20, -20, 40, 40);
+      c.strokeStyle = '#5a3b1c'; c.lineWidth = 1.1;
+      c.beginPath();
+      for (let j = 0; j < 10; j++) { const y = -18 + j * 4; c.moveTo(-18, y); c.lineTo(18, y); }
+      c.moveTo(-18, -18); c.lineTo(-18, 18); c.moveTo(18, -18); c.lineTo(18, 18);
+      for (let i = 1; i < 8; i++) { const x = -18 + i * 4.5; c.moveTo(x, -18); c.lineTo(x, -2); c.moveTo(x, 2); c.lineTo(x, 18); }
+      c.stroke();
+      c.fillStyle = 'rgba(70,120,170,.35)'; c.fillRect(-18, -2, 36, 4);   // sông
+    } else if (game === 'go') {
+      c.fillStyle = '#d9b36a'; c.fillRect(-20, -20, 40, 40);
+      c.strokeStyle = '#4a3418'; c.lineWidth = T.size > 9 ? 0.7 : 1.1;
+      lines(T.size, T.size, 18, 18);
+      c.fillStyle = '#2a1c0c'; c.beginPath(); c.arc(0, 0, 1.4, 0, TAU); c.fill();
+    } else if (game === 'gomoku') {
+      c.fillStyle = '#d9b36a'; c.fillRect(-20, -20, 40, 40);
+      c.strokeStyle = '#4a3418'; c.lineWidth = 0.8;
+      lines(15, 15, 18, 18);
+    } else {
+      c.strokeStyle = 'rgba(0,0,0,.18)'; c.lineWidth = 1.2; c.beginPath(); c.arc(0, 0, 22, 0, TAU); c.stroke();
+    }
+  }
+  function stool(c, x, y, s, key) {
+    yardGeo.set(key, { x, y, s });
+    c.fillStyle = 'rgba(0,0,0,.28)'; c.beginPath(); c.ellipse(x, y, 16 * s, 4.5 * s, 0, 0, TAU); c.fill();
+    c.fillStyle = '#7d7468'; c.fillRect(x - 10 * s, y - 14 * s, 20 * s, 14 * s);
+    c.fillStyle = '#6a6156'; c.fillRect(x - 12 * s, y - 4 * s, 24 * s, 4 * s);
+    c.fillStyle = '#a39a8b'; c.beginPath(); c.ellipse(x, y - 14 * s, 11 * s, 4 * s, 0, 0, TAU); c.fill();
+  }
+  function stoneTable(c, x, y, s, ts, id) {
+    yardGeo.set('t' + id, { x, y, s });
+    const T = tableState.get(id);
+    c.fillStyle = 'rgba(0,0,0,.3)'; c.beginPath(); c.ellipse(x, y, 42 * s, 10 * s, 0, 0, TAU); c.fill();
+    c.fillStyle = '#6a6156'; c.fillRect(x - 17 * s, y - 6 * s, 34 * s, 6 * s);
+    c.fillStyle = '#7d7468'; c.fillRect(x - 9 * s, y - 22 * s, 18 * s, 18 * s);
+    c.fillStyle = '#5a5248'; c.beginPath(); c.ellipse(x, y - 18 * s, 34 * s, 12.4 * s, 0, 0, TAU); c.fill();   // thành bàn
+    c.save(); c.translate(x, y - 22 * s); c.scale(s, s * 0.36); tableTop(c, T); c.restore();
+    if (hoverTable === id) { c.strokeStyle = 'rgba(255,211,107,.75)'; c.lineWidth = Math.max(1.5, 2 * s); c.beginPath(); c.ellipse(x, y - 22 * s, 37 * s, 13.5 * s, 0, 0, TAU); c.stroke(); }
+    if (T && T.status !== 'free') {                          // đang đấu: chấm đỏ (nhấp nhẹ, đứng yên khi giảm chuyển động); chờ người: chấm vàng
+      const play = T.status === 'playing', a = play && !reduceMotion ? 0.55 + 0.35 * Math.sin((ts || 0) / 380) : 0.85;
+      c.fillStyle = play ? `rgba(226,70,60,${a})` : 'rgba(232,196,119,.9)';
+      c.beginPath(); c.arc(x + 30 * s, y - 36 * s, 3.4 * s + 1, 0, TAU); c.fill();
+    }
+  }
+  // Vật xếp theo chiều sâu như ARENA_PROPS: bàn và hai ghế đá của mỗi bàn (ghế z nhỏ hơn chút để người ngồi đè lên ghế).
+  const YARD_PROPS = YARD_TABLES.flatMap(t => [
+    { x: t.seats[0][0], z: t.seats[0][1] - 0.003, draw(c, x, y, s) { stool(c, x, y, s, 's' + t.id + '0'); } },
+    { x: t.seats[1][0], z: t.seats[1][1] - 0.003, draw(c, x, y, s) { stool(c, x, y, s, 's' + t.id + '1'); } },
+    { x: t.x, z: t.z - 0.001, draw(c, x, y, s, ts) { stoneTable(c, x, y, s, ts, t.id); } }
+  ]);
+  // Biển tên nổi phía trên bàn (vẽ trước tên người để tên người không bị che).
+  // Đặt dưới chân bàn (không đè chữ "Chạm để xem" của thầy bói ở phía trên), kẹp trong màn; màn hẹp dùng nhãn ngắn.
+  function drawTableSigns(fs) {
+    g.font = `600 ${fs}px "Be Vietnam Pro", system-ui, sans-serif`;
+    signRects.clear();
+    for (const t of YARD_TABLES) {
+      const q = yardGeo.get('t' + t.id); if (!q) continue;
+      const T = tableState.get(t.id), text = tableLabel(t.id, W < 600), w = g.measureText(text).width + 14, h = fs + 7;
+      const cx = clamp(q.x, w / 2 + 4, Math.max(w / 2 + 4, W - w / 2 - 4)), y = Math.min(q.y + 8 * q.s + h / 2, H - h / 2 - 2);
+      signRects.set(t.id, { x: cx - w / 2, y: y - h / 2, w, h });
+      const col = T && T.status === 'playing' ? '#e2463c' : T && T.status === 'waiting' ? '#e8c477' : '#9a8b78';
+      g.fillStyle = 'rgba(12,7,5,.7)'; rrect(g, cx - w / 2, y - h / 2, w, h, h / 2); g.fill();
+      g.strokeStyle = col; g.lineWidth = 1; g.stroke();
+      g.fillStyle = '#f6eddc'; g.fillText(text, cx, y + 0.5);
+    }
+  }
+  // Biểu tượng bàn cờ nhỏ (người đang đánh ở "bàn trong").
+  function boardBadge(x, y, r) {
+    g.fillStyle = 'rgba(12,7,5,.72)'; circle(g, x, y, r);
+    const n = 4, c = r * 1.2 / n, x0 = x - r * 0.6, y0 = y - r * 0.6;
+    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) { g.fillStyle = (i + j) & 1 ? '#7c5a3a' : '#e2d0a8'; g.fillRect(x0 + i * c, y0 + j * c, c, c); }
+  }
+  // Chạm trúng bàn/ghế/người đang ngồi bàn nào? { id, seat }: seat 0/1 là ghế, −1 là mặt bàn. null nếu không trúng.
+  function tableAt(x, y) {
+    if (scene !== 'yard' || hitReader(x, y)) return null;    // thầy bói được ưu tiên: mọi điểm trong vùng chạm thầy bói không mở bàn
+    for (const p of players.values()) {                      // người đang ngồi bàn: coi như chạm ghế của họ
+      if (!p.onTable || p.sx == null || viewOf(p) !== scene) continue;
+      const hh = (p.hy || 104) * p.s, w = 17 * p.s + 6;
+      if (x > p.sx - w && x < p.sx + w && y > p.sy - hh - 16 && y < p.sy + 6) { const sd = seatIndex.get(p.id); if (sd) return { id: sd.id, seat: sd.i }; }
+    }
+    const pad = W < 600 || coarsePointer ? 10 : 0;           // màn hẹp hoặc cảm ứng (ngón tay): nới vùng chạm
+    for (const t of YARD_TABLES) for (let i = 0; i < 2; i++) {
+      const q = yardGeo.get('s' + t.id + i); if (!q) continue;
+      const dx = (x - q.x) / (17 * q.s + 6 + pad), dy = (y - q.y + 7 * q.s) / (11 * q.s + 6 + pad);
+      if (dx * dx + dy * dy <= 1) return { id: t.id, seat: i };
+    }
+    for (const t of YARD_TABLES) {
+      const q = yardGeo.get('t' + t.id); if (!q) continue;
+      const dx = (x - q.x) / (36 * q.s + 4 + pad), dy = (y - q.y + 21 * q.s) / (13 * q.s + 4 + pad);
+      if (dx * dx + dy * dy <= 1 || (Math.abs(x - q.x) <= 11 * q.s && y >= q.y - 22 * q.s && y <= q.y + 2 * q.s)) return { id: t.id, seat: -1 };
+      const r = signRects.get(t.id);                         // biển tên cũng là vùng chạm của bàn
+      if (r && x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h) return { id: t.id, seat: -1 };
+    }
+    return null;
+  }
+
   let paused = false;
   function frame(ts) {
     const dt = Math.min(64, ts - (last || ts)); last = ts;
@@ -1786,7 +1966,7 @@
   function personAt(x, y) {
     let best = null;
     for (const p of players.values()) {
-      if (p.id === me || p.sx == null || viewOf(p) !== scene) continue;
+      if (p.id === me || p.sx == null || viewOf(p) !== scene || p.onTable) continue;   // người đang ngồi bàn đá: chạm là mở bàn (tableAt), không mở hộp người chơi
       const hh = (p.hy || 104) * p.s, w = 17 * p.s + 6;
       if (x > p.sx - w && x < p.sx + w && y > p.sy - hh - 16 && y < p.sy + 6 && (!best || p.dz > best.dz)) best = p;
     }
@@ -1818,6 +1998,8 @@
       if (y > G.hb + 4 * u) walkTo(x, y);
       return;
     }
+    const tb = tableAt(x, y);                                // bàn đá Sân chùa: sau NPC bí mật, trước thầy bói
+    if (tb) { handlers.table && handlers.table(tb.id, tb.seat); return; }
     if (scene === 'hall' && hitJar(x, y)) { handlers.fortune && handlers.fortune(); return; }
     if (scene === 'yard' && hitReader(x, y)) { handlers.reader && handlers.reader(x < W / 2 ? 'horoscope' : 'tarot'); return; }
     if (scene === 'yard') { if (y > G.hb) { const [wx, wz] = unproj(x, y); handlers.floor && handlers.floor(clamp(wx, 0.03, 0.97), clamp(wz, 0.12, 0.97)); } return; }
@@ -1836,7 +2018,8 @@
     hover = '';
     if (scene === 'library') { const st = seatAt(x, y); hover = st >= 0 ? 'seat' + st : inRect(G.shelfL, x, y) ? 'shelfL' : inRect(G.shelfR, x, y) ? 'shelfR' : ''; }
     if (personAt(x, y)) hover = 'person';
-    cv.style.cursor = hover || (scene === 'hall' && (hitJar(x, y) || hitBowl(x, y) || hitStatue(x, y))) || (scene === 'yard' && hitReader(x, y)) || hoverLib ? 'pointer' : (y > G.hb ? 'crosshair' : 'default');
+    const tb = hover === 'person' ? null : tableAt(x, y); hoverTable = tb ? tb.id : null;   // người đứng trước bàn bắt chạm trước: không sáng bàn
+    cv.style.cursor = hover || (scene === 'hall' && (hitJar(x, y) || hitBowl(x, y) || hitStatue(x, y))) || (scene === 'yard' && hitReader(x, y)) || hoverLib || tb ? 'pointer' : (y > G.hb ? 'crosshair' : 'default');
   }
   function viewOf(p) {
     if (p.place === 'arena') return 'arena';
@@ -1900,7 +2083,12 @@
     get scene() { return scene; },
     /** Vẽ một nhân vật tại gốc toạ độ hiện tại (chân ở 0,0, cao khoảng 85 đơn vị) cho các màn hình khác dùng lại. */
     avatar(c, look, opts) { opts = opts || {}; drawAvatar(c, look, opts.front !== false, opts.t || 0, opts.bow || 0, !!opts.walking, opts.pose || null); },
-    setScene(value) { if (value === scene) return; scene = value; hover = ''; hoverLib = false; if (W && H) geo(); bg = null; },
+    /** Bàn đá Kỳ Đạo, nguồn duy nhất cho tư thế ngồi bàn. Mảng T (ack kd:tables) thay toàn bộ, trừ khi partial=true; một object T (sự kiện kd:table) luôn gộp, không xoá bàn khác. */
+    setTables(list, partial) { const arr = Array.isArray(list); applyTables(arr ? list : [list], arr ? !!partial : true); },
+    tableSigns() { return [...signRects].map(([id, r]) => ({ id, ...r })); },
+    setTable(t) { applyTables([t], true); },
+    YARD_TABLES,
+    setScene(value) { if (value === scene) return; scene = value; hover = ''; hoverTable = null; hoverLib = false; if (W && H) geo(); bg = null; },
     playerScene(d) { const p = players.get(d.id); if (p) { p.scene = d.scene; p.sit = -1; p.cm = ''; p.x = p.dx = d.x; p.z = p.dz = d.z; } },
     setOffset(ms) { offset = ms; },
     setPlayers(list) { players.clear(); list.forEach(p => players.set(p.id, mk(p))); },
