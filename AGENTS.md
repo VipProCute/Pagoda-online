@@ -18,7 +18,7 @@
 |---|---|
 | Cài | `npm ci` (Node ≥ 18; production dùng Node 22) |
 | Chạy | `npm start` → http://localhost:3000 · có `.env`: `npm run start:env` · tự nạp lại: `npm run dev` |
-| Kiểm cú pháp | `npm run check` (danh sách `node --check` viết tay trong `package.json`, **thêm file JS mới vào đây**) |
+| Kiểm cú pháp | `npm run check` (chạy `tools/check.js`: tự quét `server.js`, `lib/`, `public/js/` (đệ quy), `tools/`, `test/`; không cần liệt kê file JS mới) |
 | Toàn bộ test | `npm test` (`node:test`, chạy tuần tự, test e2e tự bật `server.js` trên cổng trống với `DATA_FILE` tạm) |
 | Một file test | `node --test test/pk-engine.test.js` · lọc theo tên: `--test-name-pattern "…"` (tên test bằng tiếng Việt) |
 | Test PostgreSQL | đặt `TEST_DATABASE_URL` (mặc định `postgres://pagoda:pagoda@127.0.0.1:5432/pagoda_test`); không kết nối được thì tự `skip` |
@@ -68,7 +68,7 @@ Thử nhanh trên máy: `CULTIVATION_TIME_SCALE=0.001`, `PK_TIME_SCALE=0.05`, `M
 ## 6. Định nghĩa "xong" (Definition of Done)
 
 Trước khi báo xong, tự kiểm theo thứ tự:
-1. `npm run check` sạch (đã thêm file JS mới vào danh sách nếu có).
+1. `npm run check` sạch (tự quét file JS mới, không phải thêm tay).
 2. Chạy test của khu vực mình sửa (`node --test test/<file>`), rồi `npm test` nếu đụng `server.js`, `lib/store*`, `lib/pk/*` hoặc giao thức. Thêm/sửa test cho hành vi mới; test e2e dùng `test/helpers/live.js` và `client.js`.
 3. Đụng giao diện Võ Học Các / Sân đấu: chạy ui-harness tương ứng (hoặc ghi rõ là chưa chạy được và vì sao).
 4. Đổi số liệu chiêu/luật PK: chạy `npm run sim` và ghi kết quả trước/sau vào PR hoặc `docs/VO-HOC-CAN-BANG.md`.

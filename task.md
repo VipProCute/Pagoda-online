@@ -14,7 +14,7 @@
 | T-001 | Chốt một trong hai nhánh Obito trùng nhau | ✅ Xong | P0 | CORE + PK + HALL | Claude |
 | T-002 | Kiểm và dọn các nhánh đã merge | 🔵 Sẵn sàng 👤 | P1 | CORE + OPS | — |
 | T-003 | Ghi baseline test trên Node 22 | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + OPS | Claude Haiku (thay GLM Flash) |
-| T-004 | `npm run check` tự quét file, không liệt kê tay | 🔵 Sẵn sàng | P1 | CORE + OPS | — |
+| T-004 | `npm run check` tự quét file, không liệt kê tay | ✅ Gộp tích hợp (chờ PR) | P1 | CORE + OPS | Claude Sonnet (thay Codex) |
 | T-005 | Test chống lệch các hằng số dùng chung | 🔵 Sẵn sàng | P1 | CORE + PK + HALL | — |
 | T-006 | CI GitHub Actions chạy check + test | 🔵 Sẵn sàng | P1 | CORE + OPS | — |
 | T-007 | Sửa mục "Cấu trúc mã" trong README | 🔵 Sẵn sàng | P2 | CORE + DOCS | — |
@@ -122,13 +122,13 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: sửa test.
 
 ### T-004 · `npm run check` tự quét file, không liệt kê tay
-- **Trạng thái**: 🔵 Sẵn sàng
+- **Trạng thái**: ✅ Gộp vào nhánh tích hợp (chờ PR). Soát (Opus thay Sol): PASS vòng 1. `tools/check.js` quét đệ quy `server.js`, `lib/`, `public/js/`, `tools/`, `test/` (86 file). Góp ý để sau: quét thêm `.mjs`, thêm test cho chính script.
 - **Ưu tiên**: P1
 - **Gói ngữ cảnh**: CORE + OPS
-- **Khu vực chạm**: package.json, tools/check.js (mới), AGENTS.md (§2, §3.12 bỏ ghi chú "thêm vào check"), docs/agents/ARCHITECTURE.md (§6)
+- **Khu vực chạm**: package.json, tools/check.js (mới), AGENTS.md (§2, §6), docs/agents/ARCHITECTURE.md (§6), docs/agents/CONTEXT-PACKS.md (gói CORE, PLACE)
 - **Phụ thuộc**: T-003 (để có baseline)
-- **Người làm**: —
-- **Nhánh**: `<agent>/T-004-check-tu-dong`
+- **Người làm**: Claude Sonnet 5.5 (thay Codex terra 6.1)
+- **Nhánh**: `claude/T-004-check-tu-dong`
 - **Mục tiêu**: hiện `check` là chuỗi `node --check` viết tay và **đang thiếu `lib/sweeper.js`**. Thay bằng script nhỏ không phụ thuộc thư viện, tự quét `server.js`, `lib/**/*.js`, `public/js/**/*.js` (**đệ quy**: đợt 2026-11 thêm thư mục `public/js/kydao/`), `tools/**/*.js` (bỏ qua `node_modules`, `.claude/`).
 - **Thợ / Soát (đợt 2026-11)**: Codex terra 6.1 / Sol 6.1. Thẻ này **chặn** T-010, T-021, T-022, T-025, T-026, T-027, T-050 (để các thẻ đó không phải sửa `package.json`).
 - **Tiêu chí xong**:
@@ -221,7 +221,7 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ưu tiên**: P0 · **Đợt**: 1
 - **Gói ngữ cảnh**: CORE + NAV + HALL
 - **Khu vực chạm**: public/js/mapbar.js (mới), public/index.html (khối `nav.scene-nav`, `<script>`, `?v=`), public/js/app.js (`SCENE_HINT`, `applyScene`, `goScene`, các listener của scene-nav, `sitAt`), public/js/fortune.js (chỗ gắn `#go-yard`/`#go-hall`), public/css/style.css (`.scene-nav` → `.mapbar`, `.stage-hint` trên điện thoại), test/sync-constants.test.js (ca `MapBar.MAPS` ↔ `SCENES`/`PLACES`, nếu T-005 đã có file), docs/agents/ARCHITECTURE.md (§6: dòng `MapBar.MAPS`), README.md (dòng "chạm nút ở thanh dưới…"), docs/VO-HOC.md (dòng 13)
-- **Phụ thuộc**: T-004 (nếu T-004 chưa xong: thêm `mapbar.js` vào `check` và ghi rõ trong báo cáo)
+- **Phụ thuộc**: T-004 (đã xong: `npm run check` tự quét, không cần sửa `package.json`)
 - **Thợ**: Sonnet 5.5 (high) · **Soát**: Sol 6.1 + Gemini Argon
 - **Người làm**: — · **Nhánh**: —
 - **Thiết kế**: KH §4.1, quyết định D2
