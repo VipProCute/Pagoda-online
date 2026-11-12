@@ -120,7 +120,8 @@ test('Hằng số PK: MARTIAL.PK (public/js/martial.js) khớp lib/pk/rules.js',
     LOADOUT_SECONDS: R.LOADOUT_MS / 1000,
     REVEAL_SECONDS: R.REVEAL_MS / 1000,
     SUDDEN_FROM_TURN: R.SUDDEN_FROM_TURN,
-    MAX_TURNS: R.MAX_TURNS
+    MAX_TURNS: R.MAX_TURNS,
+    IDLE_FORFEIT_TURNS: R.IDLE_FORFEIT_TURNS   // Sổ tay (T-061) đọc số lượt bỏ lỡ bị xử thua từ đây
   };
   for (const k of Object.keys(PK)) assert.ok(k in expected, `MARTIAL.PK.${k} (public/js/martial.js) chưa có ca đối chiếu với lib/pk/rules.js trong test/sync-constants.test.js`);
   for (const [k, v] of Object.entries(expected)) assert.equal(PK[k], v, `MARTIAL.PK.${k} (public/js/martial.js) = ${PK[k]} lệch lib/pk/rules.js (${v})`);

@@ -1,0 +1,40 @@
+/* Sổ tay trong game (public/js/guide.js). Tiền tố gd-. */
+dialog.gd-dlg { width: min(860px, calc(100vw - 24px)); height: min(640px, calc(100dvh - 32px)); max-height: none; overflow: hidden; }
+.gd { display: grid; grid-template-rows: auto minmax(0, 1fr); height: 100%; }
+.gd-head { display: flex; align-items: center; gap: 10px; padding: 14px 16px 10px 20px; border-bottom: 1px solid var(--line); }
+#dlg-guide .x { width: 44px; height: 44px; }
+.gd-body h3:focus { outline: none; }
+.gd-head h2 { flex: 1; margin: 0; font-family: var(--font-display); font-size: 28px; font-weight: 600; line-height: 1.1; }
+.gd-back { display: none; min-height: 44px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface-2); color: var(--fg); font: inherit; font-size: 14px; cursor: pointer; }
+.gd-main { display: grid; grid-template-columns: 230px minmax(0, 1fr); min-height: 0; }
+.gd-nav { list-style: none; margin: 0; padding: 10px; overflow-y: auto; border-right: 1px solid var(--line); display: grid; align-content: start; gap: 4px; }
+.gd-nav button { width: 100%; min-height: 44px; display: flex; align-items: center; gap: 10px; text-align: left; padding: 6px 10px; border-radius: 10px; border: 1px solid transparent; background: none; color: var(--fg); font: inherit; font-size: 14px; cursor: pointer; }
+.gd-nav button:hover { background: var(--surface-2); }
+.gd-nav button[aria-current="true"] { background: var(--gold-soft); border-color: var(--gold); color: var(--gold-ink); }
+.gd-n { flex: none; width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; background: var(--surface-2); font-size: 12px; color: var(--muted); }
+.gd-body { overflow-y: auto; padding: 16px 20px 24px; font-size: 15px; line-height: 1.6; overscroll-behavior: contain; }
+.gd-body h3 { margin: 0 0 10px; font-family: var(--font-display); font-size: 26px; font-weight: 600; color: var(--gold-ink); }
+.gd-body h4 { margin: 18px 0 4px; font-size: 15px; color: var(--gold-ink); }
+.gd-body p { margin: 0 0 10px; }
+.gd-body ul, .gd-body ol { margin: 0 0 10px; padding-left: 22px; }
+.gd-body li { margin-bottom: 4px; }
+.gd-note { color: var(--faint); font-style: italic; }
+.gd-empty { color: var(--muted); }
+.gd-terms { margin: 0; }
+.gd-terms dt { margin-top: 12px; font-weight: 600; color: var(--gold-ink); }
+.gd-terms dd { margin: 2px 0 0; color: var(--fg); }
+.icon-btn.gd-open { font-weight: 700; font-size: 17px; font-family: inherit; }
+/* vùng chạm tối thiểu 44px (AGENTS §4), thắng cả luật thu nhỏ ở màn hẹp */
+#btnGuide.icon-btn.gd-open { width: 44px; height: 44px; }
+
+/* điện thoại: mục lục là danh sách; chạm vào để đọc, có nút quay lại */
+@media (max-width: 640px) {
+  dialog.gd-dlg { width: calc(100vw - 16px); height: calc(100dvh - 16px); }
+  .gd-main { grid-template-columns: minmax(0, 1fr); }
+  .gd-nav { border-right: 0; }
+  .gd-body { display: none; }
+  .gd.gd-reading .gd-nav { display: none; }
+  .gd.gd-reading .gd-body { display: block; }
+  .gd.gd-reading .gd-back { display: inline-flex; align-items: center; }
+  .gd-head h2 { font-size: 24px; }
+}

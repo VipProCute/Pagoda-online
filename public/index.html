@@ -17,6 +17,7 @@
 <link rel="stylesheet" href="/css/places.css?v=lephat1">
 <link rel="stylesheet" href="/css/dojo.css?v=pk-titles1">
 <link rel="stylesheet" href="/css/arena.css?v=vohoc6">
+<link rel="stylesheet" href="/css/guide.css?v=sotay3">
 </head>
 <body>
 <header class="top">
@@ -34,6 +35,7 @@
       <svg id="icoSoundOn" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9Z" fill="currentColor"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg>
       <svg id="icoSoundOff" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" hidden><path d="M4 9v6h4l5 4V5L8 9Z" fill="currentColor"/><path d="M16 9l5 6M21 9l-5 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
     </button>
+    <button type="button" class="icon-btn gd-open" id="btnGuide" aria-label="Mở sổ tay" title="Sổ tay: cách chơi và các luật">?</button>
     <button type="button" class="icon-btn" id="btnProfile" aria-label="Đổi tên và trang phục" title="Đổi tên và trang phục">
       <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7" r="4" fill="currentColor"/><path d="M5 21c.8-5 3.6-8 7-8s6.2 3 7 8Z" fill="currentColor"/></svg>
     </button>
@@ -495,6 +497,21 @@
   </div>
 </dialog>
 
+<!-- Sổ tay: guide.js dựng mục lục và nội dung từ /data/so-tay.vi.json -->
+<dialog class="dlg gd-dlg" id="dlg-guide" aria-labelledby="gd-title">
+  <div class="gd">
+    <div class="gd-head">
+      <button type="button" class="gd-back" data-gd-back>← Mục lục</button>
+      <h2 id="gd-title">Sổ tay</h2>
+      <button type="button" class="x" data-close aria-label="Đóng">×</button>
+    </div>
+    <div class="gd-main">
+      <ul class="gd-nav" data-gd-nav aria-label="Mục lục"></ul>
+      <div class="gd-body" data-gd-body tabindex="0"></div>
+    </div>
+  </div>
+</dialog>
+
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script src="/socket.io/socket.io.js"></script>
@@ -509,11 +526,12 @@
 <script src="/js/fortune.js?v=tarot1"></script>
 <script src="/js/voice.js?v=pkprod1"></script>
 <script src="/js/library.js"></script>
-<script src="/js/martial.js?v=pk-titles1"></script>
+<script src="/js/martial.js?v=sotay1"></script>
 <script src="/js/places.js?v=vohoc6"></script>
 <script src="/js/meditate.js?v=vohoc5"></script>
 <script src="/js/dojo.js?v=pk-titles1"></script>
 <script src="/js/arena.js?v=secret-pk3"></script>
-<script src="/js/app.js?v=mapsd1"></script>
+<script src="/js/guide.js?v=sotay3"></script>
+<script src="/js/app.js?v=sotay2"></script>
 </body>
 </html>

@@ -329,7 +329,7 @@
   const KIND_NAMES = { atk: 'Công', guard: 'Thủ', dodge: 'Né', parry: 'Đỡ', hybrid: 'Đỡ / Công', charge: 'Tụ lực', rest: 'Nghỉ', idle: 'Nghỉ' };
 
   /** Giá trị ngắn gọn của luật PK để giao diện hiển thị (engine dùng lib/pk/rules.js). */
-  const PK = { HP: 200, TURN_SECONDS: 20, LOADOUT_SECONDS: 30, REVEAL_SECONDS: 6.5, SUDDEN_FROM_TURN: 20, MAX_TURNS: 40 };
+  const PK = { HP: 200, TURN_SECONDS: 20, LOADOUT_SECONDS: 30, REVEAL_SECONDS: 6.5, SUDDEN_FROM_TURN: 20, MAX_TURNS: 40, IDLE_FORFEIT_TURNS: 3 };
 
   const api = {
     BRANCHES, BRANCH_ORDER, TIER_REQ, TIER_NAMES, SKILLS, SKILL_LIST, SKILL_ORDER, STARTERS, SPECIAL, REST_ID, IDLE_ID,
