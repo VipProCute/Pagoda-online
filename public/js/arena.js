@@ -7,7 +7,7 @@
 (function (root) {
   'use strict';
   const M = root.MARTIAL, TAU = Math.PI * 2;
-  const RAGE_MAX = 100, EXPOSED_PCT = 25, KC_PCT = 25, KC_TURNS = 2;       // khớp lib/pk/rules.js
+  const RAGE_MAX = 100, RAGE_PCT = 0.3, EXPOSED_PCT = 25, KC_PCT = 25, KC_TURNS = 2;       // khớp lib/pk/rules.js
   const ST = { free: ['Rảnh', 'free'], busy: ['Đang đấu', 'busy'], dnd: ['Tạm nghỉ', 'dnd'] };
   const MODES = {
     balanced: { name: 'Luận võ', desc: 'Cấp nội công có tác dụng; không tính sức cộng thêm từ pháp tướng, quỷ ám và hào quang.' },
@@ -640,12 +640,12 @@
     add(d, h('summary', null, 'Luật nhanh'), ul);
     const rules = [
       ['Mục tiêu', `Mỗi bên có ${P.HP} máu. Ai hết máu trước thì thua.`],
-      ['Mỗi lượt', `Có ${P.TURN_SECONDS} giây để chọn kín một chiêu, rồi hai bên cùng lật chiêu. Chiêu nào cũng tốn nội lực; Điều tức giúp hồi thêm.`],
-      ['Nộ', `Bị đánh trúng thì tích nộ, đầy ${RAGE_MAX}. Nộ càng nhiều, đòn công kế tiếp càng mạnh; tung đòn công thì nộ về 0.`],
+      ['Mỗi lượt', `Có ${P.TURN_SECONDS} giây để chọn kín một chiêu, rồi hai bên cùng lật chiêu. Chiêu võ tốn nội lực; mỗi lượt tự hồi một ít, chọn Điều tức để hồi thêm.`],
+      ['Nộ', `Nhận sát thương thì tích nộ, đầy ${RAGE_MAX}. Nộ đầy làm đòn công kế tiếp mạnh thêm tối đa ${Math.round(RAGE_MAX * RAGE_PCT)}%. Tung đòn công thì nộ về 0.`],
       ['Sơ hở', `Đòn công bị né hoặc đỡ hết thì lượt sau bạn sơ hở, nhận thêm ${EXPOSED_PCT}% sát thương.`],
-      ['Kim Chung', `Đỡ đòn thành công được Kim Chung: trong ${KC_TURNS} lượt tới, đòn công đầu tiên mạnh thêm ${KC_PCT}%.`],
+      ['Kim Chung', `Dùng chiêu Kim Chung Tráo mà bị đánh trúng thì được Kim Chung. Trong ${KC_TURNS} lượt tới, đòn công đầu tiên mạnh thêm ${KC_PCT}%.`],
       ['Tụ lực', 'Chiêu tụ lực cần một lượt gom sức, lượt sau tự tung đòn mạnh. Lúc đó không đổi chiêu được.'],
-      ['Suy kiệt', `Từ lượt ${P.SUDDEN_FROM_TURN}, hoặc khi nhiều lượt liền không ai mất máu, cả hai cùng mất máu mỗi lượt, lượt sau mất nhiều hơn lượt trước.`],
+      ['Suy kiệt', `Từ lượt ${P.SUDDEN_FROM_TURN}, hoặc khi nhiều lượt liền không ai mất máu, cả hai cùng mất máu mỗi lượt. Lượt sau mất nhiều hơn lượt trước.`],
       ['Bỏ lượt', `Bỏ lỡ ${P.IDLE_FORFEIT_TURNS} lượt liên tiếp (hết giờ không chọn) thì bị xử thua.`],
       ['Tối đa', `${P.MAX_TURNS} lượt. Hết lượt, bên còn nhiều máu hơn thắng; bằng máu thì hòa.`]
     ];
@@ -655,7 +655,7 @@
   function buildRoster() {
     const sec = h('section', 'ar-screen ar-roster', null, { 'aria-label': 'Sân đấu' }), r = { sec };
     const yard = h('div', 'ar-yard'), top = h('div', 'ar-ytop'), msgs = h('div', 'ar-ymsgs'), list = h('div', 'ar-listbox');
-    r.cv = h('canvas', 'ar-yardcv', null, { role: 'img', 'aria-label': 'Sân đấu: võ đài giữa sân và những đạo hữu đang ở sân. Chạm vào một người để mời luận võ, chạm sân để đi lại.' });
+    r.cv = h('canvas', 'ar-yardcv', null, { role: 'img', 'aria-label': 'Sân đấu: võ đài giữa sân và những đạo hữu đang ở sân. Chạm vào đạo hữu để mời luận võ, chạm sân để đi lại.' });
     r.dnd = btn('ar-switch', null, { role: 'switch', 'aria-checked': 'false' });
     add(r.dnd, h('span', 'ar-knob'), h('span', 'ar-sw-t', 'Tạm không nhận lời mời'));
     r.dnd.addEventListener('click', toggleDnd);
@@ -1010,7 +1010,7 @@
     if (inv.buffs) {
       const bt = h('div', 'ar-bt'), c1 = h('div', 'ar-bt-c'), c2 = h('div', 'ar-bt-c');
       add(c1, h('h4', null, 'Bạn'), buffList(inv.buffs && inv.buffs.you)); add(c2, h('h4', null, f.name || 'Đối thủ'), buffList(inv.buffs && inv.buffs.op));
-      add(bt, c1, c2); add(card, bt, h('p', 'hint', inv.buffs ? 'Đây là bản xem trước. Sức cộng thêm thật được ghi nhận một lần lúc bạn nhận lời.' : 'Sức cộng thêm sẽ được ghi nhận một lần lúc bạn nhận lời.'));
+      add(bt, c1, c2); add(card, bt, h('p', 'hint', inv.buffs ? 'Đây là bản xem trước. Sức cộng thêm được ghi nhận một lần lúc bạn nhận lời.' : 'Sức cộng thêm sẽ được ghi nhận một lần lúc bạn nhận lời.'));
     }
     const bar = h('div', 'ar-ic-bar'), fill = h('i'), act = h('div', 'ar-ic-act'), yes = btn('btn primary', 'Nhận lời'), no = btn('btn', 'Từ chối');
     yes.addEventListener('click', () => respond(inv, true)); no.addEventListener('click', () => respond(inv, false));
@@ -1123,7 +1123,7 @@
     if (!canEditLoadout()) return;
     const i = m.sel.indexOf(id);
     if (i >= 0) m.sel.splice(i, 1);
-    else if (m.sel.length >= 4) { m.msg = 'Đủ 4 chiêu rồi. Bỏ bớt một chiêu để chọn chiêu khác.'; renderLobby(); return; }
+    else if (m.sel.length >= 4) { m.msg = 'Đã đủ 4 chiêu. Bỏ bớt một chiêu để chọn chiêu khác.'; renderLobby(); return; }
     else m.sel.push(id);
     m.msg = '';
     renderLobby();
@@ -1373,7 +1373,7 @@
     else if (m.msg) { txt = m.msg; U.status.classList.add('warn'); }
     else if (m.locked) { U.status.appendChild(h('span', 'spin', null, { 'aria-hidden': 'true' })); txt = m.forced ? 'Đang tụ lực, lượt này tự tung. Chờ đối thủ…' : 'Đã khóa, chờ đối thủ…'; }
     else if (m.timeUp) txt = 'Hết giờ. Bạn đứng yên ở lượt này.';
-    else txt = m.sel ? 'Bấm "Khóa" để chốt chiêu. Khóa rồi không đổi được.' : 'Chạm một chiêu để chọn, rồi bấm "Khóa".';
+    else txt = m.sel ? 'Bấm "Khóa" để chốt chiêu. Khóa rồi không thể đổi.' : 'Chạm một chiêu để chọn, rồi bấm "Khóa".';
     U.status.appendChild(document.createTextNode(txt));
     const c = U.fc.op;
     c.lock.hidden = !choosing; c.lock.classList.toggle('on', !!m.opLocked);
@@ -2054,7 +2054,7 @@
     S.loginNeeded = !!(mc.loginRequired && au && au.enabled !== false && !au.signedIn);
     S.ui.roster.login.hidden = !S.loginNeeded;
     if (a.enabled === false) { S.ui.roster.emptyT.textContent = 'Sân đấu chưa mở.'; S.ui.roster.emptyS.textContent = 'Nhà chùa chưa mở sân đấu. Bạn quay lại sau nhé.'; }
-    else { S.ui.roster.emptyT.textContent = 'Sân đang vắng.'; S.ui.roster.emptyS.textContent = 'Chưa có đạo hữu nào ra luận võ. Bạn cứ chờ một lát, hoặc rủ bạn bè cùng ra sân. Có người vào là thấy ngay ở đây.'; }
+    else { S.ui.roster.emptyT.textContent = 'Sân đang vắng.'; S.ui.roster.emptyS.textContent = 'Chưa có đạo hữu nào ra luận võ. Bạn cứ chờ một lát hoặc rủ bạn bè cùng ra sân. Có người vào là thấy ngay.'; }
     if (S.screen === 'end') { S.m = null; S.stage = null; dropPaint('lobby'); dropPaint('match'); }
     if (S.screen !== 'lobby' && S.screen !== 'match') go('roster'); else refreshCtl();
     yardOn(S.screen === 'roster');
