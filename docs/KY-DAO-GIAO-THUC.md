@@ -176,16 +176,18 @@ Hằng số dùng chung: `YARD_TABLES` trong `server.js` ↔ `YARD_TABLES` trong
 
 ```js
 const YARD_TABLES = [
-  { id: 1, x: 0.25, z: 0.50, seats: [[0.19, 0.50], [0.31, 0.50]] },
-  { id: 2, x: 0.75, z: 0.50, seats: [[0.69, 0.50], [0.81, 0.50]] },
+  { id: 1, x: 0.17, z: 0.50, seats: [[0.125, 0.50], [0.215, 0.50]] },
+  { id: 2, x: 0.83, z: 0.50, seats: [[0.785, 0.50], [0.875, 0.50]] },
   { id: 3, x: 0.18, z: 0.76, seats: [[0.12, 0.76], [0.24, 0.76]] },
   { id: 4, x: 0.82, z: 0.76, seats: [[0.76, 0.76], [0.88, 0.76]] }
 ];
 ```
 
 - `id` là số nguyên 1–4 (giá trị của `table` trong mọi gói tin). `seats[0]` là ghế bên A, `seats[1]` ghế bên B; `seats[i]` là chỗ nhân vật đi tới.
-- Toạ độ là đề xuất ban đầu (KH §5.2); T-031 chỉnh theo ảnh chụp ba cỡ màn rồi cập nhật **cả hai** hằng số và bảng này.
+- Toạ độ đã chỉnh ở T-031 (bàn 1 và 2 dịch ra sát mép, khoảng ghế ±0,045): vùng chạm của NPC bí mật (0,32; 0,67) là hình chữ nhật cao, phủ kín ghế B của bàn 1 ở toạ độ đề xuất ban đầu (0,31; 0,50). `test/hall-tables.test.js` quét ba cỡ màn để giữ cho bàn/ghế chạm được và không đè vùng thầy bói. T-030 phải dùng đúng số này ở `server.js`.
 - `kd:sit` thành công → máy chủ đặt `tx,tz = seats[seat]`, nhân vật đi tới rồi trình duyệt vẽ dáng ngồi. Dáng ngồi lấy từ `kd:table` (theo `pid`), **không** thêm trường vào `publicPlayer`.
+
+**API vẽ bàn cho giao diện (T-034 dùng):** `Hall.setTables(mảng)` thay toàn bộ trạng thái bàn (dùng cho ack `kd:tables`, hoặc thêm đối số `true` để gộp). `Hall.setTables(T)` / `Hall.setTable(T)` với **một object T** (sự kiện `kd:table`) luôn **gộp**, không xoá bàn khác. `handlers.table(id, seat)` gọi khi chạm bàn, ghế, người đang ngồi hoặc biển tên (`seat` = −1 là mặt bàn/biển). Biển tên nằm dưới chân bàn, kẹp trong màn; màn rộng < 600px dùng nhãn ngắn (bỏ trạng thái và số người xem).
 
 ### 4.2 Ai ngồi ghế nào, ai là chủ bàn **(chốt ở T-020)**
 
