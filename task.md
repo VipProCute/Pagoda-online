@@ -31,7 +31,7 @@
 | T-024 | Biến thể cờ tướng úp | ⏳ T-022, T-023 | P1 | CORE + KYDAO | — |
 | T-025 | Luật cờ vây thuần | ✅ Gộp tích hợp (chờ PR) | P1 | CORE + KYDAO | Codex terra 6.1 + Claude Sonnet 5.5 |
 | T-026 | Luật cờ caro thuần | ✅ Gộp tích hợp (chờ PR) | P1 | CORE + KYDAO | Claude Haiku 5.5 (thay GLM Flash) |
-| T-027 | Tính Elo và điều kiện xếp hạng | ⏳ T-004 | P0 | CORE + KYDAO | — |
+| T-027 | Tính Elo và điều kiện xếp hạng | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + KYDAO | Claude Haiku 5.5 + GLM Flash + Claude Sonnet 5.5 |
 | T-028 | Bộ quản lý ván cờ | ⏳ T-020, T-021, T-022, T-027 | P0 | CORE + KYDAO + PK | — |
 | T-029 | Lưu bền dữ liệu Kỳ Đạo và kỷ lục 👤 merge | ⏳ T-020 | P0 | CORE + STORE | — |
 | T-030 | Nối Kỳ Đạo vào máy chủ | ⏳ T-028, T-029, T-031, T-051 | P0 | CORE + KYDAO + HALL + AUTH | — |
@@ -404,13 +404,13 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: luật mở ván Swap2.
 
 ### T-027 · Tính Elo và điều kiện xếp hạng
-- **Trạng thái**: ⏳ Chờ T-004
+- **Trạng thái**: ✅ Gộp vào nhánh tích hợp (chờ PR). Thợ: Claude Haiku 5.5 viết bản đầu; GLM Flash (glm-4.5-flash) sửa 2 vòng nhưng làm ngược luật D6 khi tắt Google và tự sửa task.md; Điều phối giao Claude Sonnet 5.5 sửa lần cuối. Soát: Sol 6.1 vòng 1–2, Opus 5.5 vòng 3. Điều phối kiểm tay: công thức, K, sàn, điều kiện tài khoản đúng.
 - **Ưu tiên**: P0 · **Đợt**: 1
 - **Gói ngữ cảnh**: CORE + KYDAO
 - **Khu vực chạm**: lib/kydao/elo.js (mới), test/kydao-elo.test.js (mới)
 - **Phụ thuộc**: T-004
 - **Thợ**: GLM Flash · **Soát**: Sol 6.1
-- **Người làm**: — · **Nhánh**: —
+- **Người làm**: Claude Haiku 5.5 + GLM Flash + Claude Sonnet 5.5 · **Nhánh**: `claude/T-027-elo`
 - **Thiết kế**: KH §5.6, D6
 - **Mục tiêu**: hàm thuần tính Elo và quyết định một ván có được xếp hạng không.
 - **Tiêu chí xong**:
