@@ -412,6 +412,7 @@
           h('p', { class: 'dj-cl-note' }, max ? h('b', { class: 'dj-full' }, 'Viên mãn') : `Còn ${NUM(p.levelTo - p.congLuc)} để lên cấp ${p.level + 1}`))),
       h('p', { class: 'dj-line' }, 'Cảnh giới: ', h('b', null, M.realmName(p.level))),
       h('p', { class: 'dj-line' }, 'Nội lực tối đa trong trận ', h('b', null, String(p.manaMax))),
+      h('p', { class: 'dj-line' }, 'Tâm đắc ba nhánh (dùng để học chiêu):'),
       h('ul', { class: 'dj-tam', 'aria-label': 'Tâm đắc ba nhánh' }, M.BRANCH_ORDER.map(b => {
         const br = M.BRANCHES[b], v = (p.tam && p.tam[b]) || 0;
         return h('li', { style: { '--bc': br.color } },
@@ -489,7 +490,7 @@
       if (!choices.includes(practiceSkillId)) practiceSkillId = '';
       out.push(h('section', { class: 'card dj-practice' },
         h('label', { for: 'dj-practice-skill', class: 'dj-h' }, 'Luyện võ công cùng phiên tu'),
-        h('p', { class: 'hint' }, 'Chọn một chiêu đã học để tăng độ thành thạo. Hoàn thành phiên mới nhận tiến độ; hủy phiên không nhận. Mỗi 15 phút được 2 điểm thuần thục, tối đa 240 điểm mỗi chiêu.'),
+        h('p', { class: 'hint' }, `Chọn một chiêu đã học để tăng độ thành thạo. Hoàn thành phiên mới nhận tiến độ; hủy phiên không nhận. Mỗi 15 phút được 2 điểm thành thạo, tối đa ${M.MASTERY_MAX} điểm mỗi chiêu.`),
         h('select', { id: 'dj-practice-skill', class: 'dj-practice-select', onchange: e => { practiceSkillId = e.target.value; render(); } },
           h('option', { value: '', selected: practiceSkillId === '' ? '' : null }, 'Chỉ tu nội công'),
           choices.map(id => h('option', { value: id, selected: practiceSkillId === id ? '' : null }, `${M.SKILLS[id].name} · ${M.masteryInfo(st.profile.mastery && st.profile.mastery[id]).name}`)))));
@@ -508,7 +509,7 @@
       if (r.congLuc > 0) gains.push(`+${r.congLuc} công lực`);
       const tt = tamText(r.tam);
       if (tt) gains.push(tt);
-      if (c.practice && c.practice.xp > 0 && M.SKILLS[c.practice.skillId]) gains.push(`+${c.practice.xp} thuần thục ${M.SKILLS[c.practice.skillId].name} · ${M.masteryInfo(c.practice.total).name}`);
+      if (c.practice && c.practice.xp > 0 && M.SKILLS[c.practice.skillId]) gains.push(`+${c.practice.xp} thành thạo ${M.SKILLS[c.practice.skillId].name} · ${M.masteryInfo(c.practice.total).name}`);
     }
     return h('section', { class: 'card dj-celeb' + (c.levelUp ? ' up' : ''), 'aria-label': 'Kết quả phiên tu' },
       h('div', { class: 'dj-celeb-head' },
@@ -554,7 +555,7 @@
       type: 'button', class: 'dj-dur', 'data-send': '', 'data-fk': `dur:${m.id}:${d.key}`, 'data-locked': can.ok ? null : '',
       disabled: !can.ok || !online(), 'aria-label': can.ok ? label : `${label}. ${can.reason}`, onclick: () => startSession(m, d)
     }, h('b', null, durText(d.minutes)), h('span', { class: 'dj-dur-g' }, gain), tt ? h('small', null, tt) : null,
-      practiceSkillId ? h('small', null, `+${Math.min(M.practiceXP(m.id, d.key), M.MASTERY_MAX - M.masteryXP(st.profile.mastery && st.profile.mastery[practiceSkillId]))} thuần thục ${M.SKILLS[practiceSkillId].name}`) : null);
+      practiceSkillId ? h('small', null, `+${Math.min(M.practiceXP(m.id, d.key), M.MASTERY_MAX - M.masteryXP(st.profile.mastery && st.profile.mastery[practiceSkillId]))} thành thạo ${M.SKILLS[practiceSkillId].name}`) : null);
   }
 
   function sessionCard(s) {
@@ -571,7 +572,7 @@
       h('div', { class: 'eyebrow' }, 'Đang tu luyện'),
       h('div', { class: 'dj-m-head' }, h('h3', { class: 'dj-sess-name' }, m.name), h('span', { class: 'dj-han', lang: 'zh', 'aria-hidden': 'true' }, m.han || '')),
       h('p', { class: 'dj-sess-sub' }, [d ? durText(d.minutes) : s.durationKey, g.real && g.real.congLuc > 0 ? `+${g.real.congLuc} công lực` : null, tt || null].filter(Boolean).join(' · ')),
-      s.skillId && M.SKILLS[s.skillId] ? h('p', { class: 'dj-intro' }, `Đang luyện ${M.SKILLS[s.skillId].name} · +${M.practiceXP(s.methodId, s.durationKey)} thuần thục khi hoàn thành (tối đa ${M.MASTERY_MAX}).`) : null,
+      s.skillId && M.SKILLS[s.skillId] ? h('p', { class: 'dj-intro' }, `Đang luyện ${M.SKILLS[s.skillId].name} · +${M.practiceXP(s.methodId, s.durationKey)} thành thạo khi hoàn thành (tối đa ${M.MASTERY_MAX}).`) : null,
       ui.cd, ui.cdBar, ui.cdMsg,
       h('p', { class: 'dj-keep' }, 'Có thể đóng web, hết giờ máy chủ tự ghi nhận.'),
       noteEl('session'),
@@ -604,7 +605,7 @@
     h('li', null, `Bạn cúng dường ${priceText} bằng chuyển khoản (quét mã QR).`),
     h('li', null, 'Phiên tu hoàn thành khi cúng dường được xác nhận; trong lúc chờ, phiên vẫn chạy bình thường.'),
     h('li', null, 'Xác nhận xong, bạn nhận công đức, hào quang và lời thông báo như một lượt cúng dường thường.'),
-    h('li', null, `Hoàn thành ngay chỉ giúp bạn tu xong sớm; công lực vẫn không vượt trần ${NUM(M.CONG_LUC_MAX)}. Sức mạnh trong trận phụ thuộc cảnh giới đã đạt và hào quang.`),
+    h('li', null, `Hoàn thành ngay chỉ giúp bạn tu xong sớm. Công lực vẫn không vượt trần ${NUM(M.CONG_LUC_MAX)}. Sức mạnh trong trận phụ thuộc cảnh giới đã đạt và hào quang.`),
     h('li', null, limitText));
 
   function speedCard(s) {
@@ -710,7 +711,7 @@
       h('p', { class: 'dj-sk-meta' }, `${M.TIER_NAMES[s.tier]} · ${M.KIND_NAMES[s.kind]}`),
       h('p', { class: 'dj-sk-short' }, s.short),
       h('p', { class: 'dj-sk-stats' }, M.statsLine(has ? M.combatSkill(id, mastery.xp) : s)),
-      has ? h('p', { class: 'dj-sk-meta' }, `${mastery.name} · ${mastery.xp}/${M.MASTERY_MAX} thuần thục`) : null,
+      has ? h('p', { class: 'dj-sk-meta' }, `${mastery.name} · ${mastery.xp}/${M.MASTERY_MAX} thành thạo`) : null,
       h('p', { class: 'dj-sk-desc' }, s.desc),
       foot);
   }
@@ -788,7 +789,7 @@
           h('thead', null, h('tr', null, h('th', { scope: 'col' }, 'Bậc'), h('th', { scope: 'col' }, 'Nội công'), h('th', { scope: 'col' }, 'Tâm đắc'))), h('tbody', null, req)),
         h('h4', null, 'Hoàn thành ngay'),
         speedRules(`số tiền ghi trên phiên tu (từ ${vnd(Math.min(...prices))} đến ${vnd(Math.max(...prices))} tùy công pháp)`, 'Hoàn thành ngay không giới hạn số lượt mỗi ngày.'),
-        h('p', { class: 'hint' }, 'Phiếu hoàn thành ngay: nếu phiên tự hết giờ trước khi khoản cúng dường được xác nhận, khoản đó đổi thành một phiếu dùng cho phiên sau.'),
+        h('p', { class: 'hint' }, 'Phiếu hoàn thành ngay: phiên tự hết giờ khi khoản cúng dường chưa được xác nhận thì khoản đó thành một phiếu. Phiếu dùng được cho phiên sau.'),
         h('h4', null, 'Ở đâu đánh nhau'),
         h('p', null, 'Nơi này chỉ để tu luyện. Muốn luận võ, hãy ra Sân đấu.')));
   }
