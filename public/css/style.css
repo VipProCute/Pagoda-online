@@ -436,14 +436,55 @@ dialog.lib.dark-read .lib-page figure img { mix-blend-mode: normal; background: 
 }
 @media (prefers-reduced-motion: reduce) { .mapbar-btn { transition: none; } }
 .fortune-body section { display:grid; gap:12px; }
-.fortune-body section[hidden], .tarot-cards[hidden], .fortune-result[hidden] { display:none; }
+.fortune-body section[hidden], .fortune-result[hidden] { display:none; }
 .fortune-body p { margin:0; }
 .fortune-body form { display:grid; gap:9px; }
 .fortune-status, .fortune-result { background:#2a1a11; border:1px solid #8d6b39; border-radius:10px; padding:12px; white-space:pre-line; line-height:1.6; }
-.tarot-cards { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
-.tarot-cards article { border:1px solid #af8b50; background:linear-gradient(155deg,#392445,#221729); border-radius:10px; min-height:150px; padding:12px; line-height:1.5; }
-.tarot-cards strong { color:#f0d698; } .tarot-cards p { font-size:13px; margin-top:8px; }
-@media(max-width:480px) { .tarot-cards {grid-template-columns:1fr;} .tarot-cards article {min-height:0;} }
+.tarot-app { display:grid; gap:12px; }
+.tarot-app > p { margin:0; }
+.tarot-step { color:var(--gold-ink); font-weight:600; }
+.tarot-again { background:var(--gold-soft); border:1px solid var(--gold); border-radius:10px; padding:10px 12px; line-height:1.5; }
+.tarot-topics { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+.tarot-topic, .tarot-choice { display:flex; align-items:center; gap:10px; min-height:56px; padding:10px 12px; border:1px solid #af8b50; border-radius:10px; background:linear-gradient(155deg,#392445,#221729); color:var(--fg); font:inherit; text-align:left; cursor:pointer; transition:border-color .2s ease; }
+.tarot-topic:hover, .tarot-choice:hover { border-color:var(--gold-ink); }
+.tarot-ico { font-size:22px; color:var(--gold-ink); flex:none; width:28px; text-align:center; }
+.tarot-choices { display:grid; gap:8px; }
+.tarot-choice { justify-content:center; text-align:center; }
+.tarot-choice.main { border-color:var(--gold); background:linear-gradient(155deg,#4a3320,#2a1a11); }
+.tarot-prev { justify-self:start; min-height:44px; }
+.tarot-spread { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; align-items:stretch; }
+.tarot-card { position:relative; display:block; min-height:150px; padding:0; border:1px solid #af8b50; border-radius:10px; background:linear-gradient(155deg,#392445,#221729); color:var(--fg); font:inherit; text-align:left; cursor:pointer; overflow:hidden; }
+.tarot-card.pos-advice { grid-column:2; grid-row:1; }
+.tarot-card.pos-obstacle { grid-column:1; grid-row:2; }
+.tarot-card.pos-present { grid-column:2; grid-row:2; }
+.tarot-card.pos-support { grid-column:3; grid-row:2; }
+.tarot-card.pos-outlook { grid-column:2; grid-row:3; }
+.tarot-card.key { border:2px solid var(--gold); box-shadow:0 0 14px rgba(212,171,82,.35); }
+.tarot-card.key .tarot-front strong { font-size:16px; }
+.tarot-back-face { display:grid; place-content:center; gap:4px; min-height:150px; padding:10px; text-align:center; background:repeating-linear-gradient(45deg,#2b1c36,#2b1c36 6px,#35234a 6px,#35234a 12px); }
+.tarot-back-face b { font-size:26px; color:var(--gold-ink); font-family:var(--font-display); }
+.tarot-back-face small { color:var(--muted); font-size:11.5px; }
+.tarot-front { display:grid; gap:5px; padding:10px; line-height:1.45; font-size:12.5px; }
+.tarot-front em { font-style:normal; font-size:11.5px; color:var(--muted); }
+.tarot-front strong { color:#f0d698; font-size:14px; }
+.tarot-front small { color:var(--gold-ink); font-size:11.5px; }
+.tarot-card.rev .tarot-front strong { font-style:italic; }
+.tarot-card.flipped { animation:tarot-flip .45s ease; }
+@keyframes tarot-flip { from { transform:rotateY(90deg); opacity:.4; } to { transform:none; opacity:1; } }
+.tarot-reading { display:grid; gap:8px; background:#2a1a11; border:1px solid #8d6b39; border-radius:10px; padding:12px; line-height:1.6; }
+.tarot-reading[hidden] { display:none; }
+.tarot-reading h3 { margin:0; font-family:var(--font-display); font-size:20px; color:var(--gold-ink); }
+.tarot-reading p { margin:0; }
+.tarot-reading .btn { justify-self:start; min-height:44px; }
+.tarot-app .btn { min-height:44px; }
+@media(max-width:480px) {
+  .tarot-topics { grid-template-columns:1fr 1fr; }
+  .tarot-spread { grid-template-columns:1fr; }
+  .tarot-card.pos-advice, .tarot-card.pos-obstacle, .tarot-card.pos-present, .tarot-card.pos-support, .tarot-card.pos-outlook { grid-column:auto; grid-row:auto; }
+  .tarot-card, .tarot-back-face { min-height:64px; }
+  .tarot-back-face { grid-auto-flow:column; justify-content:center; align-items:center; gap:10px; }
+}
+@media (prefers-reduced-motion: reduce) { .tarot-card.flipped { animation:none; } .tarot-topic, .tarot-choice { transition:none; } }
 
 /* ---------- Tàng Kinh Các: bảng tọa thiền nổi trên cảnh ---------- */
 .medi { position: absolute; z-index: 4; right: 12px; bottom: 12px; width: min(380px, calc(100% - 24px)); max-height: calc(100% - 64px);

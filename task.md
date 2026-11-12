@@ -48,7 +48,7 @@
 | T-050 | Viết lại lịch âm (UTC+8 trước 1968, can chi đủ) | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + FORTUNE | Codex terra 6.1 + Claude Sonnet 5.5 |
 | T-051 | Máy chủ: rút tarot theo hạt giống, giới hạn xin xăm | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + FORTUNE | Claude Sonnet 5.5 |
 | T-052 | Nội dung 78 lá tarot theo 8 chủ đề | ✅ Gộp tích hợp (chờ PR) | P1 | CORE + FORTUNE | Claude Sonnet 5.5 (thay Gemini Flash) |
-| T-053 | Giao diện tarot theo chủ đề | ⏳ T-051, T-052, T-010 | P1 | CORE + FORTUNE | — |
+| T-053 | Giao diện tarot theo chủ đề | ✅ Gộp tích hợp (chờ PR) | P1 | CORE + FORTUNE | Claude Sonnet 5.5 |
 | T-054 | Bộ máy an sao Tử Vi | ⏳ T-050 | P0 | CORE + FORTUNE | — |
 | T-055 | Đối chiếu bảng tử vi, lập lá số mẫu 👤 | 🔵 Sẵn sàng | P0 | CORE + FORTUNE + DOCS | — |
 | T-056 | Nội dung luận giải tử vi | ✅ Gộp tích hợp (chờ PR) | P1 | CORE + FORTUNE | Claude Sonnet 5.5 (thay Gemini Flash) |
@@ -722,13 +722,13 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: ảnh lá bài.
 
 ### T-053 · Làm giao diện tarot theo chủ đề
-- **Trạng thái**: ⏳ Chờ T-051, T-052, T-010
+- **Trạng thái**: ✅ Gộp vào nhánh tích hợp (chờ PR). Thợ: Claude Sonnet 5.5 (qua proxy). Soát: Opus 5.5 thay Argon, Sol 6.1. Điều phối chạy thật: chọn chủ đề → tình trạng → khung → 5 lá chữ thập + Lời thầy, không lỗi console.
 - **Ưu tiên**: P1 · **Đợt**: 2
 - **Gói ngữ cảnh**: CORE + FORTUNE
 - **Khu vực chạm**: public/js/tarot.js (mới, global `Tarot`), public/js/fortune.js (bỏ khối tarot cũ, gọi `Tarot`), public/index.html (khối tarot trong `#dlg-fortune`, `<script>`, `?v=`), public/css/style.css (khối `.tarot-*`)
 - **Phụ thuộc**: T-051, T-052, T-010 (cùng sửa `fortune.js`)
 - **Thợ**: Sonnet 5.5 (high) · **Soát**: Gemini Argon + Sol 6.1
-- **Người làm**: — · **Nhánh**: —
+- **Người làm**: Claude Sonnet 5.5 · **Nhánh**: `claude/T-053-giao-dien-tarot`
 - **Thiết kế**: KH §7.2, D10
 - **Mục tiêu**: chọn chủ đề → chọn khung → trải 5 lá → lời thầy tổng hợp, không cần gõ chữ.
 - **Tiêu chí xong**:

@@ -15,7 +15,7 @@ index.html ─ nạp script theo thứ tự cố định         server.js  Expr
            Tàng Kinh Các, sân đấu, nhân vật)           ├─ lib/announce.js    câu thông báo + gọi TTS VieNeu
   dojo.js (Võ Học Các) · arena.js (Sân đấu)            ├─ lib/fortune-queue.js  hàng đợi xin xăm
   audio.js · voice.js (WebRTC) · celebrate.js          ├─ lib/sweeper.js     sự kiện Tảo Địa Tăng
-  library.js · meditate.js · fortune.js · lunar.js     ├─ lib/martial/service.js  tu luyện, học chiêu (thuần)
+  library.js · meditate.js · fortune.js · tarot.js · lunar.js     ├─ lib/martial/service.js  tu luyện, học chiêu (thuần)
   ┌ dùng chung với máy chủ (UMD) ┐                     ├─ lib/pk/engine.js   Duel: giải lượt (thuần)
   │ martial · aura · merit · lunar  │ ◄── require ──── ├─ lib/pk/manager.js  sân đấu, mời, sảnh, lượt, vào lại
   └───────────────────────────────┘                    ├─ lib/pk/buffs.js · rules.js · rng.js
