@@ -38,6 +38,7 @@ Kỳ Đạo (năm môn cờ ở Sân chùa; hợp đồng: docs/KY-DAO-GIAO-THUC
 | Nạp module | đầu file | nạp `public/js/aura.js`, `merit.js`, `martial.js`; `TRACKS` từ `public/audio/chants/manifest.json`, `BOOKS` từ `public/kinh/index.json` |
 | Cấu hình env | `process.env` | mọi biến ở README "Cấu hình"; cờ tính năng bật khi `!== '0'` |
 | Hằng số thế giới | `PLACES`, `SCENES`, `LIB_SEATS`, `MILESTONES`, `ITEMS`, `KINDS` | nơi, cảnh, bồ đoàn, mốc công đức, lễ vật |
+| Kỳ Đạo | `KYDAO_*`, `YARD_TABLES`, `kd*` (hàm hỗ trợ), `kydaoOnly`, `kydaoDropUser` | cấu hình, 4 bàn đá, cầu nối `lib/kydao/manager.js` ↔ socket (gửi theo `pid`, phòng `yard`/`hall`/`kd:<bàn>`), lưu `db.kydao`, handler `kd:*` |
 | Tiện ích | `vnDay` (UTC+7), `safeEqual`, `makeCode` (`CD` + 6 ký tự) | |
 | Công đức | `addMeritUid`, `penalize`, `linkGuest`, `accountOf` | cộng/trừ, mốc, gộp khách vào tài khoản (có hàm hoàn tác khi flush lỗi) |
 | HTTP | `app.get` / `app.post` | `/healthz`, `/api/config`, `/api/announce/:id`, `/api/webhooks/sepay`, `/api/admin/*` (header `x-admin-key`), `/api/auth/*` (trong `lib/auth.js`) |
@@ -46,7 +47,7 @@ Kỳ Đạo (năm môn cờ ở Sân chùa; hợp đồng: docs/KY-DAO-GIAO-THUC
 | Socket | `io.on('connection'` | toàn bộ handler (mục 4) |
 | Vòng lặp | `startLoops` | 50 ms di chuyển; 100 ms vị trí; 1 s công đức/mốc/thống kê/sweeper; 5 s bảng công đức; 60 s dọn dẹp; vòng quét võ học riêng |
 | Tắt máy | `SIGTERM` | flush store (tối đa 8 s). Render chạy `node server.js` trực tiếp vì `npm start` nuốt tín hiệu |
-| Khởi động | `main()` | `store.init` → tạo martial service + arena manager → listen |
+| Khởi động | `main()` | `store.init` → tạo martial service + arena manager + kydao manager → listen |
 
 Lưu ý: `players` và `io` khai báo sau các hàm dùng chúng; đừng gọi các hàm đó ở thời điểm nạp module.
 
@@ -79,7 +80,7 @@ Ack chuẩn: `{ ok:true, … }` hoặc `{ ok:false, reason, code? }`. Sự kiệ
 | Võ học (bọc `martialOnly`) | `martial:state`, `sweeper:claim`, `tu:start`, `tu:cancel`, `tu:speedup`, `tu:speedup:cancel`, `tu:voucher`, `martial:seen`, `vo:learn`, `vo:loadout` |
 | Spar | `spar:invite`, `spar:respond` |
 | Sân đấu (bọc `inArena`) | `arena:dnd`, `arena:blocks`, `pk:block`, `pk:unblock`, `pk:invite`, `pk:invite:cancel`, `pk:respond`, `pk:loadout`, `pk:pick`, `pk:forfeit`, `pk:resume` |
-| Kỳ Đạo (bọc `kydaoOnly`; sẽ có từ T-030) | `kd:tables`, `kd:sit`, `kd:setup`, `kd:ready`, `kd:stand`, `kd:invite`, `kd:invite:cancel`, `kd:respond`, `kd:move`, `kd:draw`, `kd:resign`, `kd:mark`, `kd:agree`, `kd:resume-play`, `kd:watch`, `kd:unwatch`, `kd:resume` |
+| Kỳ Đạo (bọc `kydaoOnly`) | `kd:tables`, `kd:sit`, `kd:setup`, `kd:ready`, `kd:stand`, `kd:invite`, `kd:invite:cancel`, `kd:respond`, `kd:move`, `kd:draw`, `kd:resign`, `kd:mark`, `kd:agree`, `kd:resume-play`, `kd:watch`, `kd:unwatch`, `kd:resume` |
 
 **Máy chủ → trình duyệt**
 
@@ -94,7 +95,7 @@ Ack chuẩn: `{ ok:true, … }` hoặc `{ ok:false, reason, code? }`. Sự kiệ
 | Võ học | `tu:update`, `martial:inheritance` |
 | Spar | `spar:invited`, `spar:accepted`, `spar:declined`, `spar:ready` |
 | Sân đấu | `arena:add`, `arena:del`, `arena:upd`, `pk:invited`, `pk:invite:closed`, `pk:lobby`, `pk:lobby:status`, `pk:turn`, `pk:locked`, `pk:reveal`, `pk:end` |
-| Kỳ Đạo (sẽ có từ T-030) | `kd:table`, `kd:invited`, `kd:invite:closed`, `kd:start`, `kd:moved`, `kd:offer`, `kd:marks`, `kd:end` |
+| Kỳ Đạo | `kd:table`, `kd:invited`, `kd:invite:closed`, `kd:start`, `kd:moved`, `kd:offer`, `kd:marks`, `kd:end` |
 
 Hợp đồng chi tiết của võ học và PK (payload, thứ tự gói tin): **`docs/VO-HOC-GIAO-THUC.md`**. Của Kỳ Đạo: **`docs/KY-DAO-GIAO-THUC.md`**. Đổi giao thức thì sửa tài liệu đó cùng PR.
 

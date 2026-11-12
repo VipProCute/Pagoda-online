@@ -18,8 +18,9 @@ const announce = require('./lib/announce');
 const MARTIAL = require('./public/js/martial');
 const { createMartialService } = require('./lib/martial/service');
 const { createSweeper } = require('./lib/sweeper');
-const { mergeMartialGuest, donatedBy } = require('./lib/account');
+const { mergeMartialGuest, mergeKydaoGuest, donatedBy } = require('./lib/account');
 const { createArenaManager } = require('./lib/pk/manager');
+const { createKydaoManager } = require('./lib/kydao/manager');
 const fs = require('fs');
 
 // Bài tụng dựng sẵn (tools/build_chants.py): tên, file và thời lượng thật của từng bài
@@ -78,6 +79,18 @@ const PLACES = ['hall', 'dojo', 'arena'];     // thêm nơi mới (ví dụ coi 
 const SCENES = { hall: [0.5, 0.8], yard: [0.5, 0.8], library: [0.5, 0.9] };
 // Bồ đoàn trong Tàng Kinh Các (x, z trên sàn). Phải khớp LIB_SEATS trong public/js/hall.js.
 const LIB_SEATS = [[0.22, 0.44], [0.41, 0.44], [0.59, 0.44], [0.78, 0.44], [0.22, 0.72], [0.41, 0.72], [0.59, 0.72], [0.78, 0.72]];
+
+/* ----- Kỳ Đạo: bàn cờ ở Sân chùa (docs/KY-DAO-GIAO-THUC.md) ----- */
+const KYDAO_ENABLED = process.env.KYDAO_ENABLED !== '0';
+const KYDAO_MAX_GAMES = Number(process.env.KYDAO_MAX_GAMES) >= 1 ? Math.floor(Number(process.env.KYDAO_MAX_GAMES)) : 12;
+const KYDAO_TIME_SCALE = Number(process.env.KYDAO_TIME_SCALE) > 0 ? Number(process.env.KYDAO_TIME_SCALE) : 1;   // chỉ để thử: 0.05 = mọi mốc giờ ngắn gấp 20 lần
+// Bốn bàn đá ở Sân chùa (x, z trên sàn). seats[0] là ghế bên A, seats[1] là ghế bên B. Phải khớp YARD_TABLES trong public/js/hall.js.
+const YARD_TABLES = [
+  { id: 1, x: 0.17, z: 0.50, seats: [[0.125, 0.50], [0.215, 0.50]] },
+  { id: 2, x: 0.83, z: 0.50, seats: [[0.785, 0.50], [0.875, 0.50]] },
+  { id: 3, x: 0.18, z: 0.76, seats: [[0.12, 0.76], [0.24, 0.76]] },
+  { id: 4, x: 0.82, z: 0.76, seats: [[0.76, 0.76], [0.88, 0.76]] }
+];
 
 const MERIT = MERITS.EARN;   // thắp nhang +10, dâng lễ +5, … ; cúng dường +1 cho mỗi 1.000đ
 // Mốc công đức trong ngày → hiệu ứng chúc mừng ở trình duyệt. Máy chủ quyết định, trình duyệt chỉ hiển thị.
@@ -140,7 +153,7 @@ async function iceServers() {
 /* ---------------- dữ liệu ---------------- */
 const db = store.get();    // cùng một object suốt vòng đời; main() gọi store.init() điền dữ liệu trước khi mở cổng
 const sweeper = createSweeper();
-let martial = null, arena = null;   // dịch vụ tu luyện và quản lý sân đấu, tạo trong main() sau khi dữ liệu đã nạp
+let martial = null, arena = null, kydao = null;   // dịch vụ tu luyện, quản lý sân đấu và bàn cờ, tạo trong main() sau khi dữ liệu đã nạp
 function rollDay() {
   const d = vnDay();
   if (db.day !== d) {
@@ -216,6 +229,7 @@ function meritOf(uid) {
 }
 function linkGuest(guest, uid) {
   if (db.linkedGuests[guest]) return null;
+  kydaoDropUser(guest);     // hủy ván cờ dở của khách trước khi gộp Elo (không hoàn tác: ván hủy không tính gì)
   const from = db.merit[guest], to = db.merit[uid];
   const guestAura = db.auras[guest], accountAura = db.auras[uid];
   if (from) {
@@ -241,8 +255,11 @@ function linkGuest(guest, uid) {
   }
   // hồ sơ võ học của khách (nếu có) cũng theo về tài khoản: công lực, tâm đắc, chiêu đã học, phiên tu, phiếu, thắng thua
   const undoMartial = mergeMartialGuest(db, guest, uid, now());
+  // Elo Kỳ Đạo của khách cũng theo về tài khoản (mỗi môn lấy bản nhiều ván hơn)
+  const undoKydao = mergeKydaoGuest(db, guest, uid);
   db.linkedGuests[guest] = uid;
   return () => {
+    if (undoKydao) undoKydao();
     if (undoMartial) undoMartial();
     delete db.linkedGuests[guest];
     if (from) {
@@ -355,7 +372,8 @@ function clientConfig() {
     kinds: KINDS,
     voice: VOICE_ENABLED,
     tts: announce.enabled,
-    martial: { enabled: MARTIAL_ENABLED, pk: PK_ENABLED, speedup: SPEEDUP_ENABLED, loginRequired: auth.enabled }
+    martial: { enabled: MARTIAL_ENABLED, pk: PK_ENABLED, speedup: SPEEDUP_ENABLED, loginRequired: auth.enabled },
+    kydao: { enabled: KYDAO_ENABLED, loginRequired: auth.enabled }
   };
 }
 
@@ -710,6 +728,104 @@ function leaveArena(p, reason) {
   if (!otherInArena(p)) arena.leave(p.uid, reason);     // còn tab khác của cùng tài khoản ở sân thì giữ nguyên chỗ
 }
 
+/* ---------------- Kỳ Đạo: hàm hỗ trợ (manager ở lib/kydao/manager.js, hợp đồng ở docs/KY-DAO-GIAO-THUC.md) ---------------- */
+const KD_GAME_IDS = ['chess', 'xiangqi', 'jieqi', 'go', 'gomoku'];
+const kdOwn = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
+const kdBadKey = k => typeof k !== 'string' || !k || k === '__proto__' || k === 'constructor' || k === 'prototype';
+/** Hồ sơ gửi cho manager: chỉ trường cần thiết. `pid` là id trong phòng, uid không bao giờ rời máy chủ. */
+const kdUser = p => ({ uid: p.uid, pid: p.id, name: p.name, look: p.look, x: p.x, z: p.z });
+const kdInHall = p => !p.place || p.place === 'hall';
+const kdInYard = p => p.scene === 'yard' && kdInHall(p);
+const kdSeat = new Map();      // uid -> { table, status, pids }: ai đang ngồi bàn nào (để khóa vị trí khi đang đấu)
+const kdPidUid = new Map();    // pid ở ghế -> uid (giữ lại cả khi người đó nối lại với pid mới)
+function kdDeliver(ev, payload, pick) { for (const q of players.values()) if (pick(q)) q.socket.emit(ev, payload); }
+/** Nhớ ai ngồi ghế nào từ gói `kd:table` của bàn thật, và cho nhân vật đi tới ghế. */
+function kdTrackTable(T) {
+  if (!T || !Number.isInteger(T.table) || T.table < 1 || T.table > YARD_TABLES.length || !Array.isArray(T.seats)) return;
+  for (const [uid, s] of kdSeat) if (s.table === T.table) { kdSeat.delete(uid); for (const pid of s.pids) kdPidUid.delete(pid); }
+  T.seats.forEach((s, i) => {
+    if (!s) return;
+    const q = players.get(s.pid), uid = q ? q.uid : kdPidUid.get(s.pid);
+    if (!uid) return;
+    const cur = kdSeat.get(uid) || { table: T.table, status: T.status, pids: [] };
+    cur.pids.push(s.pid); kdSeat.set(uid, cur); kdPidUid.set(s.pid, uid);
+    const [x, z] = YARD_TABLES[T.table - 1].seats[i];
+    for (const o of players.values()) if (o.uid === uid && o.scene === 'yard') { o.tx = x; o.tz = z; }
+  });
+}
+/** Chuyển người chơi sang Sân chùa (khi nhận lời mời từ chánh điện mà có bàn trống). */
+function kdGoYard(q) {
+  if (q.scene === 'yard' || !kdInHall(q)) return;
+  fortuneQueue.remove(q.id); standUp(q);
+  const [x, z] = SCENES.yard;
+  q.scene = 'yard'; q.x = q.tx = x; q.z = q.tz = z; q.dirty = true;
+  io.emit('pscene', { id: q.id, scene: 'yard', x: q.x, z: q.z });
+}
+/** Gói gửi tới từng người chơi (mọi tab của uid). Vào ván thì thôi xem bàn khác; có bàn thật thì cả hai ra sân. */
+function kdEmit(uid, ev, payload) {
+  for (const q of players.values()) {
+    if (q.uid !== uid) continue;
+    if (ev === 'kd:start' && payload && payload.you) {
+      q.kdWatch = null;
+      if (payload.table) kdGoYard(q);
+    }
+    q.socket.emit(ev, payload);
+  }
+}
+/** Gói gửi theo "phòng": yard = người ở Sân chùa, hall = người ở chánh điện hoặc sân (bàn trong), kd:<bàn> = người xem. */
+function kdRoom(name, ev, payload) {
+  if (ev === 'kd:table') kdTrackTable(payload);
+  if (name === 'yard') kdDeliver(ev, payload, kdInYard);
+  else if (name === 'hall') kdDeliver(ev, payload, kdInHall);
+  else if (/^kd:[1-4]$/.test(name)) { const n = Number(name.slice(3)); kdDeliver(ev, payload, q => q.kdWatch === n); }
+}
+function kdLeave(p, why) { p.kdWatch = null; if (kydao) kydao.leave(kdUser(p), why); }
+/** Khách vừa liên kết tài khoản: hủy ván đang đấu, đứng dậy, đóng lời mời, thôi xem (KY-DAO §10). Chạy đồng bộ trong linkGuest. */
+function kydaoDropUser(guest) {
+  if (!kydao) return;
+  let q = null;
+  for (const o of players.values()) if (o.uid === guest) { q = o; break; }
+  try { kydao.leave(q ? kdUser(q) : { uid: guest, pid: 0, name: '' }, 'account'); } catch (e) { console.error('[kydao] dropUser:', e && e.message); }
+  for (const o of players.values()) if (o.uid === guest) o.kdWatch = null;
+}
+/* Lưu bền (db.kydao): Elo từng người, ván đã xong (giữ 500), ván đang dở, bộ đếm cặp trong ngày. */
+function kdGetRating(uid, game) {
+  const r = db.kydao.ratings;
+  if (kdBadKey(uid) || !KD_GAME_IDS.includes(game) || !kdOwn(r, uid) || !kdOwn(r[uid], game)) return null;
+  return r[uid][game];
+}
+function kdSetRating(uid, game, stat) {
+  if (kdBadKey(uid) || !KD_GAME_IDS.includes(game)) return;
+  const r = db.kydao.ratings;
+  if (!kdOwn(r, uid)) r[uid] = { name: '' };
+  r[uid][game] = stat;
+  store.save();
+}
+const kdPairKey = (day, a, b, game) => [day, ...[a, b].sort(), game].join('|');
+function kdPairCount(a, b, game) {
+  const pairs = db.kydao.pairs, key = kdPairKey(vnDay(now()), a, b, game);
+  return kdOwn(pairs, key) ? Number(pairs[key]) || 0 : 0;
+}
+function kdSaveGame(rec) {
+  const kd = db.kydao;
+  if (rec.rated) {
+    const day = vnDay(rec.at), key = kdPairKey(day, rec.a.uid, rec.b.uid, rec.game);
+    for (const k of Object.keys(kd.pairs)) if (!k.startsWith(day + '|')) delete kd.pairs[k];   // bỏ bộ đếm của ngày cũ
+    kd.pairs[key] = (kdOwn(kd.pairs, key) ? Number(kd.pairs[key]) || 0 : 0) + 1;
+    for (const side of [rec.a, rec.b]) if (!kdBadKey(side.uid) && kdOwn(kd.ratings, side.uid)) kd.ratings[side.uid].name = side.name;
+  }
+  kd.games.push({ ...rec, id: store.nextId() });
+  if (kd.games.length > 500) kd.games.splice(0, kd.games.length - 500);
+  store.save();
+}
+function kdGetActive(uid) { const a = db.kydao.active; return !kdBadKey(uid) && kdOwn(a, uid) ? a[uid] : null; }
+function kdSetActive(uid, id) {
+  if (kdBadKey(uid)) return;
+  const a = db.kydao.active;
+  if (id == null) { if (kdOwn(a, uid)) delete a[uid]; } else a[uid] = id;
+  store.save();
+}
+
 /* ---------------- kết nối ---------------- */
 io.use((socket, next) => {
   const fwd = socket.handshake.headers['x-forwarded-for'];
@@ -789,6 +905,7 @@ io.on('connection', socket => {
     if (!p || typeof scene !== 'string' || !Object.prototype.hasOwnProperty.call(SCENES, scene)) return;
     if (scene !== p.scene) {
       if (scene !== 'hall') fortuneQueue.remove(p.id);
+      if (p.scene === 'yard') kdLeave(p, 'scene');       // rời Sân chùa: đứng dậy khỏi ghế, thôi xem; ván đang đấu tính là vắng mặt
       standUp(p);
       const [x, z] = SCENES[scene];
       p.scene = scene; p.x = p.tx = x; p.z = p.tz = z; p.dirty = true;
@@ -850,6 +967,11 @@ io.on('connection', socket => {
 
   socket.on('move', d => {
     if (!p || !d) return;
+    const seated = kydao && kdSeat.get(p.uid);
+    if (seated) {                                           // đang ở bàn cờ: đang đấu thì khóa vị trí, đang chờ mà bỏ đi thì đứng dậy
+      if (seated.status === 'playing') return;
+      kydao.stand(kdUser(p), { table: seated.table });
+    }
     standUp(p);                                             // đang ngồi bồ đoàn mà đi chỗ khác thì đứng dậy
     p.tx = num(d.x, X_MIN, X_MAX, p.x);
     p.tz = num(d.z, Z_MIN, Z_MAX, p.z);
@@ -1076,7 +1198,7 @@ io.on('connection', socket => {
     } else if (p.place === 'arena') {
       leaveArena(p, 'left');
     }
-    if (place !== 'hall') fortuneQueue.remove(p.id);   // đi sang Võ Học Các / Sân đấu thì rời hàng chờ xin xăm
+    if (place !== 'hall') { fortuneQueue.remove(p.id); kdLeave(p, 'place'); }   // đi sang Võ Học Các / Sân đấu thì rời hàng chờ xin xăm và bàn cờ
     standUp(p);
     if (place !== p.place) {
       // mỗi nơi có lối vào riêng: ra Sân đấu thì đứng ở cổng sân, về chùa thì đứng ở cửa cảnh đang ở
@@ -1257,13 +1379,71 @@ io.on('connection', socket => {
   socket.on('pk:forfeit', inArena((d, ack) => ack(arena.forfeit(p.uid, d.matchId))));
   socket.on('pk:resume', inArena((d, ack) => ack(arena.resume(p.uid))));
 
+  /* ----- Kỳ Đạo: bàn cờ ở Sân chùa. Máy chủ là trọng tài; lỗi nghiệp vụ trả bằng ack, không ném lỗi ----- */
+  // where: 'yard' = phải ở Sân chùa · 'hall' = chánh điện hoặc sân (mời đánh cờ) · 'any' = mọi nơi (kiểm quyền theo uid của ván)
+  const kydaoOnly = (where, fn) => (d, ack) => {
+    if (typeof d === 'function') { ack = d; d = {}; }          // sự kiện không tham số: chỉ truyền callback
+    if (!p || typeof ack !== 'function') return;
+    if (!KYDAO_ENABLED || !kydao) return ack({ ok: false, code: 'off', reason: 'Bàn cờ chưa mở.' });
+    if (!bucket('kd', 5, 15)) return ack({ ok: false, code: 'rate', reason: 'Bạn thao tác quá nhanh.' });
+    if (where === 'yard' && !kdInYard(p)) return ack({ ok: false, reason: 'Hãy ra Sân chùa để chơi cờ.' });
+    if (where === 'hall' && !kdInHall(p)) return ack({ ok: false, reason: 'Hãy về chánh điện hoặc Sân chùa để chơi cờ.' });
+    try { ack(fn(d && typeof d === 'object' && !Array.isArray(d) ? d : {})); }
+    catch (e) { console.error('[kydao]', e && e.stack || e); ack({ ok: false, reason: 'Có lỗi, bạn thử lại nhé.' }); }
+  };
+  const kdPass = name => socket.on('kd:' + name.event, kydaoOnly(name.where, d => kydao[name.fn](kdUser(p), d)));
+  [
+    { event: 'setup', where: 'yard', fn: 'setup' }, { event: 'ready', where: 'yard', fn: 'ready' },
+    { event: 'stand', where: 'yard', fn: 'stand' }, { event: 'invite:cancel', where: 'hall', fn: 'cancelInvite' }, { event: 'respond', where: 'hall', fn: 'respond' },
+    { event: 'draw', where: 'any', fn: 'draw' }, { event: 'resign', where: 'any', fn: 'resign' }, { event: 'mark', where: 'any', fn: 'mark' },
+    { event: 'agree', where: 'any', fn: 'agree' }, { event: 'resume-play', where: 'any', fn: 'resumePlay' }, { event: 'resume', where: 'any', fn: 'resume' }
+  ].forEach(kdPass);
+  socket.on('kd:tables', kydaoOnly('hall', d => {
+    const r = kydao.tables(kdUser(p), d);
+    // bàn thật chỉ gửi cho người ở sân; ở chánh điện chỉ thấy các bàn trong (ván mời đang đấu)
+    if (r.ok && !kdInYard(p)) r.tables = r.tables.filter(t => t.table === null);
+    return r;
+  }));
+  socket.on('kd:sit', kydaoOnly('yard', d => {
+    const r = kydao.sit(kdUser(p), d);
+    if (r.ok) p.kdWatch = null;
+    return r;
+  }));
+  socket.on('kd:invite', kydaoOnly('hall', d => {
+    const t = players.get(Number(d.toPid));
+    if (!t || t === p || t.uid === p.uid || !kdInHall(t)) return { ok: false, reason: 'Không có người chơi này.' };
+    // cùng bộ lọc với pk:invite: người đã chặn mình hoặc đang bật "không nhận lời mời" trả cùng một câu, không lộ lý do
+    const prof = martial && martial.profile(t.uid, false);
+    if (prof && (prof.dnd || prof.blocked.some(b => b.uid === p.uid))) return { ok: false, reason: 'Người này không nhận lời mời.' };
+    const rules = { target: kdUser(t) };
+    for (const k of ['game', 'rated', 'pace', 'size']) if (kdOwn(d, k)) rules[k] = d[k];
+    return kydao.invite(kdUser(p), rules);
+  }));
+  socket.on('kd:move', kydaoOnly('any', d => {
+    if (typeof d.move !== 'string' || d.move.length > 8) return { ok: false, reason: 'Nước đi không hợp lệ.' };
+    return kydao.move(kdUser(p), d);
+  }));
+  socket.on('kd:watch', kydaoOnly('yard', d => {
+    const r = kydao.watch(kdUser(p), d);
+    if (r.ok) p.kdWatch = r.table;
+    return r;
+  }));
+  socket.on('kd:unwatch', kydaoOnly('any', d => {
+    const r = kydao.unwatch(kdUser(p), d);
+    if (r.ok) p.kdWatch = null;
+    return r;
+  }));
+
   socket.on('disconnect', () => {
     const ip = socket.data.ip, n = (ipCount.get(ip) || 1) - 1;
     if (n <= 0) ipCount.delete(ip); else ipCount.set(ip, n);
     if (p) {
       fortuneQueue.remove(p.id);
       if (p.place === 'arena' && arena) leaveArena(p, 'disconnect');
+      const gone = p;
       players.delete(p.id); io.emit('pl', { id: p.id }); p = null;
+      // còn tab khác của cùng tài khoản thì giữ nguyên chỗ ngồi và ván cờ
+      if (kydao && ![...players.values()].some(q => q.uid === gone.uid)) kydao.leave(kdUser(gone), 'disconnect');
     }
   });
 });
@@ -1336,6 +1516,7 @@ async function shutdown() {
   closing = true;
   try {
     if (arena) arena.shutdown();
+    if (kydao) kydao.shutdown();
     const saved = await Promise.race([store.close(), new Promise(r => setTimeout(() => r(false), 8000))]);   // Render chờ SIGTERM tối đa ~30 giây
     if (!saved) console.error('[store] Cảnh báo: chưa ghi nốt được thay đổi cuối trước khi tắt.');
   } catch (e) { console.error('[store] Lỗi khi tắt:', e && e.message); }
@@ -1373,13 +1554,23 @@ async function main() {
     log: (...a) => console.error('[arena]', ...a),
     config: { enabled: PK_ENABLED, maxMatches: PK_MAX_MATCHES, timeScale: PK_TIME_SCALE }
   });
+  kydao = createKydaoManager({
+    now, setTimer: (fn, ms) => setTimeout(fn, ms), clearTimer: h => clearTimeout(h),
+    emit: kdEmit, emitRoom: kdRoom,
+    newId: () => crypto.randomBytes(9).toString('base64url'),       // gameId, inviteId: khó đoán
+    isAccount: uid => !auth.enabled || String(uid).startsWith('google:'),
+    getRating: kdGetRating, setRating: kdSetRating, saveGame: kdSaveGame, pairCountToday: kdPairCount,
+    getActive: kdGetActive, setActive: kdSetActive,
+    log: (...a) => console.error('[kydao]', ...a),
+    config: { enabled: KYDAO_ENABLED, maxGames: KYDAO_MAX_GAMES, timeScale: KYDAO_TIME_SCALE }
+  });
   for (const d of db.donations) scheduleTestDonation(d);
   startLoops();
   server.listen(PORT, () => {
     console.log(`${SITE_NAME} đang chạy tại http://localhost:${PORT}`);
     console.log(`Cúng dường tịnh tài: ${DONATION_ENABLED ? 'BẬT (' + BANK.id + ')' : 'TẮT (chưa đặt BANK_ID / BANK_ACCOUNT)'} · Tự xác nhận SePay: ${SEPAY_API_KEY ? 'BẬT' : 'TẮT'} · Quản trị: ${ADMIN_KEY ? 'BẬT' : 'TẮT (chưa đặt ADMIN_KEY)'}`);
     console.log(`Nói chuyện bằng giọng: ${VOICE_ENABLED ? 'BẬT' : 'TẮT'} (TURN: ${CF_TURN.id ? 'Cloudflare' : TURN.urls.length ? 'tự cấu hình' : 'chưa có, chỉ STUN'}) · Giọng đọc thông báo: ${announce.enabled ? 'VieNeu “' + announce.voice + '” tại ' + announce.url : 'chưa đặt TTS_URL, trình duyệt tự đọc'}`);
-    console.log(`Lưu trữ: ${store.backend === 'pg' ? 'PostgreSQL' : 'file JSON ' + store.FILE} · Võ Học Các: ${MARTIAL_ENABLED ? 'BẬT' : 'TẮT'} · Sân đấu: ${PK_ENABLED ? 'BẬT' : 'TẮT'} · Hoàn thành tu luyện ngay: ${SPEEDUP_ENABLED ? 'BẬT' : 'TẮT'}`);
+    console.log(`Lưu trữ: ${store.backend === 'pg' ? 'PostgreSQL' : 'file JSON ' + store.FILE} · Võ Học Các: ${MARTIAL_ENABLED ? 'BẬT' : 'TẮT'} · Sân đấu: ${PK_ENABLED ? 'BẬT' : 'TẮT'} · Bàn cờ: ${KYDAO_ENABLED ? 'BẬT' : 'TẮT'} · Hoàn thành tu luyện ngay: ${SPEEDUP_ENABLED ? 'BẬT' : 'TẮT'}`);
   });
 }
 main().catch(e => { console.error('Không khởi động được máy chủ:', e && e.message || e); process.exit(1); });
