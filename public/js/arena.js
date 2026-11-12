@@ -7,11 +7,11 @@
 (function (root) {
   'use strict';
   const M = root.MARTIAL, TAU = Math.PI * 2;
-  const RAGE_MAX = 100, EXPOSED_PCT = 25, KC_PCT = 25, KC_TURNS = 2;       // khớp lib/pk/rules.js
+  const RAGE_MAX = 100, RAGE_PCT = 0.3, EXPOSED_PCT = 25, KC_PCT = 25, KC_TURNS = 2;       // khớp lib/pk/rules.js
   const ST = { free: ['Rảnh', 'free'], busy: ['Đang đấu', 'busy'], dnd: ['Tạm nghỉ', 'dnd'] };
   const MODES = {
-    balanced: { name: 'Luận võ', desc: 'Nội công, pháp tướng, quỷ ám và hào quang đều ảnh hưởng sức mạnh.' },
-    buff: { name: 'Luận võ', desc: 'Pháp tướng, quỷ ám và hào quang cúng dường có tác dụng. Hai bên thấy buff của nhau trước khi nhận lời.' }
+    balanced: { name: 'Luận võ', desc: 'Cấp nội công có tác dụng; không tính sức cộng thêm từ pháp tướng, quỷ ám và hào quang.' },
+    buff: { name: 'Luận võ', desc: 'Cấp nội công, pháp tướng, quỷ ám và hào quang đều có tác dụng. Hai bên thấy sức cộng thêm của nhau trước khi nhận lời.' }
   };
   const STANCE = { atk: 'Công', release: 'Đòn tụ lực', guard: 'Thủ', dodge: 'Né', parry: 'Đỡ', charge: 'Tụ lực', rest: 'Điều tức', idle: 'Đứng yên' };
   const CLOSED_OUT = {
@@ -608,7 +608,7 @@
     ui.root = wrap;
     // đầu trang
     const head = h('header', 'ar-head'), tt = h('div', 'ar-ttl');
-    ui.sub = h('span', 'ar-sub', 'Luận võ 1 đấu 1');
+    ui.sub = h('span', 'ar-sub', 'Luận võ một đấu một');
     add(tt, h('h2', null, 'Sân đấu'), ui.sub);
     // trong trận: số lượt, giờ còn lại, thanh đếm giờ nằm ngay trên đầu trang (đỡ chỗ cho sân khấu)
     ui.hturn = h('div', 'ar-hturn'); ui.hturn.hidden = true;
@@ -634,10 +634,28 @@
 
   /* Sân đi lại được như sân chùa: khung vẽ dùng chung bộ vẽ của chánh điện (Hall, cảnh 'arena').
      Chạm một người để mời luận võ; danh sách người ở sân nằm trong ngăn kéo "Danh sách" (cho ai khó chạm trúng người). */
+  /* Dải "Luật nhanh": mở được ở sân và ở trận. Số liệu lấy từ MARTIAL.PK và hằng số đầu file, không gõ cứng. */
+  function quickRules() {
+    const P = M.PK, d = h('details', 'ar-quick'), ul = h('ul', 'ar-quick-l');
+    add(d, h('summary', null, 'Luật nhanh'), ul);
+    const rules = [
+      ['Mục tiêu', `Mỗi bên có ${P.HP} máu. Ai hết máu trước thì thua.`],
+      ['Mỗi lượt', `Có ${P.TURN_SECONDS} giây để chọn kín một chiêu, rồi hai bên cùng lật chiêu. Chiêu võ tốn nội lực; mỗi lượt tự hồi một ít, chọn Điều tức để hồi thêm.`],
+      ['Nộ', `Nhận sát thương thì tích nộ, đầy ${RAGE_MAX}. Nộ đầy làm đòn công kế tiếp mạnh thêm tối đa ${Math.round(RAGE_MAX * RAGE_PCT)}%. Tung đòn công thì nộ về 0.`],
+      ['Sơ hở', `Đòn công bị né hoặc đỡ hết thì lượt sau bạn sơ hở, nhận thêm ${EXPOSED_PCT}% sát thương.`],
+      ['Kim Chung', `Dùng chiêu Kim Chung Tráo mà bị đánh trúng thì được Kim Chung. Trong ${KC_TURNS} lượt tới, đòn công đầu tiên mạnh thêm ${KC_PCT}%.`],
+      ['Tụ lực', 'Chiêu tụ lực cần một lượt gom sức, lượt sau tự tung đòn mạnh. Lúc đó không đổi chiêu được.'],
+      ['Suy kiệt', `Từ lượt ${P.SUDDEN_FROM_TURN}, hoặc khi nhiều lượt liền không ai mất máu, cả hai cùng mất máu mỗi lượt. Lượt sau mất nhiều hơn lượt trước.`],
+      ['Bỏ lượt', `Bỏ lỡ ${P.IDLE_FORFEIT_TURNS} lượt liên tiếp (hết giờ không chọn) thì bị xử thua.`],
+      ['Tối đa', `${P.MAX_TURNS} lượt. Hết lượt, bên còn nhiều máu hơn thắng; bằng máu thì hòa.`]
+    ];
+    for (const [k, v] of rules) add(ul, add(h('li'), h('b', null, k + ': '), document.createTextNode(v)));
+    return d;
+  }
   function buildRoster() {
     const sec = h('section', 'ar-screen ar-roster', null, { 'aria-label': 'Sân đấu' }), r = { sec };
     const yard = h('div', 'ar-yard'), top = h('div', 'ar-ytop'), msgs = h('div', 'ar-ymsgs'), list = h('div', 'ar-listbox');
-    r.cv = h('canvas', 'ar-yardcv', null, { role: 'img', 'aria-label': 'Sân đấu: võ đài giữa sân và những đạo hữu đang ở sân. Chạm vào một người để mời luận võ, chạm sân để đi lại.' });
+    r.cv = h('canvas', 'ar-yardcv', null, { role: 'img', 'aria-label': 'Sân đấu: võ đài giữa sân và những đạo hữu đang ở sân. Chạm vào đạo hữu để mời luận võ, chạm sân để đi lại.' });
     r.dnd = btn('ar-switch', null, { role: 'switch', 'aria-checked': 'false' });
     add(r.dnd, h('span', 'ar-knob'), h('span', 'ar-sw-t', 'Tạm không nhận lời mời'));
     r.dnd.addEventListener('click', toggleDnd);
@@ -646,7 +664,7 @@
     r.listBtn = btn('btn small gold ar-listbtn', 'Danh sách', { 'aria-expanded': 'false' });
     r.listBtn.addEventListener('click', () => toggleDrawer());
     add(top, r.listBtn, r.dnd);
-    r.hint = h('p', 'ar-yhint', 'Chạm vào một đạo hữu để mời luận võ · chạm sân để đi lại');
+    r.hint = h('p', 'ar-yhint', 'Chạm vào đạo hữu để mời luận võ · chạm sân để đi lại');
     r.resume = h('p', 'ar-resume', null, { role: 'status' }); r.resume.hidden = true;
     add(r.resume, h('span', 'spin', null, { 'aria-hidden': 'true' }), document.createTextNode('Đang vào lại trận đang đấu dở…'));
     r.login = h('div', 'card ar-login'); r.login.hidden = true;
@@ -662,7 +680,7 @@
     r.empty = h('div', 'ar-empty');
     r.empty.appendChild(svgIcon('ar-empty-i', '<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 9.5h.01M16 9.5h.01M8.5 15.5c1-1.2 2.2-1.8 3.5-1.8s2.5.6 3.5 1.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>', 28));
     r.emptyT = h('b', null, 'Sân đang vắng.');
-    r.emptyS = h('span', null, 'Chưa có đạo hữu nào ra luận võ. Cứ đi dạo quanh võ đài chờ một lát, có người vào là thấy ngay.');
+    r.emptyS = h('span', null, 'Chưa có đạo hữu nào ra luận võ. Bạn cứ chờ một lát hoặc rủ bạn bè cùng ra sân. Có người vào là thấy ngay.');
     add(r.empty, r.emptyT, r.emptyS);
     add(msgs, r.resume, r.login, r.out, r.empty);
     // ngăn kéo danh sách
@@ -670,9 +688,10 @@
     const dclose = btn('x ar-dclose', '×', { 'aria-label': 'Đóng danh sách' });
     dclose.addEventListener('click', () => toggleDrawer(false));
     hd.appendChild(dclose);
-    r.none = h('p', 'hint ar-none', 'Chưa có ai khác ở sân.');
-    add(list, hd, h('p', 'ar-intro', 'Hai bên cùng chọn chiêu kín, rồi lật ra một lượt và đánh nhau. Ai hết máu trước thì thua.'), r.list, r.none, r.blocks);
+    r.none = h('p', 'hint ar-none', 'Chưa có đạo hữu nào khác ở sân.');
+    add(list, hd, h('p', 'ar-intro', 'Hai bên cùng chọn kín một chiêu, rồi lật ra cùng lượt. Ai hết máu trước thì thua.'), r.list, r.none, r.blocks);
     add(r.drawer, list);
+    r.quick = quickRules(); top.appendChild(r.quick);
     add(yard, r.cv, top, msgs, r.hint, r.drawer);
     add(sec, yard);
     return r;
@@ -690,7 +709,7 @@
     const me = S.host.me ? S.host.me().pid : -1;
     if (pid === me) return;
     const p = S.players.get(pid);
-    if (!p) { toast('Người này không còn ở sân.'); return; }
+    if (!p) { toast('Đạo hữu này không còn ở sân.'); return; }
     if (S.loginNeeded) { toast('Cần đăng nhập Google để luận võ.'); return; }
     if (p.st === 'busy') { toast(`${p.name} đang đấu, đợi trận xong nhé.`); return; }
     if (p.st === 'dnd') { toast(`${p.name} đang tạm không nhận lời mời.`); return; }
@@ -715,20 +734,20 @@
       add(sp, h('b', null, MODES[mode].name), h('small', null, MODES[mode].desc)); add(lab, inp, sp); opts.appendChild(lab);
     }
     add(fs, lg, opts); fs.hidden = true;
-    const send = btn('btn primary', 'Gửi lời mời', { type: 'submit' }), later = btn('btn', 'Để sau'), blk = btn('btn small ar-dblk', 'Chặn người này');
+    const send = btn('btn primary', 'Gửi lời mời', { type: 'submit' }), later = btn('btn', 'Để sau'), blk = btn('btn small ar-dblk', 'Chặn đạo hữu này');
     later.addEventListener('click', () => d1.dlg.close());
     blk.addEventListener('click', () => { const pid = S.dlg.pid; d1.dlg.close(); openBlock(pid); });
     add(d1.foot, blk, later, send); add(d1.body, fs, d1.warn, d1.foot);
     d1.send = send;
     d1.body.addEventListener('submit', e => { e.preventDefault(); sendInvite(); });
     // chặn
-    const d2 = ui.dBlock = mkDlg('Chặn người này?', ''); ui.dlgs.push(d2.dlg);
+    const d2 = ui.dBlock = mkDlg('Chặn đạo hữu này?', ''); ui.dlgs.push(d2.dlg);
     const no = btn('btn', 'Không chặn'), yes = btn('btn primary', 'Chặn');
     no.addEventListener('click', () => d2.dlg.close()); yes.addEventListener('click', doBlock);
     add(d2.foot, no, yes); add(d2.body, d2.warn, d2.foot);
     d2.yes = yes;
     // danh sách chặn
-    const d3 = ui.dBlocks = mkDlg('Danh sách chặn', 'Người bị chặn không mời luận võ bạn được nữa.'); ui.dlgs.push(d3.dlg);
+    const d3 = ui.dBlocks = mkDlg('Danh sách chặn', 'Người bị chặn không thể gửi lời mời luận võ cho bạn.'); ui.dlgs.push(d3.dlg);
     d3.list = h('ul', 'ar-bl'); d3.state = h('p', 'hint', null, { role: 'status' });
     add(d3.body, d3.state, d3.list, d3.warn);
     // rời trận
@@ -747,7 +766,7 @@
     S.screen = screen;
     if (S.visible && root.SFX) root.SFX.setMusicScene(screen === 'match' ? 'battle' : 'arena');
     ui.roster.sec.hidden = screen !== 'roster'; ui.lobby.hidden = screen !== 'lobby'; ui.match.hidden = screen !== 'match'; ui.end.hidden = screen !== 'end';
-    ui.sub.textContent = { roster: 'Luận võ 1 đấu 1', lobby: 'Sảnh chọn bộ chiêu', match: 'Đang đấu', end: 'Kết quả' }[screen];
+    ui.sub.textContent = { roster: 'Luận võ một đấu một', lobby: 'Sảnh chọn bộ chiêu', match: 'Đang đấu', end: 'Kết quả trận' }[screen];
     ui.invites.hidden = screen === 'lobby' || screen === 'match';
     ui.hturn.hidden = ui.hbar.hidden = screen !== 'match';
     ui.root.dataset.screen = screen;
@@ -792,7 +811,7 @@
   function doLeave() {
     const m = S.m, d = S.ui.dLeave;
     if (!m) { d.dlg.close(); leaveDone(); return; }
-    if (!canSend()) { d.warn.textContent = 'Mất kết nối, chưa bỏ cuộc được. Đợi nối lại rồi thử nhé.'; d.warn.hidden = false; return; }
+    if (!canSend()) { d.warn.textContent = 'Mất kết nối, chưa thể rời trận. Đợi kết nối lại rồi thử nhé.'; d.warn.hidden = false; return; }
     d.quit.disabled = true;
     S.sock.emit('pk:forfeit', { matchId: m.id }, ack => {
       d.quit.disabled = false;
@@ -871,10 +890,10 @@
   /* mời đi */
   function openInvite(pid) {
     const p = S.players.get(pid), d = S.ui.dMode;
-    if (!p || p.st !== 'free') { toast('Người này không còn rảnh để mời.'); return; }
+    if (!p || p.st !== 'free') { toast('Đạo hữu này không còn rảnh để mời.'); return; }
     if (S.out) { toast('Bạn đang chờ một lời mời khác.'); return; }
     S.dlg.pid = pid;
-    d.h2.textContent = 'Mời ' + p.name; d.sub.textContent = `Cấp ${num(p.lv, 1)} · ${num(p.wins)} thắng · ${num(p.losses)} thua. Lời mời có hiệu lực 20 giây.`;
+    d.h2.textContent = 'Mời ' + p.name; d.sub.textContent = `${M.realmName(p.lv)} (Cấp ${num(p.lv, 1)}) · ${num(p.wins)} thắng · ${num(p.losses)} thua. Lời mời có hiệu lực 20 giây.`;
     d.body.querySelectorAll('input[name="ar-mode"]').forEach(i => { i.checked = i.value === S.lastMode; });
     d.warn.hidden = true; d.send.disabled = !canSend();
     openDlg(d.dlg);
@@ -921,7 +940,7 @@
     if (!p) return;
     S.dlg.blockPid = pid;
     d.h2.textContent = 'Chặn ' + p.name + '?';
-    d.sub.textContent = 'Người bị chặn không mời luận võ bạn được nữa. Bạn bỏ chặn lúc nào cũng được trong "Danh sách chặn".';
+    d.sub.textContent = 'Người bị chặn không thể gửi lời mời luận võ cho bạn. Bạn có thể bỏ chặn bất kỳ lúc nào trong "Danh sách chặn".';
     d.warn.hidden = true; d.yes.disabled = !canSend();
     openDlg(d.dlg);
   }
@@ -967,7 +986,7 @@
   /* lời mời đến */
   function buffList(buff, emptyText) {
     const ul = h('ul', 'ar-bfl'), labels = buff && Array.isArray(buff.labels) ? buff.labels : [];
-    if (!labels.length) ul.appendChild(h('li', 'none', emptyText || 'Không có buff'));
+    if (!labels.length) ul.appendChild(h('li', 'none', emptyText || 'Không có sức cộng thêm'));
     for (const t of labels) ul.appendChild(h('li', null, t));
     return ul;
   }
@@ -984,14 +1003,14 @@
   function inviteCard(inv) {
     const f = inv.from, card = h('article', 'ar-ic', null, { role: 'group', 'aria-label': `Lời mời luận võ từ ${f.name || 'một đạo hữu'}` });
     const top = h('div', 'ar-ic-top'), pt = portrait('ar-mini', f.look, null, null), who = h('div', 'ar-ic-who'), time = h('span', 'ar-ic-time');
-    add(who, h('b', null, f.name || 'Một đạo hữu'), h('span', null, `Cấp ${num(f.lv, 1)} · ${num(f.wins)} thắng · ${num(f.losses)} thua`));
+    add(who, h('b', null, f.name || 'Một đạo hữu'), h('span', null, `${M.realmName(f.lv)} · ${num(f.wins)} thắng · ${num(f.losses)} thua`));
     add(top, pt.cv, who, time);
     const mode = h('p', 'ar-ic-mode'); add(mode, h('b', null, MODES[inv.mode].name), document.createTextNode(' · ' + MODES[inv.mode].desc));
     add(card, top, mode);
     if (inv.buffs) {
       const bt = h('div', 'ar-bt'), c1 = h('div', 'ar-bt-c'), c2 = h('div', 'ar-bt-c');
       add(c1, h('h4', null, 'Bạn'), buffList(inv.buffs && inv.buffs.you)); add(c2, h('h4', null, f.name || 'Đối thủ'), buffList(inv.buffs && inv.buffs.op));
-      add(bt, c1, c2); add(card, bt, h('p', 'hint', inv.buffs ? 'Đây là bản xem trước. Buff thật được chụp một lần lúc bạn nhận lời.' : 'Buff sẽ được chụp một lần lúc bạn nhận lời.'));
+      add(bt, c1, c2); add(card, bt, h('p', 'hint', inv.buffs ? 'Đây là bản xem trước. Sức cộng thêm được ghi nhận một lần lúc bạn nhận lời.' : 'Sức cộng thêm sẽ được ghi nhận một lần lúc bạn nhận lời.'));
     }
     const bar = h('div', 'ar-ic-bar'), fill = h('i'), act = h('div', 'ar-ic-act'), yes = btn('btn primary', 'Nhận lời'), no = btn('btn', 'Từ chối');
     yes.addEventListener('click', () => respond(inv, true)); no.addEventListener('click', () => respond(inv, false));
@@ -1067,13 +1086,13 @@
       const p = m[side], box = h('div', 'ar-lf ar-lf-' + side), pt = portrait('ar-portrait', p.look, m.buffs && m.buffs[side], 'lobby');
       L[side + 'Pt'] = pt;
       add(box, pt.cv, h('b', 'ar-lf-name', side === 'you' ? `${p.name} (bạn)` : p.name), h('span', 'ar-lf-sub', `Cấp ${num(p.level, 1)} · HP ${num(p.hpMax)} · Nội lực ${num(p.manaMax)}`));
-      if (m.buffs) add(box, buffList(m.buffs[side], 'Không có buff'));
+      if (m.buffs) add(box, buffList(m.buffs[side], 'Không có sức cộng thêm'));
       if (side === 'op') { L.ready = h('span', 'ar-ready', 'Đối thủ đã sẵn sàng', { role: 'status' }); L.ready.hidden = true; box.appendChild(L.ready); }
       vs.appendChild(box);
       if (side === 'you') vs.appendChild(h('span', 'ar-vsm', 'đấu'));
     }
     add(wrap, top, L.bar, vs);
-    if (m.buffs) wrap.appendChild(h('p', 'hint ar-note', 'Buff được chụp một lần lúc nhận lời. Hào quang hết giờ hay đổi công đức giữa trận không ảnh hưởng trận này.'));
+    if (m.buffs) wrap.appendChild(h('p', 'hint ar-note', 'Sức cộng thêm được ghi nhận một lần lúc nhận lời. Hào quang hết giờ hay đổi công đức giữa trận không ảnh hưởng trận này.'));
     const hd = h('h4', 'ar-lh2'); L.cnt = h('span', 'ar-cnt');
     add(hd, h('span', null, 'Chọn đúng 4 chiêu'), L.cnt);
     L.slots = h('ol', 'ar-slots', null, { 'aria-label': 'Bộ 4 chiêu đã chọn' });
@@ -1104,7 +1123,7 @@
     if (!canEditLoadout()) return;
     const i = m.sel.indexOf(id);
     if (i >= 0) m.sel.splice(i, 1);
-    else if (m.sel.length >= 4) { m.msg = 'Đủ 4 chiêu rồi. Bỏ bớt một chiêu để chọn chiêu khác.'; renderLobby(); return; }
+    else if (m.sel.length >= 4) { m.msg = 'Đã đủ 4 chiêu. Bỏ bớt một chiêu để chọn chiêu khác.'; renderLobby(); return; }
     else m.sel.push(id);
     m.msg = '';
     renderLobby();
@@ -1133,7 +1152,7 @@
     const ws = full ? M.loadoutWarnings(m.sel) : [];
     const lines = ws.map(w => w.text);
     if (m.msg) lines.unshift(m.msg);
-    if (m.learned.length < 4) lines.unshift('Bạn mới học dưới 4 chiêu nên chưa khóa được bộ chiêu. Hãy vào Võ Học Các học thêm chiêu.');
+    if (m.learned.length < 4) lines.unshift('Bạn chưa học đủ 4 chiêu nên chưa thể khóa bộ chiêu. Hãy vào Võ Học Các để học thêm chiêu.');
     clear(L.warn);
     for (const t of lines) L.warn.appendChild(h('span', 'ar-wl', t));
     L.warn.hidden = !lines.length;
@@ -1184,7 +1203,7 @@
     add(top, name, lv, lock);
     const hp = meter('ar-hp', side === 'you' ? 'HP của bạn' : 'HP của đối thủ'), mp = meter('ar-mp', 'Nội lực'), rg = meter('ar-rg', 'Nộ');
     hp.w.querySelector('.ar-m-l').textContent = 'HP';
-    rg.w.title = 'Mỗi điểm nộ tăng 0,3% sát thương đòn công kế tiếp, tối đa 30%. Đòn công tiêu hao toàn bộ nộ; tổng tăng cùng Kim Chung và hào quang tối đa 50%.';
+    rg.w.title = 'Mỗi điểm nộ tăng 0,3% sát thương đòn công kế tiếp, tối đa 30%. Đòn công tiêu hao toàn bộ nộ; tổng tăng cùng Kim Chung và sức cộng thêm tối đa 50%.';
     const two = h('div', 'ar-m2'), bd = h('div', 'ar-bd');
     add(two, mp.w, rg.w); add(info, top, hp.w, two, bd); add(root_, pt.cv, info);
     return { root: root_, name, lock, lockT: lock.querySelector('.ar-lk-t'), hp, mp, rg, bd, buff, shown: null };
@@ -1279,7 +1298,7 @@
     add(rv.root, rv.row, rv.lines, rv.skip);
     add(picks, ui_, rv.root);
     U.pickui = ui_;
-    add(wrap, U.fc.op.root, box, U.opl, U.fc.you.root, picks);
+    add(wrap, U.fc.op.root, box, U.opl, U.fc.you.root, picks, quickRules());
     sec.appendChild(wrap);
     renderOpLoadout();
   }
@@ -1353,8 +1372,8 @@
     else if (!canSend()) { txt = 'Mất kết nối. Đợi nối lại để tiếp tục.'; U.status.classList.add('warn'); }
     else if (m.msg) { txt = m.msg; U.status.classList.add('warn'); }
     else if (m.locked) { U.status.appendChild(h('span', 'spin', null, { 'aria-hidden': 'true' })); txt = m.forced ? 'Đang tụ lực, lượt này tự tung. Chờ đối thủ…' : 'Đã khóa, chờ đối thủ…'; }
-    else if (m.timeUp) txt = 'Hết giờ. Máy chủ sẽ cho bạn đứng yên lượt này.';
-    else txt = m.sel ? 'Bấm "Khóa" để chốt chiêu. Khóa rồi không đổi được.' : 'Chạm một chiêu để chọn, rồi bấm "Khóa".';
+    else if (m.timeUp) txt = 'Hết giờ. Bạn đứng yên ở lượt này.';
+    else txt = m.sel ? 'Bấm "Khóa" để chốt chiêu. Khóa rồi không thể đổi.' : 'Chạm một chiêu để chọn, rồi bấm "Khóa".';
     U.status.appendChild(document.createTextNode(txt));
     const c = U.fc.op;
     c.lock.hidden = !choosing; c.lock.classList.toggle('on', !!m.opLocked);
@@ -1464,7 +1483,7 @@
         case 'kc': out.push({ who: e.side, text: `nhận Kim Chung: trong ${KC_TURNS} lượt tới, đòn công đầu tiên mạnh thêm ${KC_PCT}%`, fx: [['float', e.side, 'Kim Chung', 'gold']] }); break;
         case 'sudden':
           { const affected = ['you', 'op'].filter(side => !(e.immune || []).includes(side));
-            out.push({ who: 'both', text: `Suy kiệt: ${affected.length === 2 ? 'cả hai' : affected.length === 1 ? (affected[0] === 'you' ? 'bạn' : 'đối thủ') : 'không ai'} mất ${affected.length ? e.dmg : 0}`, plain: true, fx: affected.flatMap(side => [['hp', side, e.dmg], ['float', side, '-' + e.dmg, 'warn']]) }); }
+            out.push({ who: 'both', text: `Suy kiệt: ${affected.length === 2 ? 'cả hai' : affected.length === 1 ? (affected[0] === 'you' ? 'bạn' : 'đối thủ') : 'không ai'} mất ${affected.length ? e.dmg : 0} máu`, plain: true, fx: affected.flatMap(side => [['hp', side, e.dmg], ['float', side, '-' + e.dmg, 'warn']]) }); }
           break;
         default: break;                                           // pick, rage, end: thể hiện bằng thẻ lật, thanh nộ và màn kết thúc
       }
@@ -1806,8 +1825,8 @@
   /* ---------- kết thúc ---------- */
   function endInfo(d) {
     const r = d.reason, res = d.result, who = d.who;
-    if (r === 'void') return { title: 'Trận bị hủy', cls: 'void', text: 'Trận bị hủy vì máy chủ khởi động lại hoặc có sự cố. Không ai bị tính thắng hay thua.' };
-    if (r === 'both-away') return { title: 'Trận bị hủy', cls: 'void', text: 'Cả hai cùng vắng quá 60 giây nên trận bị hủy. Không ai bị tính thắng hay thua.' };
+    if (r === 'void') return { title: 'Trận bị hủy', cls: 'void', text: 'Trận bị hủy vì máy chủ khởi động lại hoặc có sự cố. Không tính thắng thua.' };
+    if (r === 'both-away') return { title: 'Trận bị hủy', cls: 'void', text: 'Cả hai cùng vắng quá 60 giây nên trận bị hủy. Không tính thắng thua.' };
     const title = res === 'win' ? 'Bạn thắng' : res === 'lose' ? 'Bạn thua' : 'Hòa', cls = res === 'win' ? 'win' : res === 'lose' ? 'lose' : 'draw';
     let text = '';
     const byWho = who || (res === 'win' ? 'op' : 'you');
@@ -1815,11 +1834,12 @@
     else if (r === 'double-ko') {
       const dy = d.state && d.state.you && d.state.you.down, dop = d.state && d.state.op && d.state.op.down;
       const nums = Number.isFinite(dy) && Number.isFinite(dop) ? ` (bạn âm ${dy}, đối thủ âm ${dop})` : '';
-      text = 'Cả hai cùng hết máu' + nums + (res === 'win' ? ', nhưng bạn còn ít âm hơn nên thắng.' : res === 'lose' ? ', nhưng đối thủ còn ít âm hơn nên thắng.' : ' và ngang nhau nên hòa.');
+      text = 'Cả hai cùng hết máu' + nums + (res === 'win' ? ', nhưng bạn âm ít hơn nên thắng.' : res === 'lose' ? ', nhưng đối thủ âm ít hơn nên thắng.' : ' và bằng nhau nên hòa.');
     }
-    else if (r === 'turn-limit') text = `Hết ${M.PK.MAX_TURNS} lượt. ` + (res === 'win' ? 'Bạn còn nhiều máu hơn nên thắng.' : res === 'lose' ? 'Đối thủ còn nhiều máu hơn nên thắng.' : 'Hai bên còn bằng máu nhau nên hòa.');
+    else if (r === 'turn-limit') text = `Hết ${M.PK.MAX_TURNS} lượt. ` + (res === 'win' ? 'Bạn còn nhiều máu hơn nên thắng.' : res === 'lose' ? 'Đối thủ còn nhiều máu hơn nên thắng.' : 'Hai bên bằng máu nhau nên hòa.');
     else if (r === 'forfeit') text = byWho === 'you' ? 'Bạn đã bỏ cuộc nên bị xử thua.' : 'Đối thủ đã bỏ cuộc, bạn thắng.';
-    else if (r === 'idle-forfeit') text = byWho === 'you' ? 'Bạn bỏ lỡ ba lượt liên tiếp (hết giờ không chọn) nên bị xử thua.' : 'Đối thủ bỏ lỡ ba lượt liên tiếp (hết giờ không chọn) nên bị xử thua.';
+    else if (r === 'idle-forfeit') text = byWho === 'you' ? `Bạn bỏ lỡ ${M.PK.IDLE_FORFEIT_TURNS} lượt liên tiếp (hết giờ không chọn) nên bị xử thua.` : `Đối thủ bỏ lỡ ${M.PK.IDLE_FORFEIT_TURNS} lượt liên tiếp (hết giờ không chọn) nên bị xử thua.`;
+    else if (r === 'escape') text = 'Trận kết thúc hòa.';
     return { title, cls, text };
   }
   function showEnd(d) {
@@ -1847,7 +1867,7 @@
       const r = d.record, delta = info.cls === 'win' ? ' (thắng +1)' : info.cls === 'lose' ? ' (thua +1)' : info.cls === 'draw' ? ' (hòa +1)' : ' (không đổi)';
       fact('Thành tích', `Thắng ${num(r.wins)} · Thua ${num(r.losses)} · Hòa ${num(r.draws)}${delta}`);
       const title = M.pkTitle(r.wins, r.draws);
-      fact('Danh hiệu PK', `${title.name} · ${title.points} điểm chiến tích`);
+      fact('Bậc chiến tích', `${title.name} · ${title.points} điểm chiến tích`);
     }
     card.appendChild(facts);
     const act = h('div', 'ar-eact'), again = btn('btn primary big', 'Về sân'), hall = btn('btn big', 'Về chánh điện');
@@ -1883,7 +1903,7 @@
       learned: Array.isArray(d.you.learned) ? d.you.learned : [], mastery: d.you.mastery || {}, sel: youLoad, locked: false, pending: false, timeUp: false, opReady: false, msg: '', state: null, disp: { you: {}, op: {} }
     };
     buildLobby(); go('lobby'); updLobbyClock(nowMs());
-    say('Đã vào sảnh. Chọn 4 chiêu rồi khóa bộ chiêu.');
+    say('Đã vào sảnh. Chọn 4 chiêu rồi bấm khóa bộ chiêu.');
   }
   function onTurn(d) {
     if (!S.visible || !d) return;
@@ -2034,7 +2054,7 @@
     S.loginNeeded = !!(mc.loginRequired && au && au.enabled !== false && !au.signedIn);
     S.ui.roster.login.hidden = !S.loginNeeded;
     if (a.enabled === false) { S.ui.roster.emptyT.textContent = 'Sân đấu chưa mở.'; S.ui.roster.emptyS.textContent = 'Nhà chùa chưa mở sân đấu. Bạn quay lại sau nhé.'; }
-    else { S.ui.roster.emptyT.textContent = 'Sân đang vắng.'; S.ui.roster.emptyS.textContent = 'Chưa có đạo hữu nào ra luận võ. Bạn cứ chờ một lát, hoặc rủ bạn bè cùng ra sân. Có người vào là thấy ngay ở đây.'; }
+    else { S.ui.roster.emptyT.textContent = 'Sân đang vắng.'; S.ui.roster.emptyS.textContent = 'Chưa có đạo hữu nào ra luận võ. Bạn cứ chờ một lát hoặc rủ bạn bè cùng ra sân. Có người vào là thấy ngay.'; }
     if (S.screen === 'end') { S.m = null; S.stage = null; dropPaint('lobby'); dropPaint('match'); }
     if (S.screen !== 'lobby' && S.screen !== 'match') go('roster'); else refreshCtl();
     yardOn(S.screen === 'roster');

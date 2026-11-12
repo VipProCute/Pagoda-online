@@ -351,3 +351,16 @@ dialog.ar-dlg .dlg-head h2 { font-size: 26px; overflow-wrap: anywhere; }
   .ar-root .spin { animation: none; }
   .ar-flip-in { transition: none; }
 }
+
+/* ---------- dải Luật nhanh (sân và trận) ---------- */
+.ar-quick { text-align: left; }
+.ar-quick summary { min-height: 44px; min-width: 44px; display: inline-flex; align-items: center; padding: 0 14px; border: 1px solid var(--line); border-radius: 999px; background: rgba(28, 20, 16, .88); color: var(--gold-ink); font-size: 13px; cursor: pointer; list-style: none; }
+.ar-quick summary::-webkit-details-marker { display: none; }
+.ar-quick[open] summary { border-color: var(--gold); }
+.ar-quick-l { margin: 6px 0 0; padding: 10px 14px; list-style: none; display: grid; gap: 6px; font-size: 13px; line-height: 1.45; color: #f2e8d5; background: rgba(20, 12, 8, .96); border: 1px solid rgba(212, 171, 82, .3); border-radius: 12px; max-height: 55vh; overflow-y: auto; }
+.ar-quick-l b { color: var(--gold-ink); }
+.ar-ytop { z-index: 7; }
+.ar-ytop .ar-quick { position: relative; }
+.ar-ytop .ar-quick .ar-quick-l { position: absolute; left: 0; top: 100%; width: min(420px, calc(100vw - 20px)); box-shadow: 0 10px 26px rgba(0, 0, 0, .5); }
+.ar-mwrap > .ar-quick { grid-column: 1 / -1; }
+@media (prefers-reduced-motion: reduce) { .ar-quick, .ar-quick * { transition: none; animation: none; } }

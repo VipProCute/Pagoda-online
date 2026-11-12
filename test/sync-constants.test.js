@@ -112,6 +112,7 @@ test('Hằng số PK: đầu arena.js khớp lib/pk/rules.js (arena.js ghi phầ
   const R = require('../lib/pk/rules');
   const A = 'public/js/arena.js';
   assert.equal(readConst(A, 'RAGE_MAX'), R.RAGE_MAX, `RAGE_MAX: ${A} lệch lib/pk/rules.js (${R.RAGE_MAX})`);
+  assert.equal(readConst(A, 'RAGE_PCT'), Math.round(R.RAGE_PCT * 100000) / 1000, `RAGE_PCT: ${A} lệch lib/pk/rules.js RAGE_PCT (${R.RAGE_PCT}, ghi phần trăm mỗi điểm nộ)`);
   assert.equal(readConst(A, 'EXPOSED_PCT'), Math.round(R.EXPOSED_PCT * 100), `EXPOSED_PCT: ${A} lệch lib/pk/rules.js EXPOSED_PCT (${R.EXPOSED_PCT} = ${Math.round(R.EXPOSED_PCT * 100)}%)`);
   assert.equal(readConst(A, 'KC_PCT'), Math.round(R.KC_BONUS * 100), `KC_PCT: ${A} lệch lib/pk/rules.js KC_BONUS (${R.KC_BONUS} = ${Math.round(R.KC_BONUS * 100)}%)`);
   assert.equal(readConst(A, 'KC_TURNS'), R.KC_TURNS, `KC_TURNS: ${A} lệch lib/pk/rules.js (${R.KC_TURNS})`);
