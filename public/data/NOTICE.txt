@@ -1,0 +1,3 @@
+tarot.vi.json — nội dung 78 lá tarot tiếng Việt.
+Nguồn ý nghĩa: A. E. Waite, "The Pictorial Key to the Tarot" (1910), thuộc phạm vi công cộng.
+Lời văn tiếng Việt do dự án viết mới, không sao chép từ trang tarot hiện đại nào. Chỉ để tham khảo, suy ngẫm.
