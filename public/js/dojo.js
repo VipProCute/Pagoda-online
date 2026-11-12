@@ -6,7 +6,7 @@
 (function (root) {
   'use strict';
   const M = root.MARTIAL;
-  const TAB_KEY = 'ta-dojo-tab', ACK_MS = 12000;
+  const TAB_KEY = 'ta-dojo-tab', RULES_KEY = 'ta-dojo-rules-seen', ACK_MS = 12000;
   const TABS = [{ id: 'tam', label: 'Tâm pháp' }, { id: 'vo', label: 'Võ học' }, { id: 'bo', label: 'Bộ chiêu' }];
   const OFFLINE_MSG = 'Mất kết nối, các nút gửi tạm khóa cho tới khi nối lại.';
   const ICON = {
@@ -49,6 +49,10 @@
     get() { try { return localStorage.getItem(TAB_KEY); } catch (e) { return null; } },
     set(v) { try { localStorage.setItem(TAB_KEY, v); } catch (e) { /* bỏ qua */ } }
   };
+  /** Lần đầu vào Võ Học Các thì mở sẵn "Luật tu luyện"; ghi cờ để các lần sau theo trạng thái thường. */
+  function rulesFirstTime() {
+    try { if (localStorage.getItem(RULES_KEY)) return false; localStorage.setItem(RULES_KEY, '1'); return true; } catch (e) { return false; }
+  }
   function later(fn, ms) { const id = setTimeout(() => { timers.delete(id); fn(); }, ms); timers.add(id); return id; }
   function stopTimers() { timers.forEach(clearTimeout); timers.clear(); clearInterval(tickT); tickT = 0; endT = 0; }
 
@@ -333,7 +337,7 @@
     ui.head = h('header', { class: 'dj-head' },
       h('div', { class: 'dj-top' },
         h('button', { type: 'button', class: 'btn small dj-back', onclick: () => host.goto('hall') }, '← Quay lại'),
-        ui.arena = h('button', { type: 'button', class: 'dj-link', onclick: () => host.goto('arena') }, 'Ra sân đấu →')),
+        ui.arena = h('button', { type: 'button', class: 'dj-link', onclick: () => host.goto('arena') }, 'Ra Sân đấu →')),
       h('div', { class: 'dj-title' }, h('h2', null, 'Võ Học Các'), h('span', { class: 'dj-han', lang: 'zh', 'aria-hidden': 'true' }, '武學閣')),
       h('p', { class: 'dj-sub' }, 'Nơi tu luyện nội công và học chiêu.'));
     ui.off = h('p', { class: 'dj-offline', role: 'status', hidden: true }, ico('warn'), h('span', null, OFFLINE_MSG));
@@ -408,6 +412,7 @@
           h('p', { class: 'dj-cl-note' }, max ? h('b', { class: 'dj-full' }, 'Viên mãn') : `Còn ${NUM(p.levelTo - p.congLuc)} để lên cấp ${p.level + 1}`))),
       h('p', { class: 'dj-line' }, 'Cảnh giới: ', h('b', null, M.realmName(p.level))),
       h('p', { class: 'dj-line' }, 'Nội lực tối đa trong trận ', h('b', null, String(p.manaMax))),
+      h('p', { class: 'dj-line' }, 'Tâm đắc ba nhánh (dùng để học chiêu):'),
       h('ul', { class: 'dj-tam', 'aria-label': 'Tâm đắc ba nhánh' }, M.BRANCH_ORDER.map(b => {
         const br = M.BRANCHES[b], v = (p.tam && p.tam[b]) || 0;
         return h('li', { style: { '--bc': br.color } },
@@ -415,8 +420,8 @@
           h('b', null, `${v}/${M.TAM_MAX}`),
           bar(v / M.TAM_MAX, `Tâm đắc ${br.name} ${v} trên ${M.TAM_MAX}`, br.color));
       })),
-      h('p', { class: 'dj-line dj-rec' }, 'Danh hiệu PK: ', h('b', null, M.pkTitle(p.wins, p.draws).name), ' · ', String(M.pkTitle(p.wins, p.draws).points), ' điểm chiến tích'),
-      h('p', { class: 'dj-line dj-rec' }, M.pkTitle(p.wins, p.draws).next ? 'Mốc tiếp theo: ' + M.pkTitle(p.wins, p.draws).next.name + ' · ' + M.pkTitle(p.wins, p.draws).next.points + ' điểm' : 'Đã đạt danh hiệu cao nhất'),
+      h('p', { class: 'dj-line dj-rec' }, 'Bậc chiến tích: ', h('b', null, M.pkTitle(p.wins, p.draws).name), ' · ', String(M.pkTitle(p.wins, p.draws).points), ' điểm chiến tích'),
+      h('p', { class: 'dj-line dj-rec' }, M.pkTitle(p.wins, p.draws).next ? 'Mốc tiếp theo: ' + M.pkTitle(p.wins, p.draws).next.name + ' · ' + M.pkTitle(p.wins, p.draws).next.points + ' điểm' : 'Đã đạt bậc chiến tích cao nhất'),
       h('p', { class: 'dj-line dj-rec' }, 'Thắng ', h('b', null, String(p.wins || 0)), ' · Thua ', h('b', null, String(p.losses || 0)), ' · Hòa ', h('b', null, String(p.draws || 0)))]);
   }
 
@@ -466,7 +471,7 @@
   function loginCard() {
     return h('div', { class: 'card dj-state dj-login' },
       h('h3', { class: 'dj-h' }, 'Đăng nhập Google để tu luyện và lưu tiến độ'),
-      h('p', { class: 'dj-intro' }, 'Công lực, chiêu đã học và bộ chiêu gắn với tài khoản của bạn, nên cần đăng nhập mới tu luyện được. Luật tu luyện ở cuối trang, bạn vẫn đọc được.'),
+      h('p', { class: 'dj-intro' }, 'Đăng nhập Google để lưu công lực và chiêu đã học. Luật tu luyện ở cuối trang.'),
       h('button', { type: 'button', class: 'btn primary big', onclick: () => host.login() }, 'Đăng nhập Google'));
   }
 
@@ -485,7 +490,7 @@
       if (!choices.includes(practiceSkillId)) practiceSkillId = '';
       out.push(h('section', { class: 'card dj-practice' },
         h('label', { for: 'dj-practice-skill', class: 'dj-h' }, 'Luyện võ công cùng phiên tu'),
-        h('p', { class: 'hint' }, 'Chọn một chiêu đã học để tăng độ thành thạo. Hoàn thành phiên mới nhận tiến độ; hủy phiên không nhận. Mỗi 15 phút được 2 điểm thuần thục, tối đa 240 điểm mỗi chiêu.'),
+        h('p', { class: 'hint' }, `Chọn một chiêu đã học để tăng độ thành thạo. Hoàn thành phiên mới nhận tiến độ; hủy phiên không nhận. Mỗi 15 phút được 2 điểm thành thạo, tối đa ${M.MASTERY_MAX} điểm mỗi chiêu.`),
         h('select', { id: 'dj-practice-skill', class: 'dj-practice-select', onchange: e => { practiceSkillId = e.target.value; render(); } },
           h('option', { value: '', selected: practiceSkillId === '' ? '' : null }, 'Chỉ tu nội công'),
           choices.map(id => h('option', { value: id, selected: practiceSkillId === id ? '' : null }, `${M.SKILLS[id].name} · ${M.masteryInfo(st.profile.mastery && st.profile.mastery[id]).name}`)))));
@@ -504,7 +509,7 @@
       if (r.congLuc > 0) gains.push(`+${r.congLuc} công lực`);
       const tt = tamText(r.tam);
       if (tt) gains.push(tt);
-      if (c.practice && c.practice.xp > 0 && M.SKILLS[c.practice.skillId]) gains.push(`+${c.practice.xp} thuần thục ${M.SKILLS[c.practice.skillId].name} · ${M.masteryInfo(c.practice.total).name}`);
+      if (c.practice && c.practice.xp > 0 && M.SKILLS[c.practice.skillId]) gains.push(`+${c.practice.xp} thành thạo ${M.SKILLS[c.practice.skillId].name} · ${M.masteryInfo(c.practice.total).name}`);
     }
     return h('section', { class: 'card dj-celeb' + (c.levelUp ? ' up' : ''), 'aria-label': 'Kết quả phiên tu' },
       h('div', { class: 'dj-celeb-head' },
@@ -550,7 +555,7 @@
       type: 'button', class: 'dj-dur', 'data-send': '', 'data-fk': `dur:${m.id}:${d.key}`, 'data-locked': can.ok ? null : '',
       disabled: !can.ok || !online(), 'aria-label': can.ok ? label : `${label}. ${can.reason}`, onclick: () => startSession(m, d)
     }, h('b', null, durText(d.minutes)), h('span', { class: 'dj-dur-g' }, gain), tt ? h('small', null, tt) : null,
-      practiceSkillId ? h('small', null, `+${Math.min(M.practiceXP(m.id, d.key), M.MASTERY_MAX - M.masteryXP(st.profile.mastery && st.profile.mastery[practiceSkillId]))} thuần thục ${M.SKILLS[practiceSkillId].name}`) : null);
+      practiceSkillId ? h('small', null, `+${Math.min(M.practiceXP(m.id, d.key), M.MASTERY_MAX - M.masteryXP(st.profile.mastery && st.profile.mastery[practiceSkillId]))} thành thạo ${M.SKILLS[practiceSkillId].name}`) : null);
   }
 
   function sessionCard(s) {
@@ -567,7 +572,7 @@
       h('div', { class: 'eyebrow' }, 'Đang tu luyện'),
       h('div', { class: 'dj-m-head' }, h('h3', { class: 'dj-sess-name' }, m.name), h('span', { class: 'dj-han', lang: 'zh', 'aria-hidden': 'true' }, m.han || '')),
       h('p', { class: 'dj-sess-sub' }, [d ? durText(d.minutes) : s.durationKey, g.real && g.real.congLuc > 0 ? `+${g.real.congLuc} công lực` : null, tt || null].filter(Boolean).join(' · ')),
-      s.skillId && M.SKILLS[s.skillId] ? h('p', { class: 'dj-intro' }, `Đang luyện ${M.SKILLS[s.skillId].name} · +${M.practiceXP(s.methodId, s.durationKey)} thuần thục khi hoàn thành (tối đa ${M.MASTERY_MAX}).`) : null,
+      s.skillId && M.SKILLS[s.skillId] ? h('p', { class: 'dj-intro' }, `Đang luyện ${M.SKILLS[s.skillId].name} · +${M.practiceXP(s.methodId, s.durationKey)} thành thạo khi hoàn thành (tối đa ${M.MASTERY_MAX}).`) : null,
       ui.cd, ui.cdBar, ui.cdMsg,
       h('p', { class: 'dj-keep' }, 'Có thể đóng web, hết giờ máy chủ tự ghi nhận.'),
       noteEl('session'),
@@ -598,10 +603,9 @@
 
   const speedRules = (priceText, limitText) => h('ul', { class: 'dj-list' },
     h('li', null, `Bạn cúng dường ${priceText} bằng chuyển khoản (quét mã QR).`),
-    h('li', null, 'Phiên tu hoàn thành khi cúng dường được xác nhận.'),
-    h('li', null, 'Chỉ khi được xác nhận, phiên mới hoàn thành. Trong lúc chờ, phiên vẫn chạy bình thường.'),
+    h('li', null, 'Phiên tu hoàn thành khi cúng dường được xác nhận; trong lúc chờ, phiên vẫn chạy bình thường.'),
     h('li', null, 'Xác nhận xong, bạn nhận công đức, hào quang và lời thông báo như một lượt cúng dường thường.'),
-    h('li', null, `Tác dụng chỉ là rút ngắn thời gian: công lực không vượt trần ${NUM(M.CONG_LUC_MAX)}, và chỉ giúp bạn xong sớm, sức mạnh trong trận phụ thuộc cảnh giới đã đạt và các hào quang.`),
+    h('li', null, `Hoàn thành ngay chỉ giúp bạn tu xong sớm. Công lực vẫn không vượt trần ${NUM(M.CONG_LUC_MAX)}. Sức mạnh trong trận phụ thuộc cảnh giới đã đạt và hào quang.`),
     h('li', null, limitText));
 
   function speedCard(s) {
@@ -615,7 +619,7 @@
       const used = false;
       add(card, [
         h('h3', { class: 'dj-h' }, `Cúng dường ${vnd(price)} để rút ngắn phiên này`),
-        speedRules(vnd(price), 'Không giới hạn số lượt hoàn thành tu luyện nhanh.'),
+        speedRules(vnd(price), 'Hoàn thành ngay không giới hạn số lượt mỗi ngày.'),
         used ? h('p', { class: 'warn' }, 'Hôm nay bạn đã dùng đủ lượt hoàn thành ngay. Mai thử lại, hoặc đợi phiên tự viên mãn.') : null,
         h('label', { class: 'dj-check' }, h('input', { type: 'checkbox', checked: anon ? '' : null, onchange: e => { anon = e.target.checked; } }), h('span', null, 'Ẩn danh (không hiện tên khi thông báo cúng dường)')),
         noteEl('speedup'),
@@ -667,7 +671,7 @@
     const p = st.profile, learned = learnedSet(p);
     return [
       h('section', { class: 'dj-intro-box' },
-        h('p', { class: 'dj-intro' }, h('b', null, 'Học chiêu không tốn gì và không cần chờ.'), ' Đủ cấp nội công và tâm đắc của nhánh là lĩnh hội ngay. Không khóa phái: bạn có thể học cả ba nhánh.'),
+        h('p', { class: 'dj-intro' }, h('b', null, 'Học chiêu không tốn gì và không cần chờ.'), ' Đủ cấp nội công và tâm đắc của nhánh là lĩnh hội ngay. Tài khoản mới đã biết sẵn ' + M.STARTERS.length + ' chiêu. Không khóa phái: bạn có thể học cả ba nhánh.'),
         h('p', { class: 'hint' }, `Đã học ${learned.size}/${M.SKILL_LIST.length} chiêu.`),
         noteEl('learn')),
       M.BRANCH_ORDER.map(b => {
@@ -707,7 +711,7 @@
       h('p', { class: 'dj-sk-meta' }, `${M.TIER_NAMES[s.tier]} · ${M.KIND_NAMES[s.kind]}`),
       h('p', { class: 'dj-sk-short' }, s.short),
       h('p', { class: 'dj-sk-stats' }, M.statsLine(has ? M.combatSkill(id, mastery.xp) : s)),
-      has ? h('p', { class: 'dj-sk-meta' }, `${mastery.name} · ${mastery.xp}/${M.MASTERY_MAX} thuần thục`) : null,
+      has ? h('p', { class: 'dj-sk-meta' }, `${mastery.name} · ${mastery.xp}/${M.MASTERY_MAX} thành thạo`) : null,
       h('p', { class: 'dj-sk-desc' }, s.desc),
       foot);
   }
@@ -729,7 +733,7 @@
     });
     return [
       h('section', { class: 'dj-intro-box' },
-        h('p', { class: 'dj-intro' }, h('b', null, 'Chọn đúng 4 chiêu trong số đã học.'), ` Bộ này là mặc định; vào trận vẫn đổi được trong sảnh ${M.PK.LOADOUT_SECONDS} giây.`),
+        h('p', { class: 'dj-intro' }, h('b', null, 'Chọn đúng 4 chiêu mang vào trận.'), ` Bộ này là mặc định; trong sảnh trước trận vẫn đổi được, ${M.PK.LOADOUT_SECONDS} giây.`),
         !(p.loadout || []).length ? h('p', { class: 'hint' }, 'Bạn chưa lưu bộ nào. Nếu vào trận mà chưa lưu, hệ thống ghép 4 chiêu đã học theo thứ tự nhập môn.') : null),
       h('section', { class: 'dj-loadout', 'aria-label': 'Bộ chiêu đang chọn' },
         h('div', { class: 'dj-lo-head' }, h('h3', { class: 'dj-h' }, 'Bộ chiêu'), h('span', { class: 'dj-lo-n' }, `Đã chọn ${draft.length}/4`)),
@@ -764,7 +768,8 @@
     const prices = M.METHOD_LIST.map(m => m.price);
     const lv = M.LEVEL_AT.map((c, i) => h('tr', null, h('td', null, `${i + 1} · ${M.realmName(i + 1)}`), h('td', null, NUM(c)), h('td', null, String(M.manaMaxOf(i + 1)))));
     const req = [1, 2, 3, 4].map(t => h('tr', null, h('td', null, M.TIER_NAMES[t]), h('td', null, `Cấp ${M.TIER_REQ[t].level}`), h('td', null, t === 1 ? 'Không cần' : `${M.TIER_REQ[t].tam} tâm đắc nhánh đó`)));
-    return h('details', { class: 'card dj-rules' },
+    const firstRules = rulesFirstTime();
+    return h('details', { class: 'card dj-rules', open: firstRules ? '' : null },
       h('summary', null, 'Luật tu luyện'),
       h('div', { class: 'dj-rules-body' },
         h('h4', null, 'Tu luyện theo giờ máy chủ'),
@@ -773,9 +778,9 @@
         h('p', null, `Công lực có trần ${NUM(M.CONG_LUC_MAX)}. Đủ mốc thì lên cấp (tối đa cấp ${M.LEVEL_MAX}). Mỗi cấp thêm 4% lực đánh và 1,5% giảm sát thương nhận. Nội lực tối đa: ${M.MANA_BASE} ở cấp 1, thêm ${M.MANA_PER_LEVEL} mỗi cấp.`),
         h('table', { class: 'dj-tbl' }, h('caption', { class: 'sr' }, 'Cấp nội công, công lực cần có và nội lực tối đa'),
           h('thead', null, h('tr', null, h('th', { scope: 'col' }, 'Cấp'), h('th', { scope: 'col' }, 'Công lực từ'), h('th', { scope: 'col' }, 'Nội lực tối đa'))), h('tbody', null, lv)),
-        h('h4', null, 'Danh hiệu PK'),
-        h('p', null, 'Thắng được 3 điểm chiến tích, hòa được 1 điểm, thua không cộng điểm. Trận bị hủy không tính. Điểm được tính từ toàn bộ thành tích đã ghi nhận; danh hiệu không ảnh hưởng sức mạnh.'),
-        h('table', { class: 'dj-tbl' }, h('thead', null, h('tr', null, h('th', { scope: 'col' }, 'Danh hiệu'), h('th', { scope: 'col' }, 'Điểm từ'))), h('tbody', null, M.PK_TITLES.map(t => h('tr', null, h('td', null, t.name), h('td', null, String(t.points)))))),
+        h('h4', null, 'Bậc chiến tích'),
+        h('p', null, 'Thắng được 3 điểm chiến tích, hòa được 1 điểm, thua không cộng điểm. Trận bị hủy không tính. Điểm được tính từ toàn bộ thành tích đã ghi nhận; bậc chiến tích không ảnh hưởng sức mạnh.'),
+        h('table', { class: 'dj-tbl' }, h('thead', null, h('tr', null, h('th', { scope: 'col' }, 'Bậc chiến tích'), h('th', { scope: 'col' }, 'Điểm từ'))), h('tbody', null, M.PK_TITLES.map(t => h('tr', null, h('td', null, t.name), h('td', null, String(t.points)))))),
         h('h4', null, 'Tâm đắc'),
         h('p', null, `Mỗi nhánh (Cương, Tốc, Nhu) có điểm tâm đắc riêng, tối đa ${M.TAM_MAX}. Công pháp thuộc nhánh nào thì cộng tâm đắc nhánh đó; công pháp thông cả ba nhánh cộng cho cả ba.`),
         h('h4', null, 'Học chiêu'),
@@ -783,8 +788,8 @@
         h('table', { class: 'dj-tbl' }, h('caption', { class: 'sr' }, 'Điều kiện học chiêu theo bậc'),
           h('thead', null, h('tr', null, h('th', { scope: 'col' }, 'Bậc'), h('th', { scope: 'col' }, 'Nội công'), h('th', { scope: 'col' }, 'Tâm đắc'))), h('tbody', null, req)),
         h('h4', null, 'Hoàn thành ngay'),
-        speedRules(`số tiền ghi trên phiên tu (từ ${vnd(Math.min(...prices))} đến ${vnd(Math.max(...prices))} tùy công pháp)`, 'Không giới hạn số lượt hoàn thành tu luyện nhanh.'),
-        h('p', { class: 'hint' }, 'Phiếu hoàn thành ngay: nếu phiên tự hết giờ trước khi khoản cúng dường được xác nhận, khoản đó đổi thành một phiếu dùng cho phiên sau.'),
+        speedRules(`số tiền ghi trên phiên tu (từ ${vnd(Math.min(...prices))} đến ${vnd(Math.max(...prices))} tùy công pháp)`, 'Hoàn thành ngay không giới hạn số lượt mỗi ngày.'),
+        h('p', { class: 'hint' }, 'Phiếu hoàn thành ngay: phiên tự hết giờ khi khoản cúng dường chưa được xác nhận thì khoản đó thành một phiếu. Phiếu dùng được cho phiên sau.'),
         h('h4', null, 'Ở đâu đánh nhau'),
         h('p', null, 'Nơi này chỉ để tu luyện. Muốn luận võ, hãy ra Sân đấu.')));
   }
