@@ -50,7 +50,7 @@ test('UMD, FEN khứ hồi và state thuần không bị sửa', () => {
   assert.equal(state.variant, 'xiangqi');
   assert.equal(state.hidden, null);
   assert.notEqual(game.view(state), state);
-  assert.throws(() => game.create({ variant: 'jieqi' }));
+  assert.throws(() => game.create({ variant: 'unknown' }));
   assert.throws(() => game.fromFen('không hợp lệ'));
 });
 
