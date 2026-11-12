@@ -62,7 +62,7 @@
 | T-066 | Bài kiểm người mới (25 câu) | ⏳ T-067 (và mọi thẻ T-010 → T-065) | P1 | CORE + GUIDE | — |
 | T-067 | Cập nhật README và tài liệu người chơi | ⏳ T-010 → T-065 | P2 | CORE + DOCS | — |
 | T-068 | Cho máy chủ thử tắt êm trên Windows (3 test e2e) | ✅ Xong · PR #43 | P0 | CORE + STORE + OPS | Claude Sonnet 5.5 |
-| T-069 | Mọi NPC đi lang thang, chạm NPC để trò chuyện, lớp nhân vật chung | 🟣 Chờ soát | P1 | CORE + HALL + MARTIAL | Claude Opus 5.5 |
+| T-069 | Mọi NPC đi lang thang, chạm NPC để trò chuyện, lớp nhân vật chung | ✅ Xong · PR #57 | P1 | CORE + HALL + MARTIAL | Claude Opus 5.5 |
 
 Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạm `package.json`). **T-005**, **T-007**, **T-002** làm song song được với nhóm trên.
 Đợt 2026-11: làm **T-003, T-004, T-006** trước (T-004 gỡ nút thắt `package.json` cho mọi thẻ thêm file JS; T-006 là cổng "CI xanh"). Sau đó theo lịch 6 đợt ở [docs/KE-HOACH-DOT-2026-11.md §10.3](docs/KE-HOACH-DOT-2026-11.md#103-lịch-theo-đợt-và-khóa-vùng-nóng).
@@ -971,7 +971,7 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ghi chú**: phát hiện ở T-003 (2026-11-11). Soát T-003 thử hạ thời gian ghi JSON xuống 200 ms thì `e2e-donation-test-mode` xanh, hai test kia vẫn đỏ.
 
 ### T-069 · Mọi NPC đi lang thang, chạm NPC để trò chuyện, lớp nhân vật chung
-- **Trạng thái**: 🟣 Chờ soát (2026-11-12). Chưa commit, chưa mở PR. Chưa thử bằng mắt trên trình duyệt thật.
+- **Trạng thái**: ✅ Xong, merge vào main qua PR #57 (2026-11-12) theo yêu cầu của chủ dự án. Đã thử trên trình duyệt với NPC cơ duyên; chưa thử NPC thường trên trình duyệt và màn điện thoại.
 - **Ưu tiên**: P1
 - **Gói ngữ cảnh**: CORE + HALL + MARTIAL
 - **Khu vực chạm**: public/js/actors.js (mới), public/js/hall.js (`randomizeNpcs`, `updateNpcs`, `personAt`/`npcAt`, `onDown`, `onMove`, `mk`, `setSweeper`, `Hall.npc`/`npcTalk`/`npcHold`), public/js/app.js (`openPerson`, `talkTo`, `finishTalk`, bỏ handler `sweeper`/`secretNpc`), server.js (`martial:secret-encounter`, `sweeper:claim`), public/index.html (nút Trò chuyện, `?v=`), test/actors.test.js, test/e2e-npc-wander.test.js, test/helpers/npc-chase.js (mới), test/hall-npcs.test.js, test/hall-tables.test.js, test/e2e-sweeper.test.js, docs/agents/ARCHITECTURE.md
