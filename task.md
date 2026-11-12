@@ -28,7 +28,7 @@
 | T-021 | Luật cờ vua thuần, kiểm perft | ✅ Xong · PR #30 | P0 | CORE + KYDAO | Claude Sonnet 5.5 + Codex terra 6.1 |
 | T-022 | Luật cờ tướng thuần, perft, ký hiệu Việt | ✅ Xong · PR #33 | P0 | CORE + KYDAO | Codex terra 6.1 + Claude Sonnet 5.5 |
 | T-023 | Nghiên cứu luật cờ tướng úp (揭棋) | ✅ Xong · PR #47 | P1 | CORE + KYDAO + DOCS | GLM Flash + Claude Sonnet 5.5 |
-| T-024 | Biến thể cờ tướng úp | ⏳ T-022, T-023 | P1 | CORE + KYDAO | — |
+| T-024 | Biến thể cờ tướng úp | 🟣 Chờ soát | P1 | CORE + KYDAO | Gemini 3.8 Flash (qua proxy) |
 | T-025 | Luật cờ vây thuần | ✅ Xong · PR #34 | P1 | CORE + KYDAO | Codex terra 6.1 + Claude Sonnet 5.5 |
 | T-026 | Luật cờ caro thuần | ✅ Xong · PR #27 | P1 | CORE + KYDAO | Claude Haiku 5.5 (thay GLM Flash) |
 | T-027 | Tính Elo và điều kiện xếp hạng | ✅ Xong · PR #35 | P0 | CORE + KYDAO | Claude Haiku 5.5 + GLM Flash + Claude Sonnet 5.5 |
@@ -57,7 +57,7 @@
 | T-061 | Sổ tay trong game (nút "?") | ✅ Xong · PR #50 | P1 | CORE + GUIDE + NAV | Claude Sonnet 5.5 |
 | T-062 | Gợi ý lần đầu, nhãn tên không đè nhau | ⏳ T-061, T-043 | P1 | CORE + GUIDE + HALL | — |
 | T-063 | Viết lại chữ Võ Học Các | 🟣 Chờ soát | P1 | CORE + GUIDE + MARTIAL | Gemini 3 Flash + Claude Sonnet 5.5 |
-| T-064 | Viết lại chữ Sân đấu | ⏳ T-012, T-060, T-061 | P1 | CORE + GUIDE + PK | — |
+| T-064 | Viết lại chữ Sân đấu | 🟣 Chờ soát | P1 | CORE + GUIDE + PK | Gemini 3.8 Flash (soạn) + Claude Sonnet 5.5 (áp) |
 | T-065 | Viết lại chữ chánh điện, công đức, cúng dường | ⏳ T-060, T-011, T-061, T-044 | P1 | CORE + GUIDE + RITUAL | — |
 | T-066 | Bài kiểm người mới (25 câu) | ⏳ T-067 (và mọi thẻ T-010 → T-065) | P1 | CORE + GUIDE | — |
 | T-067 | Cập nhật README và tài liệu người chơi | ⏳ T-010 → T-065 | P2 | CORE + DOCS | — |
@@ -354,22 +354,23 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: mã.
 
 ### T-024 · Thêm biến thể cờ tướng úp
-- **Trạng thái**: ⏳ Chờ T-022, T-023
+- **Trạng thái**: 🟣 Chờ soát
 - **Ưu tiên**: P1 · **Đợt**: 2
 - **Gói ngữ cảnh**: CORE + KYDAO
 - **Khu vực chạm**: public/js/kydao/xiangqi.js, test/kydao-jieqi.test.js (mới)
 - **Phụ thuộc**: T-022, T-023 (và D7 đã chốt)
 - **Thợ**: Codex terra 6.1 · **Soát**: Sol 6.1 + Gemini Argon
-- **Người làm**: — · **Nhánh**: —
+- **Người làm**: Gemini 3.8 Flash (qua proxy) · **Nhánh**: gemini/T-024-co-tuong-up
 - **Thiết kế**: KH §5.4 "Cờ tướng úp", `docs/ky-dao/CO-TUONG-UP.md`
 - **Mục tiêu**: `variant:'jieqi'` chạy đúng luật đã chốt, không lộ quân úp.
 - **Tiêu chí xong**:
-  - [ ] `create({ variant:'jieqi', rng })` xáo 15 quân mỗi bên lên vị trí gốc, Tướng ngửa; cùng seed → cùng xáo
-  - [ ] Quân úp đi theo quân chủ nhà của ô; đi xong thì lật; `play` trả `info.reveal`
-  - [ ] `view(state, side)` không chứa danh tính quân chưa lật (test duyệt đệ quy mọi trường, mọi kiểu dữ liệu)
-  - [ ] `legalMoves(view)` == `legalMoves(state đầy đủ)` trên 1.000 thế ngẫu nhiên (chứng minh trình duyệt tính đúng mà không biết quân thật)
-  - [ ] Luật Sĩ/Tượng/Tốt sau khi lật và luật ăn quân úp theo T-023
+  - [x] `create({ variant:'jieqi', rng })` xáo 15 quân mỗi bên lên vị trí gốc, Tướng ngửa; cùng seed → cùng xáo
+  - [x] Quân úp đi theo quân chủ nhà của ô; đi xong thì lật; `play` trả `info.reveal`
+  - [x] `view(state, side)` không chứa danh tính quân chưa lật (test duyệt đệ quy mọi trường, mọi kiểu dữ liệu)
+  - [x] `legalMoves(view)` == `legalMoves(state đầy đủ)` trên 1.000 thế ngẫu nhiên (chứng minh trình duyệt tính đúng mà không biết quân thật)
+  - [x] Luật Sĩ/Tượng/Tốt sau khi lật và luật ăn quân úp theo T-023
 - **Ngoài phạm vi**: giao diện (T-033).
+- **Ghi chú**: Đã hoàn thành variant:'jieqi' trong KyXiangqi theo luật D7. Đã cập nhật test/kydao-jieqi.test.js theo soát nghiệp vụ: sửa test không chiếu từ ô ban đầu, thêm lặp thế 3 lần cho jieqi, hoàn thiện TH1/TH4/TH5 và kiểm tra rò rỉ view. Sửa dòng 53 của test/kydao-xiangqi.test.js vì jieqi nay đã được hỗ trợ chính thức.
 
 ### T-025 · Viết luật cờ vây thuần
 - **Trạng thái**: ✅ Xong, đã merge vào main qua PR #34 (2026-11-12, CI xanh). Thợ: Codex terra 6.1 (gpt-6.1-terra), sửa bằng Claude Sonnet 5.5 (kênh Codex hết hạn mức). Soát: Opus 5.5 thay Sol/Argon. Sau 2 vòng, Điều phối quyết: chấp nhận 5 thế mẫu tự dựng (soát đã tính lại, ghi nguồn luật tính diện tích) và bắt thêm test chống bấm 'Đồng ý' hai lần (Điều phối thử làm hỏng: đỏ).
@@ -883,13 +884,13 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ghi chú**: Chỉ sửa `dojo.js` + `?v=` (không có chuỗi mô tả nào ở `martial.js` cần đổi). Bỏ dòng 5 của bảng Flash (`(chưa có)` không tồn tại trong mã); dòng 9 dùng `M.STARTERS.length`, dòng 10 giữ `M.PK.LOADOUT_SECONDS`; cờ mở sẵn là `ta-dojo-rules-seen`.
 
 ### T-064 · Viết lại chữ Sân đấu
-- **Trạng thái**: ⏳ Chờ T-012, T-060
+- **Trạng thái**: 🟣 Chờ soát
 - **Ưu tiên**: P1 · **Đợt**: 4
 - **Gói ngữ cảnh**: CORE + GUIDE + PK
 - **Khu vực chạm**: docs/copy/SAN-DAU.md (mới), public/js/arena.js (chuỗi, dải "Luật nhanh", `endInfo` thêm `escape`, `MODES`), public/index.html (`?v=`)
 - **Phụ thuộc**: T-012, T-060, T-061 (`MARTIAL.PK.IDLE_FORFEIT_TURNS`)
 - **Thợ**: Gemini Flash soạn → Sonnet 5.5 áp · **Soát**: Gemini Argon
-- **Người làm**: — · **Nhánh**: —
+- **Người làm**: Gemini 3.8 Flash (soạn) + Claude Sonnet 5.5 (áp) · **Nhánh**: gemini/T-064-chu-san-dau
 - **Thiết kế**: KH §8.7
 - **Mục tiêu**: luật một trận hiện rõ ngay trên màn đấu.
 - **Tiêu chí xong**:
@@ -900,6 +901,7 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
   - [ ] Số lượt bỏ lỡ bị xử thua đọc từ `MARTIAL.PK.IDLE_FORFEIT_TURNS` (T-061 thêm), không gõ cứng
   - [ ] Fixture ui-harness arena tạo lại nếu cần; `ui-check.js` sạch
 - **Ngoài phạm vi**: đổi luật PK.
+- **Ghi chú**: đã áp docs/copy/SAN-DAU.md vào arena.js (bỏ qua dòng 1 của index.html; giữ `MODES.balanced`, chỉ sửa mô tả). Dải "Luật nhanh" là `quickRules()`, số liệu lấy từ `M.PK` và hằng số đầu file. Chưa chạy ui-harness arena (máy chưa cài Playwright). Đã tăng `?v=` của arena.js và arena.css.
 
 ### T-065 · Viết lại chữ chánh điện, công đức, cúng dường, tụng kinh
 - **Trạng thái**: ⏳ Chờ T-060, T-011, T-061, T-044
