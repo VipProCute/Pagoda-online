@@ -24,7 +24,7 @@
 | T-010 | Làm thanh đổi map đồng bộ (4 nút), bỏ nút Xin xăm | ⏳ T-004 | P0 | CORE + NAV + HALL | — |
 | T-011 | Gọn thanh dưới còn 9 nút lễ Phật, tab Khám phá | ⏳ T-010 | P0 | CORE + NAV | — |
 | T-012 | Thanh đổi map trong Sân đấu | ⏳ T-010, T-011 | P1 | CORE + NAV + PK | — |
-| T-020 | Chốt giao thức Kỳ Đạo | 🔵 Sẵn sàng | P0 | CORE + KYDAO + DOCS | — |
+| T-020 | Chốt giao thức Kỳ Đạo | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + KYDAO + DOCS | Claude Sonnet 5.5 |
 | T-021 | Luật cờ vua thuần, kiểm perft | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + KYDAO | Claude Sonnet 5.5 + Codex terra 6.1 |
 | T-022 | Luật cờ tướng thuần, perft, ký hiệu Việt | ⏳ T-004 | P0 | CORE + KYDAO | — |
 | T-023 | Nghiên cứu luật cờ tướng úp (揭棋) | 🔵 Sẵn sàng | P1 | CORE + KYDAO + DOCS | — |
@@ -280,13 +280,13 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 ### Epic KD · Kỳ Đạo (năm môn cờ ngoài sân chùa)
 
 ### T-020 · Chốt giao thức Kỳ Đạo
-- **Trạng thái**: 🔵 Sẵn sàng
+- **Trạng thái**: ✅ Gộp vào nhánh tích hợp (chờ PR). Thợ: Claude Sonnet 5.5 (qua proxy). Soát: Sol 6.1 vòng 1 (9 lỗi), Opus 5.5 thay Sol ở vòng 2–3 vì kênh Codex hết hạn mức; điểm cuối (báo trước ván bị hạ xuống giao hữu) được Điều phối giao sửa thêm và kiểm lại.
 - **Ưu tiên**: P0 · **Đợt**: 1
 - **Gói ngữ cảnh**: CORE + KYDAO + DOCS
 - **Khu vực chạm**: docs/KY-DAO-GIAO-THUC.md (mới), docs/agents/ARCHITECTURE.md (§1, §4, §6), docs/agents/CONTEXT-PACKS.md (gói KYDAO)
 - **Phụ thuộc**: không (theo D1, D6–D9, D16)
 - **Thợ**: Sonnet 5.5 (high) · **Soát**: Sol 6.1
-- **Người làm**: — · **Nhánh**: —
+- **Người làm**: Claude Sonnet 5.5 · **Nhánh**: `claude/T-020-giao-thuc-ky-dao`
 - **Thiết kế**: KH §5.3 → §5.8
 - **Mục tiêu**: hợp đồng ràng buộc cho mọi thẻ KD, viết theo kiểu `docs/VO-HOC-GIAO-THUC.md`.
 - **Tiêu chí xong**:
