@@ -17,7 +17,7 @@ index.html ─ nạp script theo thứ tự cố định         server.js  Expr
   audio.js · voice.js (WebRTC) · celebrate.js          ├─ lib/sweeper.js     sự kiện Tảo Địa Tăng
   library.js · meditate.js · fortune.js · lunar.js     ├─ lib/martial/service.js  tu luyện, học chiêu (thuần)
   ┌ dùng chung với máy chủ (UMD) ┐                     ├─ lib/pk/engine.js   Duel: giải lượt (thuần)
-  │ martial.js · aura.js · merit.js │ ◄── require ──── ├─ lib/pk/manager.js  sân đấu, mời, sảnh, lượt, vào lại
+  │ martial · aura · merit · lunar  │ ◄── require ──── ├─ lib/pk/manager.js  sân đấu, mời, sảnh, lượt, vào lại
   └───────────────────────────────┘                    ├─ lib/pk/buffs.js · rules.js · rng.js
 admin.html (trang quản trị, script nội tuyến)          └─ lib/store.js ─┬─ file JSON (data/db.json)
                                                                         └─ lib/store-pg.js (PostgreSQL/Neon)
