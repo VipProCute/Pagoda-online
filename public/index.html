@@ -11,10 +11,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&family=Cormorant+Garamond:wght@500;600;700&display=swap">
-<link rel="stylesheet" href="/css/style.css?v=mapbar3">
+<link rel="stylesheet" href="/css/style.css?v=lephat3">
 <link rel="stylesheet" href="/css/celebrate.css">
 <link rel="stylesheet" href="/css/account.css?v=vohoc5">
-<link rel="stylesheet" href="/css/places.css?v=vohoc5">
+<link rel="stylesheet" href="/css/places.css?v=lephat1">
 <link rel="stylesheet" href="/css/dojo.css?v=pk-titles1">
 <link rel="stylesheet" href="/css/arena.css?v=vohoc5">
 </head>
@@ -69,7 +69,7 @@
       <button type="button" role="tab" aria-selected="true" data-tab="chat" id="tab-chat">Trò chuyện</button>
       <button type="button" role="tab" aria-selected="false" data-tab="prayers" id="tab-prayers">Lời nguyện</button>
       <button type="button" role="tab" aria-selected="false" data-tab="merit" id="tab-merit">Công đức</button>
-      <button type="button" role="tab" aria-selected="false" data-tab="places" id="tab-places">Nơi khác</button>
+      <button type="button" role="tab" aria-selected="false" data-tab="places" id="tab-places">Khám phá</button>
     </div>
     <div class="pane" id="pane-chat" role="tabpanel" aria-labelledby="tab-chat">
       <div class="feed" id="feed"></div>
@@ -93,6 +93,16 @@
       <div class="pane-foot"><button type="button" class="btn" data-act="incense">Thắp nhang và gửi lời nguyện</button></div>
     </div>
     <div class="pane scroll" id="pane-places" role="tabpanel" aria-labelledby="tab-places" hidden>
+      <section class="card place-card" data-place-card="yard">
+        <span class="eyebrow">Sân chùa</span>
+        <p>Gặp thầy tử vi và thầy Tarot để xem lá số, rút lá bài.</p>
+        <button type="button" class="btn gold" data-act="yard">Ra sân chùa</button>
+      </section>
+      <section class="card place-card" data-place-card="library">
+        <span class="eyebrow">Tàng Kinh Các</span>
+        <p>Đọc kinh trên kệ và ngồi thiền tu luyện trên bồ đoàn.</p>
+        <button type="button" class="btn gold" data-act="library">Vào Tàng Kinh Các</button>
+      </section>
       <section class="card place-card" data-place-card="dojo">
         <span class="eyebrow">Võ Học Các</span>
         <p>Tu luyện nội công (bắt đầu rồi đóng web cũng được), học võ công ba nhánh Cương, Tốc, Nhu và chọn bộ chiêu.</p>
@@ -100,7 +110,7 @@
       </section>
       <section class="card place-card" data-place-card="arena">
         <span class="eyebrow">Sân đấu</span>
-        <p>Nơi duy nhất để luận võ một đấu một. Chỉ người tự ra sân mới thấy và mời được nhau; chánh điện không có đánh nhau.</p>
+        <p>Nơi duy nhất để luận võ một đấu một. Mời được từ chánh điện qua hộp người chơi, nhưng trận đấu chỉ diễn ra ở Sân đấu.</p>
         <button type="button" class="btn gold" data-act="arena">Ra Sân đấu</button>
       </section>
       <p class="hint">Cần đăng nhập Google để tu luyện và luận võ, vì tiến độ gắn với tài khoản của bạn.</p>
@@ -169,10 +179,7 @@
   <button type="button" class="act" data-act="mo"><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="11" cy="14" rx="8" ry="6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M6 14h7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M15 4l6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>Gõ mõ</span></button>
   <button type="button" class="act" data-act="bell"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 17V11a6 6 0 0 1 12 0v6Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M4 17h16M12 3v2M12 20v1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>Thỉnh chuông</span></button>
   <button type="button" class="act" data-act="chant"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h7a3 3 0 0 1 3 3v12a2.5 2.5 0 0 0-2.5-2.5H4ZM20 5h-4" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linejoin="round"/><path d="M17 9h3M17 13h3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><span>Tụng kinh</span></button>
-  <button type="button" class="act" data-act="library"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9l9-5 9 5" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linejoin="round"/><path d="M5 9v11h14V9M5 14h14" stroke="currentColor" stroke-width="1.7" fill="none"/><path d="M8 11v3M10.5 11v3M15 16v4M13 16.5v3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><span>Tàng Kinh Các</span></button>
   <button type="button" class="act gold" data-act="donate"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11h16v9H4zM3 7h18v4H3zM12 7v13M12 7c-2-3-6-3-5 0M12 7c2-3 6-3 5 0" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linejoin="round"/></svg><span>Cúng dường</span></button>
-  <button type="button" class="act goto" data-act="dojo" id="actDojo" hidden title="Võ Học Các: tu luyện nội công, học chiêu"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5.5" r="2.4" fill="currentColor"/><path d="M12 9v5.5M5 13.5c2.2 1.1 4.6 1.6 7 1.6s4.8-.5 7-1.6M7.5 21c0-3.6 2-5.6 4.5-5.6s4.5 2 4.5 5.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Võ học các</span></button>
-  <button type="button" class="act goto" data-act="arena" id="actArena" hidden title="Sân đấu: luận võ 1 đấu 1"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M7.5 7.5l9 9M16.5 7.5l-9 9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>Sân đấu</span></button>
 </nav>
 
     <div class="voicebar" id="voicebar" hidden>
@@ -508,6 +515,6 @@
 <script src="/js/meditate.js?v=vohoc5"></script>
 <script src="/js/dojo.js?v=pk-titles1"></script>
 <script src="/js/arena.js?v=secret-pk1"></script>
-<script src="/js/app.js?v=mapbar4"></script>
+<script src="/js/app.js?v=lephat3"></script>
 </body>
 </html>

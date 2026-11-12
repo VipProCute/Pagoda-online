@@ -22,7 +22,7 @@
 | T-009 | Rà các bản làm việc rời trên máy | 🔵 Sẵn sàng 👤 | P2 | CORE | — |
 | **Đợt 2026-11** | | | | | |
 | T-010 | Làm thanh đổi map đồng bộ (4 nút), bỏ nút Xin xăm | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + NAV + HALL | Claude Sonnet 5.5 |
-| T-011 | Gọn thanh dưới còn 9 nút lễ Phật, tab Khám phá | ⏳ T-010 | P0 | CORE + NAV | — |
+| T-011 | Gọn thanh dưới còn 9 nút lễ Phật, tab Khám phá | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + NAV | Claude Sonnet 5.5 |
 | T-012 | Thanh đổi map trong Sân đấu | ⏳ T-010, T-011 | P1 | CORE + NAV + PK | — |
 | T-020 | Chốt giao thức Kỳ Đạo | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + KYDAO + DOCS | Claude Sonnet 5.5 |
 | T-021 | Luật cờ vua thuần, kiểm perft | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + KYDAO | Claude Sonnet 5.5 + Codex terra 6.1 |
@@ -240,13 +240,13 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: thanh dưới (T-011), Sân đấu bên trong (T-012), viết lại chữ gợi ý (T-065).
 
 ### T-011 · Gọn thanh dưới còn 9 nút lễ Phật, tab Khám phá
-- **Trạng thái**: ⏳ Chờ T-010
+- **Trạng thái**: ✅ Gộp vào nhánh tích hợp (chờ PR). Thợ: Claude Sonnet 5.5 (qua proxy). Soát: Sol 6.1 + Opus 5.5 thay Argon; sau 2 vòng còn test giao diện yếu → giao sửa thêm (Điều phối thử làm hỏng: đỏ). Điều phối chạy thật 375×812: 9 nút, 2 hàng, nút 58px, không cuộn ngang, tab Khám phá, hộp giọng nói tự thu nhỏ.
 - **Ưu tiên**: P0 · **Đợt**: 2
 - **Gói ngữ cảnh**: CORE + NAV
 - **Khu vực chạm**: public/index.html (`nav.actions`, tab/khung "Nơi khác", `#voicebar`), public/js/app.js (`act`, `welcome`, `renderVoice`, `showTab`), public/css/style.css (`.actions`, `.voicebar`), public/css/places.css, tools/ui-harness/arena/e2e-real.js, README.md, docs/VO-HOC.md, docs/VO-HOC-GIAO-THUC.md (chỉ câu ở dòng 11)
 - **Phụ thuộc**: T-010
 - **Thợ**: Sonnet 5.5 (high) · **Soát**: Sol 6.1 + Gemini Argon
-- **Người làm**: — · **Nhánh**: —
+- **Người làm**: Claude Sonnet 5.5 · **Nhánh**: `claude/T-011-thanh-le-phat`
 - **Thiết kế**: KH §4.2, D3, D4
 - **Mục tiêu**: thanh dưới chỉ còn việc cốt lõi của đi chùa như bản đầu; trò phụ không có nút ở dưới.
 - **Tiêu chí xong**:
