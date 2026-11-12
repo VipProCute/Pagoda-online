@@ -225,7 +225,7 @@ async function t(name, fn) {
     await page.waitForSelector('.ar-ic .ar-bt', { timeout: 5000 });
     const card = await text(page, '.ar-ic');
     assert.ok(/Huyen Trang/.test(card) && /Phòng có buff/.test(card) && /Không có buff/.test(card) && /bản xem trước/.test(card), card);
-    assert.ok(await page.evaluate(() => { const b = document.querySelector('.ar-back').getBoundingClientRect(), e = document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2); return !!e.closest('.ar-back'); }), 'thẻ che nút Về chánh điện');
+    assert.ok(await page.evaluate(() => { const b = document.querySelector('.ar-head .mapbar-btn[data-map="hall"]').getBoundingClientRect(), e = document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2); return !!e.closest('.ar-head .mapbar-btn[data-map="hall"]'); }), 'thẻ che nút Chánh điện trên thanh đổi map');
     await shot(page, 'invite-buff');
     await page.click('.ar-ic .btn:not(.primary)');
     await page.waitForSelector('.ar-ic', { state: 'detached' });
@@ -246,8 +246,8 @@ async function t(name, fn) {
     bot.socket.close();
   });
 
-  /* ===== 3. Phòng buff từ phía người chơi mời, bỏ cuộc giữa trận bằng nút Về chánh điện ===== */
-  await t('Máy chủ thật: bỏ cuộc giữa trận qua nút Về chánh điện (xác nhận) → bot thắng, người chơi về chánh điện', async () => {
+  /* ===== 3. Phòng buff từ phía người chơi mời, bỏ cuộc giữa trận bằng nút Chánh điện trên thanh đổi map ===== */
+  await t('Máy chủ thật: bỏ cuộc giữa trận qua nút Chánh điện trên thanh đổi map (xác nhận) → bot thắng, người chơi về chánh điện', async () => {
     const srv = await startServer({ PK_TIME_SCALE: '1' }); servers.push(srv);
     const bot = await makeBot(srv, 'Huyen Trang', 'uid-bot-real-0003'); open.push(bot.socket);
     const page = await newPage(browser, srv);
@@ -268,7 +268,7 @@ async function t(name, fn) {
     await page.evaluate(() => history.back());                // nút Back điện thoại: bị chặn khi có trận
     await page.waitForFunction(() => /Đang có trận/.test(document.querySelector('#toast').textContent));
     assert.equal(await page.evaluate(() => Places.current), 'arena');
-    await page.click('.ar-back');
+    await page.click('.ar-head .mapbar-btn[data-map="hall"]');
     await page.waitForSelector('dialog[open]');
     await page.click('dialog[open] .btn:has-text("Bỏ cuộc")');
     await page.waitForFunction(() => Places.current === 'hall', null, { timeout: 8000 });
