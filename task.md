@@ -57,7 +57,7 @@
 | T-061 | Sổ tay trong game (nút "?") | ✅ Xong · PR #50 | P1 | CORE + GUIDE + NAV | Claude Sonnet 5.5 |
 | T-062 | Gợi ý lần đầu, nhãn tên không đè nhau | ⏳ T-061, T-043 | P1 | CORE + GUIDE + HALL | — |
 | T-063 | Viết lại chữ Võ Học Các | ⏳ T-060, T-061 | P1 | CORE + GUIDE + MARTIAL | — |
-| T-064 | Viết lại chữ Sân đấu | ⏳ T-012, T-060, T-061 | P1 | CORE + GUIDE + PK | — |
+| T-064 | Viết lại chữ Sân đấu | 🟣 Chờ soát | P1 | CORE + GUIDE + PK | Gemini 3.8 Flash (soạn) + Claude Sonnet 5.5 (áp) |
 | T-065 | Viết lại chữ chánh điện, công đức, cúng dường | ⏳ T-060, T-011, T-061, T-044 | P1 | CORE + GUIDE + RITUAL | — |
 | T-066 | Bài kiểm người mới (25 câu) | ⏳ T-067 (và mọi thẻ T-010 → T-065) | P1 | CORE + GUIDE | — |
 | T-067 | Cập nhật README và tài liệu người chơi | ⏳ T-010 → T-065 | P2 | CORE + DOCS | — |
@@ -882,13 +882,13 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: cân bằng số liệu.
 
 ### T-064 · Viết lại chữ Sân đấu
-- **Trạng thái**: ⏳ Chờ T-012, T-060
+- **Trạng thái**: 🟣 Chờ soát
 - **Ưu tiên**: P1 · **Đợt**: 4
 - **Gói ngữ cảnh**: CORE + GUIDE + PK
 - **Khu vực chạm**: docs/copy/SAN-DAU.md (mới), public/js/arena.js (chuỗi, dải "Luật nhanh", `endInfo` thêm `escape`, `MODES`), public/index.html (`?v=`)
 - **Phụ thuộc**: T-012, T-060, T-061 (`MARTIAL.PK.IDLE_FORFEIT_TURNS`)
 - **Thợ**: Gemini Flash soạn → Sonnet 5.5 áp · **Soát**: Gemini Argon
-- **Người làm**: — · **Nhánh**: —
+- **Người làm**: Gemini 3.8 Flash (soạn) + Claude Sonnet 5.5 (áp) · **Nhánh**: gemini/T-064-chu-san-dau
 - **Thiết kế**: KH §8.7
 - **Mục tiêu**: luật một trận hiện rõ ngay trên màn đấu.
 - **Tiêu chí xong**:
@@ -899,6 +899,7 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
   - [ ] Số lượt bỏ lỡ bị xử thua đọc từ `MARTIAL.PK.IDLE_FORFEIT_TURNS` (T-061 thêm), không gõ cứng
   - [ ] Fixture ui-harness arena tạo lại nếu cần; `ui-check.js` sạch
 - **Ngoài phạm vi**: đổi luật PK.
+- **Ghi chú**: đã áp docs/copy/SAN-DAU.md vào arena.js (bỏ qua dòng 1 của index.html; giữ `MODES.balanced`, chỉ sửa mô tả). Dải "Luật nhanh" là `quickRules()`, số liệu lấy từ `M.PK` và hằng số đầu file. Chưa chạy ui-harness arena (máy chưa cài Playwright). Đã tăng `?v=` của arena.js và arena.css.
 
 ### T-065 · Viết lại chữ chánh điện, công đức, cúng dường, tụng kinh
 - **Trạng thái**: ⏳ Chờ T-060, T-011, T-061, T-044
