@@ -13,55 +13,55 @@
 |---|---|---|---|---|---|
 | T-001 | Chốt một trong hai nhánh Obito trùng nhau | ✅ Xong | P0 | CORE + PK + HALL | Claude |
 | T-002 | Kiểm và dọn các nhánh đã merge | 🔵 Sẵn sàng 👤 | P1 | CORE + OPS | — |
-| T-003 | Ghi baseline test trên Node 22 | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + OPS | Claude Haiku (thay GLM Flash) |
-| T-004 | `npm run check` tự quét file, không liệt kê tay | ✅ Gộp tích hợp (chờ PR) | P1 | CORE + OPS | Claude Sonnet (thay Codex) |
-| T-005 | Test chống lệch các hằng số dùng chung | ✅ Gộp tích hợp (chờ PR) | P1 | CORE + PK + HALL | Claude Sonnet (thay Codex) |
-| T-006 | CI GitHub Actions chạy check + test | ✅ Gộp tích hợp (chờ PR) | P1 | CORE + OPS | Claude Sonnet |
+| T-003 | Ghi baseline test trên Node 22 | ✅ Xong · PR #23 | P0 | CORE + OPS | Claude Haiku (thay GLM Flash) |
+| T-004 | `npm run check` tự quét file, không liệt kê tay | ✅ Xong · PR #24 | P1 | CORE + OPS | Claude Sonnet (thay Codex) |
+| T-005 | Test chống lệch các hằng số dùng chung | ✅ Xong · PR #25 | P1 | CORE + PK + HALL | Claude Sonnet (thay Codex) |
+| T-006 | CI GitHub Actions chạy check + test | ✅ Xong · PR #26 | P1 | CORE + OPS | Claude Sonnet |
 | T-007 | Sửa mục "Cấu trúc mã" trong README | 🔵 Sẵn sàng | P2 | CORE + DOCS | — |
 | T-008 | Lệnh chạy ui-harness có sẵn trong package.json | ⚪ Hộp thư đến | P2 | CORE + OPS + PK | — |
 | T-009 | Rà các bản làm việc rời trên máy | 🔵 Sẵn sàng 👤 | P2 | CORE | — |
 | **Đợt 2026-11** | | | | | |
-| T-010 | Làm thanh đổi map đồng bộ (4 nút), bỏ nút Xin xăm | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + NAV + HALL | Claude Sonnet 5.5 |
-| T-011 | Gọn thanh dưới còn 9 nút lễ Phật, tab Khám phá | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + NAV | Claude Sonnet 5.5 |
-| T-012 | Thanh đổi map trong Sân đấu | ✅ Gộp tích hợp (chờ PR) | P1 | CORE + NAV + PK | Claude Sonnet 5.5 |
-| T-020 | Chốt giao thức Kỳ Đạo | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + KYDAO + DOCS | Claude Sonnet 5.5 |
-| T-021 | Luật cờ vua thuần, kiểm perft | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + KYDAO | Claude Sonnet 5.5 + Codex terra 6.1 |
-| T-022 | Luật cờ tướng thuần, perft, ký hiệu Việt | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + KYDAO | Codex terra 6.1 + Claude Sonnet 5.5 |
-| T-023 | Nghiên cứu luật cờ tướng úp (揭棋) | ✅ Gộp tích hợp (chờ PR) | P1 | CORE + KYDAO + DOCS | GLM Flash + Claude Sonnet 5.5 |
+| T-010 | Làm thanh đổi map đồng bộ (4 nút), bỏ nút Xin xăm | ✅ Xong · PR #32 | P0 | CORE + NAV + HALL | Claude Sonnet 5.5 |
+| T-011 | Gọn thanh dưới còn 9 nút lễ Phật, tab Khám phá | ✅ Xong · PR #38 | P0 | CORE + NAV | Claude Sonnet 5.5 |
+| T-012 | Thanh đổi map trong Sân đấu | ✅ Xong · PR #49 | P1 | CORE + NAV + PK | Claude Sonnet 5.5 |
+| T-020 | Chốt giao thức Kỳ Đạo | ✅ Xong · PR #31 | P0 | CORE + KYDAO + DOCS | Claude Sonnet 5.5 |
+| T-021 | Luật cờ vua thuần, kiểm perft | ✅ Xong · PR #30 | P0 | CORE + KYDAO | Claude Sonnet 5.5 + Codex terra 6.1 |
+| T-022 | Luật cờ tướng thuần, perft, ký hiệu Việt | ✅ Xong · PR #33 | P0 | CORE + KYDAO | Codex terra 6.1 + Claude Sonnet 5.5 |
+| T-023 | Nghiên cứu luật cờ tướng úp (揭棋) | ✅ Xong · PR #47 | P1 | CORE + KYDAO + DOCS | GLM Flash + Claude Sonnet 5.5 |
 | T-024 | Biến thể cờ tướng úp | ⏳ T-022, T-023 | P1 | CORE + KYDAO | — |
-| T-025 | Luật cờ vây thuần | ✅ Gộp tích hợp (chờ PR) | P1 | CORE + KYDAO | Codex terra 6.1 + Claude Sonnet 5.5 |
-| T-026 | Luật cờ caro thuần | ✅ Gộp tích hợp (chờ PR) | P1 | CORE + KYDAO | Claude Haiku 5.5 (thay GLM Flash) |
-| T-027 | Tính Elo và điều kiện xếp hạng | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + KYDAO | Claude Haiku 5.5 + GLM Flash + Claude Sonnet 5.5 |
-| T-028 | Bộ quản lý ván cờ | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + KYDAO + PK | Codex terra 6.1 + Claude Sonnet 5.5 |
-| T-029 | Lưu bền dữ liệu Kỳ Đạo và kỷ lục 👤 merge | ✅ Gộp tích hợp (chờ PR, 👤 merge) | P0 | CORE + STORE | Claude Sonnet 5.5 |
-| T-030 | Nối Kỳ Đạo vào máy chủ | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + KYDAO + HALL + AUTH | Claude Sonnet 5.5 |
-| T-031 | Vẽ bàn đá và ghế ở Sân chùa | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + HALL + KYDAO | Claude Sonnet 5.5 |
-| T-032 | Bảng bàn cờ: khung, cờ vua, cờ tướng | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + KYDAO | Claude Sonnet 5.5 |
+| T-025 | Luật cờ vây thuần | ✅ Xong · PR #34 | P1 | CORE + KYDAO | Codex terra 6.1 + Claude Sonnet 5.5 |
+| T-026 | Luật cờ caro thuần | ✅ Xong · PR #27 | P1 | CORE + KYDAO | Claude Haiku 5.5 (thay GLM Flash) |
+| T-027 | Tính Elo và điều kiện xếp hạng | ✅ Xong · PR #35 | P0 | CORE + KYDAO | Claude Haiku 5.5 + GLM Flash + Claude Sonnet 5.5 |
+| T-028 | Bộ quản lý ván cờ | ✅ Xong · PR #39 | P0 | CORE + KYDAO + PK | Codex terra 6.1 + Claude Sonnet 5.5 |
+| T-029 | Lưu bền dữ liệu Kỳ Đạo và kỷ lục 👤 merge | ✅ Xong · PR #36 | P0 | CORE + STORE | Claude Sonnet 5.5 |
+| T-030 | Nối Kỳ Đạo vào máy chủ | ✅ Xong · PR #51 | P0 | CORE + KYDAO + HALL + AUTH | Claude Sonnet 5.5 |
+| T-031 | Vẽ bàn đá và ghế ở Sân chùa | ✅ Xong · PR #42 | P0 | CORE + HALL + KYDAO | Claude Sonnet 5.5 |
+| T-032 | Bảng bàn cờ: khung, cờ vua, cờ tướng | ✅ Xong · PR #41 | P0 | CORE + KYDAO | Claude Sonnet 5.5 |
 | T-033 | Bảng bàn cờ: cờ vây, caro, cờ úp | ⏳ T-032, T-024, T-025, T-026 | P1 | CORE + KYDAO | — |
 | T-034 | Nối bảng cờ vào chùa | ⏳ T-030, T-031, T-032 | P0 | CORE + KYDAO + NAV | — |
 | T-035 | ui-harness cho bàn cờ | ⏳ T-032, T-033 | P1 | CORE + KYDAO + OPS | — |
-| T-040 | Thống kê mùa, tính người giữ danh hiệu | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + RANK + MARTIAL | Claude Sonnet 5.5 (thay Codex terra 6.1) |
+| T-040 | Thống kê mùa, tính người giữ danh hiệu | ✅ Xong · PR #46 | P0 | CORE + RANK + MARTIAL | Claude Sonnet 5.5 (thay Codex terra 6.1) |
 | T-041 | Phát danh hiệu từ máy chủ | ⏳ T-030, T-040 | P0 | CORE + RANK | — |
 | T-042 | Hiện danh hiệu trên đầu, hộp người chơi, Sân đấu | ⏳ T-041, T-031, T-034, T-064 | P1 | CORE + RANK + HALL | — |
 | T-043 | Bia Bảng Vàng ở Sân chùa | ⏳ T-042 | P1 | CORE + RANK + HALL | — |
 | T-044 | Màn "Kẻ mạnh nhất lịch sử… đối đầu kẻ mạnh nhất hiện tại" | ⏳ T-041, T-030 | P1 | CORE + RANK + PK + KYDAO | — |
-| T-050 | Viết lại lịch âm (UTC+8 trước 1968, can chi đủ) | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + FORTUNE | Codex terra 6.1 + Claude Sonnet 5.5 |
-| T-051 | Máy chủ: rút tarot theo hạt giống, giới hạn xin xăm | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + FORTUNE | Claude Sonnet 5.5 |
-| T-052 | Nội dung 78 lá tarot theo 8 chủ đề | ✅ Gộp tích hợp (chờ PR) | P1 | CORE + FORTUNE | Claude Sonnet 5.5 (thay Gemini Flash) |
-| T-053 | Giao diện tarot theo chủ đề | ✅ Gộp tích hợp (chờ PR) | P1 | CORE + FORTUNE | Claude Sonnet 5.5 |
-| T-054 | Bộ máy an sao Tử Vi | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + FORTUNE | Claude Sonnet 5.5 (thay Codex terra 6.1) |
-| T-055 | Đối chiếu bảng tử vi, lập lá số mẫu 👤 | ✅ Gộp tích hợp (còn 👤) | P0 | CORE + FORTUNE + DOCS | GLM Flash + Claude Sonnet 5.5 |
-| T-056 | Nội dung luận giải tử vi | ✅ Gộp tích hợp (chờ PR) | P1 | CORE + FORTUNE | Claude Sonnet 5.5 (thay Gemini Flash) |
+| T-050 | Viết lại lịch âm (UTC+8 trước 1968, can chi đủ) | ✅ Xong · PR #37 | P0 | CORE + FORTUNE | Codex terra 6.1 + Claude Sonnet 5.5 |
+| T-051 | Máy chủ: rút tarot theo hạt giống, giới hạn xin xăm | ✅ Xong · PR #28 | P0 | CORE + FORTUNE | Claude Sonnet 5.5 |
+| T-052 | Nội dung 78 lá tarot theo 8 chủ đề | ✅ Xong · PR #40 | P1 | CORE + FORTUNE | Claude Sonnet 5.5 (thay Gemini Flash) |
+| T-053 | Giao diện tarot theo chủ đề | ✅ Xong · PR #45 | P1 | CORE + FORTUNE | Claude Sonnet 5.5 |
+| T-054 | Bộ máy an sao Tử Vi | ✅ Xong · PR #48 | P0 | CORE + FORTUNE | Claude Sonnet 5.5 (thay Codex terra 6.1) |
+| T-055 | Đối chiếu bảng tử vi, lập lá số mẫu 👤 | ✅ Xong · PR #52 (còn 👤) | P0 | CORE + FORTUNE + DOCS | GLM Flash + Claude Sonnet 5.5 |
+| T-056 | Nội dung luận giải tử vi | ✅ Xong · PR #44 | P1 | CORE + FORTUNE | Claude Sonnet 5.5 (thay Gemini Flash) |
 | T-057 | Giao diện lá số tử vi | ⏳ T-054, T-056, T-053 | P1 | CORE + FORTUNE | — |
-| T-060 | Quy tắc chữ, bảng thuật ngữ, danh sách bí mật | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + GUIDE + DOCS | Claude Sonnet 5.5 (thay Gemini Flash) |
-| T-061 | Sổ tay trong game (nút "?") | ✅ Gộp tích hợp (chờ PR) | P1 | CORE + GUIDE + NAV | Claude Sonnet 5.5 |
+| T-060 | Quy tắc chữ, bảng thuật ngữ, danh sách bí mật | ✅ Xong · PR #29 | P0 | CORE + GUIDE + DOCS | Claude Sonnet 5.5 (thay Gemini Flash) |
+| T-061 | Sổ tay trong game (nút "?") | ✅ Xong · PR #50 | P1 | CORE + GUIDE + NAV | Claude Sonnet 5.5 |
 | T-062 | Gợi ý lần đầu, nhãn tên không đè nhau | ⏳ T-061, T-043 | P1 | CORE + GUIDE + HALL | — |
 | T-063 | Viết lại chữ Võ Học Các | ⏳ T-060, T-061 | P1 | CORE + GUIDE + MARTIAL | — |
 | T-064 | Viết lại chữ Sân đấu | ⏳ T-012, T-060, T-061 | P1 | CORE + GUIDE + PK | — |
 | T-065 | Viết lại chữ chánh điện, công đức, cúng dường | ⏳ T-060, T-011, T-061, T-044 | P1 | CORE + GUIDE + RITUAL | — |
 | T-066 | Bài kiểm người mới (25 câu) | ⏳ T-067 (và mọi thẻ T-010 → T-065) | P1 | CORE + GUIDE | — |
 | T-067 | Cập nhật README và tài liệu người chơi | ⏳ T-010 → T-065 | P2 | CORE + DOCS | — |
-| T-068 | Cho máy chủ thử tắt êm trên Windows (3 test e2e) | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + STORE + OPS | Claude Sonnet 5.5 |
+| T-068 | Cho máy chủ thử tắt êm trên Windows (3 test e2e) | ✅ Xong · PR #43 | P0 | CORE + STORE + OPS | Claude Sonnet 5.5 |
 
 Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạm `package.json`). **T-005**, **T-007**, **T-002** làm song song được với nhóm trên.
 Đợt 2026-11: làm **T-003, T-004, T-006** trước (T-004 gỡ nút thắt `package.json` cho mọi thẻ thêm file JS; T-006 là cổng "CI xanh"). Sau đó theo lịch 6 đợt ở [docs/KE-HOACH-DOT-2026-11.md §10.3](docs/KE-HOACH-DOT-2026-11.md#103-lịch-theo-đợt-và-khóa-vùng-nóng).
@@ -107,7 +107,7 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: tự xoá nhánh, force-push.
 
 ### T-003 · Ghi baseline test trên Node 22
-- **Trạng thái**: ✅ Gộp vào nhánh tích hợp `claude/mini-game-development-plan-b7e553` (chờ PR vào `main`). Soát (Opus thay Sol): PASS vòng 1. Baseline ghi trên Node v25 vì máy không có Node 22; Node 22 do CI (T-006) chạy. 3 test trượt cố định trên Windows → thẻ T-068.
+- **Trạng thái**: ✅ Xong, đã merge vào main qua PR #23 (2026-11-12, CI xanh). Soát (Opus thay Sol): PASS vòng 1. Baseline ghi trên Node v25 vì máy không có Node 22; Node 22 do CI (T-006) chạy. 3 test trượt cố định trên Windows → thẻ T-068.
 - **Ưu tiên**: P0
 - **Gói ngữ cảnh**: CORE + OPS
 - **Khu vực chạm**: task.md, docs/agents/ARCHITECTURE.md (mục 7 nếu cần)
@@ -123,7 +123,7 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: sửa test.
 
 ### T-004 · `npm run check` tự quét file, không liệt kê tay
-- **Trạng thái**: ✅ Gộp vào nhánh tích hợp (chờ PR). Soát (Opus thay Sol): PASS vòng 1. `tools/check.js` quét đệ quy `server.js`, `lib/`, `public/js/`, `tools/`, `test/` (86 file). Góp ý để sau: quét thêm `.mjs`, thêm test cho chính script.
+- **Trạng thái**: ✅ Xong, đã merge vào main qua PR #24 (2026-11-12, CI xanh). Soát (Opus thay Sol): PASS vòng 1. `tools/check.js` quét đệ quy `server.js`, `lib/`, `public/js/`, `tools/`, `test/` (86 file). Góp ý để sau: quét thêm `.mjs`, thêm test cho chính script.
 - **Ưu tiên**: P1
 - **Gói ngữ cảnh**: CORE + OPS
 - **Khu vực chạm**: package.json, tools/check.js (mới), AGENTS.md (§2, §6), docs/agents/ARCHITECTURE.md (§6), docs/agents/CONTEXT-PACKS.md (gói CORE, PLACE)
@@ -140,7 +140,7 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: thêm ESLint/Prettier.
 
 ### T-005 · Test chống lệch các hằng số dùng chung
-- **Trạng thái**: ✅ Gộp vào nhánh tích hợp (chờ PR). Soát (Opus thay Sol): PASS vòng 1. 5 ca kiểm, không có giá trị nào đang lệch. Người làm: Claude Sonnet 5.5 (thay Codex terra 6.1), nhánh `claude/T-005-test-dong-bo`.
+- **Trạng thái**: ✅ Xong, đã merge vào main qua PR #25 (2026-11-12, CI xanh). Soát (Opus thay Sol): PASS vòng 1. 5 ca kiểm, không có giá trị nào đang lệch. Người làm: Claude Sonnet 5.5 (thay Codex terra 6.1), nhánh `claude/T-005-test-dong-bo`.
 - **Ưu tiên**: P1
 - **Gói ngữ cảnh**: CORE + PK + HALL
 - **Khu vực chạm**: test/sync-constants.test.js (mới)
@@ -159,7 +159,7 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ghi chú (đợt 2026-11)**: Thợ Codex terra 6.1, Soát Sol 6.1. Sau khi T-010 và T-031 xong sẽ có thêm hai điểm đồng bộ: `MapBar.MAPS` (`public/js/mapbar.js`) ↔ `SCENES`/`PLACES` của `server.js`, và `YARD_TABLES` (`server.js` ↔ `public/js/hall.js`). Thẻ nào xong sau thì thêm ca kiểm vào `test/sync-constants.test.js`.
 
 ### T-006 · CI GitHub Actions chạy check + test
-- **Trạng thái**: ✅ Gộp vào nhánh tích hợp (chờ PR). Soát (Opus thay Sol): PASS vòng 1. Chưa chạy thật trên GitHub Actions; lần chạy đầu sẽ cho baseline Node 22 + PostgreSQL. Nếu 3 test của T-068 cũng đỏ trên Linux thì CI đỏ cho tới khi T-068 xong. Người làm: Claude Sonnet 5.5, nhánh `claude/T-006-ci`.
+- **Trạng thái**: ✅ Xong, đã merge vào main qua PR #26 (2026-11-12, CI xanh). Soát (Opus thay Sol): PASS vòng 1. Chưa chạy thật trên GitHub Actions; lần chạy đầu sẽ cho baseline Node 22 + PostgreSQL. Nếu 3 test của T-068 cũng đỏ trên Linux thì CI đỏ cho tới khi T-068 xong. Người làm: Claude Sonnet 5.5, nhánh `claude/T-006-ci`.
 - **Ưu tiên**: P1
 - **Gói ngữ cảnh**: CORE + OPS
 - **Khu vực chạm**: .github/workflows/ci.yml (mới)
@@ -218,7 +218,7 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 ### Epic UI · Giao diện điều hướng
 
 ### T-010 · Làm thanh đổi map đồng bộ (4 nút), bỏ nút Xin xăm
-- **Trạng thái**: ✅ Gộp vào nhánh tích hợp (chờ PR). Thợ: Claude Sonnet 5.5 (qua proxy). Soát: Sol 6.1 vòng 1 (2 lỗi), Opus 5.5 thay Sol/Argon các vòng sau (kênh Codex và Antigravity hết hạn mức). Điều phối tự chạy thật: đổi map 10 lần không lỗi console, 375×812 bốn nút 83×44px một hàng, dải gợi ý có ✕; test chọn bồ đoàn gần nhất được giao viết lại thành test hành vi (Điều phối thử làm hỏng: đỏ).
+- **Trạng thái**: ✅ Xong, đã merge vào main qua PR #32 (2026-11-12, CI xanh). Thợ: Claude Sonnet 5.5 (qua proxy). Soát: Sol 6.1 vòng 1 (2 lỗi), Opus 5.5 thay Sol/Argon các vòng sau (kênh Codex và Antigravity hết hạn mức). Điều phối tự chạy thật: đổi map 10 lần không lỗi console, 375×812 bốn nút 83×44px một hàng, dải gợi ý có ✕; test chọn bồ đoàn gần nhất được giao viết lại thành test hành vi (Điều phối thử làm hỏng: đỏ).
 - **Ưu tiên**: P0 · **Đợt**: 1
 - **Gói ngữ cảnh**: CORE + NAV + HALL
 - **Khu vực chạm**: public/js/mapbar.js (mới), public/index.html (khối `nav.scene-nav`, `<script>`, `?v=`), public/js/app.js (`SCENE_HINT`, `applyScene`, `goScene`, các listener của scene-nav, `sitAt`), public/js/fortune.js (chỗ gắn `#go-yard`/`#go-hall`), public/css/style.css (`.scene-nav` → `.mapbar`, `.stage-hint` trên điện thoại), test/sync-constants.test.js (ca `MapBar.MAPS` ↔ `SCENES`/`PLACES`, nếu T-005 đã có file), docs/agents/ARCHITECTURE.md (§6: dòng `MapBar.MAPS`), README.md (dòng "chạm nút ở thanh dưới…"), docs/VO-HOC.md (dòng 13)
@@ -241,7 +241,7 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: thanh dưới (T-011), Sân đấu bên trong (T-012), viết lại chữ gợi ý (T-065).
 
 ### T-011 · Gọn thanh dưới còn 9 nút lễ Phật, tab Khám phá
-- **Trạng thái**: ✅ Gộp vào nhánh tích hợp (chờ PR). Thợ: Claude Sonnet 5.5 (qua proxy). Soát: Sol 6.1 + Opus 5.5 thay Argon; sau 2 vòng còn test giao diện yếu → giao sửa thêm (Điều phối thử làm hỏng: đỏ). Điều phối chạy thật 375×812: 9 nút, 2 hàng, nút 58px, không cuộn ngang, tab Khám phá, hộp giọng nói tự thu nhỏ.
+- **Trạng thái**: ✅ Xong, đã merge vào main qua PR #38 (2026-11-12, CI xanh). Thợ: Claude Sonnet 5.5 (qua proxy). Soát: Sol 6.1 + Opus 5.5 thay Argon; sau 2 vòng còn test giao diện yếu → giao sửa thêm (Điều phối thử làm hỏng: đỏ). Điều phối chạy thật 375×812: 9 nút, 2 hàng, nút 58px, không cuộn ngang, tab Khám phá, hộp giọng nói tự thu nhỏ.
 - **Ưu tiên**: P0 · **Đợt**: 2
 - **Gói ngữ cảnh**: CORE + NAV
 - **Khu vực chạm**: public/index.html (`nav.actions`, tab/khung "Nơi khác", `#voicebar`), public/js/app.js (`act`, `welcome`, `renderVoice`, `showTab`), public/css/style.css (`.actions`, `.voicebar`), public/css/places.css, tools/ui-harness/arena/e2e-real.js, README.md, docs/VO-HOC.md, docs/VO-HOC-GIAO-THUC.md (chỉ câu ở dòng 11)
@@ -263,7 +263,7 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: thêm nút mới ở thanh dưới; đổi luật công đức.
 
 ### T-012 · Thanh đổi map trong Sân đấu
-- **Trạng thái**: ✅ Gộp vào nhánh tích hợp (chờ PR). Thợ: Claude Sonnet 5.5 (qua proxy). Soát: Opus 5.5 thay Argon, Sol 6.1. Điều phối chạy thật: vào Sân đấu, thanh 4 nút với Sân đấu sáng, không lỗi console. ui-harness arena cần Playwright, chưa chạy.
+- **Trạng thái**: ✅ Xong, đã merge vào main qua PR #49 (2026-11-12, CI xanh). Thợ: Claude Sonnet 5.5 (qua proxy). Soát: Opus 5.5 thay Argon, Sol 6.1. Điều phối chạy thật: vào Sân đấu, thanh 4 nút với Sân đấu sáng, không lỗi console. ui-harness arena cần Playwright, chưa chạy.
 - **Ưu tiên**: P1 · **Đợt**: 3
 - **Gói ngữ cảnh**: CORE + NAV + PK
 - **Khu vực chạm**: public/js/arena.js (đầu màn, nút "← Về chánh điện", hộp rời trận), public/css/arena.css, public/index.html (`?v=`), tools/ui-harness/arena/* (nếu cần)
@@ -281,7 +281,7 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 ### Epic KD · Kỳ Đạo (năm môn cờ ngoài sân chùa)
 
 ### T-020 · Chốt giao thức Kỳ Đạo
-- **Trạng thái**: ✅ Gộp vào nhánh tích hợp (chờ PR). Thợ: Claude Sonnet 5.5 (qua proxy). Soát: Sol 6.1 vòng 1 (9 lỗi), Opus 5.5 thay Sol ở vòng 2–3 vì kênh Codex hết hạn mức; điểm cuối (báo trước ván bị hạ xuống giao hữu) được Điều phối giao sửa thêm và kiểm lại.
+- **Trạng thái**: ✅ Xong, đã merge vào main qua PR #31 (2026-11-12, CI xanh). Thợ: Claude Sonnet 5.5 (qua proxy). Soát: Sol 6.1 vòng 1 (9 lỗi), Opus 5.5 thay Sol ở vòng 2–3 vì kênh Codex hết hạn mức; điểm cuối (báo trước ván bị hạ xuống giao hữu) được Điều phối giao sửa thêm và kiểm lại.
 - **Ưu tiên**: P0 · **Đợt**: 1
 - **Gói ngữ cảnh**: CORE + KYDAO + DOCS
 - **Khu vực chạm**: docs/KY-DAO-GIAO-THUC.md (mới), docs/agents/ARCHITECTURE.md (§1, §4, §6), docs/agents/CONTEXT-PACKS.md (gói KYDAO)
@@ -300,7 +300,7 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: viết mã.
 
 ### T-021 · Viết luật cờ vua thuần và kiểm perft
-- **Trạng thái**: ✅ Gộp vào nhánh tích hợp (chờ PR). Thợ: Claude Sonnet 5.5 viết bản đầu, Codex terra 6.1 (gpt-6.1-terra) sửa 2 vòng. Soát: Sol 6.1 còn 2 điểm sau 2 vòng; Điều phối xét: perft d4 cả 5 thế đã chạy đúng (Điều phối chạy, 0,5 giây); nhận diện thế cờ chết có hàng rào Tốt là ngoài phạm vi thẻ (chỉ khiến ván không tự hòa, người chơi vẫn xin hòa được) → chấp nhận, ghi vào Hộp thư đến.
+- **Trạng thái**: ✅ Xong, đã merge vào main qua PR #30 (2026-11-12, CI xanh). Thợ: Claude Sonnet 5.5 viết bản đầu, Codex terra 6.1 (gpt-6.1-terra) sửa 2 vòng. Soát: Sol 6.1 còn 2 điểm sau 2 vòng; Điều phối xét: perft d4 cả 5 thế đã chạy đúng (Điều phối chạy, 0,5 giây); nhận diện thế cờ chết có hàng rào Tốt là ngoài phạm vi thẻ (chỉ khiến ván không tự hòa, người chơi vẫn xin hòa được) → chấp nhận, ghi vào Hộp thư đến.
 - **Ưu tiên**: P0 · **Đợt**: 1
 - **Gói ngữ cảnh**: CORE + KYDAO
 - **Khu vực chạm**: public/js/kydao/chess.js (mới), test/kydao-chess.test.js (mới)
@@ -319,7 +319,7 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: giao diện, đồng hồ, bot.
 
 ### T-022 · Viết luật cờ tướng thuần, perft, ký hiệu Việt
-- **Trạng thái**: ✅ Gộp vào nhánh tích hợp (chờ PR). Thợ: Codex terra 6.1 (gpt-6.1-terra); sửa vòng 1 bằng Claude Sonnet 5.5 vì kênh Codex hết hạn mức. Soát: Opus 5.5 thay Sol 6.1 và Gemini Argon (hai kênh hết hạn mức), PASS vòng 2. Perft d1–d3 đúng (44 / 1.920 / 79.666).
+- **Trạng thái**: ✅ Xong, đã merge vào main qua PR #33 (2026-11-12, CI xanh). Thợ: Codex terra 6.1 (gpt-6.1-terra); sửa vòng 1 bằng Claude Sonnet 5.5 vì kênh Codex hết hạn mức. Soát: Opus 5.5 thay Sol 6.1 và Gemini Argon (hai kênh hết hạn mức), PASS vòng 2. Perft d1–d3 đúng (44 / 1.920 / 79.666).
 - **Ưu tiên**: P0 · **Đợt**: 1
 - **Gói ngữ cảnh**: CORE + KYDAO
 - **Khu vực chạm**: public/js/kydao/xiangqi.js (mới), test/kydao-xiangqi.test.js (mới)
@@ -337,7 +337,7 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: cờ úp (T-024), giao diện.
 
 ### T-023 · Nghiên cứu luật cờ tướng úp (揭棋)
-- **Trạng thái**: ✅ Gộp vào nhánh tích hợp (chờ PR). Thợ: GLM Flash (glm-4.5-flash) 2 vòng chưa đạt; Điều phối giao Claude Sonnet 5.5 viết lại. Soát: Opus 5.5 thay Gemini Argon. Luật theo D7; các điểm 👤 ở §7 của tài liệu (hòa 40 hồi hay 60 nước, lặp thế, ăn quân úp chỉ bên ăn biết).
+- **Trạng thái**: ✅ Xong, đã merge vào main qua PR #47 (2026-11-12, CI xanh). Thợ: GLM Flash (glm-4.5-flash) 2 vòng chưa đạt; Điều phối giao Claude Sonnet 5.5 viết lại. Soát: Opus 5.5 thay Gemini Argon. Luật theo D7; các điểm 👤 ở §7 của tài liệu (hòa 40 hồi hay 60 nước, lặp thế, ăn quân úp chỉ bên ăn biết).
 - **Ưu tiên**: P1 · **Đợt**: 1
 - **Gói ngữ cảnh**: CORE + KYDAO + DOCS
 - **Khu vực chạm**: docs/ky-dao/CO-TUONG-UP.md (mới)
@@ -372,7 +372,7 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: giao diện (T-033).
 
 ### T-025 · Viết luật cờ vây thuần
-- **Trạng thái**: ✅ Gộp vào nhánh tích hợp (chờ PR). Thợ: Codex terra 6.1 (gpt-6.1-terra), sửa bằng Claude Sonnet 5.5 (kênh Codex hết hạn mức). Soát: Opus 5.5 thay Sol/Argon. Sau 2 vòng, Điều phối quyết: chấp nhận 5 thế mẫu tự dựng (soát đã tính lại, ghi nguồn luật tính diện tích) và bắt thêm test chống bấm 'Đồng ý' hai lần (Điều phối thử làm hỏng: đỏ).
+- **Trạng thái**: ✅ Xong, đã merge vào main qua PR #34 (2026-11-12, CI xanh). Thợ: Codex terra 6.1 (gpt-6.1-terra), sửa bằng Claude Sonnet 5.5 (kênh Codex hết hạn mức). Soát: Opus 5.5 thay Sol/Argon. Sau 2 vòng, Điều phối quyết: chấp nhận 5 thế mẫu tự dựng (soát đã tính lại, ghi nguồn luật tính diện tích) và bắt thêm test chống bấm 'Đồng ý' hai lần (Điều phối thử làm hỏng: đỏ).
 - **Ưu tiên**: P1 · **Đợt**: 1
 - **Gói ngữ cảnh**: CORE + KYDAO
 - **Khu vực chạm**: public/js/kydao/go.js (mới), test/kydao-go.test.js (mới)
@@ -389,7 +389,7 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: chấp quân, giao diện.
 
 ### T-026 · Viết luật cờ caro thuần
-- **Trạng thái**: ✅ Gộp vào nhánh tích hợp (chờ PR). Thợ: Claude Haiku 5.5 (làm trước khi chuyển sang proxy). Soát: Sol 6.1 (gpt-6.1-sol) PASS vòng 1.
+- **Trạng thái**: ✅ Xong, đã merge vào main qua PR #27 (2026-11-12, CI xanh). Thợ: Claude Haiku 5.5 (làm trước khi chuyển sang proxy). Soát: Sol 6.1 (gpt-6.1-sol) PASS vòng 1.
 - **Ưu tiên**: P1 · **Đợt**: 1
 - **Gói ngữ cảnh**: CORE + KYDAO
 - **Khu vực chạm**: public/js/kydao/gomoku.js (mới), test/kydao-gomoku.test.js (mới)
@@ -405,7 +405,7 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: luật mở ván Swap2.
 
 ### T-027 · Tính Elo và điều kiện xếp hạng
-- **Trạng thái**: ✅ Gộp vào nhánh tích hợp (chờ PR). Thợ: Claude Haiku 5.5 viết bản đầu; GLM Flash (glm-4.5-flash) sửa 2 vòng nhưng làm ngược luật D6 khi tắt Google và tự sửa task.md; Điều phối giao Claude Sonnet 5.5 sửa lần cuối. Soát: Sol 6.1 vòng 1–2, Opus 5.5 vòng 3. Điều phối kiểm tay: công thức, K, sàn, điều kiện tài khoản đúng.
+- **Trạng thái**: ✅ Xong, đã merge vào main qua PR #35 (2026-11-12, CI xanh). Thợ: Claude Haiku 5.5 viết bản đầu; GLM Flash (glm-4.5-flash) sửa 2 vòng nhưng làm ngược luật D6 khi tắt Google và tự sửa task.md; Điều phối giao Claude Sonnet 5.5 sửa lần cuối. Soát: Sol 6.1 vòng 1–2, Opus 5.5 vòng 3. Điều phối kiểm tay: công thức, K, sàn, điều kiện tài khoản đúng.
 - **Ưu tiên**: P0 · **Đợt**: 1
 - **Gói ngữ cảnh**: CORE + KYDAO
 - **Khu vực chạm**: lib/kydao/elo.js (mới), test/kydao-elo.test.js (mới)
@@ -422,7 +422,7 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: lưu bền.
 
 ### T-028 · Viết bộ quản lý ván cờ
-- **Trạng thái**: ✅ Gộp vào nhánh tích hợp (chờ PR). Thợ: Codex terra 6.1 (bản đầu, dừng sớm vì hạn mức), Claude Sonnet 5.5 sửa 2 vòng. Soát: Sol 6.1 (vòng 1), Opus 5.5 thay Sol (vòng 2–3) PASS. 51 test đạt, có quét mọi emit không lộ uid/quân úp.
+- **Trạng thái**: ✅ Xong, đã merge vào main qua PR #39 (2026-11-12, CI xanh). Thợ: Codex terra 6.1 (bản đầu, dừng sớm vì hạn mức), Claude Sonnet 5.5 sửa 2 vòng. Soát: Sol 6.1 (vòng 1), Opus 5.5 thay Sol (vòng 2–3) PASS. 51 test đạt, có quét mọi emit không lộ uid/quân úp.
 - **Ưu tiên**: P0 · **Đợt**: 2
 - **Gói ngữ cảnh**: CORE + KYDAO + PK (tham khảo khuôn `lib/pk/manager.js`)
 - **Khu vực chạm**: lib/kydao/manager.js (mới), lib/kydao/registry.js (mới), test/kydao-manager.test.js (mới)
@@ -445,7 +445,7 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: socket thật (T-030), lưu bền (T-029).
 
 ### T-029 · Lưu bền dữ liệu Kỳ Đạo và kỷ lục
-- **Trạng thái**: ✅ Gộp vào nhánh tích hợp. PR vào main: 👤 chủ dự án bấm merge (đổi hình dạng dữ liệu). Thợ: Claude Sonnet 5.5 (qua proxy). Soát: Sol 6.1.
+- **Trạng thái**: ✅ Xong, đã merge vào main qua PR #36 (2026-11-12, CI xanh). PR vào main: 👤 chủ dự án bấm merge (đổi hình dạng dữ liệu). Thợ: Claude Sonnet 5.5 (qua proxy). Soát: Sol 6.1.
 - **Ưu tiên**: P0 · **Đợt**: 2 · **👤 chủ dự án bấm merge**
 - **Gói ngữ cảnh**: CORE + STORE + AUTH
 - **Khu vực chạm**: lib/store-sections.js, lib/account.js (hàm mới `mergeKydaoGuest`), test/store-json.test.js, test/store-pg.test.js, test/account.test.js
@@ -464,7 +464,7 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: logic ván, logic danh hiệu, sửa `server.js`.
 
 ### T-030 · Nối Kỳ Đạo vào máy chủ
-- **Trạng thái**: ✅ Gộp vào nhánh tích hợp (chờ PR). Thợ: Claude Sonnet 5.5 (qua proxy). Soát: Opus 5.5 thay Sol, PASS vòng 2. Sau gộp: npm test 702 test, 698 đạt, 0 trượt, 4 bỏ qua (PostgreSQL).
+- **Trạng thái**: ✅ Xong, đã merge vào main qua PR #51 (2026-11-12, CI xanh). Thợ: Claude Sonnet 5.5 (qua proxy). Soát: Opus 5.5 thay Sol, PASS vòng 2. Sau gộp: npm test 702 test, 698 đạt, 0 trượt, 4 bỏ qua (PostgreSQL).
 - **Ưu tiên**: P0 · **Đợt**: 3
 - **Gói ngữ cảnh**: CORE + KYDAO + HALL + AUTH
 - **Khu vực chạm**: server.js (cấu hình `KYDAO_*`, `YARD_TABLES`, `kydaoOnly`, handler `kd:*`, tạo manager trong `main()`, `shutdown`, rời bàn khi đổi cảnh/place/ngắt kết nối, `linkGuest` gọi `mergeKydaoGuest` kể cả đường hoàn tác, `/api/config` thêm `kydao`), test/e2e-kydao.test.js (mới), test/sync-constants.test.js (thêm ca `YARD_TABLES`), docs/agents/ARCHITECTURE.md (§2, §4: chỉ thêm dòng của mình), README.md (biến môi trường)
@@ -487,7 +487,7 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: giao diện.
 
 ### T-031 · Vẽ bàn đá và ghế ở Sân chùa
-- **Trạng thái**: ✅ Gộp vào nhánh tích hợp (chờ PR). Thợ: Claude Sonnet 5.5 (qua proxy). Soát: Opus 5.5 thay Argon/Sol; sau 2 vòng còn lỗi chạm thầy bói mở nhầm bàn ở cỡ canvas thật → giao sửa (thầy bói ưu tiên, test dùng cỡ canvas thật).
+- **Trạng thái**: ✅ Xong, đã merge vào main qua PR #42 (2026-11-12, CI xanh). Thợ: Claude Sonnet 5.5 (qua proxy). Soát: Opus 5.5 thay Argon/Sol; sau 2 vòng còn lỗi chạm thầy bói mở nhầm bàn ở cỡ canvas thật → giao sửa (thầy bói ưu tiên, test dùng cỡ canvas thật).
 - **Ưu tiên**: P0 · **Đợt**: 2
 - **Gói ngữ cảnh**: CORE + HALL + KYDAO
 - **Khu vực chạm**: public/js/hall.js (`YARD_TABLES`, vẽ bàn/ghế, `tableAt`, hover, `personAt` bỏ qua người đang ngồi bàn, tư thế ngồi bàn, biển tên, biểu tượng bàn cờ nhỏ trên đầu người chơi "bàn trong", `Hall.setTables`), test/hall-npcs.test.js (thêm ca nếu cần), test/hall-tables.test.js (mới), public/index.html (`?v=` của hall.js)
@@ -506,7 +506,7 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: socket, bảng bàn cờ.
 
 ### T-032 · Bảng bàn cờ: khung, đồng hồ, cờ vua, cờ tướng
-- **Trạng thái**: ✅ Gộp vào nhánh tích hợp (chờ PR). Thợ: Claude Sonnet 5.5 (qua proxy). Soát: Opus 5.5 thay Argon/Sol, PASS vòng 2. Điều phối xem trang thử: cờ tướng (chữ Hán, sông, cung) và cờ vua 375×812 vừa màn, nút 44px, không lỗi console.
+- **Trạng thái**: ✅ Xong, đã merge vào main qua PR #41 (2026-11-12, CI xanh). Thợ: Claude Sonnet 5.5 (qua proxy). Soát: Opus 5.5 thay Argon/Sol, PASS vòng 2. Điều phối xem trang thử: cờ tướng (chữ Hán, sông, cung) và cờ vua 375×812 vừa màn, nút 44px, không lỗi console.
 - **Ưu tiên**: P0 · **Đợt**: 2
 - **Gói ngữ cảnh**: CORE + KYDAO
 - **Khu vực chạm**: public/js/kydao-ui.js (mới), public/js/kydao-draw.js (mới), public/css/kydao.css (mới), tools/ui-harness/kydao/index.html (trang thử tối thiểu), public/img/NOTICE.txt (nếu dùng bộ quân cburnett)
@@ -577,7 +577,7 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 ### Epic DH · Danh hiệu, Bảng Vàng, màn đối đầu
 
 ### T-040 · Thống kê mùa và tính người giữ danh hiệu
-- **Trạng thái**: ✅ Gộp vào nhánh tích hợp (chờ PR). Thợ: Claude Sonnet 5.5 thay Codex terra 6.1 (kênh Codex lại hết hạn mức). Soát: Opus 5.5 thay Sol, PASS vòng 2. 118 test liên quan đạt.
+- **Trạng thái**: ✅ Xong, đã merge vào main qua PR #46 (2026-11-12, CI xanh). Thợ: Claude Sonnet 5.5 thay Codex terra 6.1 (kênh Codex lại hết hạn mức). Soát: Opus 5.5 thay Sol, PASS vòng 2. 118 test liên quan đạt.
 - **Ưu tiên**: P0 · **Đợt**: 2
 - **Gói ngữ cảnh**: CORE + RANK + MARTIAL
 - **Khu vực chạm**: lib/records.js (mới), lib/martial/service.js (`norm`: `season`, `name`; `recordResult` cộng điểm mùa; hàm `setName(uid, name)`), lib/account.js (gộp `season` trong `mergeMartialGuest`), test/records.test.js (mới), test/martial-service.test.js
@@ -667,7 +667,7 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 ### Epic BT · Bói toán
 
 ### T-050 · Viết lại lịch âm (UTC+8 trước 1968, can chi đủ)
-- **Trạng thái**: ✅ Gộp vào nhánh tích hợp (chờ PR). Thợ: Codex terra 6.1 (gpt-6.1-terra), sửa vòng 1 bằng Claude Sonnet 5.5. Soát: Sol 6.1 (vòng 1), Opus 5.5 thay Sol/Argon (vòng 2) PASS. Điều phối kiểm tay: 10/2/1995 → 11/1/1995, Tết 1968 → 29/1, 28/1/1903 → 30/12/1902 (UTC+8). Còn mở 👤: có đổi 1900–1928 sang giờ Bắc Kinh không (ghi đầu lunar.js).
+- **Trạng thái**: ✅ Xong, đã merge vào main qua PR #37 (2026-11-12, CI xanh). Thợ: Codex terra 6.1 (gpt-6.1-terra), sửa vòng 1 bằng Claude Sonnet 5.5. Soát: Sol 6.1 (vòng 1), Opus 5.5 thay Sol/Argon (vòng 2) PASS. Điều phối kiểm tay: 10/2/1995 → 11/1/1995, Tết 1968 → 29/1, 28/1/1903 → 30/12/1902 (UTC+8). Còn mở 👤: có đổi 1900–1928 sang giờ Bắc Kinh không (ghi đầu lunar.js).
 - **Ưu tiên**: P0 · **Đợt**: 1
 - **Gói ngữ cảnh**: CORE + FORTUNE
 - **Khu vực chạm**: public/js/lunar.js, test/lunar.test.js (mới), public/index.html (thêm `?v=` cho `lunar.js`)
@@ -686,7 +686,7 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: tử vi.
 
 ### T-051 · Máy chủ: rút tarot theo hạt giống, giới hạn xin xăm
-- **Trạng thái**: ✅ Gộp vào nhánh tích hợp (chờ PR). Thợ: Claude Sonnet 5.5 (đúng vai trong kế hoạch). Soát: Sol 6.1 (gpt-6.1-sol) NEEDS_FIX vòng 1 (2 lỗi), PASS vòng 2.
+- **Trạng thái**: ✅ Xong, đã merge vào main qua PR #28 (2026-11-12, CI xanh). Thợ: Claude Sonnet 5.5 (đúng vai trong kế hoạch). Soát: Sol 6.1 (gpt-6.1-sol) NEEDS_FIX vòng 1 (2 lỗi), PASS vòng 2.
 - **Ưu tiên**: P0 · **Đợt**: 1
 - **Gói ngữ cảnh**: CORE + FORTUNE
 - **Khu vực chạm**: server.js (handler `tarot:draw`, `bucket` cho `fortune:join`/`fortune:leave`), lib/fortune-queue.js (`crypto.randomInt`), test/e2e-fortune.test.js (mới), test/fortune-queue.test.js (mới), test/e2e-scene.test.js (chỉ khi phải chỉnh), docs/agents/ARCHITECTURE.md (§4, chỉ thêm dòng `tarot:draw`)
@@ -704,7 +704,7 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: giao diện (T-053).
 
 ### T-052 · Viết nội dung 78 lá tarot theo 8 chủ đề
-- **Trạng thái**: ✅ Gộp vào nhánh tích hợp (chờ PR). Thợ: Claude Sonnet 5.5 thay Gemini Flash (kênh Antigravity hết hạn mức). Soát: Opus 5.5 thay Argon/Sol; sau 2 vòng còn câu Ẩn phụ ghép khuôn gây sợ → giao viết lại riêng 99 câu cho các lá nặng.
+- **Trạng thái**: ✅ Xong, đã merge vào main qua PR #40 (2026-11-12, CI xanh). Thợ: Claude Sonnet 5.5 thay Gemini Flash (kênh Antigravity hết hạn mức). Soát: Opus 5.5 thay Argon/Sol; sau 2 vòng còn câu Ẩn phụ ghép khuôn gây sợ → giao viết lại riêng 99 câu cho các lá nặng.
 - **Ưu tiên**: P1 · **Đợt**: 1
 - **Gói ngữ cảnh**: CORE + FORTUNE
 - **Khu vực chạm**: public/data/tarot.vi.json (mới), public/data/NOTICE.txt (mới), test/tarot-data.test.js (mới), AGENTS.md (§3.14: thêm `public/data/NOTICE.txt` vào danh sách nơi ghi nguồn, một dòng)
@@ -722,7 +722,7 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: ảnh lá bài.
 
 ### T-053 · Làm giao diện tarot theo chủ đề
-- **Trạng thái**: ✅ Gộp vào nhánh tích hợp (chờ PR). Thợ: Claude Sonnet 5.5 (qua proxy). Soát: Opus 5.5 thay Argon, Sol 6.1. Điều phối chạy thật: chọn chủ đề → tình trạng → khung → 5 lá chữ thập + Lời thầy, không lỗi console.
+- **Trạng thái**: ✅ Xong, đã merge vào main qua PR #45 (2026-11-12, CI xanh). Thợ: Claude Sonnet 5.5 (qua proxy). Soát: Opus 5.5 thay Argon, Sol 6.1. Điều phối chạy thật: chọn chủ đề → tình trạng → khung → 5 lá chữ thập + Lời thầy, không lỗi console.
 - **Ưu tiên**: P1 · **Đợt**: 2
 - **Gói ngữ cảnh**: CORE + FORTUNE
 - **Khu vực chạm**: public/js/tarot.js (mới, global `Tarot`), public/js/fortune.js (bỏ khối tarot cũ, gọi `Tarot`), public/index.html (khối tarot trong `#dlg-fortune`, `<script>`, `?v=`), public/css/style.css (khối `.tarot-*`)
@@ -741,7 +741,7 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: ảnh lá bài.
 
 ### T-054 · Viết bộ máy an sao Tử Vi
-- **Trạng thái**: ✅ Gộp vào nhánh tích hợp (chờ PR). Thợ: Claude Sonnet 5.5 thay Codex terra 6.1 (kênh Codex hết hạn mức giữa chừng). Soát: Opus 5.5 thay Sol/Argon, PASS vòng 2. Điều phối kiểm tay: 10/2/1995 giờ Tý nam → Mệnh Dần, Mậu Dần Thành Đầu Thổ, Thổ ngũ cục; 4 ms/lá số. Phần so 12 lá số mẫu tự bỏ qua tới khi T-055 có fixture.
+- **Trạng thái**: ✅ Xong, đã merge vào main qua PR #48 (2026-11-12, CI xanh). Thợ: Claude Sonnet 5.5 thay Codex terra 6.1 (kênh Codex hết hạn mức giữa chừng). Soát: Opus 5.5 thay Sol/Argon, PASS vòng 2. Điều phối kiểm tay: 10/2/1995 giờ Tý nam → Mệnh Dần, Mậu Dần Thành Đầu Thổ, Thổ ngũ cục; 4 ms/lá số. Phần so 12 lá số mẫu tự bỏ qua tới khi T-055 có fixture.
 - **Ưu tiên**: P0 · **Đợt**: 2
 - **Gói ngữ cảnh**: CORE + FORTUNE
 - **Khu vực chạm**: public/js/tuvi.js (mới, UMD `TUVI`), test/tuvi.test.js (mới), tools/tuvi-crosscheck/ (mới, chỉ dùng khi phát triển, không thêm vào `package.json`)
@@ -761,7 +761,7 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: luận giải, giao diện.
 
 ### T-055 · Đối chiếu bảng tử vi và lập lá số mẫu
-- **Trạng thái**: ✅ Gộp vào nhánh tích hợp. Thợ: GLM Flash 2 vòng chưa đạt → Claude Sonnet 5.5 làm lại. Có bảng độ sáng 14×12, quy ước trường phái, 12 lá số mẫu từ iztro (ngày âm + giờ); test của T-054 so 12 mẫu: đạt. Còn 👤: đối chiếu 12 lá số với 2 công cụ tử vi Việt.
+- **Trạng thái**: ✅ Xong, đã merge vào main qua PR #52 (2026-11-12, CI xanh). Thợ: GLM Flash 2 vòng chưa đạt → Claude Sonnet 5.5 làm lại. Có bảng độ sáng 14×12, quy ước trường phái, 12 lá số mẫu từ iztro (ngày âm + giờ); test của T-054 so 12 mẫu: đạt. Còn 👤: đối chiếu 12 lá số với 2 công cụ tử vi Việt.
 - **Ưu tiên**: P0 · **Đợt**: 1
 - **Gói ngữ cảnh**: CORE + FORTUNE + DOCS
 - **Khu vực chạm**: docs/TU-VI-QUY-UOC.md (mới), test/fixtures/tuvi-golden.json (mới)
@@ -779,7 +779,7 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: mã.
 
 ### T-056 · Viết nội dung luận giải tử vi
-- **Trạng thái**: ✅ Gộp vào nhánh tích hợp (chờ PR). Thợ: Claude Sonnet 5.5 thay Gemini Flash (kênh Antigravity hết hạn mức). Soát: Opus 5.5 thay Gemini Argon, PASS sau sửa.
+- **Trạng thái**: ✅ Xong, đã merge vào main qua PR #44 (2026-11-12, CI xanh). Thợ: Claude Sonnet 5.5 thay Gemini Flash (kênh Antigravity hết hạn mức). Soát: Opus 5.5 thay Gemini Argon, PASS sau sửa.
 - **Ưu tiên**: P1 · **Đợt**: 2
 - **Gói ngữ cảnh**: CORE + FORTUNE
 - **Khu vực chạm**: public/data/tuvi.vi.json (mới), public/data/NOTICE.txt, test/tuvi-data.test.js (mới)
@@ -815,7 +815,7 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 ### Epic HD · Hướng dẫn cho người mới
 
 ### T-060 · Viết quy tắc chữ, bảng thuật ngữ và danh sách bí mật
-- **Trạng thái**: ✅ Gộp vào nhánh tích hợp (chờ PR). Thợ: Claude Sonnet 5.5 (làm trước khi chuyển sang proxy; sửa bằng Sonnet vì kênh Gemini đang hết hạn mức). Soát: Opus 5.5 thay Gemini Argon (kênh Antigravity hết hạn mức), PASS vòng 3.
+- **Trạng thái**: ✅ Xong, đã merge vào main qua PR #29 (2026-11-12, CI xanh). Thợ: Claude Sonnet 5.5 (làm trước khi chuyển sang proxy; sửa bằng Sonnet vì kênh Gemini đang hết hạn mức). Soát: Opus 5.5 thay Gemini Argon (kênh Antigravity hết hạn mức), PASS vòng 3.
 - **Ưu tiên**: P0 · **Đợt**: 1
 - **Gói ngữ cảnh**: CORE + GUIDE + DOCS
 - **Khu vực chạm**: docs/HUONG-DAN-VIET.md (mới)
@@ -832,7 +832,7 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: sửa mã.
 
 ### T-061 · Làm Sổ tay trong game (nút "?")
-- **Trạng thái**: ✅ Gộp vào nhánh tích hợp (chờ PR). Thợ: Claude Sonnet 5.5 (dựng + viết nội dung thay Gemini Flash). Soát: Sol PASS; Opus 5.5 thay Argon còn 2 câu sai với mã sau 2 vòng → giao sửa. Điều phối chạy thật: nút '?' mở Sổ tay 10 mục, không lỗi console.
+- **Trạng thái**: ✅ Xong, đã merge vào main qua PR #50 (2026-11-12, CI xanh). Thợ: Claude Sonnet 5.5 (dựng + viết nội dung thay Gemini Flash). Soát: Sol PASS; Opus 5.5 thay Argon còn 2 câu sai với mã sau 2 vòng → giao sửa. Điều phối chạy thật: nút '?' mở Sổ tay 10 mục, không lỗi console.
 - **Ưu tiên**: P1 · **Đợt**: 2
 - **Gói ngữ cảnh**: CORE + GUIDE + NAV
 - **Khu vực chạm**: public/js/guide.js (mới, global `Guide`), public/data/so-tay.vi.json (mới), public/css/guide.css (mới, tiền tố `gd-`), public/index.html (nút "?" ở `header.top`, `#dlg-guide`, `<script>`, `<link>`, `?v=`), public/js/app.js (vùng thanh trên: gắn nút), public/js/martial.js (chỉ thêm `IDLE_FORFEIT_TURNS` vào `MARTIAL.PK`), test/sync-constants.test.js (ca `IDLE_FORFEIT_TURNS` khớp `lib/pk/rules.js`)
@@ -950,7 +950,7 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 ### Phát sinh trong đợt
 
 ### T-068 · Cho máy chủ thử tắt êm trên Windows để 3 test e2e hết trượt
-- **Trạng thái**: ✅ Gộp vào nhánh tích hợp (chờ PR). Thợ: Claude Sonnet 5.5 (qua proxy). Soát: Sol 6.1 PASS. Sau khi gộp: npm test 588 test, 585 đạt, 0 trượt, 3 bỏ qua (PostgreSQL) trên Windows/Node v25.
+- **Trạng thái**: ✅ Xong, đã merge vào main qua PR #43 (2026-11-12, CI xanh). Thợ: Claude Sonnet 5.5 (qua proxy). Soát: Sol 6.1 PASS. Sau khi gộp: npm test 588 test, 585 đạt, 0 trượt, 3 bỏ qua (PostgreSQL) trên Windows/Node v25.
 - **Ưu tiên**: P0 · **Đợt**: 2
 - **Gói ngữ cảnh**: CORE + STORE + OPS
 - **Khu vực chạm**: test/helpers/live.js (`restart`/`stop`: gửi thông điệp IPC `'shutdown'` rồi chờ tiến trình tự thoát, chỉ `kill` khi quá hạn), server.js (khi chạy có kênh IPC, `process.on('message')` nhận `'shutdown'` thì gọi đúng hàm tắt của `SIGTERM`)
