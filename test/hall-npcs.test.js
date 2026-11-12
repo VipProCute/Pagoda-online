@@ -4,9 +4,17 @@ const assert = require('node:assert/strict');
 const vm = require('node:vm');
 const fs = require('node:fs');
 const merit = require('../public/js/merit');
+const Actors = require('../public/js/actors');
 
-test('vẽ NPC ở từng khu và chạm Tảo Địa Tăng trong thư viện', () => {
-  let nextFrame, tapped = null, picked = null, secret = null;
+// Math.random có hạt giống để NPC thường đứng chỗ cố định giữa các lần chạy
+function seededMath(seed) {
+  let s = seed >>> 0;
+  return Object.assign(Object.create(Math), { random: () => { s = (s + 0x6d2b79f5) >>> 0; let t = Math.imul(s ^ (s >>> 15), 1 | s); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; } });
+}
+
+test('mọi NPC đi lang thang, NPC cơ duyên theo giờ máy chủ, chạm thân NPC (kể cả Tảo Địa Tăng) tới handlers.npc', () => {
+  let nextFrame, tapped = null, picked = null, clock = 1_800_000_000_000;
+  class ClockDate extends Date { constructor(...a) { if (a.length) super(...a); else super(clock); } static now() { return clock; } }
   const labels = [];
   const labelPositions = new Map();
   const images = [];
@@ -27,35 +35,69 @@ test('vẽ NPC ở từng khu và chạm Tảo Địa Tăng trong thư viện', 
     set src(v) { this._src = v; if (v === '/img/obito-sprite.png') { this.complete = true; this.naturalWidth = 1024; } }
     get src() { return this._src; }
   }
-  const sandbox = { Math, Date, Image: FakeImage, MERIT: merit, devicePixelRatio: 1,
+  const sandbox = { Math: seededMath(7), Date: ClockDate, Actors, Image: FakeImage, MERIT: merit, devicePixelRatio: 1,
     matchMedia: () => ({ matches: false }), addEventListener() {}, performance: { now: () => 1000 },
     document: { hidden: false, createElement: () => ({ width: 0, height: 0, getContext: () => ctx }) },
     requestAnimationFrame: fn => { nextFrame = fn; } };
   vm.runInNewContext(fs.readFileSync(require.resolve('../public/js/hall.js'), 'utf8'), sandbox);
-  sandbox.Hall.init(canvas, { sweeper: id => { tapped = id; }, person: id => { picked = id; }, secretNpc: role => { secret = role; } });
+  sandbox.Hall.init(canvas, { npc: id => { tapped = id; }, person: id => { picked = id; } });
+  const H = sandbox.Hall;
+  let ts = 1000;
+  const frames = n => { for (let i = 0; i < n; i++) { ts += 64; clock += 64; nextFrame(ts); } };
+  // chạm khắp vùng thân NPC đang vẽ: có ít nhất một điểm tới đúng NPC đó
+  const tapBody = n => {
+    for (let y = n.sy - 100 * n.s; y < n.sy; y += 3) for (let x = n.sx - 15 * n.s; x <= n.sx + 15 * n.s; x += 3) {
+      tapped = null; canvas.listeners.pointerdown({ clientX: x, clientY: y });
+      if (tapped === n.id) return true;
+    }
+    return false;
+  };
+  const near = (p, q) => Math.hypot((p.x - q.x) * 1.6, p.z - q.z) < 1e-9;
+  const FORTUNE = { hall: [-300, 'beggar'], yard: [-301, 'wanderer'], library: [-302, 'obito'] };
   for (const scene of ['hall', 'yard', 'library', 'arena']) {
-    labels.length = 0; sandbox.Hall.setScene(scene); nextFrame(1000);
+    labels.length = 0; H.setScene(scene); frames(1);
     assert.equal(labels.filter(s => s.endsWith(' · NPC')).length, scene === 'arena' ? 2 : 3, scene);
-    const name = { hall: 'Lão Ăn Mày · NPC', yard: 'Vạn Lý Độc Hành · NPC', library: 'Obito · NPC' }[scene];
-    if (name) {
-      assert.ok(labelPositions.has(name), name);
-      const [x, y] = labelPositions.get(name);
-      canvas.listeners.pointerdown({ clientX: x, clientY: y + 25 });
-      assert.equal(secret, { hall: 'beggar', yard: 'wanderer', library: 'obito' }[scene]);
+    if (FORTUNE[scene]) {
+      const [id, role] = FORTUNE[scene], f = Actors.FORTUNE_NPCS[role], n = H.npc(id);
+      assert.ok(n instanceof Actors.FortuneNpc && n instanceof Actors.Npc && n instanceof Actors.Actor, role);
+      assert.equal(n.npc.role, role);
+      assert.ok(near(n, Actors.wanderAt(f.seed, f.area, clock)), role + ': đứng đúng chỗ máy chủ tính');
+      frames(30);                                           // để chỗ vẽ (dx, dz) đuổi kịp đích
+      assert.ok(tapBody(n), role + ': chạm thân NPC cơ duyên tới handlers.npc');
       if (scene === 'library') assert.ok(images.includes('/img/obito-sprite.png'), 'sprite Obito được vẽ lên NPC');
     }
   }
-  sandbox.Hall.setScene('library');
-  sandbox.Hall.setSweeper({ id: 'test-id', x: 0.5, z: 0.55, until: Date.now() + 60000 });
-  labels.length = 0; nextFrame(1100);
+  // đi lang thang: sau vài chặng, NPC cơ duyên và NPC thường đều đã đổi chỗ
+  H.setScene('yard'); frames(1);
+  const wand = H.npc(-301), reg = H.npc(-102);
+  assert.ok(reg instanceof Actors.Npc && !(reg instanceof Actors.FortuneNpc), 'NPC thường');
+  assert.deepEqual(reg.menu(), wand.menu(), 'NPC cơ duyên và NPC thường cùng lựa chọn Trò chuyện');
+  const w0 = { x: wand.x, z: wand.z }, r0 = { x: reg.x, z: reg.z };
+  for (let i = 0; i < 3 * Actors.LEG_MS / 640; i++) frames(10);
+  assert.ok(!near(wand, w0), 'NPC cơ duyên đã đi chỗ khác');
+  assert.ok(!near(reg, r0), 'NPC thường đã đi chỗ khác');
+  assert.ok(near(wand, Actors.wanderAt(Actors.FORTUNE_NPCS.wanderer.seed, Actors.FLOOR, clock)), 'vẫn theo đúng giờ máy chủ');
+  // trò chuyện: NPC thường đứng lại và nói một câu
+  const said = H.npcTalk(-102);
+  assert.ok(said && reg.npc.lines.includes(said) && reg.bubble.text === said);
+  const r1 = { x: reg.x, z: reg.z }; frames(40);
+  assert.ok(near(reg, r1), 'NPC thường đứng lại khi được bắt chuyện');
+  // Tảo Địa Tăng cũng là NPC cơ duyên: đi lang thang theo mã sự kiện
+  H.setScene('library');
+  H.setSweeper({ id: 'test-id', x: 0.5, z: 0.55, until: clock + 600000 });
+  labels.length = 0; frames(30);
   assert.ok(labels.some(s => s.includes('Tảo Địa Tăng')));
-  canvas.listeners.pointerdown({ clientX: 480, clientY: 430 });
-  assert.equal(tapped, 'test-id');
-  sandbox.Hall.setSweeper(null); labels.length = 0; nextFrame(1200);
+  const sw = H.npc(-999);
+  assert.ok(sw instanceof Actors.FortuneNpc);
+  assert.deepEqual(sw.gift(), { kind: 'sweeper', event: 'sweeper:claim', data: { id: 'test-id' } });
+  assert.ok(near(sw, Actors.wanderAt(Actors.seedOf('test-id'), Actors.SWEEPER.area, clock)));
+  assert.ok(tapBody(sw), 'chạm thân Tảo Địa Tăng tới handlers.npc');
+  H.setSweeper(null); labels.length = 0; frames(1);
   assert.ok(!labels.some(s => s.includes('Tảo Địa Tăng')));
-  sandbox.Hall.setMe(1);
-  sandbox.Hall.setPlayers([{ id: 42, name: 'Người thử', look: { g: 'nam', c: 1, h: 2 }, x: 0.2, z: 0.7, scene: 'yard' }]);
-  sandbox.Hall.setScene('yard'); nextFrame(1300);
+  assert.equal(H.npc(-999), null);
+  H.setMe(1);
+  H.setPlayers([{ id: 42, name: 'Người thử', look: { g: 'nam', c: 1, h: 2 }, x: 0.2, z: 0.7, scene: 'yard' }]);
+  H.setScene('yard'); frames(1);
   canvas.listeners.pointerdown({ clientX: 160, clientY: 475 });
   assert.equal(picked, 42, 'chạm người ở sân chùa mở tương tác');
 });
@@ -73,7 +115,7 @@ test('Tàng Kinh Các: chạm bồ đoàn có người ngồi tới handler bồ
     getBoundingClientRect: () => ({ width: 960, height: 600, left: 0, top: 0 }),
     addEventListener(type, fn) { this.listeners[type] = fn; } };
   class FakeImage { constructor() { this.complete = false; this.naturalWidth = 0; } set src(v) { this._src = v; } get src() { return this._src; } }
-  const sandbox = { Math, Date, Image: FakeImage, MERIT: merit, devicePixelRatio: 1,
+  const sandbox = { Math, Date, Actors, Image: FakeImage, MERIT: merit, devicePixelRatio: 1,
     matchMedia: () => ({ matches: false }), addEventListener() {}, performance: { now: () => 1000 },
     document: { hidden: false, createElement: () => ({ width: 0, height: 0, getContext: () => ctx }) },
     requestAnimationFrame: fn => { nextFrame = fn; } };
@@ -104,7 +146,7 @@ test('Tàng Kinh Các: chạm bồ đoàn có người ngồi tới handler bồ
 });
 
 test('Hall.nearestFreeSeat chọn đúng bồ đoàn trống gần nhất, hết chỗ trả -1', () => {
-  const sandbox = { Math, Date, Image: class { }, MERIT: merit, devicePixelRatio: 1,
+  const sandbox = { Math, Date, Actors, Image: class { }, MERIT: merit, devicePixelRatio: 1,
     matchMedia: () => ({ matches: false }), addEventListener() {}, performance: { now: () => 1000 },
     document: { hidden: false, createElement: () => ({ width: 0, height: 0, getContext: () => ({}) }) },
     requestAnimationFrame() {} };

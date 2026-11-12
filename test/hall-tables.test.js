@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const vm = require('node:vm');
 const fs = require('node:fs');
 const merit = require('../public/js/merit');
+const Actors = require('../public/js/actors');
 
 const SIZES = [[375, 374], [768, 482], [910, 661], [360, 360]];   // cỡ canvas thật: điện thoại dọc, máy tính bảng, máy tính, màn nhỏ
 
@@ -24,15 +25,15 @@ function makeHall(W, H, opts) {
   const canvas = { width: W, height: H, style: {}, listeners: {}, getContext: () => ctx,
     getBoundingClientRect: () => ({ width: W, height: H, left: 0, top: 0 }),
     addEventListener(type, fn) { this.listeners[type] = fn; } };
-  const sandbox = { Math, Date, Image: class { }, MERIT: merit, devicePixelRatio: 1,
+  const sandbox = { Math, Date, Actors, Image: class { }, MERIT: merit, devicePixelRatio: 1,
     matchMedia: q => ({ matches: /pointer: coarse/.test(q) ? !!opts.coarse : !!opts.reduce }), addEventListener() {}, performance: { now: () => 1000 },
     document: { hidden: false, createElement: () => ({ width: 0, height: 0, getContext: () => ctx }) },
     requestAnimationFrame: fn => { nextFrame = fn; } };
   vm.runInNewContext(fs.readFileSync(require.resolve('../public/js/hall.js'), 'utf8'), sandbox);
-  const calls = { table: [], person: [], reader: [], secret: [] };
+  const calls = { table: [], person: [], reader: [], npc: [] };
   sandbox.Hall.init(canvas, {
     table: (id, seat) => calls.table.push([id, seat]), person: id => calls.person.push(id),
-    reader: k => calls.reader.push(k), secretNpc: r => calls.secret.push(r)
+    reader: k => calls.reader.push(k), npc: id => calls.npc.push(id)
   });
   sandbox.Hall.setMe(1);
   sandbox.Hall.setScene('yard');
@@ -108,14 +109,14 @@ test('thầy bói được ưu tiên: quét cả vùng thầy bói khi 4 bàn đ
     let n = 0;
     for (const i of [0.2, 0.8]) for (let y = Math.ceil(bottom - rh); y <= bottom + 38; y += 2) for (let x = Math.ceil(W * i - rw / 2 - 12); x <= W * i + rw / 2 + 12; x += 2) {
       const c = h.tap(x, y);
-      if (c.secret.length || c.person.length) continue;     // NPC bí mật/người đứng có quyền ưu tiên riêng
+      if (c.person.length) continue;                        // người đứng có quyền ưu tiên riêng
       assert.equal(c.table.length, 0, `${W}x${H}: điểm ${x},${y} trong vùng thầy bói không được mở bàn`);
       n++;
     }
     assert.ok(n > 0, `${W}x${H}: có quét vùng thầy bói`);
     // biển TỬ VI/TAROT và dòng "Chạm để xem" nằm trong vùng đó: chạm giữa vùng vẫn tới reader
     const c = h.tap(W * 0.2, bottom + 20);
-    if (!c.secret.length && !c.person.length) assert.equal(JSON.stringify(c.reader), '["horoscope"]', `${W}x${H}: dòng Chạm để xem → thầy tử vi`);
+    if (!c.person.length) assert.equal(JSON.stringify(c.reader), '["horoscope"]', `${W}x${H}: dòng Chạm để xem → thầy tử vi`);
   }
 });
 
@@ -170,25 +171,29 @@ test('setTables(object T) luôn gộp, không xoá bàn khác; mảng thì thay 
   assert.ok(h.rec.labels.includes('Bàn 2 · trống'), 'mảng thay toàn bộ');
 });
 
-test('chạm NPC bí mật vẫn tới secretNpc dù có bàn quanh đó (thứ tự: NPC bí mật trước bàn)', () => {
+test('NPC xếp sau bàn đá: NPC đứng ngay bàn thì chạm bàn vẫn mở bàn; NPC đứng trước bàn thì chạm được NPC', () => {
   for (const [W, H] of [...SIZES, [360, 640], [390, 700]]) {
     const h = makeHall(W, H);
-    h.frame(1000); h.frame(1100);
-    let secretHits = 0;
-    for (let y = 0; y < H; y += 2) for (let x = 0; x < W; x += 2) {
-      const c = h.tap(x, y);
-      if (c.secret.length) { secretHits++; assert.equal(c.table.length, 0, `${W}x${H}: điểm ${x},${y} tới NPC thì không mở bàn`); }
-    }
-    assert.ok(secretHits > 0, `${W}x${H}: secretNpc vẫn nhận chạm`);
+    h.frame(1000);
+    const spec = h.Hall.YARD_TABLES[0];
+    let ts = 1064;
+    // thu vùng đi lại về một điểm: hai NPC thường dạt ra góc, Vạn Lý Độc Hành (NPC cơ duyên) đứng ở (x, z)
+    const scan = (x, z) => {
+      h.Hall.npc(-301).area = { x0: x, x1: x, z0: z, z1: z };
+      for (const id of [-102, -103]) h.Hall.npc(id).area = { x0: 0.85, x1: 0.85, z0: 0.8, z1: 0.8 };
+      for (const end = ts + 3000; ts < end; ts += 64) h.frame(ts);
+      const n = h.Hall.npc(-301);
+      let npcHits = 0, tableHits = 0;
+      for (let y = Math.round(n.sy - 110 * n.s); y < n.sy + 6; y += 2) for (let px = Math.round(n.sx - 20 * n.s); px <= n.sx + 20 * n.s; px += 2) {
+        const c = h.tap(px, y);
+        if (c.npc.length) { npcHits++; assert.equal(c.npc[0], -301); assert.equal(c.table.length, 0); }
+        if (c.table.length) tableHits++;
+      }
+      return { npcHits, tableHits };
+    };
+    assert.ok(scan(spec.x, spec.z).tableHits > 0, `${W}x${H}: NPC đứng đè bàn không che vùng chạm bàn`);
+    assert.ok(scan(spec.x, spec.z + 0.14).npcHits > 0, `${W}x${H}: NPC đứng trước bàn vẫn chạm được`);
   }
-  // Điểm giao cụ thể ở 375x812: vừa trong vùng chạm NPC bí mật vừa trong vùng bàn 1 (mặt bàn/ghế B).
-  // Đảo thứ tự (tableAt trước NPC bí mật) thì các điểm này mở bàn 1 và test đỏ.
-  const h = makeHall(375, 812);
-  h.frame(1000); h.frame(1100);
-  const overlapPts = [[92, 612], [90, 612], [94, 612]];
-  let n = 0;
-  for (const [x, y] of overlapPts) { const c = h.tap(x, y); if (c.secret.length) { n++; assert.equal(c.table.length, 0, `${x},${y}`); } }
-  assert.ok(n >= 1, 'có điểm giao tới secretNpc');
 });
 
 test('người ngồi bàn: tư thế ngồi từ setTables, chạm vào người mở bàn (không mở hộp người chơi)', () => {

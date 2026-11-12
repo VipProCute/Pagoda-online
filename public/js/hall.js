@@ -18,6 +18,7 @@
   const coarsePointer = !!(root.matchMedia && root.matchMedia('(pointer: coarse)').matches);   // cảm ứng: nới vùng chạm bàn
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
   const rand = (a, b) => a + Math.random() * (b - a);
+  const Actors = root.Actors;                                // lớp nhân vật chung: Player, Npc, FortuneNpc (public/js/actors.js)
 
   function shade(hex, amt) {
     const n = parseInt(hex.slice(1), 16), t = amt < 0 ? 0 : 255, p = Math.abs(amt);
@@ -215,41 +216,40 @@
     { name: 'Kiếm Khách Lắm Lời', look: { g: 'nam', c: 6, h: 3 }, role: 'sword', lines: ['Đao kiếm vô tình, đồng đội nhớ hồi máu!', 'Ta có bí kíp: thua thì bảo đang thử chiêu.', 'Đợi ta khởi động xong rồi hẵng luận võ.'] },
     { name: 'Cô Nương Du Xuân', look: { g: 'nu', c: 7, h: 0, npcFashion: true }, role: 'lady', lines: ['Mình có thói quen cardio tại ban công.', 'Người đẹp vì lụa, ta đẹp nhờ ngủ đủ.', 'Duyên tới thì đón, dép mất thì tìm.'] }
   ];
-  let npcs = [], npcRefresh = 0, npcNextSpeech = 0, sweeper = null;
+  // NPC cơ duyên (public/js/actors.js → FORTUNE_NPCS): đi lang thang như NPC thường, đường đi theo giờ máy chủ.
+  const fortuneDefs = [
+    npcDefs.find(d => d.role === 'beggar'),
+    npcDefs.find(d => d.role === 'wanderer'),
+    { name: 'Obito', role: 'obito', look: { g: 'nam', c: 11, h: 2 }, lines: ['Không gian này có những bí mật riêng.', 'Đi một vòng Tàng Kinh Các, gặp toàn duyên cũ.', 'Mặt nạ này không che được tâm đâu.'] }
+  ];
+  const sweeperDef = { name: 'Tảo Địa Tăng', role: 'sweeper', look: { g: 'nam', c: 8, h: 2 }, lines: ['Quét lá cũng là quét tâm.', 'Lá rụng về cội, người tu về tâm.', 'Sân sạch thì lòng nhẹ, thí chủ ngồi chơi.'] };
+  let npcs = [], fortuneNpcs = null, npcRefresh = 0, npcNextSpeech = 0, sweeper = null;
   function randomizeNpcs(now) {
     const pool = npcDefs.filter(d => d.role !== 'beggar' && d.role !== 'wanderer');
     for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+    const t = serverNow();
     npcs = [];
     ['hall', 'yard', 'library', 'arena'].forEach((place, n) => {
       for (let i = 0; i < 2; i++) {
-        const def = pool[n * 2 + i], x = rand(0.18, 0.82), z = rand(0.48, 0.78);
-        const p = { ...mk({ id: -100 - n * 2 - i, name: def.name + ' · NPC', look: def.look, x, z, scene: place, at: place === 'arena' ? 'arena' : 'hall', mt: def.demon ? -1000 : 0 }), npc: def, tx: x, tz: z, wait: 0 };
-        npcs.push(p);
+        const def = pool[n * 2 + i];
+        npcs.push(new Actors.Npc({ id: -100 - n * 2 - i, name: def.name + ' · NPC', look: def.look, scene: place, at: place === 'arena' ? 'arena' : 'hall', mt: def.demon ? -1000 : 0,
+          seed: Math.random() * 4294967296, area: place === 'library' ? Actors.LIBRARY : Actors.FLOOR, t }, def));
       }
     });
-    // These three encounters have stable server-validated positions.
-    const special = [
-      { place: 'hall', x: 0.68, z: 0.67, def: npcDefs.find(d => d.role === 'beggar') },
-      { place: 'yard', x: 0.32, z: 0.67, def: npcDefs.find(d => d.role === 'wanderer') },
-      { place: 'library', x: 0.76, z: 0.68, def: { name: 'Obito', role: 'obito', look: { g: 'nam', c: 11, h: 2 }, lines: ['Không gian này có những bí mật riêng.'] } }
-    ];
-    special.forEach((v, i) => npcs.push({ ...mk({ id: -300 - i, name: v.def.name + ' · NPC', look: v.def.look, x: v.x, z: v.z, scene: v.place, at: 'hall', mt: 0 }), npc: v.def, tx: v.x, tz: v.z, wait: Infinity, secretEncounter: true }));
+    // NPC cơ duyên tạo một lần, không đổi theo đợt (mọi máy cùng thấy, máy chủ kiểm được khoảng cách).
+    if (!fortuneNpcs) fortuneNpcs = fortuneDefs.map((def, i) => {
+      const f = Actors.FORTUNE_NPCS[def.role];
+      return new Actors.FortuneNpc({ id: -300 - i, name: def.name + ' · NPC', look: def.look, scene: f.scene, at: 'hall', seed: f.seed, area: f.area, t }, def);
+    });
+    npcs.push(...fortuneNpcs);
     npcRefresh = now + rand(90000, 150000);
   }
   function updateNpcs(now, dt) {
     if (!npcRefresh || now >= npcRefresh) randomizeNpcs(now);
+    const srv = serverNow();
     const visible = npcs.filter(p => viewOf(p) === scene);
-    for (const p of visible) {
-      if (reduceMotion) continue;
-      if (now >= p.wait && Math.hypot(p.tx - p.x, p.tz - p.z) < 0.008) {
-        p.tx = clamp(p.x + rand(-0.18, 0.18), 0.12, 0.88);
-        p.tz = clamp(p.z + rand(-0.12, 0.12), 0.35, 0.82);
-        p.wait = now + rand(2500, 6500);
-      }
-      if (now < p.wait) continue;
-      const dx = p.tx - p.x, dz = p.tz - p.z, dist = Math.hypot(dx, dz);
-      if (dist > 0.001) { const step = Math.min(dist, dt * 0.000025); p.x += dx / dist * step; p.z += dz / dist * step; }
-    }
+    if (scene === 'library' && sweeper && sweeper.until > srv) visible.push(sweeper);
+    for (const p of visible) p.think(now, dt, srv, reduceMotion);   // cùng một kiểu đi lang thang cho mọi NPC
     if (!npcNextSpeech) npcNextSpeech = now + 3500;
     if (visible.length && now >= npcNextSpeech) {
       const p = visible[Math.floor(Math.random() * visible.length)];
@@ -986,8 +986,7 @@
     const k = 1 - Math.exp(-dt / 90);
     // mỗi người chỉ hiện ở đúng cảnh mình đang ở (chánh điện, sân chùa, Tàng Kinh Các, Sân đấu); ở Võ Học Các thì không hiện
     const list = [...players.values()].filter(p => viewOf(p) === scene);
-    list.push(...updateNpcs(now, dt));
-    if (scene === 'library' && sweeper && sweeper.until > serverNow()) list.push(sweeper);
+    list.push(...updateNpcs(now, dt));                       // NPC (kể cả Tảo Địa Tăng khi đang xuất hiện)
     const kl = 1 - Math.exp(-dt / 80);
     for (const p of list) {
       const ox = p.dx, oz = p.dz;
@@ -1963,13 +1962,20 @@
     }
     return -1;
   }
+  // Vùng chạm thân người, dùng chung cho người chơi và NPC; chồng nhau thì người đứng trước (dz lớn) được chọn.
+  const bodyHit = (p, x, y) => { const hh = (p.hy || 104) * p.s, w = 17 * p.s + 6; return x > p.sx - w && x < p.sx + w && y > p.sy - hh - 16 && y < p.sy + 6; };
   function personAt(x, y) {
     let best = null;
     for (const p of players.values()) {
       if (p.id === me || p.sx == null || viewOf(p) !== scene || p.onTable) continue;   // người đang ngồi bàn đá: chạm là mở bàn (tableAt), không mở hộp người chơi
-      const hh = (p.hy || 104) * p.s, w = 17 * p.s + 6;
-      if (x > p.sx - w && x < p.sx + w && y > p.sy - hh - 16 && y < p.sy + 6 && (!best || p.dz > best.dz)) best = p;
+      if (bodyHit(p, x, y) && (!best || p.dz > best.dz)) best = p;
     }
+    return best;
+  }
+  const liveNpcs = () => (sweeper && sweeper.until > serverNow() ? npcs.concat(sweeper) : npcs);
+  function npcAt(x, y) {
+    let best = null;
+    for (const p of liveNpcs()) if (p.sx != null && viewOf(p) === scene && bodyHit(p, x, y) && (!best || p.dz > best.dz)) best = p;
     return best;
   }
   function walkTo(x, y) {
@@ -1983,29 +1989,31 @@
     // Tàng Kinh Các: chạm vào bồ đoàn có người ngồi thì coi là chọn bồ đoàn (app.js tự đổi sang chỗ trống gần nhất)
     if (clickedPlayer && scene === 'library' && clickedPlayer.sit >= 0 && seatAt(x, y) >= 0) clickedPlayer = null;
     if (clickedPlayer) { handlers.person && handlers.person(clickedPlayer.id); return; }
-    const specialNpc = npcs.find(p => p.secretEncounter && viewOf(p) === scene && p.sx != null && Math.abs(x - p.sx) < 25 * p.s + 12 && y > p.sy - 120 * p.s - 20 && y < p.sy + 10);
-    if (specialNpc) { handlers.secretNpc && handlers.secretNpc(specialNpc.npc.role); return; }
+    // NPC đi khắp sàn nên xếp sau đồ vật (bàn, bồ đoàn, kệ, thầy bói, bát hương…) để không che chúng, trước chạm sàn.
+    const tapNpc = () => { const n = npcAt(x, y); if (n) handlers.npc && handlers.npc(n.id); return !!n; };
     if (scene === 'arena') {
+      if (tapNpc()) return;
       if (y > G.hb + 4 * u) walkTo(x, y);
       return;
     }
     if (scene === 'library') {
-      if (sweeper && sweeper.sx != null && sweeper.until > serverNow() && Math.abs(x - sweeper.sx) < 25 * sweeper.s + 12 && y > sweeper.sy - 120 * sweeper.s - 20 && y < sweeper.sy + 10) { handlers.sweeper && handlers.sweeper(sweeper.eventId); return; }
       const seat = seatAt(x, y);
       if (seat >= 0) { handlers.seat && handlers.seat(seat); return; }
       if (inRect(G.shelfL, x, y)) { handlers.read && handlers.read(); return; }
       if (inRect(G.shelfR, x, y)) { handlers.dojo && handlers.dojo(); return; }
+      if (tapNpc()) return;
       if (y > G.hb + 4 * u) walkTo(x, y);
       return;
     }
-    const tb = tableAt(x, y);                                // bàn đá Sân chùa: sau NPC bí mật, trước thầy bói
+    const tb = tableAt(x, y);                                // bàn đá Sân chùa: trước thầy bói và NPC
     if (tb) { handlers.table && handlers.table(tb.id, tb.seat); return; }
     if (scene === 'hall' && hitJar(x, y)) { handlers.fortune && handlers.fortune(); return; }
     if (scene === 'yard' && hitReader(x, y)) { handlers.reader && handlers.reader(x < W / 2 ? 'horoscope' : 'tarot'); return; }
-    if (scene === 'yard') { if (y > G.hb) { const [wx, wz] = unproj(x, y); handlers.floor && handlers.floor(clamp(wx, 0.03, 0.97), clamp(wz, 0.12, 0.97)); } return; }
+    if (scene === 'yard') { if (tapNpc()) return; if (y > G.hb) { const [wx, wz] = unproj(x, y); handlers.floor && handlers.floor(clamp(wx, 0.03, 0.97), clamp(wz, 0.12, 0.97)); } return; }
     if (hitBowl(x, y)) { handlers.altar && handlers.altar(); return; }
     if (hitStatue(x, y)) { handlers.statue && handlers.statue(); return; }
     if (hitLib(x, y)) { handlers.library && handlers.library(); return; }
+    if (tapNpc()) return;
     if (y > G.hb + 6 * u) {
       const [wx, wz] = unproj(x, y);
       clickMark = { x, y, t: performance.now() };
@@ -2019,7 +2027,7 @@
     if (scene === 'library') { const st = seatAt(x, y); hover = st >= 0 ? 'seat' + st : inRect(G.shelfL, x, y) ? 'shelfL' : inRect(G.shelfR, x, y) ? 'shelfR' : ''; }
     if (personAt(x, y)) hover = 'person';
     const tb = hover === 'person' ? null : tableAt(x, y); hoverTable = tb ? tb.id : null;   // người đứng trước bàn bắt chạm trước: không sáng bàn
-    cv.style.cursor = hover || (scene === 'hall' && (hitJar(x, y) || hitBowl(x, y) || hitStatue(x, y))) || (scene === 'yard' && hitReader(x, y)) || hoverLib || tb ? 'pointer' : (y > G.hb ? 'crosshair' : 'default');
+    cv.style.cursor = hover || npcAt(x, y) || (scene === 'hall' && (hitJar(x, y) || hitBowl(x, y) || hitStatue(x, y))) || (scene === 'yard' && hitReader(x, y)) || hoverLib || tb ? 'pointer' : (y > G.hb ? 'crosshair' : 'default');
   }
   function viewOf(p) {
     if (p.place === 'arena') return 'arena';
@@ -2036,7 +2044,7 @@
     if (RO) RO.observe(c);
   }
 
-  function mk(p) { return { scene: p.scene || 'hall', place: p.at || 'hall', sit: p.sit >= 0 ? p.sit : -1, cm: p.cm || '', lift: 0, hy: 104, id: p.id, name: p.name, look: p.look, mod: !!p.mod, x: p.x, z: p.z, dx: p.x, dz: p.z, front: false, walking: false, bubble: null, bowAt: 0, v: p.v || 0, rd: p.rd || '', au: p.au || 0, talk: 0, burst: null, mt: p.mt || 0, pens: [], rburst: 0, dmp: null }; }
+  function mk(p) { return new Actors.Player(p); }          // người chơi: cùng lớp gốc Actor với NPC
 
   root.Hall = {
     COLORS, HAIRS,
@@ -2051,9 +2059,23 @@
     setMe(id) { me = id; },
     setSweeper(event) {
       if (!event || !event.id || event.until <= serverNow()) { sweeper = null; return; }
-      sweeper = { ...mk({ id: -999, name: 'Tảo Địa Tăng · Chạm để trò chuyện', look: { g: 'nam', c: 8, h: 2 }, x: event.x, z: event.z, scene: 'library' }), eventId: event.id, until: event.until, npc: { role: 'sweeper' } };
-      sweeper.front = true;
+      if (sweeper && sweeper.eventId === event.id) { sweeper.until = event.until; return; }
+      // NPC cơ duyên: đi lang thang trong Tàng Kinh Các, đường đi lấy từ mã sự kiện (máy chủ tính cùng đường).
+      sweeper = new Actors.FortuneNpc({ id: -999, name: 'Tảo Địa Tăng · Chạm để trò chuyện', look: sweeperDef.look, scene: 'library',
+        seed: Actors.seedOf(event.id), area: Actors.SWEEPER.area, t: serverNow(), eventId: event.id, until: event.until }, sweeperDef);
     },
+    /** NPC theo id (kể cả Tảo Địa Tăng đang xuất hiện), null nếu không có. */
+    npc(id) { return liveNpcs().find(p => p.id === id) || null; },
+    /** Trò chuyện: NPC đứng lại (NPC thường) và nói một câu. Trả về câu đã nói. */
+    npcTalk(id) {
+      const p = this.npc(id); if (!p) return '';
+      const t = serverNow(), text = p.line(); p.hold(6000, t);            // vòng vẽ dùng giờ máy chủ làm "now"
+      if (text) p.say(text, t);
+      npcNextSpeech = Math.max(npcNextSpeech, t + 7000);   // để câu trả lời không bị câu chém gió khác chen ngang
+      return text;
+    },
+    /** Giữ NPC đứng lại trong lúc người chơi đi tới (NPC cơ duyên tự bỏ qua). */
+    npcHold(id, ms) { const p = this.npc(id); if (p) p.hold(ms || 2000, serverNow()); },
     /** Tạm dừng vẽ khi người chơi đang ở nơi khác (đỡ tốn pin). */
     pause(on) { paused = !!on; if (!on) { last = 0; resize(); } },
     /** Vẽ cảnh lên một khung vẽ khác (Sân đấu có khung riêng trong màn hình của nó). Gọi lại với khung chánh điện để trả về. */

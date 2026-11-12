@@ -35,7 +35,7 @@ Kỳ Đạo (năm môn cờ ở Sân chùa; hợp đồng: docs/KY-DAO-GIAO-THUC
 
 | Khối | Tìm bằng | Nội dung |
 |---|---|---|
-| Nạp module | đầu file | nạp `public/js/aura.js`, `merit.js`, `martial.js`; `TRACKS` từ `public/audio/chants/manifest.json`, `BOOKS` từ `public/kinh/index.json` |
+| Nạp module | đầu file | nạp `public/js/aura.js`, `merit.js`, `martial.js`, `actors.js` (đường đi NPC cơ duyên); `TRACKS` từ `public/audio/chants/manifest.json`, `BOOKS` từ `public/kinh/index.json` |
 | Cấu hình env | `process.env` | mọi biến ở README "Cấu hình"; cờ tính năng bật khi `!== '0'` |
 | Hằng số thế giới | `PLACES`, `SCENES`, `LIB_SEATS`, `MILESTONES`, `ITEMS`, `KINDS` | nơi, cảnh, bồ đoàn, mốc công đức, lễ vật |
 | Kỳ Đạo | `KYDAO_*`, `YARD_TABLES`, `kd*` (hàm hỗ trợ), `kydaoOnly`, `kydaoDropUser` | cấu hình, 4 bàn đá, cầu nối `lib/kydao/manager.js` ↔ socket (gửi theo `pid`, phòng `yard`/`hall`/`kd:<bàn>`), lưu `db.kydao`, handler `kd:*` |
@@ -101,14 +101,15 @@ Hợp đồng chi tiết của võ học và PK (payload, thứ tự gói tin): 
 
 ## 5. Phía trình duyệt
 
-- **Thứ tự nạp** (`public/index.html`, cuối `<body>`): `socket.io` → `lunar` → `audio` → `aura` → `merit` → `celebrate` → `hall` → `fortune` → `voice` → `library` → `martial` → `places` → `meditate` → `dojo` → `arena` → `guide` → `app.js`. Mỗi file có `?v=…` để phá cache.
-- **Biến toàn cục**: `Lunar`, `SFX`, `AURA`, `MERIT`, `MARTIAL`, `Celebrate`, `Hall`, `Fortune`, `Voice`, `Library`, `Places`, `Meditate`, `Dojo`, `Arena`. `app.js` không xuất gì, là nơi nối mọi thứ (một `socket` toàn cục).
+- **Thứ tự nạp** (`public/index.html`, cuối `<body>`): `socket.io` → `lunar` → `audio` → `aura` → `merit` → `celebrate` → `actors` → `hall` → `fortune` → `voice` → `library` → `martial` → `places` → `meditate` → `dojo` → `arena` → `guide` → `app.js`. Mỗi file có `?v=…` để phá cache.
+- **Biến toàn cục**: `Lunar`, `SFX`, `AURA`, `MERIT`, `MARTIAL`, `Celebrate`, `Actors`, `Hall`, `Fortune`, `Voice`, `Library`, `Places`, `Meditate`, `Dojo`, `Arena`. `app.js` không xuất gì, là nơi nối mọi thứ (một `socket` toàn cục).
 - **Sổ tay** (nút "?" ở thanh trên): `public/js/guide.js` (global `Guide`, nạp trước `app.js`) dựng hộp `#dlg-guide` từ `public/data/so-tay.vi.json`. Số liệu viết bằng chỗ giữ chỗ `{EARN.x}`, `{PK.x}`, `{MARTIAL.x}`… lấy từ `MERIT`/`MARTIAL`/`AURA`/`/api/config`; mục/đoạn có `needs`/`needsNot` ẩn theo tính năng. Tính năng chưa có phía trình duyệt (`titles`, `bangvang`, `tuvi5`, `tarot5`…) mặc định tắt, thẻ làm ra nó gọi `Guide.setFeature('tên', true)`. Test: `test/guide.test.js`.
 - **Nơi (place)** = màn hình riêng: `Places.register(name, { el, mod })`, `mod` có `init(host)`, `mount(el)`, `show(info)`, `hide()`. `Places.go()` gửi `place:set`, chỉ chuyển màn khi ack `ok`. Đăng ký ở `app.js` qua object `martialHost`.
 - **Cảnh (scene)** = cùng một canvas `#hall`: `hall`, `yard`, `library` (và `arena` qua `Hall.attach(canvas)`). Luồng: `goScene` → `socket.emit('scene')` → `applyScene` → `Hall.setScene`.
 - **Vẽ**: `hall.js` `frame()` chọn hàm vẽ theo cảnh (`drawBg`, `drawYard`, `drawLibrary`, `drawArenaYard`), toạ độ sàn 0..1, sprite `.webp` là tùy chọn (thiếu thì vẽ bằng mã). `arena.js` có sân khấu canvas riêng (`paintLoop`); `dojo.js` dựng DOM bằng `h()`.
 - **localStorage** (luôn bọc try/catch, tiền tố `ta-`): `ta-uid`, `ta-look`, `ta-name`, `ta-muted`, `ta-rj`, `ta-voice-vol`, `ta-admin`, `ta-fx`, `ta-scare`, `ta-dojo-tab`, `ta-lib-prefs`, `ta-lib-progress`. Trang admin giữ `ta-admin-key` trong sessionStorage.
-- Test của file chỉ chạy trên trình duyệt chạy trong `node:vm` với canvas/DOM giả (`test/hall-npcs.test.js`, `audio-recovery.test.js`, `voice-client.test.js`): đổi tên API của `Hall` hay nhãn `' · NPC'` sẽ làm hỏng các test này.
+- **Nhân vật** (`public/js/actors.js`, dùng chung Node + trình duyệt): lớp gốc `Actor` → `Player` (máy chủ lái) và `Npc` (tự đi lang thang) → `FortuneNpc` (NPC cơ duyên: Lão Ăn Mày, Vạn Lý Độc Hành, Obito, Tảo Địa Tăng). Mọi NPC đi theo `wanderAt(seed, area, t)`: đứng một lúc rồi đi thẳng tới điểm kế tiếp, điểm lấy từ hàm băm nên tính được vị trí ở bất kỳ lúc nào. NPC cơ duyên dùng giờ máy chủ nên mọi máy thấy cùng một chỗ; máy chủ tính lại vị trí (`distanceTo`, chừa 2 giây trễ) trước khi cho trò chuyện. Chạm nhân vật mở chung hộp `#dlg-person`, nút hiện theo `actor.menu()` (`['mute','challenge']` hay `['talk']`); NPC xếp sau đồ vật (bàn, bồ đoàn, kệ, thầy bói, bát hương) khi chạm. Trò chuyện: `app.js` `talkTo` đưa người chơi tới gần, `Hall.npcTalk` cho NPC nói một câu, có `gift()` thì gửi `martial:secret-encounter` / `sweeper:claim`.
+- Test của file chỉ chạy trên trình duyệt chạy trong `node:vm` với canvas/DOM giả (`test/hall-npcs.test.js`, `audio-recovery.test.js`, `voice-client.test.js`): đổi tên API của `Hall` hay nhãn `' · NPC'` sẽ làm hỏng các test này. Sandbox của `hall.js` phải có `Actors` (`require('../public/js/actors')`).
 
 ## 6. Điểm phải đồng bộ bằng tay
 
@@ -117,6 +118,7 @@ Test `test/sync-constants.test.js` (T-005) tự kiểm: bồ đoàn, hằng số
 | Giá trị | Nơi 1 | Nơi 2 (và 3) |
 |---|---|---|
 | Bồ đoàn | `LIB_SEATS` trong `server.js` | `LIB_SEATS` trong `public/js/hall.js` |
+| Sàn có trọng số | `X_WEIGHT` trong `server.js` | `X_WEIGHT` trong `public/js/actors.js` (test `test/actors.test.js`); bảng NPC cơ duyên `FORTUNE_NPCS` chỉ khai ở `actors.js`, máy chủ đọc chung |
 | Danh sách nơi | `PLACES` trong `server.js` | vòng lặp gọi `Places.register(name, …)` trong `public/js/app.js` (danh sách `[['dojo', …], ['arena', …]]`; `hall` là mặc định) |
 | Cảnh | `SCENES` trong `server.js` | hàm vẽ cảnh trong `hall.js`, `goScene` trong `app.js` |
 | Thanh đổi map | `MapBar.MAPS` trong `public/js/mapbar.js` (nơi duy nhất khai báo map; app.js chỉ gọi `MapBar.configure({ go })` một lần rồi `MapBar.mount(el)`) | mỗi map `kind:'scene'` phải có trong `SCENES` (đúng thứ tự), mỗi map `kind:'place'` phải có trong `PLACES` (`server.js`); map mới thêm cả hàm vẽ ở `hall.js` |
