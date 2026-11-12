@@ -51,7 +51,7 @@
 | T-053 | Giao diện tarot theo chủ đề | ⏳ T-051, T-052, T-010 | P1 | CORE + FORTUNE | — |
 | T-054 | Bộ máy an sao Tử Vi | ⏳ T-050 | P0 | CORE + FORTUNE | — |
 | T-055 | Đối chiếu bảng tử vi, lập lá số mẫu 👤 | 🔵 Sẵn sàng | P0 | CORE + FORTUNE + DOCS | — |
-| T-056 | Nội dung luận giải tử vi | 🔵 Sẵn sàng | P1 | CORE + FORTUNE | — |
+| T-056 | Nội dung luận giải tử vi | ✅ Gộp tích hợp (chờ PR) | P1 | CORE + FORTUNE | Claude Sonnet 5.5 (thay Gemini Flash) |
 | T-057 | Giao diện lá số tử vi | ⏳ T-054, T-056, T-053 | P1 | CORE + FORTUNE | — |
 | T-060 | Quy tắc chữ, bảng thuật ngữ, danh sách bí mật | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + GUIDE + DOCS | Claude Sonnet 5.5 (thay Gemini Flash) |
 | T-061 | Sổ tay trong game (nút "?") | ⏳ T-060, T-011 | P1 | CORE + GUIDE + NAV | — |
@@ -779,13 +779,13 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: mã.
 
 ### T-056 · Viết nội dung luận giải tử vi
-- **Trạng thái**: 🔵 Sẵn sàng
+- **Trạng thái**: ✅ Gộp vào nhánh tích hợp (chờ PR). Thợ: Claude Sonnet 5.5 thay Gemini Flash (kênh Antigravity hết hạn mức). Soát: Opus 5.5 thay Gemini Argon, PASS sau sửa.
 - **Ưu tiên**: P1 · **Đợt**: 2
 - **Gói ngữ cảnh**: CORE + FORTUNE
 - **Khu vực chạm**: public/data/tuvi.vi.json (mới), public/data/NOTICE.txt, test/tuvi-data.test.js (mới)
 - **Phụ thuộc**: khóa dữ liệu (tên sao, mã cung) theo Phụ lục B; khớp lại khi T-054 xong
 - **Thợ**: Gemini Flash · **Soát**: Gemini Argon
-- **Người làm**: — · **Nhánh**: —
+- **Người làm**: Claude Sonnet 5.5 (thay Gemini Flash) · **Nhánh**: `claude/T-056-noi-dung-tu-vi`
 - **Thiết kế**: KH §7.3 "Đầu ra"
 - **Mục tiêu**: lời luận giải tiếng Việt cho lá số, giọng hiền, viết mới.
 - **Tiêu chí xong**:

@@ -1,0 +1,1220 @@
+{
+ "meta": {
+  "version": 1,
+  "language": "vi",
+  "disclaimer": "Lá số để tham khảo và chiêm nghiệm, không quyết định số phận. Ngày sinh chỉ tính trên máy của bạn.",
+  "ruleNote": "Trường rule của cách cục là mô tả điều kiện bằng lời để người viết tuvi.js tham chiếu; mã hóa chính thức nằm ở public/js/tuvi.js."
+ },
+ "palaces": {
+  "menh": {
+   "name": "cung Mệnh",
+   "topic": "bản thân và tính cách của bạn"
+  },
+  "phumau": {
+   "name": "cung Phụ Mẫu",
+   "topic": "chuyện cha mẹ và những người bề trên"
+  },
+  "phucduc": {
+   "name": "cung Phúc Đức",
+   "topic": "đời sống tinh thần và phúc phần"
+  },
+  "dientrach": {
+   "name": "cung Điền Trạch",
+   "topic": "chuyện nhà cửa và nơi an cư"
+  },
+  "quanloc": {
+   "name": "cung Quan Lộc",
+   "topic": "công việc và đường lập nghiệp"
+  },
+  "nopboc": {
+   "name": "cung Nô Bộc",
+   "topic": "bạn bè, đồng nghiệp và người cùng làm"
+  },
+  "thiendi": {
+   "name": "cung Thiên Di",
+   "topic": "việc ra ngoài và các mối quan hệ xã hội"
+  },
+  "tatach": {
+   "name": "cung Tật Ách",
+   "topic": "nếp sinh hoạt và sức khỏe thường ngày"
+  },
+  "taibach": {
+   "name": "cung Tài Bạch",
+   "topic": "chuyện tiền bạc và cách giữ của"
+  },
+  "tutuc": {
+   "name": "cung Tử Tức",
+   "topic": "chuyện con cái và người nhỏ tuổi quanh bạn"
+  },
+  "phuthe": {
+   "name": "cung Phu Thê",
+   "topic": "chuyện tình duyên và đời sống đôi lứa"
+  },
+  "huynhde": {
+   "name": "cung Huynh Đệ",
+   "topic": "anh chị em và tình thân trong nhà"
+  }
+ },
+ "stars": {
+  "tuvi": {
+   "menh": {
+    "sang": "Tử Vi sáng ở cung Mệnh cho phong thái điềm đạm, có tầm nhìn và dễ được người khác nể trọng; bạn hợp vai dẫn dắt nếu giữ lòng ngay thẳng.",
+    "toi": "Tử Vi kém sáng ở cung Mệnh như người có ý lớn mà chưa gặp thời; bạn nên bớt kiêu hãnh, kiên nhẫn tích lũy và biết nhờ người góp ý."
+   },
+   "phumau": {
+    "sang": "Tử Vi sáng ở cung Phụ Mẫu gợi cha mẹ hoặc bề trên là người có nếp nhà, có uy; bạn được dạy dỗ tử tế và hợp học theo người đi trước.",
+    "toi": "Tử Vi kém sáng ở cung Phụ Mẫu gợi quan hệ với bề trên hơi xa cách, khó nói lòng mình; bạn nên chủ động hỏi han để gần nhau hơn."
+   },
+   "phucduc": {
+    "sang": "Tử Vi sáng ở cung Phúc Đức cho tâm thế ung dung, phúc phần dày; bạn giữ được sự thanh thản và có chỗ dựa tinh thần vững.",
+    "toi": "Tử Vi kém sáng ở cung Phúc Đức dễ khiến lòng nặng gánh nghĩ về danh phận; bạn nên tập buông bớt kỳ vọng, sống nhẹ nhàng hơn."
+   },
+   "dientrach": {
+    "sang": "Tử Vi sáng ở cung Điền Trạch hợp việc an cư, nhà cửa gọn gàng, có nơi ở tươm tất; bạn nên chăm giữ nếp nhà ngay ngắn.",
+    "toi": "Tử Vi kém sáng ở cung Điền Trạch cho chuyện nhà đất cần thêm thời gian gây dựng; bạn nên tính kỹ và đừng vội vì sĩ diện."
+   },
+   "quanloc": {
+    "sang": "Tử Vi sáng ở cung Quan Lộc hợp công việc có trách nhiệm điều hành; bạn dễ được giao việc lớn nếu giữ chữ tín.",
+    "toi": "Tử Vi kém sáng ở cung Quan Lộc cho đường công việc có lúc chưa được trao đúng vai; bạn nên học thêm và chịu khó làm từ nền."
+   },
+   "nopboc": {
+    "sang": "Tử Vi sáng ở cung Nô Bộc cho bạn bè, đồng nghiệp biết trọng lễ nghĩa, có người đáng nể; bạn nên đối đãi công bằng với mọi người.",
+    "toi": "Tử Vi kém sáng ở cung Nô Bộc gợi người quanh mình đôi khi khó nghe lời hoặc có ý riêng; bạn nên mềm mỏng, đừng ra lệnh quá."
+   },
+   "thiendi": {
+    "sang": "Tử Vi sáng ở cung Thiên Di cho phong thái chững chạc khi ra ngoài, dễ gây thiện cảm và được người giúp ở nơi xa.",
+    "toi": "Tử Vi kém sáng ở cung Thiên Di cho lúc ra ngoài hơi gượng, chưa được trọng ngay; bạn nên khiêm tốn làm quen từng bước."
+   },
+   "tatach": {
+    "sang": "Tử Vi sáng ở cung Tật Ách gợi nếp sinh hoạt có chừng mực; bạn nên giữ giờ giấc đều và khám sức khỏe định kỳ cho yên tâm.",
+    "toi": "Tử Vi kém sáng ở cung Tật Ách nhắc bạn đừng gồng mình quá mức; nên ngủ đủ, ăn đúng bữa và nghỉ ngơi khi mệt."
+   },
+   "taibach": {
+    "sang": "Tử Vi sáng ở cung Tài Bạch cho nguồn tiền đến từ danh nghĩa, chức trách; bạn hợp cách chi tiêu có kế hoạch và đầu tư vững.",
+    "toi": "Tử Vi kém sáng ở cung Tài Bạch cho nguồn tiền chưa thật đều; bạn nên chi tiêu theo kế hoạch và tránh khoản tiêu chỉ vì thể diện."
+   },
+   "tutuc": {
+    "sang": "Tử Vi sáng ở cung Tử Tức gợi con cái có nề nếp, có chí; bạn nên dạy con bằng gương nhiều hơn bằng lời.",
+    "toi": "Tử Vi kém sáng ở cung Tử Tức gợi con cái có cá tính riêng, cần được lắng nghe; bạn nên kiên nhẫn trò chuyện thay vì áp đặt."
+   },
+   "phuthe": {
+    "sang": "Tử Vi sáng ở cung Phu Thê gợi người bạn đời đứng đắn, có chí hướng; hai người hợp nhau khi biết nhường nhịn, không ai muốn hơn thua.",
+    "toi": "Tử Vi kém sáng ở cung Phu Thê gợi duyên đến chậm, người bạn đời có chính kiến; bạn nên nhún nhường và bàn bạc rõ ràng với nhau."
+   },
+   "huynhde": {
+    "sang": "Tử Vi sáng ở cung Huynh Đệ cho tình anh em có người đứng ra gánh vác, nâng đỡ nhau; bạn nên giữ nhịp thăm hỏi đều.",
+    "toi": "Tử Vi kém sáng ở cung Huynh Đệ gợi anh chị em mỗi người một hướng, ít khi gần gũi; bạn nên chủ động liên lạc để giữ tình thân."
+   }
+  },
+  "thienco": {
+   "menh": {
+    "sang": "Thiên Cơ sáng ở cung Mệnh cho trí óc nhanh, giỏi tính toán và ứng biến; bạn hợp việc cần suy nghĩ, nghiên cứu hay làm cố vấn.",
+    "toi": "Thiên Cơ kém sáng ở cung Mệnh khiến bạn hay lo nghĩ, nhiều ý mà khó chốt; nên chọn một việc nhỏ làm trước để lòng nhẹ hơn."
+   },
+   "phumau": {
+    "sang": "Thiên Cơ sáng ở cung Phụ Mẫu gợi cha mẹ khéo léo, hay lo toan; bạn học được cách tính xa và giữ sự cẩn trọng từ gia đình.",
+    "toi": "Thiên Cơ kém sáng ở cung Phụ Mẫu gợi cha mẹ hay lo, đôi khi ý kiến khác nhau; bạn nên lắng nghe rồi nhẹ nhàng nói điều mình nghĩ."
+   },
+   "phucduc": {
+    "sang": "Thiên Cơ sáng ở cung Phúc Đức cho đầu óc thích tìm hiểu, tinh thần linh hoạt; bạn tìm được niềm vui trong sách vở và chiêm nghiệm.",
+    "toi": "Thiên Cơ kém sáng ở cung Phúc Đức khiến tâm trí khó yên, hay tính trước tính sau; bạn nên tập thiền hoặc đi dạo để buông bớt suy nghĩ."
+   },
+   "dientrach": {
+    "sang": "Thiên Cơ sáng ở cung Điền Trạch gợi nhà cửa hay được sắp xếp lại cho thuận tiện; bạn khéo trang trí, biết dùng chỗ ở hợp lý.",
+    "toi": "Thiên Cơ kém sáng ở cung Điền Trạch gợi chuyện chỗ ở hay đổi dời hoặc sửa sang; bạn nên cân nhắc kỹ trước khi chuyển hay mua sắm lớn."
+   },
+   "quanloc": {
+    "sang": "Thiên Cơ sáng ở cung Quan Lộc hợp việc dùng đầu óc như kế hoạch, kỹ thuật, tư vấn; bạn tiến thân nhờ sự khéo và tinh ý.",
+    "toi": "Thiên Cơ kém sáng ở cung Quan Lộc cho hướng đi hay đổi, dễ phân vân giữa nhiều lựa chọn; bạn nên đặt mục tiêu rõ và theo đuổi lâu hơn."
+   },
+   "nopboc": {
+    "sang": "Thiên Cơ sáng ở cung Nô Bộc cho bạn bè nhanh nhẹn, nhiều ý hay; bạn nên kết giao với người biết góp ý mà không so đo.",
+    "toi": "Thiên Cơ kém sáng ở cung Nô Bộc gợi người quanh bạn hay thay đổi ý; bạn nên ghi rõ việc giao nhận để khỏi hiểu lầm."
+   },
+   "thiendi": {
+    "sang": "Thiên Cơ sáng ở cung Thiên Di cho bạn nhanh nhạy khi ra ngoài, dễ thích ứng chỗ mới; nên giữ đầu óc tỉnh táo trong các cuộc gặp.",
+    "toi": "Thiên Cơ kém sáng ở cung Thiên Di gợi ra ngoài hay phải nghĩ nhiều, dễ lăn tăn; bạn nên chuẩn bị kỹ và đi chậm mà chắc."
+   },
+   "tatach": {
+    "sang": "Thiên Cơ sáng ở cung Tật Ách gợi nếp nghĩ nhiều, hay thao thức; bạn nên giữ giờ ngủ đều và dành lúc nghỉ cho đầu óc.",
+    "toi": "Thiên Cơ kém sáng ở cung Tật Ách nhắc bạn lo xa dễ mệt đầu óc; nên ngủ đủ giấc, ăn đều và giảm bớt thời gian lướt màn hình."
+   },
+   "taibach": {
+    "sang": "Thiên Cơ sáng ở cung Tài Bạch cho nguồn tiền đến từ trí khôn và tay nghề; bạn nên chia nhỏ nguồn thu và theo dõi chi tiêu sát sao.",
+    "toi": "Thiên Cơ kém sáng ở cung Tài Bạch cho tiền bạc hay xoay chuyển, khó giữ đều; bạn nên lập sổ chi tiêu và tránh ôm nhiều kế hoạch cùng lúc."
+   },
+   "tutuc": {
+    "sang": "Thiên Cơ sáng ở cung Tử Tức gợi con cái lanh lợi, hay hỏi; bạn nên khuyến khích tính ham học và trả lời con kiên nhẫn.",
+    "toi": "Thiên Cơ kém sáng ở cung Tử Tức gợi con cái nhạy cảm, hay nghĩ; bạn nên dành thời gian trò chuyện để con thấy yên lòng."
+   },
+   "phuthe": {
+    "sang": "Thiên Cơ sáng ở cung Phu Thê gợi người bạn đời khéo léo, hợp trò chuyện; hai người nên chia sẻ suy nghĩ để tránh hiểu lầm nhỏ.",
+    "toi": "Thiên Cơ kém sáng ở cung Phu Thê gợi đôi bên hay suy diễn, ngại nói thẳng; bạn nên nói rõ lòng mình để chuyện nhỏ không thành lớn."
+   },
+   "huynhde": {
+    "sang": "Thiên Cơ sáng ở cung Huynh Đệ gợi anh chị em khôn khéo, có người giúp mình định hướng; bạn nên trao đổi thẳng thắn với nhau.",
+    "toi": "Thiên Cơ kém sáng ở cung Huynh Đệ gợi anh chị em mỗi người một ý, ít khi đồng thuận; bạn nên bàn bạc từ tốn và giữ lời hứa với nhau."
+   }
+  },
+  "thaiduong": {
+   "menh": {
+    "sang": "Thái Dương sáng ở cung Mệnh cho tính hào phóng, thẳng thắn và thích giúp người; bạn dễ được quý mến, nên giữ khiêm tốn để ánh sáng ấy bền.",
+    "toi": "Thái Dương kém sáng ở cung Mệnh cho tấm lòng tốt nhưng công sức ít được thấy; bạn nên kiên trì và đừng nản khi chưa được ghi nhận."
+   },
+   "phumau": {
+    "sang": "Thái Dương sáng ở cung Phụ Mẫu gợi người cha hoặc bề trên rộng lượng, có danh tiếng; bạn được che chở và có tấm gương tốt để noi theo.",
+    "toi": "Thái Dương kém sáng ở cung Phụ Mẫu gợi người cha hoặc bề trên bận rộn, ít gần gũi; bạn nên chủ động chia sẻ để hiểu nhau hơn."
+   },
+   "phucduc": {
+    "sang": "Thái Dương sáng ở cung Phúc Đức cho tâm hồn rộng mở, lạc quan; bạn có phúc từ việc làm tốt và hay được người nhớ ơn.",
+    "toi": "Thái Dương kém sáng ở cung Phúc Đức khiến bạn hay lo cho người khác mà quên mình; nên dành thời gian nghỉ ngơi và vui với niềm vui nhỏ."
+   },
+   "dientrach": {
+    "sang": "Thái Dương sáng ở cung Điền Trạch gợi nhà cửa thoáng sáng, đón nắng; bạn nên chọn nơi ở rộng rãi, nhiều ánh sáng và gần người thân.",
+    "toi": "Thái Dương kém sáng ở cung Điền Trạch gợi nơi ở thiếu ánh sáng hoặc phải tốn công vun vén; bạn nên chọn chỗ thoáng và tính chắc trước khi mua."
+   },
+   "quanloc": {
+    "sang": "Thái Dương sáng ở cung Quan Lộc hợp công việc ở nơi đông người, có danh tiếng hoặc phục vụ cộng đồng; bạn dễ được ghi nhận công sức.",
+    "toi": "Thái Dương kém sáng ở cung Quan Lộc cho việc làm nhiều mà ít được ghi nhận; bạn nên trình bày thành quả rõ ràng và chịu khó học thêm."
+   },
+   "nopboc": {
+    "sang": "Thái Dương sáng ở cung Nô Bộc gợi bạn bè, người cùng làm là người thẳng thắn, hay giúp; bạn nên đáp lại bằng sự chân thành.",
+    "toi": "Thái Dương kém sáng ở cung Nô Bộc gợi bạn bè đến rồi đi, giúp người mà ít được đáp; bạn nên chọn bạn tâm giao và đừng so đo."
+   },
+   "thiendi": {
+    "sang": "Thái Dương sáng ở cung Thiên Di cho bạn nổi bật ngoài xã hội, đi đến đâu cũng có người mến; ra ngoài làm việc thường thuận lợi.",
+    "toi": "Thái Dương kém sáng ở cung Thiên Di gợi lúc ra ngoài còn lặng lẽ, chưa được chú ý; bạn nên kiên trì làm quen và giữ lòng cởi mở."
+   },
+   "tatach": {
+    "sang": "Thái Dương sáng ở cung Tật Ách gợi sức khỏe nhìn chung tươi sáng; bạn nên duy trì vận động ngoài trời và cho đôi mắt được nghỉ đủ.",
+    "toi": "Thái Dương kém sáng ở cung Tật Ách nhắc bạn giữ đôi mắt, giấc ngủ và nhịp sinh hoạt; nên bớt thức khuya và nghỉ ngơi đúng lúc."
+   },
+   "taibach": {
+    "sang": "Thái Dương sáng ở cung Tài Bạch cho nguồn tiền đến rõ ràng, đàng hoàng; bạn hợp nghề giữ thể diện, nhưng nên tránh hào phóng quá tay.",
+    "toi": "Thái Dương kém sáng ở cung Tài Bạch gợi tiền ra nhiều hơn vào vì việc chung, việc giúp người; bạn nên đặt hạn mức khi cho giúp."
+   },
+   "tutuc": {
+    "sang": "Thái Dương sáng ở cung Tử Tức gợi con cái sáng dạ, hoạt bát; bạn nên cho con nhiều không gian vận động và làm gương tốt.",
+    "toi": "Thái Dương kém sáng ở cung Tử Tức gợi việc gần gũi con cái cần nhiều công sức hơn; bạn nên dành thời gian đều đặn bên con."
+   },
+   "phuthe": {
+    "sang": "Thái Dương sáng ở cung Phu Thê gợi người bạn đời rộng lượng, quang minh; đôi bên hợp nhau khi cùng chia sẻ và tôn trọng.",
+    "toi": "Thái Dương kém sáng ở cung Phu Thê gợi một bên hay gánh nhiều hơn bên kia; bạn nên nói ra điều cần được sẻ chia."
+   },
+   "huynhde": {
+    "sang": "Thái Dương sáng ở cung Huynh Đệ gợi anh chị em thẳng thắn, hay giúp nhau; tình thân được giữ vững nhờ những lần giúp đỡ chân thành.",
+    "toi": "Thái Dương kém sáng ở cung Huynh Đệ gợi bạn hay giúp anh chị em mà ít khi nhận lại; bạn nên giữ tình thân và đừng tính thiệt hơn."
+   }
+  },
+  "vukhuc": {
+   "menh": {
+    "sang": "Vũ Khúc sáng ở cung Mệnh cho tính quyết đoán, giỏi tính tiền bạc và sống có nguyên tắc; bạn hợp việc tài chính, kinh doanh.",
+    "toi": "Vũ Khúc kém sáng ở cung Mệnh khiến tính hơi cứng, hay một mình gánh việc; bạn nên chịu nhờ người, giữ lời mềm và chọn việc vừa sức."
+   },
+   "phumau": {
+    "sang": "Vũ Khúc sáng ở cung Phụ Mẫu gợi cha mẹ nghiêm, siêng làm và biết lo cho gia đình; bạn học được tính cần kiệm từ nhỏ.",
+    "toi": "Vũ Khúc kém sáng ở cung Phụ Mẫu gợi cha mẹ nghiêm khắc hoặc ít bày tỏ tình cảm; bạn nên chủ động nói lời quan tâm trước."
+   },
+   "phucduc": {
+    "sang": "Vũ Khúc sáng ở cung Phúc Đức cho tinh thần mạnh mẽ, thực tế; bạn thấy yên lòng khi có của để dành và việc làm đều.",
+    "toi": "Vũ Khúc kém sáng ở cung Phúc Đức khiến lòng hay canh cánh chuyện tiền; bạn nên tập sống đơn giản và tìm niềm vui không tốn kém."
+   },
+   "dientrach": {
+    "sang": "Vũ Khúc sáng ở cung Điền Trạch gợi khả năng tích góp mua nhà đất; bạn giữ của chắc tay, nên tính kỹ giấy tờ trước khi giao dịch.",
+    "toi": "Vũ Khúc kém sáng ở cung Điền Trạch gợi chuyện tích cóp nhà đất cần nhiều năm; bạn nên để dành đều và tránh vay quá sức."
+   },
+   "quanloc": {
+    "sang": "Vũ Khúc sáng ở cung Quan Lộc hợp nghề tài chính, ngân hàng, quản lý, kỹ thuật; bạn làm việc dứt khoát và được tin về sự rõ ràng.",
+    "toi": "Vũ Khúc kém sáng ở cung Quan Lộc cho công việc nhiều áp lực, phải tự lực; bạn nên học thêm kỹ năng và giữ nguyên tắc rõ ràng."
+   },
+   "nopboc": {
+    "sang": "Vũ Khúc sáng ở cung Nô Bộc gợi bạn bè làm ăn cứng cáp, thẳng tính; bạn nên rõ ràng chuyện tiền bạc khi hợp tác với người quen.",
+    "toi": "Vũ Khúc kém sáng ở cung Nô Bộc gợi người quanh bạn hay tính toán thiệt hơn; bạn nên minh bạch tiền bạc để giữ tình bạn."
+   },
+   "thiendi": {
+    "sang": "Vũ Khúc sáng ở cung Thiên Di cho bạn mạnh dạn khi ra ngoài, hợp việc làm ăn xa; ra ngoài dễ gặp cơ hội về tiền bạc.",
+    "toi": "Vũ Khúc kém sáng ở cung Thiên Di gợi ra ngoài phải tự lo nhiều việc; bạn nên chuẩn bị tiền dự phòng và đi cùng người tin cậy."
+   },
+   "tatach": {
+    "sang": "Vũ Khúc sáng ở cung Tật Ách gợi thể trạng rắn rỏi; bạn nên chú ý hơi thở, cổ vai và nghỉ ngơi để không dồn sức quá.",
+    "toi": "Vũ Khúc kém sáng ở cung Tật Ách nhắc bạn tránh gồng sức quá lâu; nên giữ vận động nhẹ nhàng, ăn uống điều độ và nghỉ đủ."
+   },
+   "taibach": {
+    "sang": "Vũ Khúc sáng ở cung Tài Bạch là thế tài tinh đắc vị, nguồn tiền vững nhờ cần mẫn và biết tính toán; bạn nên giữ chữ tín trong làm ăn.",
+    "toi": "Vũ Khúc kém sáng ở cung Tài Bạch cho tiền kiếm được vất vả và dễ thất thường; bạn nên tích góp từ từ và tránh đầu tư vội."
+   },
+   "tutuc": {
+    "sang": "Vũ Khúc sáng ở cung Tử Tức gợi con cái có chí và biết lo thân; bạn nên cho con học cách tiết kiệm và nói lời ấm áp.",
+    "toi": "Vũ Khúc kém sáng ở cung Tử Tức gợi con cái cứng đầu hoặc đến chậm hơn dự tính; bạn nên bình tĩnh và nuôi dạy bằng sự kiên nhẫn."
+   },
+   "phuthe": {
+    "sang": "Vũ Khúc sáng ở cung Phu Thê gợi người bạn đời đảm đang, có chính kiến, hợp kết duyên khi đã chín chắn; bạn nên mềm lời để nhà luôn ấm.",
+    "toi": "Vũ Khúc kém sáng ở cung Phu Thê gợi duyên đến muộn và người bạn đời cá tính mạnh; bạn nên nhường nhịn, cùng nhau nói chuyện tiền bạc cho rõ."
+   },
+   "huynhde": {
+    "sang": "Vũ Khúc sáng ở cung Huynh Đệ gợi anh chị em cứng cỏi, biết lo cho nhau về tiền bạc; bạn nên rõ ràng khi cùng góp việc nhà.",
+    "toi": "Vũ Khúc kém sáng ở cung Huynh Đệ gợi anh chị em ít nói, đôi khi nảy sinh chuyện tiền bạc; bạn nên rạch ròi và giữ tình nghĩa."
+   }
+  },
+  "thiendong": {
+   "menh": {
+    "sang": "Thiên Đồng sáng ở cung Mệnh cho tính hiền hòa, lạc quan và dễ gần; bạn thường được lòng người và sống thong dong nếu không ngại chăm chỉ.",
+    "toi": "Thiên Đồng kém sáng ở cung Mệnh khiến bạn dễ ngại việc khó và hay trông chờ; bạn nên đặt lịch làm việc nhỏ và giữ nhịp đều."
+   },
+   "phumau": {
+    "sang": "Thiên Đồng sáng ở cung Phụ Mẫu gợi cha mẹ hiền, thương con; bạn lớn lên trong bầu không khí ấm áp và dễ nói chuyện.",
+    "toi": "Thiên Đồng kém sáng ở cung Phụ Mẫu gợi cha mẹ hay lo cho con hoặc ít ở gần; bạn nên giữ liên lạc để cả hai yên lòng."
+   },
+   "phucduc": {
+    "sang": "Thiên Đồng sáng ở cung Phúc Đức là thế phúc tinh đắc vị, tâm an và biết hưởng niềm vui giản dị; bạn nên chia sẻ phúc ấy với người khác.",
+    "toi": "Thiên Đồng kém sáng ở cung Phúc Đức khiến lòng hay chùng xuống, dễ buồn vu vơ; bạn nên tìm niềm vui trong việc nhỏ và gặp người thân."
+   },
+   "dientrach": {
+    "sang": "Thiên Đồng sáng ở cung Điền Trạch cho nơi ở êm ả, vui vẻ; bạn dễ có tổ ấm dễ chịu và hợp cách bày biện nhẹ nhàng.",
+    "toi": "Thiên Đồng kém sáng ở cung Điền Trạch gợi chuyện nhà cửa dễ lơ là hoặc dời đổi; bạn nên chủ động lo toan, đừng để lâu."
+   },
+   "quanloc": {
+    "sang": "Thiên Đồng sáng ở cung Quan Lộc hợp việc dịch vụ, giáo dục, chăm sóc; bạn làm việc hòa nhã, ít xung đột với đồng nghiệp.",
+    "toi": "Thiên Đồng kém sáng ở cung Quan Lộc cho đường công việc thiếu chí tiến thủ nếu quá thoải mái; bạn nên đặt mục tiêu cụ thể theo từng năm."
+   },
+   "nopboc": {
+    "sang": "Thiên Đồng sáng ở cung Nô Bộc gợi bạn bè hiền lành, hay giúp và dễ hợp; bạn nên chọn bạn tốt để niềm vui thêm bền.",
+    "toi": "Thiên Đồng kém sáng ở cung Nô Bộc gợi bạn bè vui chơi nhiều hơn giúp việc; bạn nên chọn người có chí và cùng nhau tiến bộ."
+   },
+   "thiendi": {
+    "sang": "Thiên Đồng sáng ở cung Thiên Di cho bạn dễ thích nghi và được người ngoài quý; nơi xa thường đón bạn bằng sự thân thiện.",
+    "toi": "Thiên Đồng kém sáng ở cung Thiên Di gợi bạn hơi ngại ra ngoài, dễ nhờ cậy; bạn nên tập tự lo và mở rộng quen biết từ từ."
+   },
+   "tatach": {
+    "sang": "Thiên Đồng sáng ở cung Tật Ách gợi thể chất ôn hòa, ít lo; bạn nên giữ ăn ngủ điều độ và đừng chủ quan với việc ít vận động.",
+    "toi": "Thiên Đồng kém sáng ở cung Tật Ách nhắc bạn đừng lơ là việc chăm thân; nên tập thể dục đều, ăn uống nhẹ và ngủ đủ giấc."
+   },
+   "taibach": {
+    "sang": "Thiên Đồng sáng ở cung Tài Bạch cho nguồn tiền đến nhẹ nhàng, đủ dùng; bạn nên tránh tiêu pha cho thú vui quá tay.",
+    "toi": "Thiên Đồng kém sáng ở cung Tài Bạch gợi tiền đến chậm và dễ tiêu cho thú vui; bạn nên đặt khoản để dành cố định mỗi tháng."
+   },
+   "tutuc": {
+    "sang": "Thiên Đồng sáng ở cung Tử Tức gợi con cái hiền, dễ thương và gần gũi với cha mẹ; gia đình nhiều tiếng cười.",
+    "toi": "Thiên Đồng kém sáng ở cung Tử Tức gợi con cái hay nũng hoặc cần được nhắc nhở; bạn nên giữ kỷ luật nhẹ nhàng mà đều."
+   },
+   "phuthe": {
+    "sang": "Thiên Đồng sáng ở cung Phu Thê gợi người bạn đời hiền hòa, chiều chuộng; tình duyên êm ấm khi hai bên cùng gánh việc nhà.",
+    "toi": "Thiên Đồng kém sáng ở cung Phu Thê gợi tình cảm dịu nhưng thiếu quyết đoán; bạn nên cùng người bạn đời đặt kế hoạch chung rõ ràng."
+   },
+   "huynhde": {
+    "sang": "Thiên Đồng sáng ở cung Huynh Đệ gợi anh chị em hòa thuận, vui vẻ bên nhau; bạn nên giữ nếp sum họp để tình thân bền.",
+    "toi": "Thiên Đồng kém sáng ở cung Huynh Đệ gợi anh chị em hiền nhưng ít chủ động; bạn nên là người nhắc nhau gặp gỡ."
+   }
+  },
+  "liemtrinh": {
+   "menh": {
+    "sang": "Liêm Trinh sáng ở cung Mệnh cho tính ngay thẳng, có chính kiến và sức hút riêng; bạn làm việc có nguyên tắc và biết giữ lời.",
+    "toi": "Liêm Trinh kém sáng ở cung Mệnh khiến cảm xúc dễ dâng lên, hay tự ái; bạn nên bình tĩnh trước khi nói và chọn môi trường rõ quy tắc."
+   },
+   "phumau": {
+    "sang": "Liêm Trinh sáng ở cung Phụ Mẫu gợi cha mẹ nghiêm trang, trọng danh dự; bạn được nuôi dạy có khuôn phép và biết giữ mình.",
+    "toi": "Liêm Trinh kém sáng ở cung Phụ Mẫu gợi quan hệ với bề trên có lúc căng vì quan điểm; bạn nên nhẹ lời, lắng nghe trước."
+   },
+   "phucduc": {
+    "sang": "Liêm Trinh sáng ở cung Phúc Đức cho tâm thế sống ngay thẳng, trọng đạo lý; bạn yên lòng khi làm đúng điều mình tin.",
+    "toi": "Liêm Trinh kém sáng ở cung Phúc Đức khiến lòng hay day dứt chuyện đúng sai; bạn nên học cách tha thứ cho mình và cho người."
+   },
+   "dientrach": {
+    "sang": "Liêm Trinh sáng ở cung Điền Trạch gợi nhà cửa ngăn nắp, có trật tự; bạn khéo quản việc nhà và giữ giấy tờ rõ ràng.",
+    "toi": "Liêm Trinh kém sáng ở cung Điền Trạch nhắc bạn cẩn thận giấy tờ nhà đất; nên đọc kỹ điều khoản trước khi ký, nhờ người am hiểu xem giúp."
+   },
+   "quanloc": {
+    "sang": "Liêm Trinh sáng ở cung Quan Lộc hợp việc có kỷ cương như pháp chế, hành chính, quản trị; bạn được tin vì sự chính trực.",
+    "toi": "Liêm Trinh kém sáng ở cung Quan Lộc cho công việc nhiều áp lực quy định; bạn nên giữ minh bạch và tránh chuyện thị phi nơi làm."
+   },
+   "nopboc": {
+    "sang": "Liêm Trinh sáng ở cung Nô Bộc gợi người quanh bạn có nguyên tắc, biết giữ lời; bạn nên chọn người cùng chí hướng để hợp tác.",
+    "toi": "Liêm Trinh kém sáng ở cung Nô Bộc gợi quan hệ cấp dưới hoặc bạn bè dễ nảy lòng ghen tị; bạn nên công bằng và nói rõ phần việc."
+   },
+   "thiendi": {
+    "sang": "Liêm Trinh sáng ở cung Thiên Di cho phong thái nghiêm túc, gây được sự tin cậy; ra ngoài bạn thường được trọng nếu giữ lời.",
+    "toi": "Liêm Trinh kém sáng ở cung Thiên Di nhắc bạn giữ ý tứ khi ra ngoài; nên chọn chỗ đáng tin và tránh kết giao chóng vánh."
+   },
+   "tatach": {
+    "sang": "Liêm Trinh sáng ở cung Tật Ách gợi bạn sống kỷ luật, ít phóng túng; nên chú ý huyết áp, giấc ngủ và nghỉ khi căng thẳng.",
+    "toi": "Liêm Trinh kém sáng ở cung Tật Ách nhắc bạn giữ nhịp sinh hoạt, tránh nóng trong và thức khuya; nên uống đủ nước và nghỉ ngơi."
+   },
+   "taibach": {
+    "sang": "Liêm Trinh sáng ở cung Tài Bạch cho tiền bạc rõ ràng, làm đường chính đáng; bạn hợp việc có quy trình và nên tránh khoản mập mờ.",
+    "toi": "Liêm Trinh kém sáng ở cung Tài Bạch gợi tiền bạc dễ nảy sinh rắc rối giấy tờ; bạn nên rõ ràng khi vay mượn và lưu giữ chứng từ."
+   },
+   "tutuc": {
+    "sang": "Liêm Trinh sáng ở cung Tử Tức gợi con cái có chính kiến, biết giữ nếp; bạn nên dạy con bằng lý lẽ và sự gương mẫu.",
+    "toi": "Liêm Trinh kém sáng ở cung Tử Tức gợi con cái nhạy cảm, hay thắc mắc; bạn nên giữ lời nhẹ nhàng và gần gũi để con dám nói."
+   },
+   "phuthe": {
+    "sang": "Liêm Trinh sáng ở cung Phu Thê gợi tình cảm nồng, người bạn đời có nguyên tắc; đôi bên hợp nhau khi cùng thẳng thắn và giữ lòng trung thành.",
+    "toi": "Liêm Trinh kém sáng ở cung Phu Thê gợi tình cảm dễ nhiều sóng gió, hay ghen hoặc hiểu lầm; bạn nên trung thực, nói rõ lòng mình và kết duyên khi đã chín chắn."
+   },
+   "huynhde": {
+    "sang": "Liêm Trinh sáng ở cung Huynh Đệ gợi anh chị em có chính kiến, trọng danh dự; bạn nên nhẹ lời để khỏi va chạm vì tự ái.",
+    "toi": "Liêm Trinh kém sáng ở cung Huynh Đệ gợi anh chị em dễ tự ái, hay giữ ý riêng; bạn nên mềm mỏng và đừng nhắc lại chuyện cũ."
+   }
+  },
+  "thienphu": {
+   "menh": {
+    "sang": "Thiên Phủ sáng ở cung Mệnh cho tính ôn hòa, biết giữ gìn và có nền tảng vững; bạn được lòng người nhờ sự chu đáo.",
+    "toi": "Thiên Phủ kém sáng ở cung Mệnh khiến bạn hơi thận trọng quá mức, ngại thay đổi; bạn nên thử việc mới từng bước nhỏ."
+   },
+   "phumau": {
+    "sang": "Thiên Phủ sáng ở cung Phụ Mẫu gợi cha mẹ đầy đặn, biết lo cho con; bạn nhận được sự chăm sóc và nền nếp tốt.",
+    "toi": "Thiên Phủ kém sáng ở cung Phụ Mẫu gợi cha mẹ tiết kiệm, ít bày tỏ; bạn nên chủ động quan tâm và đừng ngại nói lời cảm ơn."
+   },
+   "phucduc": {
+    "sang": "Thiên Phủ sáng ở cung Phúc Đức cho đời sống tinh thần đầy đặn, an ổn; bạn có chỗ dựa vững và biết sẻ chia cho người khác.",
+    "toi": "Thiên Phủ kém sáng ở cung Phúc Đức khiến lòng hay lo mất mát, giữ nhiều thứ; bạn nên tập buông bớt và sống nhẹ lòng hơn."
+   },
+   "dientrach": {
+    "sang": "Thiên Phủ sáng ở cung Điền Trạch là thế kho đầy, hợp việc tạo nhà cửa, giữ đất đai; bạn có nền tảng tốt để an cư.",
+    "toi": "Thiên Phủ kém sáng ở cung Điền Trạch gợi việc tích nhà đất cần thời gian; bạn nên để dành đều và tránh mua theo phong trào."
+   },
+   "quanloc": {
+    "sang": "Thiên Phủ sáng ở cung Quan Lộc hợp việc quản lý, kế toán, hành chính; bạn tiến đều, vững vàng và được tin giao việc lâu dài.",
+    "toi": "Thiên Phủ kém sáng ở cung Quan Lộc cho công việc ổn mà ít bứt phá; bạn nên chủ động học thêm và nhận việc mới dần dần."
+   },
+   "nopboc": {
+    "sang": "Thiên Phủ sáng ở cung Nô Bộc gợi bạn bè hiền hậu, hay giúp đỡ; người quanh bạn có nhiều người đáng tin.",
+    "toi": "Thiên Phủ kém sáng ở cung Nô Bộc gợi bạn bè hay giữ ý, ít hết lòng; bạn nên chọn người hợp tính và cởi mở với nhau."
+   },
+   "thiendi": {
+    "sang": "Thiên Phủ sáng ở cung Thiên Di cho bạn điềm đạm khi ra ngoài, dễ được quý; nơi xa cũng có người sẵn lòng nâng đỡ.",
+    "toi": "Thiên Phủ kém sáng ở cung Thiên Di gợi bạn ngại ra ngoài hoặc thay đổi chỗ; nên mở rộng quen biết từ từ và đi cùng người tin cậy."
+   },
+   "tatach": {
+    "sang": "Thiên Phủ sáng ở cung Tật Ách gợi thể chất bền, ít lo; bạn nên giữ ăn uống vừa phải và đừng chủ quan với cân nặng.",
+    "toi": "Thiên Phủ kém sáng ở cung Tật Ách nhắc bạn đề phòng tăng cân và ít vận động; nên ăn điều độ và tập nhẹ mỗi ngày."
+   },
+   "taibach": {
+    "sang": "Thiên Phủ sáng ở cung Tài Bạch cho nguồn tiền ổn định, biết giữ của; bạn nên chia việc tích lũy thành nhiều phần cho chắc.",
+    "toi": "Thiên Phủ kém sáng ở cung Tài Bạch gợi bạn giữ của kỹ mà thu nhập chưa dồi dào; nên đa dạng nguồn thu và theo dõi chi tiêu."
+   },
+   "tutuc": {
+    "sang": "Thiên Phủ sáng ở cung Tử Tức gợi con cái đầy đặn, hiền hậu; bạn sẽ có tình thân ấm áp và nên cho con nền tảng học hành đều.",
+    "toi": "Thiên Phủ kém sáng ở cung Tử Tức gợi con cái khá kín đáo, cần được khích lệ; bạn nên động viên để con mạnh dạn hơn."
+   },
+   "phuthe": {
+    "sang": "Thiên Phủ sáng ở cung Phu Thê gợi người bạn đời chu đáo, biết lo toan; hai bên gây dựng tổ ấm bền khi cùng chia việc nhà.",
+    "toi": "Thiên Phủ kém sáng ở cung Phu Thê gợi tình cảm kín đáo, thiên về lo toan hơn lời ngọt; bạn nên bày tỏ yêu thương bằng lời cho người kia nghe."
+   },
+   "huynhde": {
+    "sang": "Thiên Phủ sáng ở cung Huynh Đệ gợi anh chị em đùm bọc, người lớn biết giúp người nhỏ; tình thân bền khi giữ lòng khoan dung.",
+    "toi": "Thiên Phủ kém sáng ở cung Huynh Đệ gợi anh chị em giữ ý, ít chia sẻ; bạn nên chủ động mời gặp nhau để gần gũi hơn."
+   }
+  },
+  "thaiam": {
+   "menh": {
+    "sang": "Thái Âm sáng ở cung Mệnh cho tính dịu dàng, tinh tế và giàu cảm xúc; bạn có duyên, khéo giữ của và biết quan tâm người.",
+    "toi": "Thái Âm kém sáng ở cung Mệnh khiến bạn dễ nhạy cảm, hay buồn vu vơ; bạn nên giữ nếp sống đều và chia sẻ với người thân."
+   },
+   "phumau": {
+    "sang": "Thái Âm sáng ở cung Phụ Mẫu gợi người mẹ hiền, tinh tế; bạn được yêu thương, chăm sóc chu đáo.",
+    "toi": "Thái Âm kém sáng ở cung Phụ Mẫu gợi người mẹ hay lo, ít khi gần; bạn nên gọi hỏi thăm đều để bà yên lòng."
+   },
+   "phucduc": {
+    "sang": "Thái Âm sáng ở cung Phúc Đức cho tâm hồn êm đềm, giàu cảm thụ; bạn tìm được bình yên trong những phút lặng và nghệ thuật.",
+    "toi": "Thái Âm kém sáng ở cung Phúc Đức khiến tâm tư hay trầm lắng; bạn nên đi ra ngoài, tìm bạn bè và niềm vui giản dị."
+   },
+   "dientrach": {
+    "sang": "Thái Âm sáng ở cung Điền Trạch là thế tốt cho nhà cửa, đất đai; bạn có duyên với nơi ở đẹp và biết vun vén tổ ấm.",
+    "toi": "Thái Âm kém sáng ở cung Điền Trạch gợi nhà cửa cần nhiều công chăm; bạn nên tính toán kỹ khi mua bán và giữ ngân sách sửa nhà."
+   },
+   "quanloc": {
+    "sang": "Thái Âm sáng ở cung Quan Lộc hợp việc tinh tế như tài chính, giáo dục, nghệ thuật hoặc làm đêm; bạn làm việc kỹ và biết lắng nghe.",
+    "toi": "Thái Âm kém sáng ở cung Quan Lộc cho công việc nhiều lo toan thầm lặng; bạn nên rèn sự tự tin và nói rõ phần đóng góp của mình."
+   },
+   "nopboc": {
+    "sang": "Thái Âm sáng ở cung Nô Bộc gợi bạn bè nhẹ nhàng, nhất là phụ nữ, hay giúp bạn thầm lặng; bạn nên biết ơn và giữ gìn tình bạn.",
+    "toi": "Thái Âm kém sáng ở cung Nô Bộc gợi bạn bè hay thay đổi thất thường; bạn nên giữ khoảng cách vừa phải và chọn người đáng tin."
+   },
+   "thiendi": {
+    "sang": "Thái Âm sáng ở cung Thiên Di cho bạn duyên dáng, dễ được quý khi ra ngoài; đi xa gặp nhiều thiện cảm.",
+    "toi": "Thái Âm kém sáng ở cung Thiên Di gợi lúc ra ngoài dễ ngại ngùng, chưa được chú ý; bạn nên tập mạnh dạn từng bước."
+   },
+   "tatach": {
+    "sang": "Thái Âm sáng ở cung Tật Ách gợi thể chất nhẹ nhàng; bạn nên giữ giấc ngủ, uống đủ nước và chú ý đến đôi mắt.",
+    "toi": "Thái Âm kém sáng ở cung Tật Ách nhắc bạn chú ý giấc ngủ và tinh thần; nên đi bộ nhẹ, uống đủ nước và tránh buồn lâu một mình."
+   },
+   "taibach": {
+    "sang": "Thái Âm sáng ở cung Tài Bạch cho tiền bạc tích lũy đều, hợp nghề cất giữ, bất động sản; bạn khéo thu vén và hưởng thành quả ổn định.",
+    "toi": "Thái Âm kém sáng ở cung Tài Bạch gợi tiền vào chậm, hay dành cho gia đình; bạn nên tích góp nhỏ mà đều và tránh mua sắm theo cảm xúc."
+   },
+   "tutuc": {
+    "sang": "Thái Âm sáng ở cung Tử Tức gợi con cái dịu dàng, ngoan; bạn có tình thân đằm thắm và nên dành thời gian chơi cùng con.",
+    "toi": "Thái Âm kém sáng ở cung Tử Tức gợi con cái nhạy cảm, cần được vỗ về về tinh thần; bạn nên kiên nhẫn lắng nghe và động viên."
+   },
+   "phuthe": {
+    "sang": "Thái Âm sáng ở cung Phu Thê gợi người bạn đời dịu dàng, tinh tế; đôi bên hợp nhau khi biết lắng nghe và chăm nhau từng chút.",
+    "toi": "Thái Âm kém sáng ở cung Phu Thê gợi tình cảm sâu nhưng hay lo nghĩ; bạn nên nói rõ lòng mình để người kia không phải đoán."
+   },
+   "huynhde": {
+    "sang": "Thái Âm sáng ở cung Huynh Đệ gợi chị em hoặc anh em hiền, hay quan tâm nhau; tình thân êm đềm nếu bạn giữ lòng chân thành.",
+    "toi": "Thái Âm kém sáng ở cung Huynh Đệ gợi anh chị em xa cách hoặc ít tâm sự; bạn nên chủ động nhắn hỏi để tình thân thêm gần."
+   }
+  },
+  "thamlang": {
+   "menh": {
+    "sang": "Tham Lang sáng ở cung Mệnh cho tính đa tài, khéo giao tiếp và nhiều hứng thú; bạn có sức hút, nên chọn một hướng để đi cho sâu.",
+    "toi": "Tham Lang kém sáng ở cung Mệnh khiến bạn dễ ham nhiều thứ và thất thường sở thích; bạn nên đặt giới hạn, theo một mục tiêu đủ lâu."
+   },
+   "phumau": {
+    "sang": "Tham Lang sáng ở cung Phụ Mẫu gợi cha mẹ khéo xã giao, năng động; bạn học được cách ứng xử linh hoạt từ gia đình.",
+    "toi": "Tham Lang kém sáng ở cung Phụ Mẫu gợi cha mẹ bận rộn xã giao, ít ở nhà; bạn nên chủ động dành thời gian trò chuyện cùng nhau."
+   },
+   "phucduc": {
+    "sang": "Tham Lang sáng ở cung Phúc Đức cho đời sống nhiều thú vui lành mạnh và ham học hỏi; bạn nên giữ chừng mực để lòng thanh thản.",
+    "toi": "Tham Lang kém sáng ở cung Phúc Đức khiến lòng khó yên, hay muốn thêm; bạn nên biết đủ và tập thói quen sống giản dị."
+   },
+   "dientrach": {
+    "sang": "Tham Lang sáng ở cung Điền Trạch gợi chỗ ở có nhiều nét riêng, hay thay đổi bài trí; bạn khéo mua bán và nên giữ giấy tờ chặt chẽ.",
+    "toi": "Tham Lang kém sáng ở cung Điền Trạch nhắc bạn cẩn trọng khi mua bán nhà đất; nên xem kỹ pháp lý và đừng quyết định vì cảm hứng."
+   },
+   "quanloc": {
+    "sang": "Tham Lang sáng ở cung Quan Lộc hợp nghề giao tiếp, kinh doanh, nghệ thuật, giải trí; bạn thích nghi nhanh và có nhiều cơ hội mở rộng.",
+    "toi": "Tham Lang kém sáng ở cung Quan Lộc gợi công việc dễ đổi hướng vì nhiều lời mời; bạn nên giữ nguyên tắc và chọn nghề bền."
+   },
+   "nopboc": {
+    "sang": "Tham Lang sáng ở cung Nô Bộc gợi bạn bè đông, vui vẻ và biết chơi; bạn nên chọn kỹ người cùng đi đường dài.",
+    "toi": "Tham Lang kém sáng ở cung Nô Bộc gợi bạn bè vui đó rồi tan, có người chỉ đến lúc cần; bạn nên chọn bạn chân thành."
+   },
+   "thiendi": {
+    "sang": "Tham Lang sáng ở cung Thiên Di cho bạn nổi bật ngoài xã hội, kết giao rộng; ra ngoài nhiều cơ hội nhưng cần giữ chừng mực.",
+    "toi": "Tham Lang kém sáng ở cung Thiên Di nhắc bạn giữ ý tứ khi ra ngoài, tránh những cuộc vui quá đà; nên đi cùng người tin cậy."
+   },
+   "tatach": {
+    "sang": "Tham Lang sáng ở cung Tật Ách nhắc bạn đừng ham vui quá mức; nên giữ ăn uống, giấc ngủ điều độ và hạn chế thức khuya.",
+    "toi": "Tham Lang kém sáng ở cung Tật Ách nhắc bạn kiểm soát ăn uống, rượu bia và giờ giấc; nên giữ nếp sinh hoạt đều và nghỉ ngơi."
+   },
+   "taibach": {
+    "sang": "Tham Lang sáng ở cung Tài Bạch cho nhiều đường kiếm tiền từ tài khéo và quan hệ; bạn nên tách bạch khoản tiêu cho thú vui và khoản tích lũy.",
+    "toi": "Tham Lang kém sáng ở cung Tài Bạch gợi tiền dễ vào nhanh ra nhanh vì thú vui; bạn nên lập ngân sách và tránh vay mượn tiêu pha."
+   },
+   "tutuc": {
+    "sang": "Tham Lang sáng ở cung Tử Tức gợi con cái tài hoa, hoạt bát và hay tò mò; bạn nên định hướng để con có mục tiêu.",
+    "toi": "Tham Lang kém sáng ở cung Tử Tức gợi con cái cá tính, thích tự do; bạn nên kiên nhẫn dạy dỗ và đặt giới hạn rõ ràng."
+   },
+   "phuthe": {
+    "sang": "Tham Lang sáng ở cung Phu Thê gợi người bạn đời có sức hút, nhiều ý thích; duyên thường đến muộn một chút, bạn nên chân thành và giữ lòng chung thủy.",
+    "toi": "Tham Lang kém sáng ở cung Phu Thê gợi tình duyên nhiều biến đổi, dễ gặp cám dỗ; bạn nên kết duyên muộn một chút, chung thủy và nói rõ với nhau."
+   },
+   "huynhde": {
+    "sang": "Tham Lang sáng ở cung Huynh Đệ gợi anh chị em hoạt bát, nhiều bạn; bạn nên giữ tình thân gần gũi thay vì chỉ gặp lúc vui.",
+    "toi": "Tham Lang kém sáng ở cung Huynh Đệ gợi anh chị em mỗi người một thú, ít gắn bó; bạn nên chủ động giữ liên lạc đều."
+   }
+  },
+  "cumon": {
+   "menh": {
+    "sang": "Cự Môn sáng ở cung Mệnh cho lời ăn tiếng nói thuyết phục, giỏi phân tích; bạn hợp nghề dùng lời như giảng dạy, luật, truyền thông.",
+    "toi": "Cự Môn kém sáng ở cung Mệnh khiến lời nói dễ gây hiểu lầm, hay nghi ngại; bạn nên chậm rãi, nói rõ ý và cẩn thận khi nhắn tin."
+   },
+   "phumau": {
+    "sang": "Cự Môn sáng ở cung Phụ Mẫu gợi cha mẹ nói nhiều, hay dạy dỗ; bạn học được cách lập luận và nghe lời khuyên có chọn lọc.",
+    "toi": "Cự Môn kém sáng ở cung Phụ Mẫu gợi bất đồng ý kiến với bề trên, dễ cãi vì lời nói; bạn nên nhẹ giọng và nghe cho hết."
+   },
+   "phucduc": {
+    "sang": "Cự Môn sáng ở cung Phúc Đức cho tâm trí ham tìm hiểu, hay suy xét; bạn thấy vui khi được trao đổi và giải đáp điều chưa rõ.",
+    "toi": "Cự Môn kém sáng ở cung Phúc Đức khiến lòng hay nghi ngại, khó yên; bạn nên tập nói ra điều lo với người tin cậy."
+   },
+   "dientrach": {
+    "sang": "Cự Môn sáng ở cung Điền Trạch gợi chuyện nhà đất cần bàn bạc rõ ràng; bạn nên thống nhất bằng văn bản và nhờ người am hiểu.",
+    "toi": "Cự Môn kém sáng ở cung Điền Trạch gợi chuyện nhà đất hay phát sinh tranh cãi hoặc giấy tờ rườm rà; bạn nên ghi chép rõ ràng và tìm người xem hộ."
+   },
+   "quanloc": {
+    "sang": "Cự Môn sáng ở cung Quan Lộc hợp việc dùng lời như thuyết trình, tư vấn, luật, báo chí; bạn nổi bật nhờ khả năng giải thích rõ ràng.",
+    "toi": "Cự Môn kém sáng ở cung Quan Lộc gợi công việc dễ có tin đồn hoặc bất đồng lời nói; bạn nên minh bạch, nói thật và giữ hồ sơ."
+   },
+   "nopboc": {
+    "sang": "Cự Môn sáng ở cung Nô Bộc gợi bạn bè hay tranh luận nhưng thẳng thắn; bạn nên lắng nghe và giữ lời hòa nhã khi bàn việc.",
+    "toi": "Cự Môn kém sáng ở cung Nô Bộc gợi người quanh bạn hay bàn tán, dễ có chuyện thị phi; bạn nên kín tiếng và chọn lời khi trò chuyện."
+   },
+   "thiendi": {
+    "sang": "Cự Môn sáng ở cung Thiên Di cho bạn nói chuyện cuốn hút khi ra ngoài; nên cẩn trọng lời nói nơi đông người để giữ tiếng tốt.",
+    "toi": "Cự Môn kém sáng ở cung Thiên Di nhắc bạn đề phòng hiểu lầm khi ra ngoài; nên nói chuyện cẩn trọng và tránh tranh cãi nơi công cộng."
+   },
+   "tatach": {
+    "sang": "Cự Môn sáng ở cung Tật Ách nhắc bạn chú ý cổ họng, dạ dày và thói quen ăn uống; nên chậm rãi bữa ăn và cho giọng nói được nghỉ.",
+    "toi": "Cự Môn kém sáng ở cung Tật Ách nhắc bạn chú ý dạ dày, cổ họng và nếp nghĩ ngợi; nên ăn đúng bữa, uống đủ nước và tránh căng thẳng."
+   },
+   "taibach": {
+    "sang": "Cự Môn sáng ở cung Tài Bạch cho nguồn tiền đến từ lời nói, kiến thức; bạn nên ghi rõ điều khoản khi giao kèo để tránh hiểu lầm.",
+    "toi": "Cự Môn kém sáng ở cung Tài Bạch gợi chuyện tiền bạc dễ vướng lời qua tiếng lại; bạn nên giao kèo bằng văn bản và đừng hứa miệng."
+   },
+   "tutuc": {
+    "sang": "Cự Môn sáng ở cung Tử Tức gợi con cái lém lỉnh, hay hỏi; bạn nên kiên nhẫn trả lời và hướng sự tò mò ấy vào việc học.",
+    "toi": "Cự Môn kém sáng ở cung Tử Tức gợi con cái hay cãi lại hoặc ngại bày tỏ; bạn nên lắng nghe trước, rồi nhẹ nhàng nói lý."
+   },
+   "phuthe": {
+    "sang": "Cự Môn sáng ở cung Phu Thê gợi hai người hay bàn luận, tranh cãi nhỏ nhưng nói ra được lòng nhau; bạn nên giữ lời ôn hòa và đừng bỏ sót chuyện cần nói.",
+    "toi": "Cự Môn kém sáng ở cung Phu Thê gợi tình cảm dễ có hiểu lầm vì lời nói, hay hờn giận; bạn nên nói chuyện thẳng, nhường nhau và kết duyên khi đã hiểu người."
+   },
+   "huynhde": {
+    "sang": "Cự Môn sáng ở cung Huynh Đệ gợi anh chị em hay tranh luận mà thẳng thắn; bạn nên nghe hết ý nhau trước khi phản ứng.",
+    "toi": "Cự Môn kém sáng ở cung Huynh Đệ gợi anh chị em dễ mích lòng vì lời nói; bạn nên nói chậm và tránh nhắc chuyện cũ."
+   }
+  },
+  "thientuong": {
+   "menh": {
+    "sang": "Thiên Tướng sáng ở cung Mệnh cho tính chu đáo, ngay thẳng và biết giúp người; bạn được tin cậy, hợp vai trợ lý đắc lực.",
+    "toi": "Thiên Tướng kém sáng ở cung Mệnh khiến bạn dễ phụ thuộc ý người khác, thiếu chủ kiến; bạn nên tập quyết định những việc nhỏ của mình."
+   },
+   "phumau": {
+    "sang": "Thiên Tướng sáng ở cung Phụ Mẫu gợi cha mẹ nề nếp, biết lo toan; bạn được che chở và học tính ngăn nắp từ nhỏ.",
+    "toi": "Thiên Tướng kém sáng ở cung Phụ Mẫu gợi cha mẹ nhiều lo toan, ít thời gian cho con; bạn nên chủ động quan tâm và hiểu cho họ."
+   },
+   "phucduc": {
+    "sang": "Thiên Tướng sáng ở cung Phúc Đức cho tâm thế ngay thẳng, thích giúp việc có ích; lòng bạn an khi làm tròn bổn phận.",
+    "toi": "Thiên Tướng kém sáng ở cung Phúc Đức khiến lòng hay gánh việc cho người; bạn nên biết nói không và dành chỗ cho mình nghỉ ngơi."
+   },
+   "dientrach": {
+    "sang": "Thiên Tướng sáng ở cung Điền Trạch gợi nhà cửa ngăn nắp, tươm tất; bạn khéo sắp xếp và chăm lo tổ ấm.",
+    "toi": "Thiên Tướng kém sáng ở cung Điền Trạch gợi nhà cửa nhiều việc vặt, hay phải sửa sang; bạn nên chia việc cho cả nhà và lên lịch bảo dưỡng."
+   },
+   "quanloc": {
+    "sang": "Thiên Tướng sáng ở cung Quan Lộc hợp việc điều phối, hành chính, dịch vụ; bạn được tin giao việc nhờ sự cẩn thận.",
+    "toi": "Thiên Tướng kém sáng ở cung Quan Lộc gợi công việc phục vụ nhiều mà ít được ghi nhận; bạn nên nói rõ phần việc và học thêm kỹ năng."
+   },
+   "nopboc": {
+    "sang": "Thiên Tướng sáng ở cung Nô Bộc gợi bạn bè và cấp dưới đáng tin, biết giúp việc; bạn nên trân trọng và ghi nhận công sức người khác.",
+    "toi": "Thiên Tướng kém sáng ở cung Nô Bộc gợi bạn hay giúp người mà ít được đáp lại; bạn nên chọn người đáng giúp và đặt giới hạn."
+   },
+   "thiendi": {
+    "sang": "Thiên Tướng sáng ở cung Thiên Di cho phong thái lịch thiệp khi ra ngoài; bạn dễ được người giúp và nể trọng.",
+    "toi": "Thiên Tướng kém sáng ở cung Thiên Di gợi lúc ra ngoài hay bị nhờ vả hoặc cuốn theo ý người; bạn nên giữ chủ kiến."
+   },
+   "tatach": {
+    "sang": "Thiên Tướng sáng ở cung Tật Ách gợi bạn biết giữ gìn thân thể; nên duy trì nếp ăn ngủ và chú ý da, thận một cách nhẹ nhàng.",
+    "toi": "Thiên Tướng kém sáng ở cung Tật Ách nhắc bạn chú ý da và thận, đừng bỏ qua dấu hiệu nhỏ; nên uống đủ nước và khám định kỳ."
+   },
+   "taibach": {
+    "sang": "Thiên Tướng sáng ở cung Tài Bạch cho nguồn tiền đều nhờ làm việc chu đáo; bạn nên chi tiêu có nguyên tắc và tích lũy ổn định.",
+    "toi": "Thiên Tướng kém sáng ở cung Tài Bạch gợi tiền hay chi cho người khác hoặc việc chung; bạn nên lập quỹ riêng và ghi chép."
+   },
+   "tutuc": {
+    "sang": "Thiên Tướng sáng ở cung Tử Tức gợi con cái ngoan, biết nghe lời; bạn nên dạy con tính tự lập để con vững vàng.",
+    "toi": "Thiên Tướng kém sáng ở cung Tử Tức gợi con cái hơi lệ thuộc hoặc cần nhiều chăm sóc; bạn nên từng bước giúp con tự lập."
+   },
+   "phuthe": {
+    "sang": "Thiên Tướng sáng ở cung Phu Thê gợi người bạn đời chu đáo, biết chăm sóc; đôi bên hợp nhau khi giữ lễ nghĩa và quan tâm lẫn nhau.",
+    "toi": "Thiên Tướng kém sáng ở cung Phu Thê gợi một bên hay nhường nhịn quá mức; bạn nên nói ra điều mình cần để cả hai cân bằng."
+   },
+   "huynhde": {
+    "sang": "Thiên Tướng sáng ở cung Huynh Đệ gợi anh chị em biết giúp đỡ nhau; bạn nên giữ nhịp thăm hỏi để tình thân thêm vững.",
+    "toi": "Thiên Tướng kém sáng ở cung Huynh Đệ gợi bạn thường là người gánh việc cho anh chị em; bạn nên chia sẻ trách nhiệm đều hơn."
+   }
+  },
+  "thienluong": {
+   "menh": {
+    "sang": "Thiên Lương sáng ở cung Mệnh cho tính nhân hậu, điềm tĩnh và hay che chở người khác; bạn hợp vai cố vấn và được kính trọng.",
+    "toi": "Thiên Lương kém sáng ở cung Mệnh khiến bạn hay lo cho người, dễ gánh việc ngoài phần mình; bạn nên biết giới hạn và chăm thân trước."
+   },
+   "phumau": {
+    "sang": "Thiên Lương sáng ở cung Phụ Mẫu gợi cha mẹ hiền, có đức, hay che chở; bạn lớn lên trong sự dạy bảo ân cần.",
+    "toi": "Thiên Lương kém sáng ở cung Phụ Mẫu gợi cha mẹ hay lo xa hoặc ở xa; bạn nên giữ liên lạc đều và quan tâm chu đáo."
+   },
+   "phucduc": {
+    "sang": "Thiên Lương sáng ở cung Phúc Đức là thế phúc đức dày, tâm an và hay gặp người giúp; bạn nên gieo thêm việc thiện.",
+    "toi": "Thiên Lương kém sáng ở cung Phúc Đức khiến lòng hay lo toan thay người khác; bạn nên tập buông và tin rằng người ta tự lo được."
+   },
+   "dientrach": {
+    "sang": "Thiên Lương sáng ở cung Điền Trạch gợi nhà cửa bình yên, có nếp tổ tiên để lại; bạn nên giữ gìn và vun đắp nếp nhà.",
+    "toi": "Thiên Lương kém sáng ở cung Điền Trạch gợi chuyện nhà đất phải tự tay gây dựng; bạn nên làm từ từ, nhờ người thân góp sức."
+   },
+   "quanloc": {
+    "sang": "Thiên Lương sáng ở cung Quan Lộc hợp việc giáo dục, y tế, công ích, pháp lý; bạn tiến thân nhờ uy tín và lòng nhân.",
+    "toi": "Thiên Lương kém sáng ở cung Quan Lộc gợi công việc nhiều trách nhiệm mà ít vinh hiển; bạn nên kiên nhẫn và giữ uy tín của mình."
+   },
+   "nopboc": {
+    "sang": "Thiên Lương sáng ở cung Nô Bộc gợi người quanh bạn là bậc có đức, biết dìu dắt; bạn nên khiêm tốn học hỏi và biết ơn.",
+    "toi": "Thiên Lương kém sáng ở cung Nô Bộc gợi bạn hay giúp người mà ít được báo đáp; bạn nên giúp trong khả năng và đừng buồn."
+   },
+   "thiendi": {
+    "sang": "Thiên Lương sáng ở cung Thiên Di cho bạn được quý nhân giúp khi ra ngoài; nơi xa thường có người đỡ đầu.",
+    "toi": "Thiên Lương kém sáng ở cung Thiên Di gợi ra ngoài phải dựa nhiều vào bản thân; bạn nên chuẩn bị kỹ và giữ lòng tin vào người tốt."
+   },
+   "tatach": {
+    "sang": "Thiên Lương sáng ở cung Tật Ách gợi sức khỏe được che chở, hay có người nhắc chăm thân; bạn nên giữ nếp sống lành mạnh và nghe lời khuyên.",
+    "toi": "Thiên Lương kém sáng ở cung Tật Ách nhắc bạn lo cho người nhiều mà quên mình; nên khám định kỳ, nghỉ ngơi và ăn uống điều độ."
+   },
+   "taibach": {
+    "sang": "Thiên Lương sáng ở cung Tài Bạch cho tiền đến chậm mà bền, nhờ uy tín và việc có ích; bạn hợp cách tích lũy khiêm tốn, đều đặn.",
+    "toi": "Thiên Lương kém sáng ở cung Tài Bạch gợi tiền hay phân tán cho việc giúp người; bạn nên dành phần chắc cho mình trước."
+   },
+   "tutuc": {
+    "sang": "Thiên Lương sáng ở cung Tử Tức gợi con cái hiếu thảo, có đức; bạn có tình thân ấm áp và nên làm gương cho con.",
+    "toi": "Thiên Lương kém sáng ở cung Tử Tức gợi con cái cần nhiều thời gian chăm sóc hoặc ở xa; bạn nên giữ gắn bó qua thư từ, lời hỏi han."
+   },
+   "phuthe": {
+    "sang": "Thiên Lương sáng ở cung Phu Thê gợi người bạn đời chín chắn, hơn tuổi hoặc biết che chở; đôi bên hợp nhau khi giữ lòng khoan dung.",
+    "toi": "Thiên Lương kém sáng ở cung Phu Thê gợi người bạn đời lớn hơn hoặc hay lo cho bạn; hai người nên chia sẻ cảm xúc để khỏi nặng nề."
+   },
+   "huynhde": {
+    "sang": "Thiên Lương sáng ở cung Huynh Đệ gợi anh chị em biết thương, người lớn che chở người nhỏ; tình thân bền nhờ sự nhường nhịn.",
+    "toi": "Thiên Lương kém sáng ở cung Huynh Đệ gợi bạn là người che chở anh chị em, đôi khi mệt; bạn nên nhờ họ san sẻ."
+   }
+  },
+  "thatsat": {
+   "menh": {
+    "sang": "Thất Sát sáng ở cung Mệnh cho khí chất mạnh mẽ, dám nghĩ dám làm và tự lập sớm; bạn hợp vai xung phong, nên học lắng nghe để đi xa.",
+    "toi": "Thất Sát kém sáng ở cung Mệnh làm tính nóng dễ trội, hay đi một mình; bạn nên bình tĩnh trước khi quyết định và chịu nhờ người góp ý."
+   },
+   "phumau": {
+    "sang": "Thất Sát sáng ở cung Phụ Mẫu gợi cha mẹ cá tính mạnh, nghiêm khắc; bạn học được ý chí nhưng nên chủ động mềm lời để gần nhau.",
+    "toi": "Thất Sát kém sáng ở cung Phụ Mẫu gợi quan hệ với cha mẹ hay căng vì cả hai cùng cứng; bạn nên lùi một bước và nói lời mềm."
+   },
+   "phucduc": {
+    "sang": "Thất Sát sáng ở cung Phúc Đức cho tinh thần cứng cỏi, ít khi chịu khuất phục; bạn tìm bình an nhờ việc làm và nên tập nghỉ ngơi.",
+    "toi": "Thất Sát kém sáng ở cung Phúc Đức khiến lòng khó lặng, hay gồng mình; bạn nên tập thở sâu, nghỉ ngơi và tìm niềm vui yên tĩnh."
+   },
+   "dientrach": {
+    "sang": "Thất Sát sáng ở cung Điền Trạch gợi bạn tự gây dựng nhà cửa bằng sức mình hơn là nhờ để lại; có thể phải dời đổi vài nơi trước khi an cư.",
+    "toi": "Thất Sát kém sáng ở cung Điền Trạch gợi chuyện nhà cửa nhiều thay đổi, phải tự lo; bạn nên tính chắc ngân sách và đừng quyết vội."
+   },
+   "quanloc": {
+    "sang": "Thất Sát sáng ở cung Quan Lộc hợp việc cần xông pha như quân đội, an ninh, kỹ thuật, tự lập nghiệp; bạn làm việc dứt khoát và gánh trách nhiệm lớn.",
+    "toi": "Thất Sát kém sáng ở cung Quan Lộc cho đường công việc nhiều thử thách, có lúc phải làm lại; bạn nên bền chí và giữ hòa khí với đồng nghiệp."
+   },
+   "nopboc": {
+    "sang": "Thất Sát sáng ở cung Nô Bộc gợi người quanh bạn mạnh mẽ, cá tính; bạn nên rõ ràng giao việc và tôn trọng khác biệt.",
+    "toi": "Thất Sát kém sáng ở cung Nô Bộc gợi quan hệ bạn bè hay va chạm vì tính nóng; bạn nên nhẹ lời và chọn người hợp tính."
+   },
+   "thiendi": {
+    "sang": "Thất Sát sáng ở cung Thiên Di cho bạn mạnh dạn khi ra ngoài, dám đi xa lập nghiệp; nơi xa thử thách nhiều nhưng cũng rèn bạn vững vàng.",
+    "toi": "Thất Sát kém sáng ở cung Thiên Di nhắc bạn cẩn trọng khi đi xa hoặc ra đường; nên chuẩn bị chu đáo và không hấp tấp."
+   },
+   "tatach": {
+    "sang": "Thất Sát sáng ở cung Tật Ách gợi thể lực khá tốt nhưng hay gắng sức; bạn nên chú ý xương khớp, vận động đúng cách và nghỉ ngơi.",
+    "toi": "Thất Sát kém sáng ở cung Tật Ách nhắc bạn đề phòng va chạm, vấp ngã do vội vàng; nên đi chậm, khởi động kỹ và nghỉ ngơi đủ."
+   },
+   "taibach": {
+    "sang": "Thất Sát sáng ở cung Tài Bạch cho tiền kiếm bằng sức mạnh và sự dám làm; nguồn tiền có lúc lên xuống nên cần để dành phòng khi chậm.",
+    "toi": "Thất Sát kém sáng ở cung Tài Bạch gợi tiền kiếm vất vả và lên xuống thất thường; bạn nên tránh liều lĩnh và giữ quỹ dự phòng."
+   },
+   "tutuc": {
+    "sang": "Thất Sát sáng ở cung Tử Tức gợi con cái cá tính, tự lập sớm; bạn nên giữ kỷ luật vừa phải và trò chuyện nhiều với con.",
+    "toi": "Thất Sát kém sáng ở cung Tử Tức gợi con cái cứng đầu hoặc đến muộn; bạn nên kiên nhẫn, ít quát mắng và dành thời gian lắng nghe."
+   },
+   "phuthe": {
+    "sang": "Thất Sát sáng ở cung Phu Thê gợi người bạn đời cá tính mạnh, tình cảm có sóng gió; bạn hợp kết duyên muộn, cần nhường nhịn và nói chuyện thẳng với nhau.",
+    "toi": "Thất Sát kém sáng ở cung Phu Thê gợi hôn nhân nhiều sóng gió, người bạn đời cá tính mạnh; bạn nên kết duyên muộn, nhường nhịn và đừng nóng giận khi nói chuyện."
+   },
+   "huynhde": {
+    "sang": "Thất Sát sáng ở cung Huynh Đệ gợi anh chị em mạnh mẽ, ít khi ở gần, mỗi người một đường; bạn nên giữ liên lạc để tình thân không phai.",
+    "toi": "Thất Sát kém sáng ở cung Huynh Đệ gợi anh chị em dễ xích mích vì tính cứng; bạn nên lùi một bước và giữ lời hòa nhã."
+   }
+  },
+  "phaquan": {
+   "menh": {
+    "sang": "Phá Quân sáng ở cung Mệnh cho tính dám đổi mới, không ngại làm lại từ đầu; bạn hợp việc cần phá cách nhưng nên có kế hoạch rõ.",
+    "toi": "Phá Quân kém sáng ở cung Mệnh khiến bạn hay thay đổi ý và khó giữ lâu một việc; bạn nên đặt mục tiêu dài hơi và nghĩ kỹ trước khi bỏ dở."
+   },
+   "phumau": {
+    "sang": "Phá Quân sáng ở cung Phụ Mẫu gợi cha mẹ có tính cách mạnh, hay thay đổi; bạn sớm tự lập và nên giữ tình cảm bằng lời hỏi han.",
+    "toi": "Phá Quân kém sáng ở cung Phụ Mẫu gợi quan hệ với bề trên có lúc xa cách hoặc va chạm; bạn nên nhẹ lời và chủ động hỏi han."
+   },
+   "phucduc": {
+    "sang": "Phá Quân sáng ở cung Phúc Đức cho tinh thần thích đổi mới, ưa khám phá; bạn tìm niềm vui trong cái mới và nên giữ lại điều quý cũ.",
+    "toi": "Phá Quân kém sáng ở cung Phúc Đức khiến lòng bất định, hay muốn thay đổi; bạn nên tập thói quen đều và sống chậm lại."
+   },
+   "dientrach": {
+    "sang": "Phá Quân sáng ở cung Điền Trạch gợi chuyện nhà cửa có nhiều thay đổi, sửa sang hoặc dời chỗ; bạn tự dựng lại nơi ở theo ý mình, nên tính kỹ ngân sách.",
+    "toi": "Phá Quân kém sáng ở cung Điền Trạch gợi chuyện nhà đất dễ biến động, tốn kém sửa sang; bạn nên giữ tiền dự phòng và tránh bán mua vội."
+   },
+   "quanloc": {
+    "sang": "Phá Quân sáng ở cung Quan Lộc hợp việc khai phá, cải tổ, khởi nghiệp; bạn dám thay đổi nhưng nên thận trọng với bước chuyển lớn.",
+    "toi": "Phá Quân kém sáng ở cung Quan Lộc gợi công việc đổi hướng nhiều, phải làm lại; bạn nên học thêm kỹ năng và đừng bỏ ngang khi chưa tính kỹ."
+   },
+   "nopboc": {
+    "sang": "Phá Quân sáng ở cung Nô Bộc gợi người quanh bạn năng động, thích đổi mới; bạn nên chọn người cùng chí và rõ phần việc.",
+    "toi": "Phá Quân kém sáng ở cung Nô Bộc gợi bạn bè hay thay đổi, quan hệ khó bền; bạn nên giữ chữ tín và chọn bạn đáng tin."
+   },
+   "thiendi": {
+    "sang": "Phá Quân sáng ở cung Thiên Di cho bạn mạnh dạn ra ngoài, hợp việc đi nhiều nơi; thay đổi môi trường mang lại cơ hội mới.",
+    "toi": "Phá Quân kém sáng ở cung Thiên Di nhắc bạn cẩn trọng khi thay đổi nơi ở hoặc chỗ làm; nên chuẩn bị đường lui trước khi đi."
+   },
+   "tatach": {
+    "sang": "Phá Quân sáng ở cung Tật Ách gợi sức sống dồi dào nhưng hay dồn sức; bạn nên nghỉ ngơi đều, vận động có chừng mực.",
+    "toi": "Phá Quân kém sáng ở cung Tật Ách nhắc bạn chú ý nhịp nghỉ ngơi, tránh làm việc quá sức; nên ăn ngủ đều và đi khám khi cần."
+   },
+   "taibach": {
+    "sang": "Phá Quân sáng ở cung Tài Bạch cho tiền đến từ việc đổi mới, mở đường mới; dòng tiền lên xuống nên bạn cần để dành quỹ dự phòng.",
+    "toi": "Phá Quân kém sáng ở cung Tài Bạch gợi tiền dễ tiêu nhanh khi đổi hướng; bạn nên tích góp đều và tránh đầu tư bốc đồng."
+   },
+   "tutuc": {
+    "sang": "Phá Quân sáng ở cung Tử Tức gợi con cái cá tính, thích khám phá; bạn nên cho con tự thử mà vẫn giữ những quy tắc cơ bản.",
+    "toi": "Phá Quân kém sáng ở cung Tử Tức gợi con cái cá tính mạnh, khó bảo; bạn nên bình tĩnh, thương yêu và đặt quy tắc rõ ràng."
+   },
+   "phuthe": {
+    "sang": "Phá Quân sáng ở cung Phu Thê gợi tình duyên nhiều thay đổi, người bạn đời cá tính mạnh; bạn hợp kết duyên muộn, cần nhường nhịn và nói chuyện chân thành.",
+    "toi": "Phá Quân kém sáng ở cung Phu Thê gợi hôn nhân nhiều sóng gió, dễ bất đồng; bạn nên kết duyên muộn, bình tĩnh nhường nhịn và không quyết định trong lúc giận."
+   },
+   "huynhde": {
+    "sang": "Phá Quân sáng ở cung Huynh Đệ gợi anh chị em mỗi người một hướng, hay thay đổi chỗ ở; bạn nên giữ liên lạc để không xa cách.",
+    "toi": "Phá Quân kém sáng ở cung Huynh Đệ gợi anh chị em dễ bất hòa vì khác ý; bạn nên nói chuyện thẳng thắn, nhẹ nhàng."
+   }
+  }
+ },
+ "minor": {
+  "taphu": "Tả Phù là sao của người giúp sức bên cạnh, mang lại sự phò trợ ngay thẳng. Có sao này, bạn dễ nhận được bàn tay nâng đỡ khi cần.",
+  "huubat": "Hữu Bật là sao của sự hỗ trợ âm thầm, khéo léo. Nhờ sao này, bạn thường có người đồng hành đúng lúc.",
+  "vanxuong": "Văn Xương chủ về chữ nghĩa, thi cử, sự rõ ràng trong cách trình bày. Sao này khuyến khích bạn học đều và viết cho rõ.",
+  "vankhuc": "Văn Khúc chủ về năng khiếu nghệ thuật, lời hay ý đẹp. Sao này giúp bạn có duyên ăn nói và cảm thụ tinh tế.",
+  "thienkhoi": "Thiên Khôi là quý nhân hiển hiện, hay gặp người lớn tuổi hoặc có địa vị giúp đỡ. Bạn nên giữ lễ phép và biết ơn.",
+  "thienviet": "Thiên Việt là quý nhân đến kín đáo, thường hỗ trợ khi bạn đang khó khăn. Hãy giữ lòng thiện để duyên lành bền.",
+  "locton": "Lộc Tồn là sao của của cải và sự giữ gìn, chủ về nguồn thu đều đặn. Sao này hợp lối sống tiết kiệm, biết lo xa.",
+  "kinhduong": "Kình Dương là sao sắc bén, chủ về tính quyết liệt. Bạn nên dùng sức mạnh đó cho việc đúng và nhớ giữ lời nhẹ nhàng.",
+  "dala": "Đà La là sao chậm mà dai, hay khiến việc bị trì hoãn. Bạn cần kiên nhẫn, làm đều từng bước để vượt qua.",
+  "thienma": "Thiên Mã là sao của sự di chuyển và thay đổi. Sao này gợi ý bạn năng động, hợp công việc đi lại hay làm ở nhiều nơi.",
+  "hoatinh": "Hỏa Tinh là sao nóng, chủ về tính nóng nảy và hành động nhanh. Bạn nên tập thở sâu và chậm lại trước khi quyết định.",
+  "linhtinh": "Linh Tinh là sao lửa ngầm, dễ làm lòng bồn chồn. Giữ nếp sinh hoạt đều và tĩnh tâm sẽ giúp bạn dịu lại.",
+  "diakhong": "Địa Không là sao của sự trống rỗng, hay làm kế hoạch lệch khỏi dự tính. Bạn nên linh hoạt, chuẩn bị phương án dự phòng.",
+  "diakiep": "Địa Kiếp là sao của những biến đổi bất ngờ, đòi hỏi bạn cẩn trọng với tiền bạc. Cẩn thận từng bước là cách giữ bình an.",
+  "hoaloc": "Hóa Lộc là sao của duyên may và nguồn nuôi dưỡng, thường đem lại sự thuận lợi. Bạn nên biết đủ và chia sẻ để lộc bền.",
+  "hoaquyen": "Hóa Quyền là sao của sự chủ động và năng lực điều hành. Sao này giúp bạn có tiếng nói, nhưng cần dùng quyền bằng sự khiêm nhường.",
+  "hoakhoa": "Hóa Khoa là sao của danh tiếng tốt và sự hiểu biết. Nhờ sao này, bạn dễ được người mến mộ và giúp khi cần.",
+  "hoaky": "Hóa Kỵ là sao của sự canh cánh, hay khiến bạn băn khoăn về một điều nào đó. Hãy xem đó là lời nhắc để cẩn trọng hơn.",
+  "tuan": "Tuần là vùng trống đi qua một số cung, làm các sao trong đó giảm sức: sao tốt bớt rực, sao xấu bớt xấu. Tuần nhẹ hơn Triệt và thường rõ hơn về hậu vận, nên bạn cần kiên trì.",
+  "triet": "Triệt như một khúc ngắt, tác động mạnh từ lúc sinh đến khoảng ba mươi tuổi rồi nhẹ dần; sao tốt giảm sức, sao xấu bớt xấu. Bạn nên bền bỉ, đừng nản khi gặp trở ngại đầu đời.",
+  "daohoa": "Đào Hoa là sao của duyên dáng và sức hút. Sao này giúp bạn thân thiện, nhưng cần giữ chừng mực trong quan hệ.",
+  "hongloan": "Hồng Loan là sao của duyên lành, hay gắn với chuyện tình cảm và lễ vui. Sao này khuyến khích bạn mở lòng và chân thành.",
+  "thienhy": "Thiên Hỷ là sao của niềm vui, tin mừng và những dịp sum họp. Sao này đem lại không khí vui vẻ cho cung nó đứng.",
+  "thienhinh": "Thiên Hình là sao của kỷ luật và khuôn phép, đòi hỏi bạn giữ lời và đúng việc. Dùng đúng chỗ, sao này giúp bạn rất tự chủ.",
+  "thiendieu": "Thiên Diêu là sao của sự mơ mộng và nét duyên kín đáo, hợp với nghệ thuật. Bạn nên giữ thực tế để mộng mơ có điểm tựa.",
+  "thaitue": "Thái Tuế là sao của năm, chủ về lời nói, lý lẽ và chuyện bàn luận. Sao này nhắc bạn giữ lời, nói rõ ý và tránh tranh cãi không cần thiết."
+ },
+ "trangsinh": {
+  "trangsinh": "Tràng Sinh là lúc khởi đầu, như hạt giống nảy mầm; chuyện ở cung này có đà đi lên.",
+  "mocduc": "Mộc Dục là lúc tắm gội, còn non nớt và dễ thay đổi; bạn nên giữ sự giản dị.",
+  "quandoi": "Quan Đới là lúc trưởng thành, bắt đầu gánh vác; bạn cần học chỉn chu.",
+  "lamquan": "Lâm Quan là lúc vào đời, có sức làm việc và cơ hội tự lập.",
+  "devuong": "Đế Vượng là lúc sung sức nhất; nên giữ khiêm tốn để sức tốt kéo dài.",
+  "suy": "Suy là lúc sức đi chậm lại; bạn nên chọn việc vừa sức và chăm lo cho mình.",
+  "benh": "Bệnh là lúc cần chú ý chăm sóc, như lời nhắc nghỉ ngơi cho đúng lúc.",
+  "tu": "Tử là giai đoạn lắng xuống, như chuyển mùa; hãy xem đó là lúc dọn lòng cho cái mới.",
+  "mo": "Mộ là lúc cất giữ, tích lại; hợp với việc cất công học và để dành.",
+  "tuyet": "Tuyệt là lúc cũ qua mà mới chưa tới; bạn nên bình tĩnh, chờ thời.",
+  "thai": "Thai là lúc ấp ủ ý định mới, còn kín đáo; hãy nuôi dưỡng từ từ.",
+  "duong": "Dưỡng là lúc được nuôi nấng, chăm sóc; hợp với việc học hỏi và tích lũy nền tảng."
+ },
+ "combos": {
+  "tu-phu-dong-cung": {
+   "name": "Tử Phủ đồng cung",
+   "text": "Tử Vi và Thiên Phủ cùng cung là thế vững vàng, nhiều quý khí. Bạn có nền tảng tốt và nên dùng sự ổn định ấy để giúp người.",
+   "rule": "Tử Vi và Thiên Phủ cùng đứng trong một cung (cung Dần hoặc cung Thân)."
+  },
+  "sat-pha-tham": {
+   "name": "Sát Phá Tham",
+   "text": "Thất Sát, Phá Quân, Tham Lang hội lại là thế nhiều biến động và nghị lực. Bạn hợp với việc đổi mới, miễn là có mục tiêu rõ ràng.",
+   "rule": "Ít nhất hai trong ba sao Thất Sát, Phá Quân, Tham Lang nằm ở cung đang xét hoặc các cung tam hợp, xung chiếu của nó."
+  },
+  "co-nguyet-dong-luong": {
+   "name": "Cơ Nguyệt Đồng Lương",
+   "text": "Bốn sao Cơ, Nguyệt, Đồng, Lương hội lại hợp với nghề ổn định, giúp người, làm văn phòng hoặc giảng dạy. Bạn nên chọn đường yên lành và bền.",
+   "rule": "Ít nhất ba trong bốn sao Thiên Cơ, Thái Âm, Thiên Đồng, Thiên Lương hội về cung đang xét (cùng cung, tam hợp hoặc xung chiếu)."
+  },
+  "nhat-nguyet-tinh-minh": {
+   "name": "Nhật Nguyệt tịnh minh",
+   "text": "Thái Dương và Thái Âm cùng sáng là thế đẹp, gặp thuận lợi cả sáng lẫn tối. Bạn nên biết ơn và tiếp tục siêng năng.",
+   "rule": "Thái Dương và Thái Âm đều sáng (miếu, vượng, đắc) và cùng đứng hoặc cùng chiếu về cung đang xét."
+  },
+  "ta-huu-giap-menh": {
+   "name": "Tả Hữu giáp Mệnh",
+   "text": "Tả Phù, Hữu Bật đứng hai bên cung Mệnh nghĩa là có người nâng đỡ hai phía. Bạn nên trân trọng những người ấy.",
+   "rule": "Tả Phù và Hữu Bật đứng ở hai cung liền kề hai bên cung Mệnh."
+  },
+  "loc-ma-giao-tri": {
+   "name": "Lộc Mã giao trì",
+   "text": "Lộc Tồn gặp Thiên Mã là thế vừa có của vừa đi động, hợp việc kinh doanh hoặc làm ở nơi xa. Bạn cần giữ kế hoạch rõ ràng.",
+   "rule": "Lộc Tồn (hoặc Hóa Lộc) và Thiên Mã đứng cùng một cung."
+  },
+  "khong-kiep-giap-menh": {
+   "name": "Không Kiếp giáp Mệnh",
+   "text": "Địa Không, Địa Kiếp kẹp hai bên là thế dễ có biến động về tiền bạc và kế hoạch. Bạn nên sống giản dị và có dự phòng.",
+   "rule": "Địa Không và Địa Kiếp đứng ở hai cung liền kề hai bên cung Mệnh."
+  },
+  "menh-vo-chinh-dieu": {
+   "name": "Mệnh vô chính diệu",
+   "text": "Cung Mệnh không có chính tinh nên mượn sao từ cung đối diện để luận. Bạn linh hoạt và dễ thích nghi, nhưng nên giữ mục tiêu cho vững.",
+   "rule": "Cung Mệnh không có chính tinh nào; mượn chính tinh ở cung xung chiếu (cung Thiên Di) để luận."
+  },
+  "tu-phu-trieu-vien": {
+   "name": "Tử Phủ triều viên",
+   "text": "Tử Vi và Thiên Phủ chầu về cung Mệnh từ hai phía, tạo thế được che chở. Bạn nhiều thuận lợi nếu biết khiêm nhường.",
+   "rule": "Tử Vi và Thiên Phủ nằm ở hai cung tam hợp chiếu về cung Mệnh."
+  },
+  "tu-sat-dong-cung": {
+   "name": "Tử Sát đồng cung",
+   "text": "Tử Vi gặp Thất Sát là uy nghiêm kèm sự mạnh mẽ. Bạn có chí lớn, nên học cách lắng nghe người khác.",
+   "rule": "Tử Vi và Thất Sát cùng đứng trong một cung."
+  },
+  "tu-tham-dong-cung": {
+   "name": "Tử Tham đồng cung",
+   "text": "Tử Vi gặp Tham Lang cho thế đa tài, duyên dáng nhưng hay thay đổi sở thích. Bạn nên chọn một việc để theo đuổi lâu.",
+   "rule": "Tử Vi và Tham Lang cùng đứng trong một cung."
+  },
+  "tu-tuong-dong-cung": {
+   "name": "Tử Tướng đồng cung",
+   "text": "Tử Vi cùng Thiên Tướng cho thế chu đáo và được tin cậy. Bạn hợp với vai trò giữ nếp, điều phối.",
+   "rule": "Tử Vi và Thiên Tướng cùng đứng trong một cung."
+  },
+  "liem-tham-dong-cung": {
+   "name": "Liêm Tham đồng cung",
+   "text": "Liêm Trinh gặp Tham Lang là thế giàu cảm xúc, có sức hút mạnh. Bạn nên kiểm soát nóng vội và giữ lòng chân thành.",
+   "rule": "Liêm Trinh và Tham Lang cùng đứng trong một cung."
+  },
+  "liem-phu-dong-cung": {
+   "name": "Liêm Phủ đồng cung",
+   "text": "Liêm Trinh gặp Thiên Phủ là thế vừa nghiêm vừa vững. Bạn làm việc có nguyên tắc và biết giữ của.",
+   "rule": "Liêm Trinh và Thiên Phủ cùng đứng trong một cung."
+  },
+  "vu-tuong-dong-cung": {
+   "name": "Vũ Tướng đồng cung",
+   "text": "Vũ Khúc gặp Thiên Tướng là thế giỏi lo liệu, được người nể. Bạn hợp việc quản lý và việc cần uy tín.",
+   "rule": "Vũ Khúc và Thiên Tướng cùng đứng trong một cung."
+  },
+  "vu-tham-dong-cung": {
+   "name": "Vũ Tham đồng cung",
+   "text": "Vũ Khúc gặp Tham Lang là thế đại khí vãn thành, càng về sau càng thuận. Bạn cần kiên nhẫn và đừng nóng vội.",
+   "rule": "Vũ Khúc và Tham Lang cùng đứng trong một cung."
+  },
+  "vu-phu-dong-cung": {
+   "name": "Vũ Phủ đồng cung",
+   "text": "Vũ Khúc cùng Thiên Phủ là thế giàu về tài lực và sự bền bỉ. Bạn biết lo cho gia đình chu đáo.",
+   "rule": "Vũ Khúc và Thiên Phủ cùng đứng trong một cung."
+  },
+  "nhat-nguyet-dong-cung": {
+   "name": "Nhật Nguyệt đồng cung",
+   "text": "Thái Dương cùng Thái Âm ở một cung là thế hài hòa giữa cứng và mềm. Bạn cân bằng được lý trí và cảm xúc.",
+   "rule": "Thái Dương và Thái Âm cùng đứng trong một cung."
+  },
+  "nhat-luong-dong-cung": {
+   "name": "Nhật Lương đồng cung",
+   "text": "Thái Dương gặp Thiên Lương là thế nhân hậu, hay làm việc có ích. Bạn hợp việc giảng dạy, chăm sóc, công ích.",
+   "rule": "Thái Dương và Thiên Lương cùng đứng trong một cung."
+  },
+  "cu-nhat-dong-cung": {
+   "name": "Cự Nhật đồng cung",
+   "text": "Cự Môn gặp Thái Dương giúp lời nói thêm sáng, hợp việc giảng giải. Bạn nên nói điều thật và rõ ràng.",
+   "rule": "Cự Môn và Thái Dương cùng đứng trong một cung."
+  },
+  "cu-co-dong-cung": {
+   "name": "Cự Cơ đồng cung",
+   "text": "Cự Môn gặp Thiên Cơ là thế nhiều suy tính và nhiều ý tưởng. Bạn nên chọn lọc, đừng để lo nghĩ lấn át.",
+   "rule": "Cự Môn và Thiên Cơ cùng đứng trong một cung."
+  },
+  "co-luong-dong-cung": {
+   "name": "Cơ Lương đồng cung",
+   "text": "Thiên Cơ gặp Thiên Lương là thế vừa khôn vừa nhân hậu. Bạn hợp làm cố vấn, người đỡ đầu.",
+   "rule": "Thiên Cơ và Thiên Lương cùng đứng trong một cung."
+  },
+  "dong-am-dong-cung": {
+   "name": "Đồng Âm đồng cung",
+   "text": "Thiên Đồng gặp Thái Âm là thế dịu dàng, tình cảm và hay nghĩ cho người. Bạn nên giữ nhịp sống ấm áp, đều đặn.",
+   "rule": "Thiên Đồng và Thái Âm cùng đứng trong một cung."
+  },
+  "dong-luong-dong-cung": {
+   "name": "Đồng Lương đồng cung",
+   "text": "Thiên Đồng gặp Thiên Lương cho thế hiền hòa, hay được người quý. Bạn hợp việc ổn định, nhẹ nhàng.",
+   "rule": "Thiên Đồng và Thiên Lương cùng đứng trong một cung."
+  },
+  "phu-tuong-trieu-vien": {
+   "name": "Phủ Tướng triều viên",
+   "text": "Thiên Phủ và Thiên Tướng chầu về cung Mệnh là thế được nâng đỡ, ổn định. Bạn nên giữ lễ và biết chia sẻ.",
+   "rule": "Thiên Phủ và Thiên Tướng nằm ở hai cung tam hợp chiếu về cung Mệnh."
+  },
+  "xuong-khuc-giap-menh": {
+   "name": "Xương Khúc giáp Mệnh",
+   "text": "Văn Xương, Văn Khúc đứng hai bên cung Mệnh cho thế hiếu học và tinh tế. Bạn hợp việc học hành, viết lách, nghệ thuật.",
+   "rule": "Văn Xương và Văn Khúc đứng ở hai cung liền kề hai bên cung Mệnh."
+  },
+  "khoi-viet-giap-menh": {
+   "name": "Khôi Việt giáp Mệnh",
+   "text": "Thiên Khôi, Thiên Việt đứng hai bên cung Mệnh là thế được quý nhân dìu dắt. Bạn nên giữ lễ phép và lòng biết ơn.",
+   "rule": "Thiên Khôi và Thiên Việt đứng ở hai cung liền kề hai bên cung Mệnh."
+  },
+  "kinh-da-giap-menh": {
+   "name": "Kình Đà giáp Mệnh",
+   "text": "Kình Dương, Đà La kẹp hai bên là thế dễ áp lực và chậm trễ. Bạn nên làm đều, chia nhỏ việc để vượt qua.",
+   "rule": "Kình Dương và Đà La đứng ở hai cung liền kề hai bên cung Mệnh."
+  },
+  "song-loc-giap-menh": {
+   "name": "Song Lộc giáp Mệnh",
+   "text": "Lộc Tồn và Hóa Lộc đứng hai bên cung Mệnh là thế có duyên với của cải. Bạn nên biết đủ và chia sẻ.",
+   "rule": "Lộc Tồn và Hóa Lộc đứng ở hai cung liền kề hai bên cung Mệnh."
+  },
+  "tam-hoa-lien-chau": {
+   "name": "Tam Hóa liên châu",
+   "text": "Lộc, Quyền, Khoa nối liền nhau là thế nhiều thuận lợi cả tiền, quyền và danh. Bạn nên giữ lòng khiêm tốn.",
+   "rule": "Hóa Lộc, Hóa Quyền, Hóa Khoa cùng hội về cung đang xét (cùng cung, tam hợp hoặc xung chiếu)."
+  },
+  "quyen-loc-gap-nhau": {
+   "name": "Quyền Lộc gặp nhau",
+   "text": "Hóa Quyền gặp Hóa Lộc là thế chủ động và có nguồn lực. Bạn hợp việc lãnh đạo, tự gây dựng.",
+   "rule": "Hóa Quyền và Hóa Lộc đứng cùng cung hoặc chiếu nhau (tam hợp, xung chiếu)."
+  },
+  "loc-ton-dong-cung": {
+   "name": "Lộc Tồn đồng cung",
+   "text": "Lộc Tồn đứng cùng chính tinh là thế biết giữ gìn, của cải đều đặn. Bạn nên tránh quá khắt khe với bản thân.",
+   "rule": "Lộc Tồn đứng cùng cung với một chính tinh ở cung đang xét."
+  },
+  "dao-hong-hy-hoi-tu": {
+   "name": "Đào Hồng Hỷ hội tụ",
+   "text": "Đào Hoa, Hồng Loan, Thiên Hỷ hội lại là thế nhiều duyên lành và dịp vui. Bạn nên mở lòng và giữ chừng mực.",
+   "rule": "Ít nhất hai trong ba sao Đào Hoa, Hồng Loan, Thiên Hỷ hội về cung đang xét (cùng cung, tam hợp hoặc xung chiếu)."
+  },
+  "hoa-linh-dong-cung": {
+   "name": "Hỏa Linh đồng cung",
+   "text": "Hỏa Tinh cùng Linh Tinh là thế nóng và hay bồn chồn. Bạn nên tập thở sâu, chậm nhịp và giữ lời mềm.",
+   "rule": "Hỏa Tinh và Linh Tinh đứng trong cùng một cung."
+  },
+  "khoa-quyen-loc-giap": {
+   "name": "Khoa Quyền Lộc giáp",
+   "text": "Các sao Khoa, Quyền, Lộc đứng quanh cung Mệnh là thế được nhiều điều kiện tốt. Bạn nên trân trọng và dùng đúng việc.",
+   "rule": "Ít nhất hai trong ba sao Hóa Khoa, Hóa Quyền, Hóa Lộc đứng ở hai cung liền kề hai bên cung Mệnh hoặc chiếu về cung Mệnh."
+  },
+  "nhat-nguyet-chieu-menh": {
+   "name": "Nhật Nguyệt chiếu Mệnh",
+   "text": "Thái Dương, Thái Âm từ hai phía chiếu về cung Mệnh là thế được che chở dịu dàng. Bạn nên chăm giữ tình thân và hiếu đạo.",
+   "rule": "Thái Dương và Thái Âm nằm ở các cung chiếu về cung Mệnh (tam hợp hoặc xung chiếu), không đứng trong cung Mệnh."
+  },
+  "thien-ma-hoa-ky": {
+   "name": "Mã Kỵ gặp nhau",
+   "text": "Thiên Mã gặp Hóa Kỵ là thế hay băn khoăn khi đi xa hoặc đổi chỗ. Bạn nên chuẩn bị kỹ và đi chậm mà chắc.",
+   "rule": "Thiên Mã và Hóa Kỵ đứng cùng một cung."
+  },
+  "vo-chinh-dieu-gap-tuan-triet": {
+   "name": "Vô chính diệu gặp Tuần Triệt",
+   "text": "Cung Mệnh không có chính tinh mà gặp Tuần hoặc Triệt thường được xem là thế tốt, vì không có sao nào bị giảm sức. Bạn nên giữ nếp học hỏi và đừng chủ quan.",
+   "rule": "Cung Mệnh không có chính tinh và có Tuần hoặc Triệt đóng cùng cung."
+  },
+  "cu-mon-hoa-ky": {
+   "name": "Cự Môn hóa Kỵ",
+   "text": "Cự Môn gặp Hóa Kỵ là thế dễ hiểu lầm vì lời nói. Bạn nên chậm rãi, nói rõ ý và cẩn thận khi nhắn tin.",
+   "rule": "Cự Môn đứng cùng cung với Hóa Kỵ."
+  },
+  "tuan-triet-giap-menh": {
+   "name": "Tuần Triệt giáp Mệnh",
+   "text": "Tuần và Triệt đứng hai bên cung Mệnh làm các sao tốt giảm sức và sao xấu bớt xấu; thuở trẻ chịu tác động rõ hơn, sau khoảng ba mươi tuổi nhẹ dần. Bạn nên bền chí và đừng vội nản.",
+   "rule": "Tuần và Triệt đứng ở hai cung liền kề hai bên cung Mệnh."
+  }
+ },
+ "hoa": {
+  "hoaloc": {
+   "menh": "Hóa Lộc ở cung Mệnh thêm duyên may và sức hút cho bạn; người ta dễ mến, cơ hội đến đều nếu bạn giữ lòng biết đủ.",
+   "phumau": "Hóa Lộc ở cung Phụ Mẫu gợi bề trên giúp đỡ về vật chất lẫn lời khuyên; bạn nên đáp lại bằng sự hiếu kính.",
+   "phucduc": "Hóa Lộc ở cung Phúc Đức cho tinh thần phong phú, hay được hưởng niềm vui nhỏ; bạn nên chia sẻ bớt phúc phần với người khác.",
+   "dientrach": "Hóa Lộc ở cung Điền Trạch thuận cho việc an cư, mua sắm hoặc sửa nhà; bạn nên tính toán kỹ để lộc thành của vững.",
+   "quanloc": "Hóa Lộc ở cung Quan Lộc mở đường công việc, hay có thêm cơ hội và thu nhập từ nghề; bạn nên nắm bắt nhưng giữ sự chuyên tâm.",
+   "nopboc": "Hóa Lộc ở cung Nô Bộc cho bạn bè, đồng nghiệp hay mang đến cơ hội; bạn nên giữ tình nghĩa và rõ ràng khi hợp tác.",
+   "thiendi": "Hóa Lộc ở cung Thiên Di giúp ra ngoài gặp thuận duyên, dễ có việc hay mối quen; bạn nên giữ lễ độ để duyên lành bền.",
+   "tatach": "Hóa Lộc ở cung Tật Ách gợi thể trạng dễ hồi phục, ăn ngủ khá tốt; bạn vẫn nên điều độ để khỏi dư thừa.",
+   "taibach": "Hóa Lộc ở cung Tài Bạch làm nguồn tiền thêm đều đặn, dễ có thêm thu nhập; bạn nên tích lũy bớt và tránh tiêu quá tay.",
+   "tutuc": "Hóa Lộc ở cung Tử Tức gợi tình thân với con cái đằm thắm, con cái có duyên; bạn nên dành thời gian cho con để niềm vui thêm đầy.",
+   "phuthe": "Hóa Lộc ở cung Phu Thê thêm duyên và sự ngọt ngào trong tình cảm; bạn nên trân trọng và đừng coi đó là điều đương nhiên.",
+   "huynhde": "Hóa Lộc ở cung Huynh Đệ gợi anh chị em đùm bọc, có thể giúp nhau về công việc; bạn nên giữ tình thân và chia sẻ chân thành."
+  },
+  "hoaquyen": {
+   "menh": "Hóa Quyền ở cung Mệnh cho bạn thêm chủ kiến và sức điều hành; bạn nên dùng quyền bằng sự khiêm nhường để được lòng người.",
+   "phumau": "Hóa Quyền ở cung Phụ Mẫu gợi bề trên có tiếng nói mạnh, hay định hướng cho bạn; bạn nên lắng nghe nhưng giữ chính kiến riêng.",
+   "phucduc": "Hóa Quyền ở cung Phúc Đức làm tâm thế thêm vững, ít để mình bị cuốn theo; bạn nên giữ sự cởi mở để không cứng nhắc.",
+   "dientrach": "Hóa Quyền ở cung Điền Trạch cho bạn chủ động trong chuyện nhà cửa, quyết định gọn; bạn nên bàn với người nhà để mọi người yên lòng.",
+   "quanloc": "Hóa Quyền ở cung Quan Lộc tăng sức quản lý và uy tín nơi làm việc; bạn dễ được giao trọng trách nếu giữ công bằng.",
+   "nopboc": "Hóa Quyền ở cung Nô Bộc gợi người quanh bạn có ý kiến mạnh; bạn nên rõ ràng vai trò và biết lắng nghe phản hồi.",
+   "thiendi": "Hóa Quyền ở cung Thiên Di cho bạn tự tin và có tiếng nói khi ra ngoài; nên giữ thái độ ôn hòa để được nể trọng bền lâu.",
+   "tatach": "Hóa Quyền ở cung Tật Ách gợi bạn có ý chí tự chăm thân; bạn nên đặt kế hoạch vận động hợp sức, tránh ép mình quá.",
+   "taibach": "Hóa Quyền ở cung Tài Bạch cho bạn chủ động trong chuyện tiền bạc, quản lý chắc tay; bạn nên minh bạch để tránh hiểu lầm.",
+   "tutuc": "Hóa Quyền ở cung Tử Tức gợi con cái có chủ kiến, tự lập sớm; bạn nên hướng dẫn nhẹ nhàng và tôn trọng ý con.",
+   "phuthe": "Hóa Quyền ở cung Phu Thê cho người bạn đời có chính kiến; đôi bên nên bàn bạc, tránh ai cũng muốn nói câu cuối.",
+   "huynhde": "Hóa Quyền ở cung Huynh Đệ gợi anh chị em có người đứng ra lo liệu; bạn nên biết ơn và góp sức để không ai phải gánh một mình."
+  },
+  "hoakhoa": {
+   "menh": "Hóa Khoa ở cung Mệnh thêm nét nho nhã, ham học và được người quý trọng; bạn nên giữ tiếng tốt bằng việc làm thật.",
+   "phumau": "Hóa Khoa ở cung Phụ Mẫu gợi bề trên hiểu biết, có nếp học hành; bạn được dạy dỗ tử tế và nên tiếp nối truyền thống ấy.",
+   "phucduc": "Hóa Khoa ở cung Phúc Đức giúp tâm trí sáng suốt, hay gặp được lời khuyên hay; bạn nên dành thời gian đọc sách, chiêm nghiệm.",
+   "dientrach": "Hóa Khoa ở cung Điền Trạch gợi chỗ ở gọn gàng, có nét văn hóa; bạn nên bày biện giản dị, có sách vở để nhà thêm yên.",
+   "quanloc": "Hóa Khoa ở cung Quan Lộc hợp công việc dùng kiến thức, thi cử, giảng dạy; bạn dễ được ghi nhận khi chịu khó học thêm.",
+   "nopboc": "Hóa Khoa ở cung Nô Bộc gợi bạn bè lịch thiệp, hay giúp bạn về hiểu biết; bạn nên giữ phép lịch sự và cảm ơn người giúp.",
+   "thiendi": "Hóa Khoa ở cung Thiên Di giúp bạn nhận được thiện cảm và đánh giá tốt khi ra ngoài; bạn nên giữ phong thái chỉn chu.",
+   "tatach": "Hóa Khoa ở cung Tật Ách gợi bạn biết tìm hiểu cách chăm sóc bản thân; nên theo lời khuyên đúng và khám sức khỏe định kỳ.",
+   "taibach": "Hóa Khoa ở cung Tài Bạch cho tiền đến nhờ kiến thức, tay nghề; bạn nên tiếp tục học để thu nhập thêm bền vững.",
+   "tutuc": "Hóa Khoa ở cung Tử Tức gợi con cái ham học, có tiếng tốt; bạn nên cổ vũ việc học bằng sự đồng hành, không ép.",
+   "phuthe": "Hóa Khoa ở cung Phu Thê gợi người bạn đời có học, nhã nhặn; đôi bên nên giữ lễ và trò chuyện chân thành.",
+   "huynhde": "Hóa Khoa ở cung Huynh Đệ gợi anh chị em có người học giỏi, giúp nhau mở mang; bạn nên chia sẻ hiểu biết và khích lệ nhau."
+  },
+  "hoaky": {
+   "menh": "Hóa Kỵ ở cung Mệnh khiến bạn hay canh cánh, nghĩ nhiều về một điều; bạn nên xem đó là lời nhắc cẩn trọng và chia sẻ bớt với người thân.",
+   "phumau": "Hóa Kỵ ở cung Phụ Mẫu gợi quan hệ với bề trên dễ có hiểu lầm hoặc khoảng cách; bạn nên chủ động hỏi han và nói rõ ý.",
+   "phucduc": "Hóa Kỵ ở cung Phúc Đức khiến lòng khó buông một mối bận tâm; bạn nên tập viết ra điều lo, rồi nghỉ ngơi, đi dạo cho nhẹ.",
+   "dientrach": "Hóa Kỵ ở cung Điền Trạch nhắc bạn kỹ lưỡng giấy tờ và hợp đồng về nhà đất; nên hỏi người am hiểu trước khi quyết.",
+   "quanloc": "Hóa Kỵ ở cung Quan Lộc gợi công việc có điều khúc mắc hoặc hay phải làm lại; bạn nên cẩn thận chi tiết và trao đổi rõ với cấp trên.",
+   "nopboc": "Hóa Kỵ ở cung Nô Bộc nhắc bạn dễ hiểu lầm với bạn bè hoặc đồng nghiệp; nên nói thẳng, rõ ràng và đừng nghĩ thay người.",
+   "thiendi": "Hóa Kỵ ở cung Thiên Di nhắc bạn thận trọng khi đi xa hoặc ở nơi lạ; nên chuẩn bị kỹ và hỏi thêm thông tin trước khi đi.",
+   "tatach": "Hóa Kỵ ở cung Tật Ách nhắc bạn chú ý nếp sinh hoạt, giấc ngủ và những điều hay lo nghĩ; nên đi khám định kỳ cho yên lòng.",
+   "taibach": "Hóa Kỵ ở cung Tài Bạch gợi chuyện tiền bạc hay canh cánh, dễ nghi ngại; bạn nên ghi chép chi tiêu và tránh cho vay, hùn hạp khi chưa rõ.",
+   "tutuc": "Hóa Kỵ ở cung Tử Tức gợi bạn hay lo cho con cái và đôi khi hiểu lầm nhau; nên trò chuyện cởi mở và kiên nhẫn lắng nghe con.",
+   "phuthe": "Hóa Kỵ ở cung Phu Thê gợi tình cảm hay nghi ngại, dễ hiểu lầm; bạn nên nói thẳng lòng mình, tin nhau hơn và không so đo.",
+   "huynhde": "Hóa Kỵ ở cung Huynh Đệ nhắc bạn dễ mích lòng với anh chị em vì chuyện nhỏ; nên nói điều mình nghĩ nhẹ nhàng và đừng giữ trong lòng."
+  }
+ },
+ "tuanTriet": {
+  "tuan": {
+   "menh": "Tuần ở cung Mệnh nhẹ nhàng hơn Triệt, làm điều tốt chậm hiện ra lúc đầu và rõ hơn về sau; bạn nên kiên trì, hậu vận thường vững hơn.",
+   "phumau": "Tuần ở cung Phụ Mẫu gợi sự gắn bó với bề trên có phần lặng lẽ, ít bày tỏ; càng lớn bạn càng hiểu và gần họ hơn.",
+   "phucduc": "Tuần ở cung Phúc Đức làm phúc phần hiện chậm; tuổi càng về sau tâm càng an, nên bạn hãy đều đặn làm việc thiện.",
+   "dientrach": "Tuần ở cung Điền Trạch gợi chuyện nhà cửa đến muộn hơn dự tính nhưng bền; bạn nên tích lũy đều và đừng nóng vội.",
+   "quanloc": "Tuần ở cung Quan Lộc làm đường công việc lúc đầu chưa rõ hướng, về sau nghề nghiệp rõ nét và ổn định; bạn nên chịu khó học hỏi.",
+   "nopboc": "Tuần ở cung Nô Bộc cho bạn bè thân thiết đến chậm, ít mà bền; bạn nên chân thành vun đắp từng mối quen.",
+   "thiendi": "Tuần ở cung Thiên Di làm lúc mới ra ngoài chưa quen, càng về sau bạn càng được người biết đến; nên kiên nhẫn làm quen.",
+   "tatach": "Tuần ở cung Tật Ách làm nhẹ bớt điều lo về sức khỏe; bạn vẫn nên giữ nếp sinh hoạt đều và khám định kỳ cho yên tâm.",
+   "taibach": "Tuần ở cung Tài Bạch làm tiền bạc lúc trẻ chưa dày, về sau ổn dần; bạn nên tích góp từ sớm và tránh vội làm giàu.",
+   "tutuc": "Tuần ở cung Tử Tức gợi chuyện con cái đến chậm hoặc cần nhiều kiên nhẫn; về sau tình thân thêm đằm thắm.",
+   "phuthe": "Tuần ở cung Phu Thê gợi duyên đến chậm, không vội; bạn nên kết duyên khi đã hiểu nhau và càng về sau tình cảm càng sâu.",
+   "huynhde": "Tuần ở cung Huynh Đệ gợi tình anh chị em ban đầu hơi xa, về sau gần gũi hơn; bạn nên chủ động giữ liên lạc."
+  },
+  "triet": {
+   "menh": "Triệt ở cung Mệnh tác động mạnh từ thuở nhỏ đến khoảng ba mươi tuổi, dễ khiến bạn có đoạn đứt nối; sau tuổi ấy nhẹ dần và bạn nên bền chí.",
+   "phumau": "Triệt ở cung Phụ Mẫu gợi lúc nhỏ khoảng cách với bề trên rõ hơn, có thể xa nhau; qua tuổi ba mươi quan hệ thường dịu lại, nên chủ động hỏi han.",
+   "phucduc": "Triệt ở cung Phúc Đức khiến tâm tư thuở trẻ hay bất định; sau chừng ba mươi tuổi lòng yên dần, bạn nên giữ nếp sống lành.",
+   "dientrach": "Triệt ở cung Điền Trạch gợi chuyện nhà cửa lúc trẻ hay đổi dời, khó giữ; sau chừng ba mươi tuổi chỗ ở ổn hơn, nên tích lũy dần.",
+   "quanloc": "Triệt ở cung Quan Lộc gợi sự nghiệp thuở trẻ nhiều ngã rẽ, dễ phải làm lại; sau chừng ba mươi tuổi đường đi rõ hơn, bạn nên giữ chí.",
+   "nopboc": "Triệt ở cung Nô Bộc gợi bạn bè thuở trẻ đến rồi đi; sau chừng ba mươi tuổi người đồng hành ổn định hơn, nên chọn người tâm giao.",
+   "thiendi": "Triệt ở cung Thiên Di gợi lúc trẻ ra ngoài gặp nhiều trở ngại ban đầu; sau chừng ba mươi tuổi bước đi thuận hơn, bạn nên chuẩn bị chu đáo.",
+   "tatach": "Triệt ở cung Tật Ách làm bớt sức nặng của các sao xấu ở cung này; bạn vẫn nên điều độ và đừng chủ quan với nhịp sinh hoạt.",
+   "taibach": "Triệt ở cung Tài Bạch gợi tiền bạc thuở trẻ thất thường, khó giữ; sau chừng ba mươi tuổi ổn hơn, bạn nên tích lũy và tránh hùn hạp vội.",
+   "tutuc": "Triệt ở cung Tử Tức gợi chuyện con cái cần thêm thời gian, có thể đến muộn; sau chừng ba mươi tuổi thường thuận hơn, bạn nên giữ lòng bình thản.",
+   "phuthe": "Triệt ở cung Phu Thê gợi chuyện tình cảm thuở trẻ dễ dang dở; sau chừng ba mươi tuổi duyên thường vững hơn, nên kết duyên muộn và chín chắn.",
+   "huynhde": "Triệt ở cung Huynh Đệ gợi anh chị em lúc trẻ ít gần nhau; sau chừng ba mươi tuổi tình thân dần ấm hơn, bạn nên chủ động liên lạc."
+  }
+ },
+ "daivan": {
+  "menh": "Mười năm này đại vận đi vào cung Mệnh, nên chính bạn là trung tâm: tính cách, hướng đi và các quyết định lớn đều đáng được cân nhắc kỹ.",
+  "phumau": "Mười năm này đại vận đi vào cung Phụ Mẫu, nhiều chuyện xoay quanh cha mẹ, thầy cô và người bề trên; bạn nên giữ lòng kính trọng và học hỏi.",
+  "phucduc": "Mười năm này đại vận đi vào cung Phúc Đức, đời sống tinh thần được đề cao; bạn hợp tu dưỡng, sống chậm và vun phúc phần.",
+  "dientrach": "Mười năm này đại vận đi vào cung Điền Trạch, chuyện nhà cửa, nơi ở và tài sản là mối quan tâm chính; bạn nên tính chắc trước các quyết định lớn.",
+  "quanloc": "Mười năm này đại vận đi vào cung Quan Lộc, công việc và sự nghiệp được đặt nặng; bạn nên rèn năng lực, giữ uy tín và đừng quên nghỉ ngơi.",
+  "nopboc": "Mười năm này đại vận đi vào cung Nô Bộc, các mối quan hệ bạn bè và đồng nghiệp thêm nhiều vai trò; bạn nên chọn bạn đồng hành và giữ chữ tín.",
+  "thiendi": "Mười năm này đại vận đi vào cung Thiên Di, bạn hay ra ngoài, giao tiếp rộng và có nhiều dịp thay đổi chỗ; nên chuẩn bị chu đáo khi đi xa.",
+  "tatach": "Mười năm này đại vận đi vào cung Tật Ách, nếp sinh hoạt và sức khỏe cần được chú ý hơn; bạn nên ăn ngủ điều độ, vận động nhẹ và khám định kỳ.",
+  "taibach": "Mười năm này đại vận đi vào cung Tài Bạch, chuyện kiếm tiền và giữ của chiếm nhiều tâm trí; bạn nên lập kế hoạch tài chính và tích lũy đều.",
+  "tutuc": "Mười năm này đại vận đi vào cung Tử Tức, con cái và những người nhỏ tuổi quanh bạn là mối quan tâm; bạn nên dành thời gian gần gũi, dạy dỗ.",
+  "phuthe": "Mười năm này đại vận đi vào cung Phu Thê, tình duyên và đời sống đôi lứa được đặt nặng; bạn nên chân thành lắng nghe và nhường nhịn nhau.",
+  "huynhde": "Mười năm này đại vận đi vào cung Huynh Đệ, anh chị em và tình thân trong nhà có nhiều vai trò; bạn nên giữ gắn bó và giúp nhau khi cần."
+ },
+ "luunien": {
+  "thaitue": {
+   "menh": "Năm xem Thái Tuế đóng ở cung Mệnh, lời nói và cách đối đáp của bạn được chú ý hơn; bạn nên nói chậm, rõ ý và giữ chữ tín.",
+   "phumau": "Năm xem Thái Tuế đóng ở cung Phụ Mẫu, chuyện trò với cha mẹ và bề trên nhiều hơn; bạn nên lắng nghe trước, rồi nhẹ nhàng nói lý.",
+   "phucduc": "Năm xem Thái Tuế đóng ở cung Phúc Đức, lòng hay suy xét chuyện đúng sai; bạn nên giữ tâm bình thản và tránh ôm lời người khác vào lòng.",
+   "dientrach": "Năm xem Thái Tuế đóng ở cung Điền Trạch, chuyện nhà cửa có nhiều bàn bạc, giấy tờ; bạn nên thống nhất rõ ràng với người trong nhà.",
+   "quanloc": "Năm xem Thái Tuế đóng ở cung Quan Lộc, công việc nhiều cuộc họp, trao đổi và lý lẽ; bạn nên chuẩn bị kỹ ý kiến và nói có chừng mực.",
+   "nopboc": "Năm xem Thái Tuế đóng ở cung Nô Bộc, bạn bè và đồng nghiệp hay bàn luận; bạn nên kín tiếng, tránh chuyện phiếm không cần thiết.",
+   "thiendi": "Năm xem Thái Tuế đóng ở cung Thiên Di, ra ngoài dễ gặp tranh luận hoặc lời bàn tán; bạn nên giữ lễ độ và cẩn trọng khi phát biểu nơi đông người.",
+   "tatach": "Năm xem Thái Tuế đóng ở cung Tật Ách, nếp nghĩ ngợi nhiều dễ làm mệt; bạn nên giữ giờ giấc đều, bớt tranh cãi và nghỉ ngơi đủ.",
+   "taibach": "Năm xem Thái Tuế đóng ở cung Tài Bạch, chuyện tiền bạc cần nói rõ, ghi chép rõ; bạn nên tránh hứa miệng và giữ chứng từ đầy đủ.",
+   "tutuc": "Năm xem Thái Tuế đóng ở cung Tử Tức, bạn nói chuyện với con cái nhiều hơn; nên giải thích nhẹ nhàng thay vì quở trách.",
+   "phuthe": "Năm xem Thái Tuế đóng ở cung Phu Thê, đôi bên có nhiều chuyện cần bàn; bạn nên nói thẳng, nhẹ giọng và đừng để hiểu lầm kéo dài.",
+   "huynhde": "Năm xem Thái Tuế đóng ở cung Huynh Đệ, anh chị em có nhiều lúc trao đổi và bàn bạc; bạn nên giữ lời ôn hòa và tôn trọng ý nhau."
+  },
+  "hoa": {
+   "hoaloc": {
+    "menh": "Năm xem, Hóa Lộc lưu về cung Mệnh, thêm duyên may và sức hút cho bạn; người ta dễ mến, cơ hội đến đều nếu bạn giữ lòng biết đủ.",
+    "phumau": "Năm xem, Hóa Lộc lưu về cung Phụ Mẫu, gợi bề trên giúp đỡ về vật chất lẫn lời khuyên; trong năm này bạn nên đáp lại bằng sự hiếu kính.",
+    "phucduc": "Năm xem, Hóa Lộc lưu về cung Phúc Đức, cho tinh thần phong phú, hay được hưởng niềm vui nhỏ; trong năm này bạn nên chia sẻ bớt phúc phần với người khác.",
+    "dientrach": "Năm xem, Hóa Lộc lưu về cung Điền Trạch, thuận cho việc an cư, mua sắm hoặc sửa nhà; trong năm này bạn nên tính toán kỹ để lộc thành của vững.",
+    "quanloc": "Năm xem, Hóa Lộc lưu về cung Quan Lộc, mở đường công việc, hay có thêm cơ hội và thu nhập từ nghề; trong năm này bạn nên nắm bắt nhưng giữ sự chuyên tâm.",
+    "nopboc": "Năm xem, Hóa Lộc lưu về cung Nô Bộc, cho bạn bè, đồng nghiệp hay mang đến cơ hội; trong năm này bạn nên giữ tình nghĩa và rõ ràng khi hợp tác.",
+    "thiendi": "Năm xem, Hóa Lộc lưu về cung Thiên Di, giúp ra ngoài gặp thuận duyên, dễ có việc hay mối quen; trong năm này bạn nên giữ lễ độ để duyên lành bền.",
+    "tatach": "Năm xem, Hóa Lộc lưu về cung Tật Ách, gợi thể trạng dễ hồi phục, ăn ngủ khá tốt; trong năm này bạn vẫn nên điều độ để khỏi dư thừa.",
+    "taibach": "Năm xem, Hóa Lộc lưu về cung Tài Bạch, làm nguồn tiền thêm đều đặn, dễ có thêm thu nhập; trong năm này bạn nên tích lũy bớt và tránh tiêu quá tay.",
+    "tutuc": "Năm xem, Hóa Lộc lưu về cung Tử Tức, gợi tình thân với con cái đằm thắm, con cái có duyên; trong năm này bạn nên dành thời gian cho con để niềm vui thêm đầy.",
+    "phuthe": "Năm xem, Hóa Lộc lưu về cung Phu Thê, thêm duyên và sự ngọt ngào trong tình cảm; trong năm này bạn nên trân trọng và đừng coi đó là điều đương nhiên.",
+    "huynhde": "Năm xem, Hóa Lộc lưu về cung Huynh Đệ, gợi anh chị em đùm bọc, có thể giúp nhau về công việc; trong năm này bạn nên giữ tình thân và chia sẻ chân thành."
+   },
+   "hoaquyen": {
+    "menh": "Năm xem, Hóa Quyền lưu về cung Mệnh, cho bạn thêm chủ kiến và sức điều hành; trong năm này bạn nên dùng quyền bằng sự khiêm nhường để được lòng người.",
+    "phumau": "Năm xem, Hóa Quyền lưu về cung Phụ Mẫu, gợi bề trên có tiếng nói mạnh, hay định hướng cho bạn; trong năm này bạn nên lắng nghe nhưng giữ chính kiến riêng.",
+    "phucduc": "Năm xem, Hóa Quyền lưu về cung Phúc Đức, làm tâm thế thêm vững, ít để mình bị cuốn theo; trong năm này bạn nên giữ sự cởi mở để không cứng nhắc.",
+    "dientrach": "Năm xem, Hóa Quyền lưu về cung Điền Trạch, cho bạn chủ động trong chuyện nhà cửa, quyết định gọn; trong năm này bạn nên bàn với người nhà để mọi người yên lòng.",
+    "quanloc": "Năm xem, Hóa Quyền lưu về cung Quan Lộc, tăng sức quản lý và uy tín nơi làm việc; trong năm này bạn dễ được giao trọng trách nếu giữ công bằng.",
+    "nopboc": "Năm xem, Hóa Quyền lưu về cung Nô Bộc, gợi người quanh bạn có ý kiến mạnh; trong năm này bạn nên rõ ràng vai trò và biết lắng nghe phản hồi.",
+    "thiendi": "Năm xem, Hóa Quyền lưu về cung Thiên Di, cho bạn tự tin và có tiếng nói khi ra ngoài; năm nay nên giữ thái độ ôn hòa để được nể trọng bền lâu.",
+    "tatach": "Năm xem, Hóa Quyền lưu về cung Tật Ách, gợi bạn có ý chí tự chăm thân; trong năm này bạn nên đặt kế hoạch vận động hợp sức, tránh ép mình quá.",
+    "taibach": "Năm xem, Hóa Quyền lưu về cung Tài Bạch, cho bạn chủ động trong chuyện tiền bạc, quản lý chắc tay; trong năm này bạn nên minh bạch để tránh hiểu lầm.",
+    "tutuc": "Năm xem, Hóa Quyền lưu về cung Tử Tức, gợi con cái có chủ kiến, tự lập sớm; trong năm này bạn nên hướng dẫn nhẹ nhàng và tôn trọng ý con.",
+    "phuthe": "Năm xem, Hóa Quyền lưu về cung Phu Thê, cho người bạn đời có chính kiến; đôi bên nên bàn bạc, tránh ai cũng muốn nói câu cuối.",
+    "huynhde": "Năm xem, Hóa Quyền lưu về cung Huynh Đệ, gợi anh chị em có người đứng ra lo liệu; trong năm này bạn nên biết ơn và góp sức để không ai phải gánh một mình."
+   },
+   "hoakhoa": {
+    "menh": "Năm xem, Hóa Khoa lưu về cung Mệnh, thêm nét nho nhã, ham học và được người quý trọng; trong năm này bạn nên giữ tiếng tốt bằng việc làm thật.",
+    "phumau": "Năm xem, Hóa Khoa lưu về cung Phụ Mẫu, gợi bề trên hiểu biết, có nếp học hành; trong năm này bạn được dạy dỗ tử tế và nên tiếp nối truyền thống ấy.",
+    "phucduc": "Năm xem, Hóa Khoa lưu về cung Phúc Đức, giúp tâm trí sáng suốt, hay gặp được lời khuyên hay; trong năm này bạn nên dành thời gian đọc sách, chiêm nghiệm.",
+    "dientrach": "Năm xem, Hóa Khoa lưu về cung Điền Trạch, gợi chỗ ở gọn gàng, có nét văn hóa; trong năm này bạn nên bày biện giản dị, có sách vở để nhà thêm yên.",
+    "quanloc": "Năm xem, Hóa Khoa lưu về cung Quan Lộc, hợp công việc dùng kiến thức, thi cử, giảng dạy; trong năm này bạn dễ được ghi nhận khi chịu khó học thêm.",
+    "nopboc": "Năm xem, Hóa Khoa lưu về cung Nô Bộc, gợi bạn bè lịch thiệp, hay giúp bạn về hiểu biết; trong năm này bạn nên giữ phép lịch sự và cảm ơn người giúp.",
+    "thiendi": "Năm xem, Hóa Khoa lưu về cung Thiên Di, giúp bạn nhận được thiện cảm và đánh giá tốt khi ra ngoài; trong năm này bạn nên giữ phong thái chỉn chu.",
+    "tatach": "Năm xem, Hóa Khoa lưu về cung Tật Ách, gợi bạn biết tìm hiểu cách chăm sóc bản thân; năm nay nên theo lời khuyên đúng và khám sức khỏe định kỳ.",
+    "taibach": "Năm xem, Hóa Khoa lưu về cung Tài Bạch, cho tiền đến nhờ kiến thức, tay nghề; trong năm này bạn nên tiếp tục học để thu nhập thêm bền vững.",
+    "tutuc": "Năm xem, Hóa Khoa lưu về cung Tử Tức, gợi con cái ham học, có tiếng tốt; trong năm này bạn nên cổ vũ việc học bằng sự đồng hành, không ép.",
+    "phuthe": "Năm xem, Hóa Khoa lưu về cung Phu Thê, gợi người bạn đời có học, nhã nhặn; đôi bên nên giữ lễ và trò chuyện chân thành.",
+    "huynhde": "Năm xem, Hóa Khoa lưu về cung Huynh Đệ, gợi anh chị em có người học giỏi, giúp nhau mở mang; trong năm này bạn nên chia sẻ hiểu biết và khích lệ nhau."
+   },
+   "hoaky": {
+    "menh": "Năm xem, Hóa Kỵ lưu về cung Mệnh, khiến bạn hay canh cánh, nghĩ nhiều về một điều; trong năm này bạn nên xem đó là lời nhắc cẩn trọng và chia sẻ bớt với người thân.",
+    "phumau": "Năm xem, Hóa Kỵ lưu về cung Phụ Mẫu, gợi quan hệ với bề trên dễ có hiểu lầm hoặc khoảng cách; trong năm này bạn nên chủ động hỏi han và nói rõ ý.",
+    "phucduc": "Năm xem, Hóa Kỵ lưu về cung Phúc Đức, khiến lòng khó buông một mối bận tâm; trong năm này bạn nên tập viết ra điều lo, rồi nghỉ ngơi, đi dạo cho nhẹ.",
+    "dientrach": "Năm xem, Hóa Kỵ lưu về cung Điền Trạch, nhắc bạn kỹ lưỡng giấy tờ và hợp đồng về nhà đất; năm nay nên hỏi người am hiểu trước khi quyết.",
+    "quanloc": "Năm xem, Hóa Kỵ lưu về cung Quan Lộc, gợi công việc có điều khúc mắc hoặc hay phải làm lại; trong năm này bạn nên cẩn thận chi tiết và trao đổi rõ với cấp trên.",
+    "nopboc": "Năm xem, Hóa Kỵ lưu về cung Nô Bộc, nhắc bạn dễ hiểu lầm với bạn bè hoặc đồng nghiệp; năm nay nên nói thẳng, rõ ràng và đừng nghĩ thay người.",
+    "thiendi": "Năm xem, Hóa Kỵ lưu về cung Thiên Di, nhắc bạn thận trọng khi đi xa hoặc ở nơi lạ; năm nay nên chuẩn bị kỹ và hỏi thêm thông tin trước khi đi.",
+    "tatach": "Năm xem, Hóa Kỵ lưu về cung Tật Ách, nhắc bạn chú ý nếp sinh hoạt, giấc ngủ và những điều hay lo nghĩ; năm nay nên đi khám định kỳ cho yên lòng.",
+    "taibach": "Năm xem, Hóa Kỵ lưu về cung Tài Bạch, gợi chuyện tiền bạc hay canh cánh, dễ nghi ngại; trong năm này bạn nên ghi chép chi tiêu và tránh cho vay, hùn hạp khi chưa rõ.",
+    "tutuc": "Năm xem, Hóa Kỵ lưu về cung Tử Tức, gợi bạn hay lo cho con cái và đôi khi hiểu lầm nhau; năm nay nên trò chuyện cởi mở và kiên nhẫn lắng nghe con.",
+    "phuthe": "Năm xem, Hóa Kỵ lưu về cung Phu Thê, gợi tình cảm hay nghi ngại, dễ hiểu lầm; trong năm này bạn nên nói thẳng lòng mình, tin nhau hơn và không so đo.",
+    "huynhde": "Năm xem, Hóa Kỵ lưu về cung Huynh Đệ, nhắc bạn dễ mích lòng với anh chị em vì chuyện nhỏ; năm nay nên nói điều mình nghĩ nhẹ nhàng và đừng giữ trong lòng."
+   }
+  },
+  "luulocton": "Lưu Lộc Tồn chỉ nơi nguồn lộc năm ấy dễ đến; bạn nên giữ gìn và dùng tiền hợp lý ở cung đó.",
+  "luukinhda": "Lưu Kình Dương và Đà La chỉ nơi năm ấy dễ nhiều áp lực nhỏ; hãy làm chậm, kiểm lại kỹ để vượt qua êm.",
+  "luuthienma": "Lưu Thiên Mã chỉ nơi có thay đổi, di chuyển trong năm; bạn nên linh hoạt và chuẩn bị trước khi đi lại."
+ },
+ "sinhkhac": {
+  "kim": {
+   "thuy2": "Mệnh Kim, Thủy nhị cục: Mệnh sinh Cục, bạn bỏ nhiều công sức hơn ban đầu. Giữ nhịp đều và chăm sức khỏe sẽ giúp bạn đi xa, nhất là với người mang nét cứng cỏi, dứt khoát của Kim.",
+   "moc3": "Mệnh Kim, Mộc tam cục: Mệnh khắc Cục, bạn chủ động nhưng hay gặp việc phải gắng sức. Bạn nên chia nhỏ mục tiêu cho nhẹ nhàng, nhất là với người mang nét cứng cỏi, dứt khoát của Kim.",
+   "kim4": "Mệnh Kim, Kim tứ cục: Mệnh và Cục cùng hành, hòa hợp, đi đường ít bị cản trở. Bạn nên giữ sự cân bằng, đừng quá cứng một hướng, nhất là với người mang nét cứng cỏi, dứt khoát của Kim.",
+   "tho5": "Mệnh Kim, Thổ ngũ cục: Cục sinh Mệnh, thuận lợi, hoàn cảnh hay nâng đỡ bạn. Bạn nên biết ơn và tận dụng thời cơ, nhất là với người mang nét cứng cỏi, dứt khoát của Kim.",
+   "hoa6": "Mệnh Kim, Hỏa lục cục: Cục khắc Mệnh, hoàn cảnh có lúc gây áp lực. Bạn nên kiên nhẫn, học cách thích nghi và nhờ người giúp khi cần, nhất là với người mang nét cứng cỏi, dứt khoát của Kim."
+  },
+  "moc": {
+   "thuy2": "Mệnh Mộc, Thủy nhị cục: Cục sinh Mệnh, thuận lợi, hoàn cảnh hay nâng đỡ bạn. Bạn nên biết ơn và tận dụng thời cơ, nhất là với người mang nét mềm dẻo, ham phát triển của Mộc.",
+   "moc3": "Mệnh Mộc, Mộc tam cục: Mệnh và Cục cùng hành, hòa hợp, đi đường ít bị cản trở. Bạn nên giữ sự cân bằng, đừng quá cứng một hướng, nhất là với người mang nét mềm dẻo, ham phát triển của Mộc.",
+   "kim4": "Mệnh Mộc, Kim tứ cục: Cục khắc Mệnh, hoàn cảnh có lúc gây áp lực. Bạn nên kiên nhẫn, học cách thích nghi và nhờ người giúp khi cần, nhất là với người mang nét mềm dẻo, ham phát triển của Mộc.",
+   "tho5": "Mệnh Mộc, Thổ ngũ cục: Mệnh khắc Cục, bạn chủ động nhưng hay gặp việc phải gắng sức. Bạn nên chia nhỏ mục tiêu cho nhẹ nhàng, nhất là với người mang nét mềm dẻo, ham phát triển của Mộc.",
+   "hoa6": "Mệnh Mộc, Hỏa lục cục: Mệnh sinh Cục, bạn bỏ nhiều công sức hơn ban đầu. Giữ nhịp đều và chăm sức khỏe sẽ giúp bạn đi xa, nhất là với người mang nét mềm dẻo, ham phát triển của Mộc."
+  },
+  "thuy": {
+   "thuy2": "Mệnh Thủy, Thủy nhị cục: Mệnh và Cục cùng hành, hòa hợp, đi đường ít bị cản trở. Bạn nên giữ sự cân bằng, đừng quá cứng một hướng, nhất là với người mang nét linh hoạt, hay suy nghĩ của Thủy.",
+   "moc3": "Mệnh Thủy, Mộc tam cục: Mệnh sinh Cục, bạn bỏ nhiều công sức hơn ban đầu. Giữ nhịp đều và chăm sức khỏe sẽ giúp bạn đi xa, nhất là với người mang nét linh hoạt, hay suy nghĩ của Thủy.",
+   "kim4": "Mệnh Thủy, Kim tứ cục: Cục sinh Mệnh, thuận lợi, hoàn cảnh hay nâng đỡ bạn. Bạn nên biết ơn và tận dụng thời cơ, nhất là với người mang nét linh hoạt, hay suy nghĩ của Thủy.",
+   "tho5": "Mệnh Thủy, Thổ ngũ cục: Cục khắc Mệnh, hoàn cảnh có lúc gây áp lực. Bạn nên kiên nhẫn, học cách thích nghi và nhờ người giúp khi cần, nhất là với người mang nét linh hoạt, hay suy nghĩ của Thủy.",
+   "hoa6": "Mệnh Thủy, Hỏa lục cục: Mệnh khắc Cục, bạn chủ động nhưng hay gặp việc phải gắng sức. Bạn nên chia nhỏ mục tiêu cho nhẹ nhàng, nhất là với người mang nét linh hoạt, hay suy nghĩ của Thủy."
+  },
+  "hoa": {
+   "thuy2": "Mệnh Hỏa, Thủy nhị cục: Cục khắc Mệnh, hoàn cảnh có lúc gây áp lực. Bạn nên kiên nhẫn, học cách thích nghi và nhờ người giúp khi cần, nhất là với người mang nét nhiệt tình, nóng nảy của Hỏa.",
+   "moc3": "Mệnh Hỏa, Mộc tam cục: Cục sinh Mệnh, thuận lợi, hoàn cảnh hay nâng đỡ bạn. Bạn nên biết ơn và tận dụng thời cơ, nhất là với người mang nét nhiệt tình, nóng nảy của Hỏa.",
+   "kim4": "Mệnh Hỏa, Kim tứ cục: Mệnh khắc Cục, bạn chủ động nhưng hay gặp việc phải gắng sức. Bạn nên chia nhỏ mục tiêu cho nhẹ nhàng, nhất là với người mang nét nhiệt tình, nóng nảy của Hỏa.",
+   "tho5": "Mệnh Hỏa, Thổ ngũ cục: Mệnh sinh Cục, bạn bỏ nhiều công sức hơn ban đầu. Giữ nhịp đều và chăm sức khỏe sẽ giúp bạn đi xa, nhất là với người mang nét nhiệt tình, nóng nảy của Hỏa.",
+   "hoa6": "Mệnh Hỏa, Hỏa lục cục: Mệnh và Cục cùng hành, hòa hợp, đi đường ít bị cản trở. Bạn nên giữ sự cân bằng, đừng quá cứng một hướng, nhất là với người mang nét nhiệt tình, nóng nảy của Hỏa."
+  },
+  "tho": {
+   "thuy2": "Mệnh Thổ, Thủy nhị cục: Mệnh khắc Cục, bạn chủ động nhưng hay gặp việc phải gắng sức. Bạn nên chia nhỏ mục tiêu cho nhẹ nhàng, nhất là với người mang nét trầm ổn, kiên nhẫn của Thổ.",
+   "moc3": "Mệnh Thổ, Mộc tam cục: Cục khắc Mệnh, hoàn cảnh có lúc gây áp lực. Bạn nên kiên nhẫn, học cách thích nghi và nhờ người giúp khi cần, nhất là với người mang nét trầm ổn, kiên nhẫn của Thổ.",
+   "kim4": "Mệnh Thổ, Kim tứ cục: Mệnh sinh Cục, bạn bỏ nhiều công sức hơn ban đầu. Giữ nhịp đều và chăm sức khỏe sẽ giúp bạn đi xa, nhất là với người mang nét trầm ổn, kiên nhẫn của Thổ.",
+   "tho5": "Mệnh Thổ, Thổ ngũ cục: Mệnh và Cục cùng hành, hòa hợp, đi đường ít bị cản trở. Bạn nên giữ sự cân bằng, đừng quá cứng một hướng, nhất là với người mang nét trầm ổn, kiên nhẫn của Thổ.",
+   "hoa6": "Mệnh Thổ, Hỏa lục cục: Cục sinh Mệnh, thuận lợi, hoàn cảnh hay nâng đỡ bạn. Bạn nên biết ơn và tận dụng thời cơ, nhất là với người mang nét trầm ổn, kiên nhẫn của Thổ."
+  }
+ }
+}
