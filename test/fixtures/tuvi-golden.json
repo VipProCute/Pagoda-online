@@ -1,0 +1,2281 @@
+{
+  "status": "iztro-only",
+  "verifiedByVietTools": false,
+  "note": "Lá số lập bằng iztro (MIT, trường phái Trung Quốc/Toàn Thư), đưa NGÀY ÂM + chi giờ + giới tính, không đưa ngày dương. CHƯA được đối chiếu với hai công cụ tử vi Việt (việc 👤 của chủ dự án). Mọi chỗ iztro khác quy ước Việt của game được ghi ở differsFromViet và docs/TU-VI-QUY-UOC.md mục 3; test của T-054 chỉ được so 100% ở các trường không nằm trong differsFromViet.",
+  "source": {
+    "tool": "iztro",
+    "version": "2.6.5",
+    "license": "MIT",
+    "url": "https://github.com/SylarLong/iztro",
+    "accessed": "2026-11-12",
+    "params": "astro.byLunar(lunarDate, timeIndex, gender, isLeapMonth, fixLeap=false, \"vi-VN\")"
+  },
+  "calendar": "Ngày âm do thợ chọn sao cho UTC+7 (thuật toán Hồ Ngọc Đức), UTC+8 (cùng thuật toán) và lunar-typescript (iztro) cho cùng ngày âm, nên không dính 927 ngày lệch 1900-1967; mẫu trước 1968 vì thế đúng với cả hai quy ước.",
+  "inputFormat": {
+    "lunar": "{year, month, day, leap}",
+    "hourBranch": "Tý=0 … Hợi=11",
+    "lateTy": "true: sinh 23:00-23:59, tính sang ngày hôm sau",
+    "gender": "male|female"
+  },
+  "samples": [
+    {
+      "id": "S01",
+      "input": {
+        "lunar": {
+          "year": 1998,
+          "month": 9,
+          "day": 5,
+          "leap": false
+        },
+        "hourBranch": 9,
+        "lateTy": false,
+        "gender": "female",
+        "hourNote": "chi giờ Dậu",
+        "yearCanChi": "Mậu Dần"
+      },
+      "calendarCheck": {
+        "solarUsedOnlyToPickSafeDay": "1998-10-24",
+        "utc7EqualsUtc8EqualsLunarTypescript": true
+      },
+      "expected": {
+        "menh": "Sửu",
+        "than": "Mùi",
+        "cuc": "kim4",
+        "amDuong": "duong",
+        "chinhTinh": {
+          "phaquan": "Dần",
+          "liemtrinh": "Thìn",
+          "thienphu": "Thìn",
+          "thaiam": "Tỵ",
+          "thamlang": "Ngọ",
+          "thiendong": "Mùi",
+          "cumon": "Mùi",
+          "vukhuc": "Thân",
+          "thientuong": "Thân",
+          "thaiduong": "Dậu",
+          "thienluong": "Dậu",
+          "thatsat": "Tuất",
+          "thienco": "Hợi",
+          "tuvi": "Tý"
+        },
+        "palaces": {
+          "phumau": {
+            "chi": "Dần",
+            "can": "Giáp",
+            "chinhTinh": [
+              "phaquan"
+            ]
+          },
+          "phucduc": {
+            "chi": "Mão",
+            "can": "Ất",
+            "chinhTinh": []
+          },
+          "dientrach": {
+            "chi": "Thìn",
+            "can": "Bính",
+            "chinhTinh": [
+              "liemtrinh",
+              "thienphu"
+            ]
+          },
+          "quanloc": {
+            "chi": "Tỵ",
+            "can": "Đinh",
+            "chinhTinh": [
+              "thaiam"
+            ]
+          },
+          "nopboc": {
+            "chi": "Ngọ",
+            "can": "Mậu",
+            "chinhTinh": [
+              "thamlang"
+            ]
+          },
+          "thiendi": {
+            "chi": "Mùi",
+            "can": "Kỷ",
+            "chinhTinh": [
+              "thiendong",
+              "cumon"
+            ]
+          },
+          "tatach": {
+            "chi": "Thân",
+            "can": "Canh",
+            "chinhTinh": [
+              "vukhuc",
+              "thientuong"
+            ]
+          },
+          "taibach": {
+            "chi": "Dậu",
+            "can": "Tân",
+            "chinhTinh": [
+              "thaiduong",
+              "thienluong"
+            ]
+          },
+          "tutuc": {
+            "chi": "Tuất",
+            "can": "Nhâm",
+            "chinhTinh": [
+              "thatsat"
+            ]
+          },
+          "phuthe": {
+            "chi": "Hợi",
+            "can": "Quý",
+            "chinhTinh": [
+              "thienco"
+            ]
+          },
+          "huynhde": {
+            "chi": "Tý",
+            "can": "Giáp",
+            "chinhTinh": [
+              "tuvi"
+            ]
+          },
+          "menh": {
+            "chi": "Sửu",
+            "can": "Ất",
+            "chinhTinh": []
+          }
+        },
+        "tuHoaIztro": [
+          "Tham Lang",
+          "Thái Âm",
+          "Hữu Bật",
+          "Thiên Cơ"
+        ],
+        "tuHoaViet": [
+          "Tham Lang",
+          "Thái Âm",
+          "Hữu Bật",
+          "Thiên Cơ"
+        ]
+      },
+      "brightness": {
+        "iztro": {
+          "phaquan": "D",
+          "liemtrinh": "D",
+          "thienphu": "M",
+          "thaiam": "H",
+          "thamlang": "V",
+          "thiendong": "H",
+          "cumon": "H",
+          "vukhuc": "D",
+          "thientuong": "M",
+          "thaiduong": "B",
+          "thienluong": "D",
+          "thatsat": "M",
+          "thienco": "B",
+          "tuvi": "B"
+        },
+        "game": {
+          "tuvi": "D",
+          "thienco": "H",
+          "thaiduong": "H",
+          "vukhuc": "M",
+          "thiendong": "H",
+          "liemtrinh": "M",
+          "thienphu": "M",
+          "thaiam": "H",
+          "thamlang": "H",
+          "cumon": "H",
+          "thientuong": "M",
+          "thienluong": "H",
+          "thatsat": "H",
+          "phaquan": "H"
+        }
+      },
+      "differsFromViet": {
+        "tuHoa": false,
+        "brightnessCells": [
+          "tuvi@Tý: game D, iztro B",
+          "thienco@Hợi: game H, iztro B",
+          "thaiduong@Dậu: game H, iztro B",
+          "vukhuc@Thân: game M, iztro D",
+          "liemtrinh@Thìn: game M, iztro D",
+          "thamlang@Ngọ: game H, iztro V",
+          "thienluong@Dậu: game H, iztro D",
+          "thatsat@Tuất: game H, iztro M",
+          "phaquan@Dần: game H, iztro D"
+        ]
+      }
+    },
+    {
+      "id": "S02",
+      "input": {
+        "lunar": {
+          "year": 1939,
+          "month": 6,
+          "day": 22,
+          "leap": false
+        },
+        "hourBranch": 10,
+        "lateTy": false,
+        "gender": "male",
+        "hourNote": "chi giờ Tuất",
+        "yearCanChi": "Kỷ Mão"
+      },
+      "calendarCheck": {
+        "solarUsedOnlyToPickSafeDay": "1939-8-7",
+        "utc7EqualsUtc8EqualsLunarTypescript": true
+      },
+      "expected": {
+        "menh": "Dậu",
+        "than": "Tỵ",
+        "cuc": "kim4",
+        "amDuong": "am",
+        "chinhTinh": {
+          "thiendong": "Thìn",
+          "vukhuc": "Tỵ",
+          "phaquan": "Tỵ",
+          "thaiduong": "Ngọ",
+          "thienphu": "Mùi",
+          "thienco": "Thân",
+          "thaiam": "Thân",
+          "tuvi": "Dậu",
+          "thamlang": "Dậu",
+          "cumon": "Tuất",
+          "thientuong": "Hợi",
+          "thienluong": "Tý",
+          "liemtrinh": "Sửu",
+          "thatsat": "Sửu"
+        },
+        "palaces": {
+          "nopboc": {
+            "chi": "Dần",
+            "can": "Bính",
+            "chinhTinh": []
+          },
+          "thiendi": {
+            "chi": "Mão",
+            "can": "Đinh",
+            "chinhTinh": []
+          },
+          "tatach": {
+            "chi": "Thìn",
+            "can": "Mậu",
+            "chinhTinh": [
+              "thiendong"
+            ]
+          },
+          "taibach": {
+            "chi": "Tỵ",
+            "can": "Kỷ",
+            "chinhTinh": [
+              "vukhuc",
+              "phaquan"
+            ]
+          },
+          "tutuc": {
+            "chi": "Ngọ",
+            "can": "Canh",
+            "chinhTinh": [
+              "thaiduong"
+            ]
+          },
+          "phuthe": {
+            "chi": "Mùi",
+            "can": "Tân",
+            "chinhTinh": [
+              "thienphu"
+            ]
+          },
+          "huynhde": {
+            "chi": "Thân",
+            "can": "Nhâm",
+            "chinhTinh": [
+              "thienco",
+              "thaiam"
+            ]
+          },
+          "menh": {
+            "chi": "Dậu",
+            "can": "Quý",
+            "chinhTinh": [
+              "tuvi",
+              "thamlang"
+            ]
+          },
+          "phumau": {
+            "chi": "Tuất",
+            "can": "Giáp",
+            "chinhTinh": [
+              "cumon"
+            ]
+          },
+          "phucduc": {
+            "chi": "Hợi",
+            "can": "Ất",
+            "chinhTinh": [
+              "thientuong"
+            ]
+          },
+          "dientrach": {
+            "chi": "Tý",
+            "can": "Bính",
+            "chinhTinh": [
+              "thienluong"
+            ]
+          },
+          "quanloc": {
+            "chi": "Sửu",
+            "can": "Đinh",
+            "chinhTinh": [
+              "liemtrinh",
+              "thatsat"
+            ]
+          }
+        },
+        "tuHoaIztro": [
+          "Vũ Khúc",
+          "Tham Lang",
+          "Thiên Lương",
+          "Văn Khúc"
+        ],
+        "tuHoaViet": [
+          "Vũ Khúc",
+          "Tham Lang",
+          "Thiên Lương",
+          "Văn Khúc"
+        ]
+      },
+      "brightness": {
+        "iztro": {
+          "thiendong": "B",
+          "vukhuc": "B",
+          "phaquan": "B",
+          "thaiduong": "V",
+          "thienphu": "M",
+          "thienco": "D",
+          "thaiam": "D",
+          "tuvi": "V",
+          "thamlang": "D",
+          "cumon": "H",
+          "thientuong": "D",
+          "thienluong": "M",
+          "liemtrinh": "D",
+          "thatsat": "M"
+        },
+        "game": {
+          "tuvi": "B",
+          "thienco": "V",
+          "thaiduong": "M",
+          "vukhuc": "H",
+          "thiendong": "H",
+          "liemtrinh": "D",
+          "thienphu": "D",
+          "thaiam": "M",
+          "thamlang": "H",
+          "cumon": "H",
+          "thientuong": "D",
+          "thienluong": "M",
+          "thatsat": "D",
+          "phaquan": "H"
+        }
+      },
+      "differsFromViet": {
+        "tuHoa": false,
+        "brightnessCells": [
+          "tuvi@Dậu: game B, iztro V",
+          "thienco@Thân: game V, iztro D",
+          "thaiduong@Ngọ: game M, iztro V",
+          "vukhuc@Tỵ: game H, iztro B",
+          "thiendong@Thìn: game H, iztro B",
+          "thienphu@Mùi: game D, iztro M",
+          "thaiam@Thân: game M, iztro D",
+          "thamlang@Dậu: game H, iztro D",
+          "thatsat@Sửu: game D, iztro M",
+          "phaquan@Tỵ: game H, iztro B"
+        ]
+      }
+    },
+    {
+      "id": "S03",
+      "input": {
+        "lunar": {
+          "year": 1945,
+          "month": 9,
+          "day": 6,
+          "leap": false
+        },
+        "hourBranch": 0,
+        "lateTy": true,
+        "gender": "female",
+        "hourNote": "Sinh 23:00-23:59: tính sang ngày âm kế tiếp (D11); nhập vào iztro là giờ Tý muộn (timeIndex 12) và đã đối chiếu = ngày kế + giờ Tý đầu",
+        "yearCanChi": "Ất Dậu"
+      },
+      "calendarCheck": {
+        "solarUsedOnlyToPickSafeDay": "1945-10-11",
+        "utc7EqualsUtc8EqualsLunarTypescript": true
+      },
+      "expected": {
+        "menh": "Tuất",
+        "than": "Tuất",
+        "cuc": "tho5",
+        "amDuong": "am",
+        "chinhTinh": {
+          "phaquan": "Dần",
+          "liemtrinh": "Thìn",
+          "thienphu": "Thìn",
+          "thaiam": "Tỵ",
+          "thamlang": "Ngọ",
+          "thiendong": "Mùi",
+          "cumon": "Mùi",
+          "vukhuc": "Thân",
+          "thientuong": "Thân",
+          "thaiduong": "Dậu",
+          "thienluong": "Dậu",
+          "thatsat": "Tuất",
+          "thienco": "Hợi",
+          "tuvi": "Tý"
+        },
+        "palaces": {
+          "quanloc": {
+            "chi": "Dần",
+            "can": "Mậu",
+            "chinhTinh": [
+              "phaquan"
+            ]
+          },
+          "nopboc": {
+            "chi": "Mão",
+            "can": "Kỷ",
+            "chinhTinh": []
+          },
+          "thiendi": {
+            "chi": "Thìn",
+            "can": "Canh",
+            "chinhTinh": [
+              "liemtrinh",
+              "thienphu"
+            ]
+          },
+          "tatach": {
+            "chi": "Tỵ",
+            "can": "Tân",
+            "chinhTinh": [
+              "thaiam"
+            ]
+          },
+          "taibach": {
+            "chi": "Ngọ",
+            "can": "Nhâm",
+            "chinhTinh": [
+              "thamlang"
+            ]
+          },
+          "tutuc": {
+            "chi": "Mùi",
+            "can": "Quý",
+            "chinhTinh": [
+              "thiendong",
+              "cumon"
+            ]
+          },
+          "phuthe": {
+            "chi": "Thân",
+            "can": "Giáp",
+            "chinhTinh": [
+              "vukhuc",
+              "thientuong"
+            ]
+          },
+          "huynhde": {
+            "chi": "Dậu",
+            "can": "Ất",
+            "chinhTinh": [
+              "thaiduong",
+              "thienluong"
+            ]
+          },
+          "menh": {
+            "chi": "Tuất",
+            "can": "Bính",
+            "chinhTinh": [
+              "thatsat"
+            ]
+          },
+          "phumau": {
+            "chi": "Hợi",
+            "can": "Đinh",
+            "chinhTinh": [
+              "thienco"
+            ]
+          },
+          "phucduc": {
+            "chi": "Tý",
+            "can": "Mậu",
+            "chinhTinh": [
+              "tuvi"
+            ]
+          },
+          "dientrach": {
+            "chi": "Sửu",
+            "can": "Kỷ",
+            "chinhTinh": []
+          }
+        },
+        "tuHoaIztro": [
+          "Thiên Cơ",
+          "Thiên Lương",
+          "Tử Vi",
+          "Thái Âm"
+        ],
+        "tuHoaViet": [
+          "Thiên Cơ",
+          "Thiên Lương",
+          "Tử Vi",
+          "Thái Âm"
+        ]
+      },
+      "brightness": {
+        "iztro": {
+          "phaquan": "D",
+          "liemtrinh": "D",
+          "thienphu": "M",
+          "thaiam": "H",
+          "thamlang": "V",
+          "thiendong": "H",
+          "cumon": "H",
+          "vukhuc": "D",
+          "thientuong": "M",
+          "thaiduong": "B",
+          "thienluong": "D",
+          "thatsat": "M",
+          "thienco": "B",
+          "tuvi": "B"
+        },
+        "game": {
+          "tuvi": "D",
+          "thienco": "H",
+          "thaiduong": "H",
+          "vukhuc": "M",
+          "thiendong": "H",
+          "liemtrinh": "M",
+          "thienphu": "M",
+          "thaiam": "H",
+          "thamlang": "H",
+          "cumon": "H",
+          "thientuong": "M",
+          "thienluong": "H",
+          "thatsat": "H",
+          "phaquan": "H"
+        }
+      },
+      "differsFromViet": {
+        "tuHoa": false,
+        "brightnessCells": [
+          "tuvi@Tý: game D, iztro B",
+          "thienco@Hợi: game H, iztro B",
+          "thaiduong@Dậu: game H, iztro B",
+          "vukhuc@Thân: game M, iztro D",
+          "liemtrinh@Thìn: game M, iztro D",
+          "thamlang@Ngọ: game H, iztro V",
+          "thienluong@Dậu: game H, iztro D",
+          "thatsat@Tuất: game H, iztro M",
+          "phaquan@Dần: game H, iztro D"
+        ]
+      }
+    },
+    {
+      "id": "S04",
+      "input": {
+        "lunar": {
+          "year": 1960,
+          "month": 6,
+          "day": 27,
+          "leap": true
+        },
+        "hourBranch": 0,
+        "lateTy": false,
+        "gender": "male",
+        "hourNote": "chi giờ Tý",
+        "yearCanChi": "Canh Tý"
+      },
+      "calendarCheck": {
+        "solarUsedOnlyToPickSafeDay": "1960-8-19",
+        "utc7EqualsUtc8EqualsLunarTypescript": true
+      },
+      "expected": {
+        "menh": "Mùi",
+        "than": "Mùi",
+        "cuc": "moc3",
+        "amDuong": "duong",
+        "chinhTinh": {
+          "liemtrinh": "Dần",
+          "phaquan": "Thìn",
+          "thiendong": "Tỵ",
+          "vukhuc": "Ngọ",
+          "thienphu": "Ngọ",
+          "thaiduong": "Mùi",
+          "thaiam": "Mùi",
+          "thamlang": "Thân",
+          "thienco": "Dậu",
+          "cumon": "Dậu",
+          "tuvi": "Tuất",
+          "thientuong": "Tuất",
+          "thienluong": "Hợi",
+          "thatsat": "Tý"
+        },
+        "palaces": {
+          "tatach": {
+            "chi": "Dần",
+            "can": "Mậu",
+            "chinhTinh": [
+              "liemtrinh"
+            ]
+          },
+          "taibach": {
+            "chi": "Mão",
+            "can": "Kỷ",
+            "chinhTinh": []
+          },
+          "tutuc": {
+            "chi": "Thìn",
+            "can": "Canh",
+            "chinhTinh": [
+              "phaquan"
+            ]
+          },
+          "phuthe": {
+            "chi": "Tỵ",
+            "can": "Tân",
+            "chinhTinh": [
+              "thiendong"
+            ]
+          },
+          "huynhde": {
+            "chi": "Ngọ",
+            "can": "Nhâm",
+            "chinhTinh": [
+              "vukhuc",
+              "thienphu"
+            ]
+          },
+          "menh": {
+            "chi": "Mùi",
+            "can": "Quý",
+            "chinhTinh": [
+              "thaiduong",
+              "thaiam"
+            ]
+          },
+          "phumau": {
+            "chi": "Thân",
+            "can": "Giáp",
+            "chinhTinh": [
+              "thamlang"
+            ]
+          },
+          "phucduc": {
+            "chi": "Dậu",
+            "can": "Ất",
+            "chinhTinh": [
+              "thienco",
+              "cumon"
+            ]
+          },
+          "dientrach": {
+            "chi": "Tuất",
+            "can": "Bính",
+            "chinhTinh": [
+              "tuvi",
+              "thientuong"
+            ]
+          },
+          "quanloc": {
+            "chi": "Hợi",
+            "can": "Đinh",
+            "chinhTinh": [
+              "thienluong"
+            ]
+          },
+          "nopboc": {
+            "chi": "Tý",
+            "can": "Mậu",
+            "chinhTinh": [
+              "thatsat"
+            ]
+          },
+          "thiendi": {
+            "chi": "Sửu",
+            "can": "Kỷ",
+            "chinhTinh": []
+          }
+        },
+        "tuHoaIztro": [
+          "Thái Dương",
+          "Vũ Khúc",
+          "Thái Âm",
+          "Thiên Đồng"
+        ],
+        "tuHoaViet": [
+          "Thái Dương",
+          "Vũ Khúc",
+          "Thái Âm",
+          "Thiên Đồng"
+        ]
+      },
+      "brightness": {
+        "iztro": {
+          "liemtrinh": "M",
+          "phaquan": "V",
+          "thiendong": "M",
+          "vukhuc": "V",
+          "thienphu": "V",
+          "thaiduong": "D",
+          "thaiam": "H",
+          "thamlang": "B",
+          "thienco": "V",
+          "cumon": "M",
+          "tuvi": "D",
+          "thientuong": "D",
+          "thienluong": "H",
+          "thatsat": "V"
+        },
+        "game": {
+          "tuvi": "V",
+          "thienco": "M",
+          "thaiduong": "D",
+          "vukhuc": "M",
+          "thiendong": "D",
+          "liemtrinh": "M",
+          "thienphu": "M",
+          "thaiam": "D",
+          "thamlang": "D",
+          "cumon": "M",
+          "thientuong": "M",
+          "thienluong": "H",
+          "thatsat": "M",
+          "phaquan": "D"
+        }
+      },
+      "differsFromViet": {
+        "tuHoa": false,
+        "brightnessCells": [
+          "tuvi@Tuất: game V, iztro D",
+          "thienco@Dậu: game M, iztro V",
+          "vukhuc@Ngọ: game M, iztro V",
+          "thiendong@Tỵ: game D, iztro M",
+          "thienphu@Ngọ: game M, iztro V",
+          "thaiam@Mùi: game D, iztro H",
+          "thamlang@Thân: game D, iztro B",
+          "thientuong@Tuất: game M, iztro D",
+          "thatsat@Tý: game M, iztro V",
+          "phaquan@Thìn: game D, iztro V"
+        ]
+      }
+    },
+    {
+      "id": "S05",
+      "input": {
+        "lunar": {
+          "year": 1972,
+          "month": 7,
+          "day": 25,
+          "leap": false
+        },
+        "hourBranch": 1,
+        "lateTy": false,
+        "gender": "male",
+        "hourNote": "chi giờ Sửu",
+        "yearCanChi": "Nhâm Tý"
+      },
+      "calendarCheck": {
+        "solarUsedOnlyToPickSafeDay": "1972-9-2",
+        "utc7EqualsUtc8EqualsLunarTypescript": true
+      },
+      "expected": {
+        "menh": "Mùi",
+        "than": "Dậu",
+        "cuc": "thuy2",
+        "amDuong": "duong",
+        "chinhTinh": {
+          "thienphu": "Mão",
+          "thaiam": "Thìn",
+          "liemtrinh": "Tỵ",
+          "thamlang": "Tỵ",
+          "cumon": "Ngọ",
+          "thientuong": "Mùi",
+          "thiendong": "Thân",
+          "thienluong": "Thân",
+          "vukhuc": "Dậu",
+          "thatsat": "Dậu",
+          "thaiduong": "Tuất",
+          "thienco": "Tý",
+          "tuvi": "Sửu",
+          "phaquan": "Sửu"
+        },
+        "palaces": {
+          "tatach": {
+            "chi": "Dần",
+            "can": "Nhâm",
+            "chinhTinh": []
+          },
+          "taibach": {
+            "chi": "Mão",
+            "can": "Quý",
+            "chinhTinh": [
+              "thienphu"
+            ]
+          },
+          "tutuc": {
+            "chi": "Thìn",
+            "can": "Giáp",
+            "chinhTinh": [
+              "thaiam"
+            ]
+          },
+          "phuthe": {
+            "chi": "Tỵ",
+            "can": "Ất",
+            "chinhTinh": [
+              "liemtrinh",
+              "thamlang"
+            ]
+          },
+          "huynhde": {
+            "chi": "Ngọ",
+            "can": "Bính",
+            "chinhTinh": [
+              "cumon"
+            ]
+          },
+          "menh": {
+            "chi": "Mùi",
+            "can": "Đinh",
+            "chinhTinh": [
+              "thientuong"
+            ]
+          },
+          "phumau": {
+            "chi": "Thân",
+            "can": "Mậu",
+            "chinhTinh": [
+              "thiendong",
+              "thienluong"
+            ]
+          },
+          "phucduc": {
+            "chi": "Dậu",
+            "can": "Kỷ",
+            "chinhTinh": [
+              "vukhuc",
+              "thatsat"
+            ]
+          },
+          "dientrach": {
+            "chi": "Tuất",
+            "can": "Canh",
+            "chinhTinh": [
+              "thaiduong"
+            ]
+          },
+          "quanloc": {
+            "chi": "Hợi",
+            "can": "Tân",
+            "chinhTinh": []
+          },
+          "nopboc": {
+            "chi": "Tý",
+            "can": "Nhâm",
+            "chinhTinh": [
+              "thienco"
+            ]
+          },
+          "thiendi": {
+            "chi": "Sửu",
+            "can": "Quý",
+            "chinhTinh": [
+              "tuvi",
+              "phaquan"
+            ]
+          }
+        },
+        "tuHoaIztro": [
+          "Thiên Lương",
+          "Tử Vi",
+          "Tả Phù",
+          "Vũ Khúc"
+        ],
+        "tuHoaViet": [
+          "Thiên Lương",
+          "Tử Vi",
+          "Tả Phù",
+          "Vũ Khúc"
+        ]
+      },
+      "brightness": {
+        "iztro": {
+          "thienphu": "D",
+          "thaiam": "H",
+          "liemtrinh": "H",
+          "thamlang": "H",
+          "cumon": "V",
+          "thientuong": "D",
+          "thiendong": "V",
+          "thienluong": "H",
+          "vukhuc": "D",
+          "thatsat": "V",
+          "thaiduong": "H",
+          "thienco": "M",
+          "tuvi": "M",
+          "phaquan": "V"
+        },
+        "game": {
+          "tuvi": "D",
+          "thienco": "D",
+          "thaiduong": "H",
+          "vukhuc": "D",
+          "thiendong": "M",
+          "liemtrinh": "H",
+          "thienphu": "B",
+          "thaiam": "H",
+          "thamlang": "H",
+          "cumon": "M",
+          "thientuong": "D",
+          "thienluong": "M",
+          "thatsat": "H",
+          "phaquan": "M"
+        }
+      },
+      "differsFromViet": {
+        "tuHoa": false,
+        "brightnessCells": [
+          "tuvi@Sửu: game D, iztro M",
+          "thienco@Tý: game D, iztro M",
+          "thiendong@Thân: game M, iztro V",
+          "thienphu@Mão: game B, iztro D",
+          "cumon@Ngọ: game M, iztro V",
+          "thienluong@Thân: game M, iztro H",
+          "thatsat@Dậu: game H, iztro V",
+          "phaquan@Sửu: game M, iztro V"
+        ]
+      }
+    },
+    {
+      "id": "S06",
+      "input": {
+        "lunar": {
+          "year": 2016,
+          "month": 8,
+          "day": 14,
+          "leap": false
+        },
+        "hourBranch": 1,
+        "lateTy": false,
+        "gender": "female",
+        "hourNote": "chi giờ Sửu",
+        "yearCanChi": "Bính Thân"
+      },
+      "calendarCheck": {
+        "solarUsedOnlyToPickSafeDay": "2016-9-14",
+        "utc7EqualsUtc8EqualsLunarTypescript": true
+      },
+      "expected": {
+        "menh": "Thân",
+        "than": "Tuất",
+        "cuc": "hoa6",
+        "amDuong": "duong",
+        "chinhTinh": {
+          "thatsat": "Dần",
+          "thiendong": "Mão",
+          "vukhuc": "Thìn",
+          "thaiduong": "Tỵ",
+          "phaquan": "Ngọ",
+          "thienco": "Mùi",
+          "tuvi": "Thân",
+          "thienphu": "Thân",
+          "thaiam": "Dậu",
+          "thamlang": "Tuất",
+          "cumon": "Hợi",
+          "liemtrinh": "Tý",
+          "thientuong": "Tý",
+          "thienluong": "Sửu"
+        },
+        "palaces": {
+          "thiendi": {
+            "chi": "Dần",
+            "can": "Canh",
+            "chinhTinh": [
+              "thatsat"
+            ]
+          },
+          "tatach": {
+            "chi": "Mão",
+            "can": "Tân",
+            "chinhTinh": [
+              "thiendong"
+            ]
+          },
+          "taibach": {
+            "chi": "Thìn",
+            "can": "Nhâm",
+            "chinhTinh": [
+              "vukhuc"
+            ]
+          },
+          "tutuc": {
+            "chi": "Tỵ",
+            "can": "Quý",
+            "chinhTinh": [
+              "thaiduong"
+            ]
+          },
+          "phuthe": {
+            "chi": "Ngọ",
+            "can": "Giáp",
+            "chinhTinh": [
+              "phaquan"
+            ]
+          },
+          "huynhde": {
+            "chi": "Mùi",
+            "can": "Ất",
+            "chinhTinh": [
+              "thienco"
+            ]
+          },
+          "menh": {
+            "chi": "Thân",
+            "can": "Bính",
+            "chinhTinh": [
+              "tuvi",
+              "thienphu"
+            ]
+          },
+          "phumau": {
+            "chi": "Dậu",
+            "can": "Đinh",
+            "chinhTinh": [
+              "thaiam"
+            ]
+          },
+          "phucduc": {
+            "chi": "Tuất",
+            "can": "Mậu",
+            "chinhTinh": [
+              "thamlang"
+            ]
+          },
+          "dientrach": {
+            "chi": "Hợi",
+            "can": "Kỷ",
+            "chinhTinh": [
+              "cumon"
+            ]
+          },
+          "quanloc": {
+            "chi": "Tý",
+            "can": "Canh",
+            "chinhTinh": [
+              "liemtrinh",
+              "thientuong"
+            ]
+          },
+          "nopboc": {
+            "chi": "Sửu",
+            "can": "Tân",
+            "chinhTinh": [
+              "thienluong"
+            ]
+          }
+        },
+        "tuHoaIztro": [
+          "Thiên Đồng",
+          "Thiên Cơ",
+          "Văn Xương",
+          "Liêm Trinh"
+        ],
+        "tuHoaViet": [
+          "Thiên Đồng",
+          "Thiên Cơ",
+          "Văn Xương",
+          "Liêm Trinh"
+        ]
+      },
+      "brightness": {
+        "iztro": {
+          "thatsat": "M",
+          "thiendong": "B",
+          "vukhuc": "M",
+          "thaiduong": "V",
+          "phaquan": "M",
+          "thienco": "H",
+          "tuvi": "V",
+          "thienphu": "D",
+          "thaiam": "V",
+          "thamlang": "M",
+          "cumon": "V",
+          "liemtrinh": "B",
+          "thientuong": "M",
+          "thienluong": "V"
+        },
+        "game": {
+          "tuvi": "M",
+          "thienco": "D",
+          "thaiduong": "M",
+          "vukhuc": "M",
+          "thiendong": "D",
+          "liemtrinh": "M",
+          "thienphu": "M",
+          "thaiam": "M",
+          "thamlang": "M",
+          "cumon": "D",
+          "thientuong": "M",
+          "thienluong": "D",
+          "thatsat": "M",
+          "phaquan": "M"
+        }
+      },
+      "differsFromViet": {
+        "tuHoa": false,
+        "brightnessCells": [
+          "tuvi@Thân: game M, iztro V",
+          "thienco@Mùi: game D, iztro H",
+          "thaiduong@Tỵ: game M, iztro V",
+          "thiendong@Mão: game D, iztro B",
+          "liemtrinh@Tý: game M, iztro B",
+          "thienphu@Thân: game M, iztro D",
+          "thaiam@Dậu: game M, iztro V",
+          "cumon@Hợi: game D, iztro V",
+          "thienluong@Sửu: game D, iztro V"
+        ]
+      }
+    },
+    {
+      "id": "S07",
+      "input": {
+        "lunar": {
+          "year": 1950,
+          "month": 3,
+          "day": 12,
+          "leap": false
+        },
+        "hourBranch": 1,
+        "lateTy": false,
+        "gender": "female",
+        "hourNote": "chi giờ Sửu",
+        "yearCanChi": "Canh Dần"
+      },
+      "calendarCheck": {
+        "solarUsedOnlyToPickSafeDay": "1950-4-28",
+        "utc7EqualsUtc8EqualsLunarTypescript": true
+      },
+      "expected": {
+        "menh": "Mão",
+        "than": "Tỵ",
+        "cuc": "tho5",
+        "amDuong": "duong",
+        "chinhTinh": {
+          "thienphu": "Mão",
+          "thaiam": "Thìn",
+          "liemtrinh": "Tỵ",
+          "thamlang": "Tỵ",
+          "cumon": "Ngọ",
+          "thientuong": "Mùi",
+          "thiendong": "Thân",
+          "thienluong": "Thân",
+          "vukhuc": "Dậu",
+          "thatsat": "Dậu",
+          "thaiduong": "Tuất",
+          "thienco": "Tý",
+          "tuvi": "Sửu",
+          "phaquan": "Sửu"
+        },
+        "palaces": {
+          "huynhde": {
+            "chi": "Dần",
+            "can": "Mậu",
+            "chinhTinh": []
+          },
+          "menh": {
+            "chi": "Mão",
+            "can": "Kỷ",
+            "chinhTinh": [
+              "thienphu"
+            ]
+          },
+          "phumau": {
+            "chi": "Thìn",
+            "can": "Canh",
+            "chinhTinh": [
+              "thaiam"
+            ]
+          },
+          "phucduc": {
+            "chi": "Tỵ",
+            "can": "Tân",
+            "chinhTinh": [
+              "liemtrinh",
+              "thamlang"
+            ]
+          },
+          "dientrach": {
+            "chi": "Ngọ",
+            "can": "Nhâm",
+            "chinhTinh": [
+              "cumon"
+            ]
+          },
+          "quanloc": {
+            "chi": "Mùi",
+            "can": "Quý",
+            "chinhTinh": [
+              "thientuong"
+            ]
+          },
+          "nopboc": {
+            "chi": "Thân",
+            "can": "Giáp",
+            "chinhTinh": [
+              "thiendong",
+              "thienluong"
+            ]
+          },
+          "thiendi": {
+            "chi": "Dậu",
+            "can": "Ất",
+            "chinhTinh": [
+              "vukhuc",
+              "thatsat"
+            ]
+          },
+          "tatach": {
+            "chi": "Tuất",
+            "can": "Bính",
+            "chinhTinh": [
+              "thaiduong"
+            ]
+          },
+          "taibach": {
+            "chi": "Hợi",
+            "can": "Đinh",
+            "chinhTinh": []
+          },
+          "tutuc": {
+            "chi": "Tý",
+            "can": "Mậu",
+            "chinhTinh": [
+              "thienco"
+            ]
+          },
+          "phuthe": {
+            "chi": "Sửu",
+            "can": "Kỷ",
+            "chinhTinh": [
+              "tuvi",
+              "phaquan"
+            ]
+          }
+        },
+        "tuHoaIztro": [
+          "Thái Dương",
+          "Vũ Khúc",
+          "Thái Âm",
+          "Thiên Đồng"
+        ],
+        "tuHoaViet": [
+          "Thái Dương",
+          "Vũ Khúc",
+          "Thái Âm",
+          "Thiên Đồng"
+        ]
+      },
+      "brightness": {
+        "iztro": {
+          "thienphu": "D",
+          "thaiam": "H",
+          "liemtrinh": "H",
+          "thamlang": "H",
+          "cumon": "V",
+          "thientuong": "D",
+          "thiendong": "V",
+          "thienluong": "H",
+          "vukhuc": "D",
+          "thatsat": "V",
+          "thaiduong": "H",
+          "thienco": "M",
+          "tuvi": "M",
+          "phaquan": "V"
+        },
+        "game": {
+          "tuvi": "D",
+          "thienco": "D",
+          "thaiduong": "H",
+          "vukhuc": "D",
+          "thiendong": "M",
+          "liemtrinh": "H",
+          "thienphu": "B",
+          "thaiam": "H",
+          "thamlang": "H",
+          "cumon": "M",
+          "thientuong": "D",
+          "thienluong": "M",
+          "thatsat": "H",
+          "phaquan": "M"
+        }
+      },
+      "differsFromViet": {
+        "tuHoa": false,
+        "brightnessCells": [
+          "tuvi@Sửu: game D, iztro M",
+          "thienco@Tý: game D, iztro M",
+          "thiendong@Thân: game M, iztro V",
+          "thienphu@Mão: game B, iztro D",
+          "cumon@Ngọ: game M, iztro V",
+          "thienluong@Thân: game M, iztro H",
+          "thatsat@Dậu: game H, iztro V",
+          "phaquan@Sửu: game M, iztro V"
+        ]
+      }
+    },
+    {
+      "id": "S08",
+      "input": {
+        "lunar": {
+          "year": 1965,
+          "month": 8,
+          "day": 28,
+          "leap": false
+        },
+        "hourBranch": 10,
+        "lateTy": false,
+        "gender": "female",
+        "hourNote": "chi giờ Tuất",
+        "yearCanChi": "Ất Tỵ"
+      },
+      "calendarCheck": {
+        "solarUsedOnlyToPickSafeDay": "1965-9-23",
+        "utc7EqualsUtc8EqualsLunarTypescript": true
+      },
+      "expected": {
+        "menh": "Hợi",
+        "than": "Mùi",
+        "cuc": "tho5",
+        "amDuong": "am",
+        "chinhTinh": {
+          "thiendong": "Thìn",
+          "vukhuc": "Tỵ",
+          "phaquan": "Tỵ",
+          "thaiduong": "Ngọ",
+          "thienphu": "Mùi",
+          "thienco": "Thân",
+          "thaiam": "Thân",
+          "tuvi": "Dậu",
+          "thamlang": "Dậu",
+          "cumon": "Tuất",
+          "thientuong": "Hợi",
+          "thienluong": "Tý",
+          "liemtrinh": "Sửu",
+          "thatsat": "Sửu"
+        },
+        "palaces": {
+          "dientrach": {
+            "chi": "Dần",
+            "can": "Mậu",
+            "chinhTinh": []
+          },
+          "quanloc": {
+            "chi": "Mão",
+            "can": "Kỷ",
+            "chinhTinh": []
+          },
+          "nopboc": {
+            "chi": "Thìn",
+            "can": "Canh",
+            "chinhTinh": [
+              "thiendong"
+            ]
+          },
+          "thiendi": {
+            "chi": "Tỵ",
+            "can": "Tân",
+            "chinhTinh": [
+              "vukhuc",
+              "phaquan"
+            ]
+          },
+          "tatach": {
+            "chi": "Ngọ",
+            "can": "Nhâm",
+            "chinhTinh": [
+              "thaiduong"
+            ]
+          },
+          "taibach": {
+            "chi": "Mùi",
+            "can": "Quý",
+            "chinhTinh": [
+              "thienphu"
+            ]
+          },
+          "tutuc": {
+            "chi": "Thân",
+            "can": "Giáp",
+            "chinhTinh": [
+              "thienco",
+              "thaiam"
+            ]
+          },
+          "phuthe": {
+            "chi": "Dậu",
+            "can": "Ất",
+            "chinhTinh": [
+              "tuvi",
+              "thamlang"
+            ]
+          },
+          "huynhde": {
+            "chi": "Tuất",
+            "can": "Bính",
+            "chinhTinh": [
+              "cumon"
+            ]
+          },
+          "menh": {
+            "chi": "Hợi",
+            "can": "Đinh",
+            "chinhTinh": [
+              "thientuong"
+            ]
+          },
+          "phumau": {
+            "chi": "Tý",
+            "can": "Mậu",
+            "chinhTinh": [
+              "thienluong"
+            ]
+          },
+          "phucduc": {
+            "chi": "Sửu",
+            "can": "Kỷ",
+            "chinhTinh": [
+              "liemtrinh",
+              "thatsat"
+            ]
+          }
+        },
+        "tuHoaIztro": [
+          "Thiên Cơ",
+          "Thiên Lương",
+          "Tử Vi",
+          "Thái Âm"
+        ],
+        "tuHoaViet": [
+          "Thiên Cơ",
+          "Thiên Lương",
+          "Tử Vi",
+          "Thái Âm"
+        ]
+      },
+      "brightness": {
+        "iztro": {
+          "thiendong": "B",
+          "vukhuc": "B",
+          "phaquan": "B",
+          "thaiduong": "V",
+          "thienphu": "M",
+          "thienco": "D",
+          "thaiam": "D",
+          "tuvi": "V",
+          "thamlang": "D",
+          "cumon": "H",
+          "thientuong": "D",
+          "thienluong": "M",
+          "liemtrinh": "D",
+          "thatsat": "M"
+        },
+        "game": {
+          "tuvi": "B",
+          "thienco": "V",
+          "thaiduong": "M",
+          "vukhuc": "H",
+          "thiendong": "H",
+          "liemtrinh": "D",
+          "thienphu": "D",
+          "thaiam": "M",
+          "thamlang": "H",
+          "cumon": "H",
+          "thientuong": "D",
+          "thienluong": "M",
+          "thatsat": "D",
+          "phaquan": "H"
+        }
+      },
+      "differsFromViet": {
+        "tuHoa": false,
+        "brightnessCells": [
+          "tuvi@Dậu: game B, iztro V",
+          "thienco@Thân: game V, iztro D",
+          "thaiduong@Ngọ: game M, iztro V",
+          "vukhuc@Tỵ: game H, iztro B",
+          "thiendong@Thìn: game H, iztro B",
+          "thienphu@Mùi: game D, iztro M",
+          "thaiam@Thân: game M, iztro D",
+          "thamlang@Dậu: game H, iztro D",
+          "thatsat@Sửu: game D, iztro M",
+          "phaquan@Tỵ: game H, iztro B"
+        ]
+      }
+    },
+    {
+      "id": "S09",
+      "input": {
+        "lunar": {
+          "year": 1953,
+          "month": 11,
+          "day": 15,
+          "leap": false
+        },
+        "hourBranch": 7,
+        "lateTy": false,
+        "gender": "female",
+        "hourNote": "chi giờ Mùi",
+        "yearCanChi": "Quý Tỵ"
+      },
+      "calendarCheck": {
+        "solarUsedOnlyToPickSafeDay": "1953-12-20",
+        "utc7EqualsUtc8EqualsLunarTypescript": true
+      },
+      "expected": {
+        "menh": "Tỵ",
+        "than": "Mùi",
+        "cuc": "tho5",
+        "amDuong": "am",
+        "chinhTinh": {
+          "thamlang": "Dần",
+          "thienco": "Mão",
+          "cumon": "Mão",
+          "tuvi": "Thìn",
+          "thientuong": "Thìn",
+          "thienluong": "Tỵ",
+          "thatsat": "Ngọ",
+          "liemtrinh": "Thân",
+          "phaquan": "Tuất",
+          "thiendong": "Hợi",
+          "vukhuc": "Tý",
+          "thienphu": "Tý",
+          "thaiduong": "Sửu",
+          "thaiam": "Sửu"
+        },
+        "palaces": {
+          "tutuc": {
+            "chi": "Dần",
+            "can": "Giáp",
+            "chinhTinh": [
+              "thamlang"
+            ]
+          },
+          "phuthe": {
+            "chi": "Mão",
+            "can": "Ất",
+            "chinhTinh": [
+              "thienco",
+              "cumon"
+            ]
+          },
+          "huynhde": {
+            "chi": "Thìn",
+            "can": "Bính",
+            "chinhTinh": [
+              "tuvi",
+              "thientuong"
+            ]
+          },
+          "menh": {
+            "chi": "Tỵ",
+            "can": "Đinh",
+            "chinhTinh": [
+              "thienluong"
+            ]
+          },
+          "phumau": {
+            "chi": "Ngọ",
+            "can": "Mậu",
+            "chinhTinh": [
+              "thatsat"
+            ]
+          },
+          "phucduc": {
+            "chi": "Mùi",
+            "can": "Kỷ",
+            "chinhTinh": []
+          },
+          "dientrach": {
+            "chi": "Thân",
+            "can": "Canh",
+            "chinhTinh": [
+              "liemtrinh"
+            ]
+          },
+          "quanloc": {
+            "chi": "Dậu",
+            "can": "Tân",
+            "chinhTinh": []
+          },
+          "nopboc": {
+            "chi": "Tuất",
+            "can": "Nhâm",
+            "chinhTinh": [
+              "phaquan"
+            ]
+          },
+          "thiendi": {
+            "chi": "Hợi",
+            "can": "Quý",
+            "chinhTinh": [
+              "thiendong"
+            ]
+          },
+          "tatach": {
+            "chi": "Tý",
+            "can": "Giáp",
+            "chinhTinh": [
+              "vukhuc",
+              "thienphu"
+            ]
+          },
+          "taibach": {
+            "chi": "Sửu",
+            "can": "Ất",
+            "chinhTinh": [
+              "thaiduong",
+              "thaiam"
+            ]
+          }
+        },
+        "tuHoaIztro": [
+          "Phá Quân",
+          "Cự Môn",
+          "Thái Âm",
+          "Tham Lang"
+        ],
+        "tuHoaViet": [
+          "Phá Quân",
+          "Cự Môn",
+          "Thái Âm",
+          "Tham Lang"
+        ]
+      },
+      "brightness": {
+        "iztro": {
+          "thamlang": "B",
+          "thienco": "V",
+          "cumon": "M",
+          "tuvi": "D",
+          "thientuong": "D",
+          "thienluong": "H",
+          "thatsat": "V",
+          "liemtrinh": "M",
+          "phaquan": "V",
+          "thiendong": "M",
+          "vukhuc": "V",
+          "thienphu": "M",
+          "thaiduong": "H",
+          "thaiam": "M"
+        },
+        "game": {
+          "tuvi": "V",
+          "thienco": "M",
+          "thaiduong": "D",
+          "vukhuc": "M",
+          "thiendong": "D",
+          "liemtrinh": "M",
+          "thienphu": "M",
+          "thaiam": "D",
+          "thamlang": "D",
+          "cumon": "M",
+          "thientuong": "M",
+          "thienluong": "H",
+          "thatsat": "M",
+          "phaquan": "D"
+        }
+      },
+      "differsFromViet": {
+        "tuHoa": false,
+        "brightnessCells": [
+          "tuvi@Thìn: game V, iztro D",
+          "thienco@Mão: game M, iztro V",
+          "thaiduong@Sửu: game D, iztro H",
+          "vukhuc@Tý: game M, iztro V",
+          "thiendong@Hợi: game D, iztro M",
+          "thaiam@Sửu: game D, iztro M",
+          "thamlang@Dần: game D, iztro B",
+          "thientuong@Thìn: game M, iztro D",
+          "thatsat@Ngọ: game M, iztro V",
+          "phaquan@Tuất: game D, iztro V"
+        ]
+      }
+    },
+    {
+      "id": "S10",
+      "input": {
+        "lunar": {
+          "year": 1938,
+          "month": 4,
+          "day": 5,
+          "leap": false
+        },
+        "hourBranch": 2,
+        "lateTy": false,
+        "gender": "male",
+        "hourNote": "chi giờ Dần",
+        "yearCanChi": "Mậu Dần"
+      },
+      "calendarCheck": {
+        "solarUsedOnlyToPickSafeDay": "1938-5-4",
+        "utc7EqualsUtc8EqualsLunarTypescript": true
+      },
+      "expected": {
+        "menh": "Mão",
+        "than": "Mùi",
+        "cuc": "thuy2",
+        "amDuong": "duong",
+        "chinhTinh": {
+          "thienco": "Dần",
+          "thaiam": "Dần",
+          "tuvi": "Mão",
+          "thamlang": "Mão",
+          "cumon": "Thìn",
+          "thientuong": "Tỵ",
+          "thienluong": "Ngọ",
+          "liemtrinh": "Mùi",
+          "thatsat": "Mùi",
+          "thiendong": "Tuất",
+          "vukhuc": "Hợi",
+          "phaquan": "Hợi",
+          "thaiduong": "Tý",
+          "thienphu": "Sửu"
+        },
+        "palaces": {
+          "huynhde": {
+            "chi": "Dần",
+            "can": "Giáp",
+            "chinhTinh": [
+              "thienco",
+              "thaiam"
+            ]
+          },
+          "menh": {
+            "chi": "Mão",
+            "can": "Ất",
+            "chinhTinh": [
+              "tuvi",
+              "thamlang"
+            ]
+          },
+          "phumau": {
+            "chi": "Thìn",
+            "can": "Bính",
+            "chinhTinh": [
+              "cumon"
+            ]
+          },
+          "phucduc": {
+            "chi": "Tỵ",
+            "can": "Đinh",
+            "chinhTinh": [
+              "thientuong"
+            ]
+          },
+          "dientrach": {
+            "chi": "Ngọ",
+            "can": "Mậu",
+            "chinhTinh": [
+              "thienluong"
+            ]
+          },
+          "quanloc": {
+            "chi": "Mùi",
+            "can": "Kỷ",
+            "chinhTinh": [
+              "liemtrinh",
+              "thatsat"
+            ]
+          },
+          "nopboc": {
+            "chi": "Thân",
+            "can": "Canh",
+            "chinhTinh": []
+          },
+          "thiendi": {
+            "chi": "Dậu",
+            "can": "Tân",
+            "chinhTinh": []
+          },
+          "tatach": {
+            "chi": "Tuất",
+            "can": "Nhâm",
+            "chinhTinh": [
+              "thiendong"
+            ]
+          },
+          "taibach": {
+            "chi": "Hợi",
+            "can": "Quý",
+            "chinhTinh": [
+              "vukhuc",
+              "phaquan"
+            ]
+          },
+          "tutuc": {
+            "chi": "Tý",
+            "can": "Giáp",
+            "chinhTinh": [
+              "thaiduong"
+            ]
+          },
+          "phuthe": {
+            "chi": "Sửu",
+            "can": "Ất",
+            "chinhTinh": [
+              "thienphu"
+            ]
+          }
+        },
+        "tuHoaIztro": [
+          "Tham Lang",
+          "Thái Âm",
+          "Hữu Bật",
+          "Thiên Cơ"
+        ],
+        "tuHoaViet": [
+          "Tham Lang",
+          "Thái Âm",
+          "Hữu Bật",
+          "Thiên Cơ"
+        ]
+      },
+      "brightness": {
+        "iztro": {
+          "thienco": "D",
+          "thaiam": "V",
+          "tuvi": "V",
+          "thamlang": "D",
+          "cumon": "H",
+          "thientuong": "D",
+          "thienluong": "M",
+          "liemtrinh": "D",
+          "thatsat": "M",
+          "thiendong": "B",
+          "vukhuc": "B",
+          "phaquan": "B",
+          "thaiduong": "H",
+          "thienphu": "M"
+        },
+        "game": {
+          "tuvi": "B",
+          "thienco": "H",
+          "thaiduong": "H",
+          "vukhuc": "H",
+          "thiendong": "H",
+          "liemtrinh": "D",
+          "thienphu": "B",
+          "thaiam": "H",
+          "thamlang": "H",
+          "cumon": "H",
+          "thientuong": "D",
+          "thienluong": "M",
+          "thatsat": "D",
+          "phaquan": "H"
+        }
+      },
+      "differsFromViet": {
+        "tuHoa": false,
+        "brightnessCells": [
+          "tuvi@Mão: game B, iztro V",
+          "thienco@Dần: game H, iztro D",
+          "vukhuc@Hợi: game H, iztro B",
+          "thiendong@Tuất: game H, iztro B",
+          "thienphu@Sửu: game B, iztro M",
+          "thaiam@Dần: game H, iztro V",
+          "thamlang@Mão: game H, iztro D",
+          "thatsat@Mùi: game D, iztro M",
+          "phaquan@Hợi: game H, iztro B"
+        ]
+      }
+    },
+    {
+      "id": "S11",
+      "input": {
+        "lunar": {
+          "year": 2024,
+          "month": 2,
+          "day": 26,
+          "leap": false
+        },
+        "hourBranch": 3,
+        "lateTy": false,
+        "gender": "female",
+        "hourNote": "chi giờ Mão",
+        "yearCanChi": "Giáp Thìn"
+      },
+      "calendarCheck": {
+        "solarUsedOnlyToPickSafeDay": "2024-4-4",
+        "utc7EqualsUtc8EqualsLunarTypescript": true
+      },
+      "expected": {
+        "menh": "Tý",
+        "than": "Ngọ",
+        "cuc": "thuy2",
+        "amDuong": "duong",
+        "chinhTinh": {
+          "tuvi": "Dần",
+          "thienphu": "Dần",
+          "thaiam": "Mão",
+          "thamlang": "Thìn",
+          "cumon": "Tỵ",
+          "liemtrinh": "Ngọ",
+          "thientuong": "Ngọ",
+          "thienluong": "Mùi",
+          "thatsat": "Thân",
+          "thiendong": "Dậu",
+          "vukhuc": "Tuất",
+          "thaiduong": "Hợi",
+          "phaquan": "Tý",
+          "thienco": "Sửu"
+        },
+        "palaces": {
+          "phucduc": {
+            "chi": "Dần",
+            "can": "Bính",
+            "chinhTinh": [
+              "tuvi",
+              "thienphu"
+            ]
+          },
+          "dientrach": {
+            "chi": "Mão",
+            "can": "Đinh",
+            "chinhTinh": [
+              "thaiam"
+            ]
+          },
+          "quanloc": {
+            "chi": "Thìn",
+            "can": "Mậu",
+            "chinhTinh": [
+              "thamlang"
+            ]
+          },
+          "nopboc": {
+            "chi": "Tỵ",
+            "can": "Kỷ",
+            "chinhTinh": [
+              "cumon"
+            ]
+          },
+          "thiendi": {
+            "chi": "Ngọ",
+            "can": "Canh",
+            "chinhTinh": [
+              "liemtrinh",
+              "thientuong"
+            ]
+          },
+          "tatach": {
+            "chi": "Mùi",
+            "can": "Tân",
+            "chinhTinh": [
+              "thienluong"
+            ]
+          },
+          "taibach": {
+            "chi": "Thân",
+            "can": "Nhâm",
+            "chinhTinh": [
+              "thatsat"
+            ]
+          },
+          "tutuc": {
+            "chi": "Dậu",
+            "can": "Quý",
+            "chinhTinh": [
+              "thiendong"
+            ]
+          },
+          "phuthe": {
+            "chi": "Tuất",
+            "can": "Giáp",
+            "chinhTinh": [
+              "vukhuc"
+            ]
+          },
+          "huynhde": {
+            "chi": "Hợi",
+            "can": "Ất",
+            "chinhTinh": [
+              "thaiduong"
+            ]
+          },
+          "menh": {
+            "chi": "Tý",
+            "can": "Bính",
+            "chinhTinh": [
+              "phaquan"
+            ]
+          },
+          "phumau": {
+            "chi": "Sửu",
+            "can": "Đinh",
+            "chinhTinh": [
+              "thienco"
+            ]
+          }
+        },
+        "tuHoaIztro": [
+          "Liêm Trinh",
+          "Phá Quân",
+          "Vũ Khúc",
+          "Thái Dương"
+        ],
+        "tuHoaViet": [
+          "Liêm Trinh",
+          "Phá Quân",
+          "Vũ Khúc",
+          "Thái Dương"
+        ]
+      },
+      "brightness": {
+        "iztro": {
+          "tuvi": "V",
+          "thienphu": "M",
+          "thaiam": "H",
+          "thamlang": "M",
+          "cumon": "V",
+          "liemtrinh": "B",
+          "thientuong": "M",
+          "thienluong": "V",
+          "thatsat": "M",
+          "thiendong": "B",
+          "vukhuc": "M",
+          "thaiduong": "H",
+          "phaquan": "M",
+          "thienco": "H"
+        },
+        "game": {
+          "tuvi": "M",
+          "thienco": "D",
+          "thaiduong": "H",
+          "vukhuc": "M",
+          "thiendong": "H",
+          "liemtrinh": "M",
+          "thienphu": "M",
+          "thaiam": "H",
+          "thamlang": "M",
+          "cumon": "H",
+          "thientuong": "M",
+          "thienluong": "D",
+          "thatsat": "M",
+          "phaquan": "M"
+        }
+      },
+      "differsFromViet": {
+        "tuHoa": false,
+        "brightnessCells": [
+          "tuvi@Dần: game M, iztro V",
+          "thienco@Sửu: game D, iztro H",
+          "thiendong@Dậu: game H, iztro B",
+          "liemtrinh@Ngọ: game M, iztro B",
+          "cumon@Tỵ: game H, iztro V",
+          "thienluong@Mùi: game D, iztro V"
+        ]
+      }
+    },
+    {
+      "id": "S12",
+      "input": {
+        "lunar": {
+          "year": 1999,
+          "month": 9,
+          "day": 19,
+          "leap": false
+        },
+        "hourBranch": 7,
+        "lateTy": false,
+        "gender": "male",
+        "hourNote": "chi giờ Mùi",
+        "yearCanChi": "Kỷ Mão"
+      },
+      "calendarCheck": {
+        "solarUsedOnlyToPickSafeDay": "1999-10-27",
+        "utc7EqualsUtc8EqualsLunarTypescript": true
+      },
+      "expected": {
+        "menh": "Mão",
+        "than": "Tỵ",
+        "cuc": "hoa6",
+        "amDuong": "am",
+        "chinhTinh": {
+          "phaquan": "Dần",
+          "liemtrinh": "Thìn",
+          "thienphu": "Thìn",
+          "thaiam": "Tỵ",
+          "thamlang": "Ngọ",
+          "thiendong": "Mùi",
+          "cumon": "Mùi",
+          "vukhuc": "Thân",
+          "thientuong": "Thân",
+          "thaiduong": "Dậu",
+          "thienluong": "Dậu",
+          "thatsat": "Tuất",
+          "thienco": "Hợi",
+          "tuvi": "Tý"
+        },
+        "palaces": {
+          "huynhde": {
+            "chi": "Dần",
+            "can": "Bính",
+            "chinhTinh": [
+              "phaquan"
+            ]
+          },
+          "menh": {
+            "chi": "Mão",
+            "can": "Đinh",
+            "chinhTinh": []
+          },
+          "phumau": {
+            "chi": "Thìn",
+            "can": "Mậu",
+            "chinhTinh": [
+              "liemtrinh",
+              "thienphu"
+            ]
+          },
+          "phucduc": {
+            "chi": "Tỵ",
+            "can": "Kỷ",
+            "chinhTinh": [
+              "thaiam"
+            ]
+          },
+          "dientrach": {
+            "chi": "Ngọ",
+            "can": "Canh",
+            "chinhTinh": [
+              "thamlang"
+            ]
+          },
+          "quanloc": {
+            "chi": "Mùi",
+            "can": "Tân",
+            "chinhTinh": [
+              "thiendong",
+              "cumon"
+            ]
+          },
+          "nopboc": {
+            "chi": "Thân",
+            "can": "Nhâm",
+            "chinhTinh": [
+              "vukhuc",
+              "thientuong"
+            ]
+          },
+          "thiendi": {
+            "chi": "Dậu",
+            "can": "Quý",
+            "chinhTinh": [
+              "thaiduong",
+              "thienluong"
+            ]
+          },
+          "tatach": {
+            "chi": "Tuất",
+            "can": "Giáp",
+            "chinhTinh": [
+              "thatsat"
+            ]
+          },
+          "taibach": {
+            "chi": "Hợi",
+            "can": "Ất",
+            "chinhTinh": [
+              "thienco"
+            ]
+          },
+          "tutuc": {
+            "chi": "Tý",
+            "can": "Bính",
+            "chinhTinh": [
+              "tuvi"
+            ]
+          },
+          "phuthe": {
+            "chi": "Sửu",
+            "can": "Đinh",
+            "chinhTinh": []
+          }
+        },
+        "tuHoaIztro": [
+          "Vũ Khúc",
+          "Tham Lang",
+          "Thiên Lương",
+          "Văn Khúc"
+        ],
+        "tuHoaViet": [
+          "Vũ Khúc",
+          "Tham Lang",
+          "Thiên Lương",
+          "Văn Khúc"
+        ]
+      },
+      "brightness": {
+        "iztro": {
+          "phaquan": "D",
+          "liemtrinh": "D",
+          "thienphu": "M",
+          "thaiam": "H",
+          "thamlang": "V",
+          "thiendong": "H",
+          "cumon": "H",
+          "vukhuc": "D",
+          "thientuong": "M",
+          "thaiduong": "B",
+          "thienluong": "D",
+          "thatsat": "M",
+          "thienco": "B",
+          "tuvi": "B"
+        },
+        "game": {
+          "tuvi": "D",
+          "thienco": "H",
+          "thaiduong": "H",
+          "vukhuc": "M",
+          "thiendong": "H",
+          "liemtrinh": "M",
+          "thienphu": "M",
+          "thaiam": "H",
+          "thamlang": "H",
+          "cumon": "H",
+          "thientuong": "M",
+          "thienluong": "H",
+          "thatsat": "H",
+          "phaquan": "H"
+        }
+      },
+      "differsFromViet": {
+        "tuHoa": false,
+        "brightnessCells": [
+          "tuvi@Tý: game D, iztro B",
+          "thienco@Hợi: game H, iztro B",
+          "thaiduong@Dậu: game H, iztro B",
+          "vukhuc@Thân: game M, iztro D",
+          "liemtrinh@Thìn: game M, iztro D",
+          "thamlang@Ngọ: game H, iztro V",
+          "thienluong@Dậu: game H, iztro D",
+          "thatsat@Tuất: game H, iztro M",
+          "phaquan@Dần: game H, iztro D"
+        ]
+      }
+    }
+  ]
+}

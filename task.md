@@ -50,7 +50,7 @@
 | T-052 | Nội dung 78 lá tarot theo 8 chủ đề | ✅ Gộp tích hợp (chờ PR) | P1 | CORE + FORTUNE | Claude Sonnet 5.5 (thay Gemini Flash) |
 | T-053 | Giao diện tarot theo chủ đề | ✅ Gộp tích hợp (chờ PR) | P1 | CORE + FORTUNE | Claude Sonnet 5.5 |
 | T-054 | Bộ máy an sao Tử Vi | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + FORTUNE | Claude Sonnet 5.5 (thay Codex terra 6.1) |
-| T-055 | Đối chiếu bảng tử vi, lập lá số mẫu 👤 | 🔵 Sẵn sàng | P0 | CORE + FORTUNE + DOCS | — |
+| T-055 | Đối chiếu bảng tử vi, lập lá số mẫu 👤 | ✅ Gộp tích hợp (còn 👤) | P0 | CORE + FORTUNE + DOCS | GLM Flash + Claude Sonnet 5.5 |
 | T-056 | Nội dung luận giải tử vi | ✅ Gộp tích hợp (chờ PR) | P1 | CORE + FORTUNE | Claude Sonnet 5.5 (thay Gemini Flash) |
 | T-057 | Giao diện lá số tử vi | ⏳ T-054, T-056, T-053 | P1 | CORE + FORTUNE | — |
 | T-060 | Quy tắc chữ, bảng thuật ngữ, danh sách bí mật | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + GUIDE + DOCS | Claude Sonnet 5.5 (thay Gemini Flash) |
@@ -761,13 +761,13 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: luận giải, giao diện.
 
 ### T-055 · Đối chiếu bảng tử vi và lập lá số mẫu
-- **Trạng thái**: 🔵 Sẵn sàng 👤
+- **Trạng thái**: ✅ Gộp vào nhánh tích hợp. Thợ: GLM Flash 2 vòng chưa đạt → Claude Sonnet 5.5 làm lại. Có bảng độ sáng 14×12, quy ước trường phái, 12 lá số mẫu từ iztro (ngày âm + giờ); test của T-054 so 12 mẫu: đạt. Còn 👤: đối chiếu 12 lá số với 2 công cụ tử vi Việt.
 - **Ưu tiên**: P0 · **Đợt**: 1
 - **Gói ngữ cảnh**: CORE + FORTUNE + DOCS
 - **Khu vực chạm**: docs/TU-VI-QUY-UOC.md (mới), test/fixtures/tuvi-golden.json (mới)
 - **Phụ thuộc**: không
 - **Thợ**: GLM Flash (+ 👤 chủ dự án hoặc người được nhờ lập 12 lá số từ 2 công cụ tử vi Việt) · **Soát**: Gemini Argon
-- **Người làm**: — · **Nhánh**: —
+- **Người làm**: GLM Flash + Claude Sonnet 5.5 · **Nhánh**: `claude/T-055-tu-vi-quy-uoc`
 - **Thiết kế**: KH §7.3 "Kiểm chứng", Phụ lục B
 - **Mục tiêu**: có "đáp án" để kiểm bộ máy an sao.
 - **Tiêu chí xong**:

@@ -483,22 +483,40 @@ test('Tử Vi: lá số tính tay 3 · nữ Dương, đại vận và tiểu v�
 });
 
 // Lá số mẫu của T-055 (test/fixtures/tuvi-golden.json). Chưa có file thì bỏ qua.
-// Dạng dự kiến: [{ ten, input:{ date, hour, gender, options? }, expect:{ menh, than, cuc, chinh:{ma:chi}, hoa:{hoaloc:ma,…} } }]
-// (menh, than, chi tính theo chỉ số 0–11 hoặc tên chi viết hoa chữ đầu; cuc là 2–6)
+// Định dạng thật: { samples:[{ id, input:{ lunar:{year,month,day,leap}, hourBranch, lateTy, gender:'male|female' },
+//   expected:{ menh, than, cuc:'kim4', chinhTinh:{ma:chi}, tuHoaViet:[tên sao ×4] }, differsFromViet }] }.
+// Mẫu do iztro (trường phái Trung Quốc) lập. Chỉ so các trường KHÔNG khác quy ước Việt:
+// bỏ qua độ sáng (differsFromViet.brightnessCells), chủ thân (Tý/Ngọ), Hỏa/Linh, Khôi/Việt Canh.
+// Tứ Hóa so với `tuHoaViet` (không phải `tuHoaIztro`); mẫu nào ghi differsFromViet.tuHoa === true thì bỏ qua Tứ Hóa.
 const goldenFile = path.join(__dirname, 'fixtures', 'tuvi-golden.json');
+const SAO_TEN = {
+  tuvi: 'Tử Vi', thienco: 'Thiên Cơ', thaiduong: 'Thái Dương', vukhuc: 'Vũ Khúc', thiendong: 'Thiên Đồng',
+  liemtrinh: 'Liêm Trinh', thienphu: 'Thiên Phủ', thaiam: 'Thái Âm', thamlang: 'Tham Lang', cumon: 'Cự Môn',
+  thientuong: 'Thiên Tướng', thienluong: 'Thiên Lương', thatsat: 'Thất Sát', phaquan: 'Phá Quân',
+  taphu: 'Tả Phù', huubat: 'Hữu Bật', vanxuong: 'Văn Xương', vankhuc: 'Văn Khúc',
+};
 test('Tử Vi: 12 lá số mẫu khớp 100% phần chính', { skip: !fs.existsSync(goldenFile) && 'chưa có test/fixtures/tuvi-golden.json (T-055)' }, () => {
   const raw = JSON.parse(fs.readFileSync(goldenFile, 'utf8'));
-  const list = Array.isArray(raw) ? raw : (raw.charts || raw.cases || []);
-  assert.ok(list.length >= 1);
-  const idx = (v) => (typeof v === 'number' ? v : CHI_TEN.indexOf(v));
+  const list = raw.samples || [];
+  assert.equal(list.length, 12);
+  assert.deepEqual(raw.inputFormat && Object.keys(raw.inputFormat), ['lunar', 'hourBranch', 'lateTy', 'gender']);
+  const idx = (v) => CHI_TEN.indexOf(v);
   for (const g of list) {
-    const c = TUVI.chart({ viewYear: 2026, ...g.input });
-    const e = g.expect || {};
-    const name = g.ten || JSON.stringify(g.input);
-    if (e.menh !== undefined) assert.equal(c.menhPos, idx(e.menh), `Mệnh ${name}`);
-    if (e.than !== undefined) assert.equal(c.thanPos, idx(e.than), `Thân ${name}`);
-    if (e.cuc !== undefined) assert.equal(c.cuc.so, e.cuc, `Cục ${name}`);
-    for (const [code, pos] of Object.entries(e.chinh || {})) assert.equal(posOf(c, code), idx(pos), `${code} ${name}`);
-    for (const [code, star] of Object.entries(e.hoa || {})) assert.equal(c.hoa.find((x) => x.code === code).star, star, `${code} ${name}`);
+    const inp = g.input, e = g.expected, name = g.id;
+    const opt = inp.lateTy ? { hour24: 23 } : undefined; // sinh 23h: tính sang ngày âm kế (D11)
+    const c = TUVI.chart({
+      date: { lunar: { d: inp.lunar.day, m: inp.lunar.month, y: inp.lunar.year }, leap: !!inp.lunar.leap },
+      hour: inp.hourBranch, gender: inp.gender === 'male' ? 'nam' : 'nu', viewYear: 2026, options: opt,
+    });
+    assert.equal(c.lateTyShifted, !!inp.lateTy, `Giờ Tý muộn ${name}`);
+    assert.equal(c.menhPos, idx(e.menh), `Mệnh ${name}`);
+    assert.equal(c.thanPos, idx(e.than), `Thân ${name}`);
+    assert.equal(c.cuc.so, Number(e.cuc.slice(-1)), `Cục ${name}`);
+    const chinh = Object.entries(e.chinhTinh);
+    assert.equal(chinh.length, 14, `đủ 14 chính tinh ${name}`);
+    for (const [code, chi] of chinh) assert.equal(posOf(c, code), idx(chi), `${code} ${name}`);
+    if (!(g.differsFromViet && g.differsFromViet.tuHoa)) {
+      assert.deepEqual(c.hoa.map((x) => SAO_TEN[x.star]), e.tuHoaViet, `Tứ Hóa ${name}`);
+    }
   }
 });
