@@ -56,7 +56,7 @@
 | T-060 | Quy tắc chữ, bảng thuật ngữ, danh sách bí mật | ✅ Xong · PR #29 | P0 | CORE + GUIDE + DOCS | Claude Sonnet 5.5 (thay Gemini Flash) |
 | T-061 | Sổ tay trong game (nút "?") | ✅ Xong · PR #50 | P1 | CORE + GUIDE + NAV | Claude Sonnet 5.5 |
 | T-062 | Gợi ý lần đầu, nhãn tên không đè nhau | ⏳ T-061, T-043 | P1 | CORE + GUIDE + HALL | — |
-| T-063 | Viết lại chữ Võ Học Các | ⏳ T-060, T-061 | P1 | CORE + GUIDE + MARTIAL | — |
+| T-063 | Viết lại chữ Võ Học Các | 🟣 Chờ soát | P1 | CORE + GUIDE + MARTIAL | Gemini 3 Flash + Claude Sonnet 5.5 |
 | T-064 | Viết lại chữ Sân đấu | ⏳ T-012, T-060, T-061 | P1 | CORE + GUIDE + PK | — |
 | T-065 | Viết lại chữ chánh điện, công đức, cúng dường | ⏳ T-060, T-011, T-061, T-044 | P1 | CORE + GUIDE + RITUAL | — |
 | T-066 | Bài kiểm người mới (25 câu) | ⏳ T-067 (và mọi thẻ T-010 → T-065) | P1 | CORE + GUIDE | — |
@@ -866,13 +866,13 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: viết lại chữ các màn.
 
 ### T-063 · Viết lại chữ Võ Học Các
-- **Trạng thái**: ⏳ Chờ T-060
+- **Trạng thái**: 🟣 Chờ soát
 - **Ưu tiên**: P1 · **Đợt**: 3
 - **Gói ngữ cảnh**: CORE + GUIDE + MARTIAL
 - **Khu vực chạm**: docs/copy/VO-HOC-CAC.md (mới, bảng chữ cũ → mới), public/js/dojo.js (chỉ chuỗi chữ + mở sẵn "Luật tu luyện" lần đầu), public/js/martial.js (chỉ chuỗi mô tả), public/index.html (`?v=`), docs/VO-HOC.md
 - **Phụ thuộc**: T-060; T-061 (thứ tự `martial.js`)
 - **Thợ**: Gemini Flash soạn bảng → Sonnet 5.5 áp vào mã · **Soát**: Gemini Argon (+ Sol kiểm diff chỉ là chuỗi)
-- **Người làm**: — · **Nhánh**: —
+- **Người làm**: Gemini 3 Flash (soạn) + Claude Sonnet 5.5 (áp) · **Nhánh**: gemini/T-063-chu-vo-hoc-cac
 - **Thiết kế**: KH §8.7
 - **Mục tiêu**: người mới hiểu Võ Học Các mà không cần đọc docs.
 - **Tiêu chí xong**:
@@ -880,6 +880,7 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
   - [ ] Không đổi số liệu hay logic (diff chỉ là chuỗi + 1 cờ mở sẵn)
   - [ ] `martial-data`, `martial-service` xanh; ui-harness dojo chạy được
 - **Ngoài phạm vi**: cân bằng số liệu.
+- **Ghi chú**: Chỉ sửa `dojo.js` + `?v=` (không có chuỗi mô tả nào ở `martial.js` cần đổi). Bỏ dòng 5 của bảng Flash (`(chưa có)` không tồn tại trong mã); dòng 9 dùng `M.STARTERS.length`, dòng 10 giữ `M.PK.LOADOUT_SECONDS`; cờ mở sẵn là `ta-dojo-rules-seen`.
 
 ### T-064 · Viết lại chữ Sân đấu
 - **Trạng thái**: ⏳ Chờ T-012, T-060
