@@ -370,7 +370,7 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
   - [x] `legalMoves(view)` == `legalMoves(state đầy đủ)` trên 1.000 thế ngẫu nhiên (chứng minh trình duyệt tính đúng mà không biết quân thật)
   - [x] Luật Sĩ/Tượng/Tốt sau khi lật và luật ăn quân úp theo T-023
 - **Ngoài phạm vi**: giao diện (T-033).
-- **Ghi chú**: Đã hoàn thành variant:'jieqi' trong KyXiangqi theo luật D7, test duyệt đệ quy view không rò rỉ và 1.000 thế ngẫu nhiên khớp hoàn toàn. Sửa dòng 53 của test/kydao-xiangqi.test.js vì jieqi nay đã được hỗ trợ chính thức.
+- **Ghi chú**: Đã hoàn thành variant:'jieqi' trong KyXiangqi theo luật D7. Đã cập nhật test/kydao-jieqi.test.js theo soát nghiệp vụ: sửa test không chiếu từ ô ban đầu, thêm lặp thế 3 lần cho jieqi, hoàn thiện TH1/TH4/TH5 và kiểm tra rò rỉ view. Sửa dòng 53 của test/kydao-xiangqi.test.js vì jieqi nay đã được hỗ trợ chính thức.
 
 ### T-025 · Viết luật cờ vây thuần
 - **Trạng thái**: ✅ Xong, đã merge vào main qua PR #34 (2026-11-12, CI xanh). Thợ: Codex terra 6.1 (gpt-6.1-terra), sửa bằng Claude Sonnet 5.5 (kênh Codex hết hạn mức). Soát: Opus 5.5 thay Sol/Argon. Sau 2 vòng, Điều phối quyết: chấp nhận 5 thế mẫu tự dựng (soát đã tính lại, ghi nguồn luật tính diện tích) và bắt thêm test chống bấm 'Đồng ý' hai lần (Điều phối thử làm hỏng: đỏ).
