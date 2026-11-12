@@ -138,4 +138,21 @@ test('Danh sách nơi: mỗi tên trong PLACES của server.js (trừ hall) đư
   assert.deepEqual(extra, [], `public/js/app.js đăng ký ${JSON.stringify(extra)} mà PLACES (server.js) không có`);
 });
 
+/* ---------- thanh đổi map ---------- */
+test('Thanh đổi map: MapBar.MAPS (public/js/mapbar.js) khớp SCENES và PLACES của server.js', () => {
+  const maps = readConst('public/js/mapbar.js', 'MAPS');
+  assert.ok(Array.isArray(maps) && maps.length > 0, 'MapBar.MAPS rỗng');
+  assert.equal(new Set(maps.map(m => m.id)).size, maps.length, 'MapBar.MAPS có id trùng');
+  for (const m of maps) {
+    assert.ok(m.kind === 'scene' || m.kind === 'place', `MapBar.MAPS "${m.id}": kind phải là 'scene' hoặc 'place'`);
+    assert.ok(m.label && m.short && m.icon, `MapBar.MAPS "${m.id}": thiếu label/short/icon`);
+  }
+  // mọi cảnh của máy chủ đều có nút, theo đúng thứ tự (lệnh 'scene' của máy chủ từ chối cảnh lạ)
+  same(maps.filter(m => m.kind === 'scene').map(m => m.id), Object.keys(readConst('server.js', 'SCENES')), 'MapBar.MAPS (kind scene)', 'SCENES (server.js)');
+  // nút nơi (Sân đấu…) phải là nơi máy chủ biết; Võ Học Các không có nút trên thanh nên không đòi chiều ngược lại
+  const places = readConst('server.js', 'PLACES');
+  const unknown = maps.filter(m => m.kind === 'place').map(m => m.id).filter(id => !places.includes(id));
+  assert.deepEqual(unknown, [], `MapBar.MAPS có nơi ${JSON.stringify(unknown)} mà PLACES (server.js) không có`);
+});
+
 module.exports = { src, readConst, bracketSlice, placesRegisteredInApp, same };

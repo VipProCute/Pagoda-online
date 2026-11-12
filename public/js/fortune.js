@@ -43,12 +43,11 @@
     return 'không thuộc cặp tam hợp hoặc lục xung trong cách xem này: giữ nhịp ổn định và theo dõi hoàn cảnh';
   }
   function text(el,value) { el.textContent=value; }
-  function init({socket, getMe, getJoined, setScene, goScene, getScene, toast}) {
+  function init({socket, getMe, getJoined, setScene, getScene, toast}) {
     const $=id=>document.getElementById(id), dlg=$('dlg-fortune'); let state={current:null,waiting:[]};
     const open=type=>{ if(!getJoined()){toast('Mời bạn vào chùa trước nhé.');return;} $('fortune-lot').hidden=type!=='lot';$('fortune-tarot').hidden=type!=='tarot';$('fortune-horoscope').hidden=type!=='horoscope';text($('fortune-title'),type==='lot'?'Xin xăm':type==='tarot'?'Trải bài Tarot':'Xem tử vi sắp tới');if(!dlg.open)dlg.showModal();};
     $('fortune-close').onclick=()=>dlg.close();
-    // đổi cảnh (chánh điện, sân chùa, Tàng Kinh Các) do app.js lo: goScene gửi lên máy chủ rồi mới đổi
-    $('go-yard').onclick=()=>goScene('yard'); $('go-hall').onclick=()=>goScene('hall');
+    // đổi cảnh (chánh điện, sân chùa, Tàng Kinh Các) do thanh đổi map lo (public/js/mapbar.js, app.js: goMap)
     $('fortune-join').onclick=()=>socket.emit('fortune:join',{},r=>{if(!r||!r.ok)toast(r?.reason||'Chưa thể xin xăm.');else $('lot-result').hidden=true;});
     $('fortune-leave').onclick=()=>socket.emit('fortune:leave');
     function renderQueue() {

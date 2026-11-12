@@ -1799,7 +1799,9 @@
   }
   function onDown(e) {
     const [x, y] = point(e);
-    const clickedPlayer = personAt(x, y);
+    let clickedPlayer = personAt(x, y);
+    // Tàng Kinh Các: chạm vào bồ đoàn có người ngồi thì coi là chọn bồ đoàn (app.js tự đổi sang chỗ trống gần nhất)
+    if (clickedPlayer && scene === 'library' && clickedPlayer.sit >= 0 && seatAt(x, y) >= 0) clickedPlayer = null;
     if (clickedPlayer) { handlers.person && handlers.person(clickedPlayer.id); return; }
     const specialNpc = npcs.find(p => p.secretEncounter && viewOf(p) === scene && p.sx != null && Math.abs(x - p.sx) < 25 * p.s + 12 && y > p.sy - 120 * p.s - 20 && y < p.sy + 10);
     if (specialNpc) { handlers.secretNpc && handlers.secretNpc(specialNpc.npc.role); return; }
@@ -1885,6 +1887,16 @@
     setTagger(fn) { tagger = typeof fn === 'function' ? fn : null; },
     seatCount: LIB_SEATS.length,
     seatPos: i => LIB_SEATS[i] || null,
+    /** Bồ đoàn trống gần (x, z) nhất; taken là tập các số bồ đoàn đã có người; -1 nếu hết chỗ. */
+    nearestFreeSeat(x, z, taken) {
+      let best = -1, bd = Infinity;
+      for (let i = 0; i < LIB_SEATS.length; i++) {
+        if (taken && taken.has(i)) continue;
+        const d = Math.hypot((x - LIB_SEATS[i][0]) * 1.6, z - LIB_SEATS[i][1]);
+        if (d < bd) { bd = d; best = i; }
+      }
+      return best;
+    },
     get scene() { return scene; },
     /** Vẽ một nhân vật tại gốc toạ độ hiện tại (chân ở 0,0, cao khoảng 85 đơn vị) cho các màn hình khác dùng lại. */
     avatar(c, look, opts) { opts = opts || {}; drawAvatar(c, look, opts.front !== false, opts.t || 0, opts.bow || 0, !!opts.walking, opts.pose || null); },

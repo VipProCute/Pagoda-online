@@ -30,7 +30,7 @@ Hoàn thành tu luyện nhanh không giới hạn lượt mỗi ngày. Mọi tr�
 
 ## Các "nơi" của chùa
 
-Mỗi nơi một màn hình riêng; chạm nút ở thanh dưới chánh điện để sang nơi khác, nút "Về chánh điện" để quay lại.
+Mỗi nơi một màn hình riêng; dùng thanh đổi map ở góc trên cảnh (Chánh điện · Sân chùa · Tàng Kinh Các · Sân đấu; nút của nơi đang đứng sáng màu vàng) để sang nơi khác, nút "Về chánh điện" để quay lại từ Võ Học Các. Xin xăm, xem tử vi, tarot, ngồi thiền, đọc kinh: chạm vật trong cảnh (hũ xăm trên bàn thờ, bàn thầy bói, bồ đoàn, kệ kinh), không có nút riêng.
 
 | Nơi | Dùng để | Ghi chú |
 |---|---|---|

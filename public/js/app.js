@@ -96,20 +96,27 @@
     yard: 'Chạm sàn để đi lại · chạm bàn thầy tử vi hoặc thầy Tarot để xem',
     library: 'Chạm bồ đoàn để ngồi thiền tu luyện · chạm Kệ kinh để đọc kinh · chạm kệ Võ học để học chiêu'
   };
+  /** Thanh đổi map: nút của nơi đang đứng sáng (đang ở Võ Học Các / Sân đấu thì sáng nơi đó), nút Sân đấu ẩn khi PK tắt. */
+  function syncMapBar() {
+    const mc = (cfg && cfg.martial) || {};
+    MapBar.setCurrent(Places.current === 'hall' ? curScene : Places.current);
+    MapBar.setEnabled('arena', !!mc.pk);
+  }
+  // Dòng gợi ý cảnh: máy bàn luôn hiện; điện thoại là dải nhỏ có ✕, chỉ hiện lần đầu vào mỗi map (nhớ bằng ta-hint-<map>)
+  const hintKey = scene => 'ta-hint-' + scene;
+  function showHint(scene) {
+    $('#stageHintText').textContent = SCENE_HINT[scene] || SCENE_HINT.hall;
+    $('#stageHint').classList.toggle('gone', store.get(hintKey(scene)) === '1');
+  }
+  $('#stageHintX').addEventListener('click', () => { store.set(hintKey(curScene), '1'); $('#stageHint').classList.add('gone'); });
   function applyScene(scene) {
+    if (scene !== curScene) store.set(hintKey(curScene), '1');   // đã rời map thì không nhắc lại lần sau
     curScene = scene;
     SFX.recover();
     if (Places.current !== 'arena') Hall.setScene(scene);
-    const mc = (cfg && cfg.martial) || {};
-    $('#go-yard').hidden = scene !== 'hall';
-    $('#go-hall').hidden = scene === 'hall';
-    $('#go-library').hidden = scene !== 'hall';
-    $('#open-lot').hidden = scene !== 'hall';
-    $('#open-horoscope').hidden = $('#open-tarot').hidden = scene !== 'yard';
-    $('#lib-read').hidden = $('#lib-sit').hidden = scene !== 'library';
-    $('#lib-dojo').hidden = scene !== 'library' || !mc.enabled;
+    syncMapBar();
     $('#stage').setAttribute('aria-label', SCENE_LABEL[scene] || 'Chánh điện');
-    $('#stageHint').textContent = SCENE_HINT[scene] || SCENE_HINT.hall;
+    showHint(scene);
     if (scene !== 'library') Meditate.close();
   }
   function goScene(scene) {
@@ -121,27 +128,38 @@
       if (scene === 'library') toast('Tàng Kinh Các: chạm bồ đoàn để ngồi thiền tu luyện, chạm kệ để đọc kinh hay học võ.');
     });
   }
-  $('#go-library').addEventListener('click', () => goScene('library'));
-  $('#lib-read').addEventListener('click', () => act('read'));
-  // Ngồi thiền: đang ngồi thì mở lại bảng; chưa thì chọn bồ đoàn trống gần mình nhất
-  $('#lib-sit').addEventListener('click', () => {
-    const mine = Hall.player(me);
-    if (mine && mine.sit >= 0) { Meditate.open(mine.sit); return; }
-    const taken = new Set(Hall.list().filter(p => p.id !== me && p.sit >= 0 && p.scene === 'library' && (p.place || 'hall') === 'hall').map(p => p.sit));
-    let best = -1, bd = Infinity;
-    for (let i = 0; i < Hall.seatCount; i++) {
-      if (taken.has(i)) continue;
-      const [x, z] = Hall.seatPos(i), d = mine ? Math.hypot((mine.x - x) * 1.6, mine.z - z) : i;
-      if (d < bd) { bd = d; best = i; }
-    }
-    if (best < 0) toast('Các bồ đoàn đều có người ngồi rồi, bạn đợi một chút nhé.'); else sitAt(best);
-  });
-  $('#lib-dojo').addEventListener('click', () => act('dojo'));
-  /** Ngồi lên bồ đoàn số i: máy chủ cho đi tới chỗ đó, tới nơi thì ngồi xuống; bảng tọa thiền mở ngay. */
+  // Thanh đổi map: nơi duy nhất đổi map. Cảnh trong chùa đi qua goScene; Sân đấu đi qua act('arena') (giữ needLogin).
+  // Đang ở Võ Học Các / Sân đấu mà bấm map khác thì về chánh điện trước rồi mới sang cảnh đó.
+  function goMap(id) {
+    const m = MapBar.MAPS.find(x => x.id === id);
+    if (!m) return;
+    if (m.kind === 'place') { act(id); return; }
+    if (Places.current !== 'hall') { Places.go('hall').then(ok => { if (ok) goScene(id); }); return; }
+    goScene(id);
+  }
+  MapBar.configure({ go: goMap });
+  MapBar.mount($('#stage'));
+  MapBar.setCurrent('hall');
+  /** Các bồ đoàn đang có người khác ngồi (ở Tàng Kinh Các, cùng chánh điện). */
+  function takenSeats() {
+    return new Set(Hall.list().filter(p => p.id !== me && p.sit >= 0 && p.scene === 'library' && (p.place || 'hall') === 'hall').map(p => p.sit));
+  }
+  /** Bồ đoàn trống gần vị trí (x, z) nhất; -1 nếu hết chỗ. */
+  function nearestFreeSeat(x, z) { return Hall.nearestFreeSeat(x, z, takenSeats()); }
+  /** Ngồi lên bồ đoàn số i: máy chủ cho đi tới chỗ đó, tới nơi thì ngồi xuống; bảng tọa thiền mở ngay.
+   *  Bồ đoàn đang có người thì tự chọn bồ đoàn trống gần nhất. */
   function sitAt(i) {
     if (!joined) return;
     const mine = Hall.player(me);
     if (mine && mine.sit === i) { Meditate.open(i); return; }
+    if (takenSeats().has(i)) {
+      const [x, z] = Hall.seatPos(i) || [0.5, 0.5];
+      const best = nearestFreeSeat(x, z);
+      if (best < 0) { toast('Các bồ đoàn đều có người ngồi rồi, bạn đợi một chút nhé.'); return; }
+      if (mine && mine.sit === best) { Meditate.open(best); return; }
+      toast('Bồ đoàn này có người, mời bạn sang bồ đoàn bên cạnh.');
+      i = best;
+    }
     socket.emit('sit', { seat: i }, r => {
       if (!r || !r.ok) { toast((r && r.reason) || 'Chưa ngồi được, thử lại nhé.'); return; }
       Hall.setSit(me, i, (mine && mine.cm) || '');
@@ -293,10 +311,7 @@
 
   /* ---------- kết nối ---------- */
   const socket = io({ transports: ['websocket', 'polling'] });
-  const fortune = Fortune.init({ socket, getMe: () => me, getJoined: () => joined, setScene: applyScene, goScene, getScene: () => curScene, toast });
-  $('#open-lot').addEventListener('click', () => fortune.open('lot'));
-  $('#open-horoscope').addEventListener('click', () => fortune.open('horoscope'));
-  $('#open-tarot').addEventListener('click', () => fortune.open('tarot'));
+  const fortune = Fortune.init({ socket, getMe: () => me, getJoined: () => joined, setScene: applyScene, getScene: () => curScene, toast });
   socket.on('pscene', d => { Hall.playerScene(d); Voice.refresh(); });
   async function syncTime() {
     let best = null;
@@ -915,6 +930,7 @@
       SFX.recover();
       Hall.pause(name === 'dojo'); Hall.setPlace(me, name);       // Sân đấu có khung vẽ riêng (Arena gắn cảnh vào đó)
       if (name !== 'hall') Meditate.close();
+      syncMapBar();
       // Voice tự chuyển phòng khi nơi của người chơi đổi; giữ trạng thái mic rõ ràng trên thanh điều khiển.
       voiceUI();
     }
