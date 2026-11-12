@@ -424,11 +424,11 @@
   </div>
 </dialog>
 
-<!-- Tương tác với người chơi, dùng chung ở các cảnh -->
+<!-- Tương tác với người chơi và NPC, dùng chung ở các cảnh (nút hiện theo actor.menu() trong public/js/actors.js) -->
 <dialog class="dlg" id="dlg-person" aria-labelledby="person-title">
   <div class="dlg-body">
     <div class="dlg-head"><div><h2 id="person-title">Người chơi</h2><p id="person-hint"></p></div><button type="button" class="x" data-close aria-label="Đóng">×</button></div>
-    <div class="dlg-foot"><button type="button" class="btn" id="person-mute">Tắt tiếng người này</button><button type="button" class="btn gold" id="person-challenge">Thách đấu</button></div>
+    <div class="dlg-foot"><button type="button" class="btn" id="person-mute">Tắt tiếng người này</button><button type="button" class="btn gold" id="person-challenge">Thách đấu</button><button type="button" class="btn gold" id="person-talk" hidden>Trò chuyện</button></div>
   </div>
 </dialog>
 
@@ -520,7 +520,8 @@
 <script src="/js/aura.js"></script>
 <script src="/js/merit.js?v=npc2"></script>
 <script src="/js/celebrate.js"></script>
-<script src="/js/hall.js?v=kydao4"></script>
+<script src="/js/actors.js?v=npc1"></script>
+<script src="/js/hall.js?v=npc-walk1"></script>
 <script src="/js/mapbar.js?v=mapbar1"></script>
 <script src="/js/tarot.js?v=tarot2"></script>
 <script src="/js/fortune.js?v=tarot1"></script>
@@ -532,6 +533,6 @@
 <script src="/js/dojo.js?v=chu-vhc2"></script>
 <script src="/js/arena.js?v=sandau2"></script>
 <script src="/js/guide.js?v=sotay3"></script>
-<script src="/js/app.js?v=sotay2"></script>
+<script src="/js/app.js?v=npc-walk1"></script>
 </body>
 </html>

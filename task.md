@@ -62,6 +62,7 @@
 | T-066 | Bài kiểm người mới (25 câu) | ⏳ T-067 (và mọi thẻ T-010 → T-065) | P1 | CORE + GUIDE | — |
 | T-067 | Cập nhật README và tài liệu người chơi | ⏳ T-010 → T-065 | P2 | CORE + DOCS | — |
 | T-068 | Cho máy chủ thử tắt êm trên Windows (3 test e2e) | ✅ Xong · PR #43 | P0 | CORE + STORE + OPS | Claude Sonnet 5.5 |
+| T-069 | Mọi NPC đi lang thang, chạm NPC để trò chuyện, lớp nhân vật chung | 🟣 Chờ soát | P1 | CORE + HALL + MARTIAL | Claude Opus 5.5 |
 
 Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạm `package.json`). **T-005**, **T-007**, **T-002** làm song song được với nhóm trên.
 Đợt 2026-11: làm **T-003, T-004, T-006** trước (T-004 gỡ nút thắt `package.json` cho mọi thẻ thêm file JS; T-006 là cổng "CI xanh"). Sau đó theo lịch 6 đợt ở [docs/KE-HOACH-DOT-2026-11.md §10.3](docs/KE-HOACH-DOT-2026-11.md#103-lịch-theo-đợt-và-khóa-vùng-nóng).
@@ -968,6 +969,21 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
   - [ ] Nếu một test vẫn đỏ vì lý do khác (không phải flush khi tắt): ghi rõ nguyên nhân, mở thẻ ⚪ mới, không sửa logic nghiệp vụ trong thẻ này
 - **Ngoài phạm vi**: sửa logic tu luyện, cúng dường, đăng nhập.
 - **Ghi chú**: phát hiện ở T-003 (2026-11-11). Soát T-003 thử hạ thời gian ghi JSON xuống 200 ms thì `e2e-donation-test-mode` xanh, hai test kia vẫn đỏ.
+
+### T-069 · Mọi NPC đi lang thang, chạm NPC để trò chuyện, lớp nhân vật chung
+- **Trạng thái**: 🟣 Chờ soát (2026-11-12). Chưa commit, chưa mở PR. Chưa thử bằng mắt trên trình duyệt thật.
+- **Ưu tiên**: P1
+- **Gói ngữ cảnh**: CORE + HALL + MARTIAL
+- **Khu vực chạm**: public/js/actors.js (mới), public/js/hall.js (`randomizeNpcs`, `updateNpcs`, `personAt`/`npcAt`, `onDown`, `onMove`, `mk`, `setSweeper`, `Hall.npc`/`npcTalk`/`npcHold`), public/js/app.js (`openPerson`, `talkTo`, `finishTalk`, bỏ handler `sweeper`/`secretNpc`), server.js (`martial:secret-encounter`, `sweeper:claim`), public/index.html (nút Trò chuyện, `?v=`), test/actors.test.js, test/e2e-npc-wander.test.js, test/helpers/npc-chase.js (mới), test/hall-npcs.test.js, test/hall-tables.test.js, test/e2e-sweeper.test.js, docs/agents/ARCHITECTURE.md
+- **Người làm**: Claude Opus 5.5 · **Nhánh**: `claude/npc-random-movement-interaction-528715`
+- **Mục tiêu**: chủ dự án muốn mọi NPC (kể cả NPC cơ duyên và Tảo Địa Tăng) đi lang thang như nhau; chạm vào thân NPC mở hộp tương tác giống người chơi, chỉ có "Trò chuyện"; người chơi và NPC cùng kế thừa một lớp chung. NPC cơ duyên trò chuyện xong thì còn có bí kíp ẩn hoặc truyền công lực.
+- **Cách làm**: `Actor` → `Player` / `Npc` → `FortuneNpc`. Mọi NPC đi theo `wanderAt(seed, area, t)` (chặng 18 giây: đứng rồi đi thẳng 0,08 đv/giây). NPC cơ duyên tính theo giờ máy chủ nên mọi máy cùng thấy, máy chủ tính lại vị trí (`distanceTo`, chừa 2 giây) trước khi cho nhận quà. Bỏ toạ độ cố định trong `server.js`. NPC xếp sau đồ vật khi chạm (bàn, bồ đoàn, kệ, thầy bói, bát hương, tượng, tủ kinh), trước chạm sàn; người chơi vẫn đứng đầu.
+- **Tiêu chí xong**:
+  - [x] `npm run check` sạch; `npm test` 720 test, 717 đạt, 0 trượt, 3 bỏ qua (PostgreSQL) trên Windows/Node v25
+  - [x] NPC cơ duyên ở đúng chỗ máy chủ tính, có đổi chỗ theo thời gian; NPC thường đứng lại khi được bắt chuyện
+  - [x] Máy chủ báo `far` kèm chỗ NPC đang đứng; đuổi kịp thì thôi báo `far` (e2e)
+  - [ ] Chủ dự án thử trên trình duyệt: chạm NPC ở 4 cảnh, trò chuyện với NPC thường và NPC cơ duyên, màn điện thoại
+- **Ngoài phạm vi**: đổi danh sách NPC, câu thoại, điều kiện nhận bí kíp; đồng bộ NPC thường giữa các máy (vẫn ngẫu nhiên riêng từng máy như trước).
 
 ---
 

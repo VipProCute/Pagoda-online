@@ -60,32 +60,15 @@
 
   /* ---------- cảnh chánh điện ---------- */
   Hall.init($('#hall'), {
-    floor(x, z) { if (joined) socket.emit('move', { x, z }); },
+    floor(x, z) { stopTalk(); if (joined) socket.emit('move', { x, z }); },   // tự đi chỗ khác thì thôi đuổi theo NPC
     altar() { act('incense'); },
     statue() { act('bow'); },
     library() { goScene('library'); },                     // chạm tủ Tàng Kinh Các: bước vào trong
     read() { act('read'); },                               // trong Tàng Kinh Các: chạm Kệ kinh để đọc kinh
     dojo() { act('dojo'); },                               // chạm kệ Võ học: sang Võ Học Các học chiêu
-    seat(i) { sitAt(i); },
-    sweeper(id) {
-      if (!joined) return;
-      socket.emit('sweeper:claim', { id }, r => {
-        if (!r) return toast('Chưa gặp được cao nhân, hãy thử lại.');
-        if (r.code === 'far') socket.emit('move', { x: r.x, z: r.z });
-        if (!r.ok) toast(r.reason || 'Chưa nhận được truyền thừa.');
-        else if (r.already) toast('Bạn đã nhận truyền thừa trong lần gặp này.');
-      });
-    },                                 // chạm bồ đoàn: đi tới, ngồi thiền
-    secretNpc(role) {
-      if (!joined) return;
-      socket.emit('martial:secret-encounter', { role }, r => {
-        if (!r) return toast('Chưa thể trò chuyện, hãy thử lại.');
-        if (r.code === 'far') socket.emit('move', { x: r.x, z: r.z });
-        if (!r.ok) return toast(r.reason || 'Cơ duyên chưa tới.');
-        toast(r.already ? `Bạn đã lĩnh ngộ ${r.name}.` : `Cơ duyên xuất hiện! Bạn lĩnh ngộ ${r.name}.`);
-      });
-    },
+    seat(i) { sitAt(i); },                                 // chạm bồ đoàn: đi tới, ngồi thiền
     person(id) { openPerson(id); },
+    npc(id) { openPerson(id); },                           // NPC dùng chung hộp tương tác với người chơi, chỉ khác lựa chọn
     fortune() { fortune.open('lot'); },
     reader(type) { fortune.open(type); }
   });
@@ -112,7 +95,7 @@
   $('#stageHintX').addEventListener('click', () => { store.set(hintKey(curScene), '1'); $('#stageHint').classList.add('gone'); });
   function applyScene(scene) {
     if (scene !== curScene) store.set(hintKey(curScene), '1');   // đã rời map thì không nhắc lại lần sau
-    curScene = scene;
+    curScene = scene; stopTalk();
     SFX.recover();
     if (Places.current !== 'arena') Hall.setScene(scene);
     syncMapBar();
@@ -804,16 +787,56 @@
     } finally { voiceMicBusy = false; voiceUI(); }
   }
   let personId = null;
+  /** Hộp tương tác chung: người chơi hay NPC đều là Actor (public/js/actors.js), nút hiện theo actor.menu(). */
   function openPerson(id) {
-    const p = Hall.player(id); if (!p) return;
+    const p = Hall.player(id) || Hall.npc(id); if (!p) return;
     personId = id;
-    $('#person-title').textContent = p.name;
-    const canChallenge = Places.current === 'arena';
-    $('#person-hint').textContent = canChallenge ? 'Chọn thao tác với người chơi này.' : 'Mời người này cùng ra Sân đấu để luận võ.';
+    const menu = p.menu();
+    $('#person-title').textContent = p.isNpc ? p.name.split(' · ')[0] : p.name;
+    if (p.isNpc) $('#person-hint').textContent = 'Khách trong chùa. Lại gần trò chuyện đôi câu cho vui.';
+    else $('#person-hint').textContent = Places.current === 'arena' ? 'Chọn thao tác với người chơi này.' : 'Mời người này cùng ra Sân đấu để luận võ.';
     $('#person-mute').textContent = Voice.isMuted(id) ? 'Bật tiếng người này' : 'Tắt tiếng người này';
-    $('#person-challenge').hidden = !(cfg && cfg.martial && cfg.martial.pk);
+    $('#person-mute').hidden = !menu.includes('mute');
+    $('#person-challenge').hidden = !menu.includes('challenge') || !(cfg && cfg.martial && cfg.martial.pk);
+    $('#person-talk').hidden = !menu.includes('talk');
     openDlg('person');
   }
+  /* ---------- trò chuyện với NPC: đi tới gần (NPC vẫn đi lang thang), tới nơi thì NPC đáp một câu ---------- */
+  const TALK_NEAR = 0.14;                                  // dưới ngưỡng máy chủ (Actors.TALK_RANGE) để chừa độ trễ
+  let talkRun = 0;
+  function stopTalk() { talkRun++; }
+  function talkTo(id) {
+    if (!joined) { openDlg('join'); return; }
+    const run = ++talkRun, until = Date.now() + 20000;
+    let aim = null;
+    const step = () => {
+      if (run !== talkRun) return;
+      const n = Hall.npc(id), mine = Hall.player(me);
+      if (!n || !mine) { stopTalk(); return; }
+      if (pdist(mine, n) <= TALK_NEAR) { stopTalk(); finishTalk(n); return; }
+      if (Date.now() > until) { stopTalk(); toast('Người ấy đi xa mất rồi, chạm lại để trò chuyện nhé.'); return; }
+      Hall.npcHold(id, 1500);                              // NPC thường đứng chờ; NPC cơ duyên vẫn đi theo giờ máy chủ
+      const x = Math.min(0.97, Math.max(0.03, n.x)), z = Math.min(0.97, n.z + 0.05);   // đứng trước mặt NPC một chút
+      if (!aim || pdist(aim, { x, z }) > 0.03) { aim = { x, z }; socket.emit('move', aim); }
+      setTimeout(step, 300);
+    };
+    step();
+  }
+  function finishTalk(n) {
+    Hall.npcTalk(n.id);
+    const gift = n.gift();                                 // chỉ NPC cơ duyên có quà; máy chủ quyết có nhận được không
+    if (!gift) return;
+    socket.emit(gift.event, gift.data, r => {
+      if (!r) return toast('Chưa thể trò chuyện, hãy thử lại.');
+      if (!r.ok) return r.code === 'login' ? needLogin(r.reason) : toast(r.reason || 'Cơ duyên chưa tới.');
+      if (gift.kind === 'sweeper') { if (r.already) toast('Bạn đã nhận truyền thừa trong lần gặp này.'); return; }
+      toast(r.already ? `Bạn đã lĩnh ngộ ${r.name}.` : `Cơ duyên xuất hiện! Bạn lĩnh ngộ ${r.name}.`);
+    });
+  }
+  $('#person-talk').addEventListener('click', () => {
+    const id = personId; closeDlg('person');
+    if (id != null) talkTo(id);
+  });
   $('#person-mute').addEventListener('click', () => {
     if (personId == null) return;
     const off = !Voice.isMuted(personId); Voice.mute(personId, off);

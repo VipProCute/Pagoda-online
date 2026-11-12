@@ -16,6 +16,7 @@ const AURA = require('./public/js/aura');
 const MERITS = require('./public/js/merit');
 const announce = require('./lib/announce');
 const MARTIAL = require('./public/js/martial');
+const ACTORS = require('./public/js/actors');     // đường đi lang thang của NPC cơ duyên (dùng chung với trình duyệt)
 const { createMartialService } = require('./lib/martial/service');
 const { createSweeper } = require('./lib/sweeper');
 const { mergeMartialGuest, mergeKydaoGuest, donatedBy } = require('./lib/account');
@@ -1259,21 +1260,27 @@ io.on('connection', socket => {
     const event = sweeper.current();
     if (!event || event.id !== d.id) return ack({ ok: false, reason: 'Tảo Địa Tăng đã rời đi, hãy chờ cơ duyên khác.' });
     if (p.scene !== 'library' || (p.place && p.place !== 'hall')) return ack({ ok: false, reason: 'Hãy vào Tàng Kinh Các để gặp cao nhân.' });
-    if (Math.hypot((p.x - event.x) * X_WEIGHT, p.z - event.z) > 0.22) return ack({ ok: false, code: 'far', x: event.x, z: event.z, reason: 'Hãy đến gần Tảo Địa Tăng rồi trò chuyện.' });
+    // Tảo Địa Tăng đi lang thang theo đường tính từ mã sự kiện (public/js/actors.js), trình duyệt vẽ đúng đường đó
+    const seed = ACTORS.seedOf(event.id), t = now();
+    if (ACTORS.distanceTo(seed, ACTORS.SWEEPER.area, p.x, p.z, t) > ACTORS.TALK_RANGE) {
+      const at = ACTORS.wanderAt(seed, ACTORS.SWEEPER.area, t);
+      return ack({ ok: false, code: 'far', x: at.x, z: at.z, reason: 'Hãy đến gần Tảo Địa Tăng rồi trò chuyện.' });
+    }
     const result = martial.inheritSweeper(p.uid, event.id);
     if (result.ok && !(await store.flush())) return ack({ ok: false, reason: 'Chưa lưu được truyền thừa, hãy thử lại sau ít giây.', updates: result.updates });
     if (result.ok && !result.already) emitToUid(p.uid, 'martial:inheritance', { level: result.level, gain: result.gain });
     ack(result);
   }));
   socket.on('martial:secret-encounter', martialOnly(async (d, ack) => {
-    const locations = {
-      beggar: { scene: 'hall', x: 0.68, z: 0.67 },
-      wanderer: { scene: 'yard', x: 0.32, z: 0.67 },
-      obito: { scene: 'library', x: 0.76, z: 0.68 }
-    };
-    const loc = Object.prototype.hasOwnProperty.call(locations, d.role) && locations[d.role];
+    // NPC cơ duyên đi lang thang theo giờ máy chủ (public/js/actors.js → FORTUNE_NPCS): vị trí tính lại ở đây, không tin client
+    const role = d && typeof d.role === 'string' ? d.role : '';
+    const loc = Object.prototype.hasOwnProperty.call(ACTORS.FORTUNE_NPCS, role) && ACTORS.FORTUNE_NPCS[role];
     if (!loc || p.scene !== loc.scene || (p.place && p.place !== 'hall')) return ack({ ok: false, reason: 'Không tìm thấy người này tại đây.' });
-    if (Math.hypot((p.x - loc.x) * X_WEIGHT, p.z - loc.z) > 0.22) return ack({ ok: false, code: 'far', x: loc.x, z: loc.z, reason: 'Hãy đến gần rồi trò chuyện lại.' });
+    const t = now();
+    if (ACTORS.distanceTo(loc.seed, loc.area, p.x, p.z, t) > ACTORS.TALK_RANGE) {
+      const at = ACTORS.wanderAt(loc.seed, loc.area, t);
+      return ack({ ok: false, code: 'far', x: at.x, z: at.z, reason: 'Hãy đến gần rồi trò chuyện lại.' });
+    }
     const result = martial.claimSecret(p.uid, d.role);
     if (result.ok && !(await store.flush())) return ack({ ok: false, reason: 'Chưa lưu được cơ duyên, hãy thử lại sau ít giây.', updates: result.updates });
     ack(result);
