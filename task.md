@@ -26,7 +26,7 @@
 | T-012 | Thanh đổi map trong Sân đấu | ⏳ T-010, T-011 | P1 | CORE + NAV + PK | — |
 | T-020 | Chốt giao thức Kỳ Đạo | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + KYDAO + DOCS | Claude Sonnet 5.5 |
 | T-021 | Luật cờ vua thuần, kiểm perft | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + KYDAO | Claude Sonnet 5.5 + Codex terra 6.1 |
-| T-022 | Luật cờ tướng thuần, perft, ký hiệu Việt | ⏳ T-004 | P0 | CORE + KYDAO | — |
+| T-022 | Luật cờ tướng thuần, perft, ký hiệu Việt | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + KYDAO | Codex terra 6.1 + Claude Sonnet 5.5 |
 | T-023 | Nghiên cứu luật cờ tướng úp (揭棋) | 🔵 Sẵn sàng | P1 | CORE + KYDAO + DOCS | — |
 | T-024 | Biến thể cờ tướng úp | ⏳ T-022, T-023 | P1 | CORE + KYDAO | — |
 | T-025 | Luật cờ vây thuần | ⏳ T-004 | P1 | CORE + KYDAO | — |
@@ -318,13 +318,13 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: giao diện, đồng hồ, bot.
 
 ### T-022 · Viết luật cờ tướng thuần, perft, ký hiệu Việt
-- **Trạng thái**: ⏳ Chờ T-004
+- **Trạng thái**: ✅ Gộp vào nhánh tích hợp (chờ PR). Thợ: Codex terra 6.1 (gpt-6.1-terra); sửa vòng 1 bằng Claude Sonnet 5.5 vì kênh Codex hết hạn mức. Soát: Opus 5.5 thay Sol 6.1 và Gemini Argon (hai kênh hết hạn mức), PASS vòng 2. Perft d1–d3 đúng (44 / 1.920 / 79.666).
 - **Ưu tiên**: P0 · **Đợt**: 1
 - **Gói ngữ cảnh**: CORE + KYDAO
 - **Khu vực chạm**: public/js/kydao/xiangqi.js (mới), test/kydao-xiangqi.test.js (mới)
 - **Phụ thuộc**: T-004
 - **Thợ**: Codex terra 6.1 · **Soát**: Sol 6.1 + Gemini Argon (luật lặp thế)
-- **Người làm**: — · **Nhánh**: —
+- **Người làm**: Codex terra 6.1 + Claude Sonnet 5.5 · **Nhánh**: `claude/T-022-luat-co-tuong`
 - **Thiết kế**: KH §5.4 "Cờ tướng", Phụ lục A
 - **Mục tiêu**: luật cờ tướng đầy đủ, ký hiệu kiểu Việt, sẵn chỗ cho biến thể cờ úp.
 - **Tiêu chí xong**:
