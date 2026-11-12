@@ -51,9 +51,9 @@ Chi tiết từng chiêu (nội lực, tốc độ, sát thương, hiệu ứng)
 
 ### Độ thành thạo từng chiêu
 
-Học xong ở bậc Tiếp xúc da lông; chọn **Luyện chiêu này** hoặc chọn chiêu trong tab Tâm pháp trước khi bắt đầu phiên tu. Một phiên luyện một chiêu đã học, đồng thời nhận công lực/tâm đắc như cũ. Cứ 15 phút thời lượng gốc được 2 điểm thuần thục; mốc 0 / 20 / 60 / 120 / 240 tương ứng Tiếp xúc da lông / Sơ nhập môn đình / Đăng đường nhập thất / Lô hỏa thuần thanh / Đại viên mãn. Từ 0 đến tối đa mất tổng 30 giờ tu hoàn thành cho mỗi chiêu. Hoàn thành ngay/phiếu nhận cùng phần thưởng sau khi xác nhận; hủy hoặc spam PK không nhận thuần thục.
+Học xong ở bậc Tiếp xúc da lông; chọn **Luyện chiêu này** hoặc chọn chiêu trong tab Tâm pháp trước khi bắt đầu phiên tu. Một phiên luyện một chiêu đã học, đồng thời nhận công lực/tâm đắc như cũ. Cứ 15 phút thời lượng gốc được 2 điểm thành thạo; mốc 0 / 20 / 60 / 120 / 240 tương ứng Tiếp xúc da lông / Sơ nhập môn đình / Đăng đường nhập thất / Lô hỏa thuần thanh / Đại viên mãn. Từ 0 đến tối đa mất tổng 30 giờ tu hoàn thành cho mỗi chiêu. Hoàn thành ngay/phiếu nhận cùng phần thưởng sau khi xác nhận; hủy hoặc spam PK không nhận thành thạo.
 
-Chiêu công thông thường tăng 5% sát thương gốc mỗi bậc sau bậc đầu; chiêu thủ thêm 2 điểm phần trăm giảm sát thương mỗi bậc; né thêm 2 tốc, đỡ thêm 1,5 tốc và 5% phản phẳng mỗi bậc. Phá Sơn có thang riêng bên dưới. Dữ liệu cũ giữ nguyên công lực/chiêu đã học; các chiêu chưa luyện có thuần thục 0. Độ thành thạo chụp lúc nhận lời đấu, không thay đổi giữa trận.
+Chiêu công thông thường tăng 5% sát thương gốc mỗi bậc sau bậc đầu; chiêu thủ thêm 2 điểm phần trăm giảm sát thương mỗi bậc; né thêm 2 tốc, đỡ thêm 1,5 tốc và 5% phản phẳng mỗi bậc. Phá Sơn có thang riêng bên dưới. Dữ liệu cũ giữ nguyên công lực/chiêu đã học; các chiêu chưa luyện có thành thạo 0. Độ thành thạo chụp lúc nhận lời đấu, không thay đổi giữa trận.
 
 ## Luận võ so chiêu đồng thời
 
