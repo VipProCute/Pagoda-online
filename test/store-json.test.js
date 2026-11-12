@@ -46,6 +46,11 @@ function fill(db) {
   db.martial.ledger['session:5'] = { uid: 'u_a', at: 1, congLuc: 2, tam: {} };
   db.martial.matches.push({ id: 14, at: 1, a: { uid: 'u_a' }, b: { uid: 'u_b' }, result: 'a' });
   db.martial.audit.push({ id: 15, at: 1, actor: 'admin', action: 'x', target: '', detail: null });
+  db.kydao.ratings.u_a = { name: 'Ánh', chess: { r: 1230, peak: 1250, peakAt: 5, n: 22, w: 12, l: 8, d: 2, last: 6 } };
+  db.kydao.games.push({ id: 16, at: 1, game: 'chess', a: { uid: 'u_a' }, b: { uid: 'u_b' }, result: 'a' });
+  db.kydao.active.u_a = 16;
+  db.kydao.pairs['2026-11-11|u_a|u_b|chess'] = 3;
+  db.records.log.push({ id: 17, at: 1, cat: 'xiangqi.now', kind: 'season', name: 'Ánh', v: 1300, season: '2026-10' });
   db.seq = 200;
   return db;
 }
@@ -332,6 +337,36 @@ test('store-sections: snapshot / diff / adopt cho biết đúng phần chênh', 
   assert.deepEqual(S.unknownKeys(db), []);
   db.khoaLa = 1;
   assert.deepEqual(S.unknownKeys(db), ['khoaLa']);
+  delete db.khoaLa;
+  db.kydao.khoaCon = 1; db.records.khoaCon = 1;
+  assert.deepEqual(S.unknownKeys(db), ['kydao.khoaCon', 'records.khoaCon']);
+});
+
+test('store-sections: kydao và records có mặc định, vá khi thiếu/sai kiểu, và diff theo id', () => {
+  const f = S.fresh();
+  assert.deepEqual(f.kydao, { ratings: {}, games: [], active: {}, pairs: {} });
+  assert.deepEqual(f.records, { log: [] });
+  const db = S.adopt({}, { version: 2, kydao: { games: 'x', ratings: { u: { name: 'U' } } }, records: null });
+  assert.deepEqual(db.kydao, { ratings: { u: { name: 'U' } }, games: [], active: {}, pairs: {} });
+  assert.deepEqual(db.records, { log: [] });
+  const old = S.adopt({}, { version: 2 });
+  assert.deepEqual(old.kydao, S.fresh().kydao, 'dữ liệu cũ không có hai khóa vẫn nạp được');
+  for (let i = 1; i <= 3; i++) { old.kydao.games.push({ id: i }); old.records.log.push({ id: 10 + i }); }
+  const shadow = S.snapshot(old);
+  old.kydao.games.shift(); old.records.log.shift();
+  const d = S.diff(shadow, S.snapshot(old));
+  assert.deepEqual(d.upserts, [], 'cắt bớt đầu danh sách không ghi lại mục còn lại');
+  assert.deepEqual(d.deletes.sort(), [['kydao.games', '1'], ['records.log', '11']]);
+});
+
+test('store-sections: kydao.pairs khứ hồi qua snapshot → rowsToRaw → adopt, không bị coi là khóa lạ', () => {
+  const db = S.adopt({}, { version: 2 });
+  db.kydao.pairs['2026-11-11|a|b|go'] = 2;
+  assert.deepEqual(S.unknownKeys(db), []);
+  const rows = new Map();
+  for (const [name, m] of S.snapshot(db)) rows.set(name, [...m].map(([k, str]) => ({ k, v: JSON.parse(str) })));
+  const back = S.adopt({}, S.rowsToRaw(rows));
+  assert.deepEqual(back.kydao.pairs, { '2026-11-11|a|b|go': 2 });
 });
 
 test('store-sections: chuỗi có NUL hoặc surrogate lẻ được làm sạch để jsonb nhận', () => {

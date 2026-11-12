@@ -33,7 +33,7 @@
 | T-026 | Luật cờ caro thuần | ✅ Gộp tích hợp (chờ PR) | P1 | CORE + KYDAO | Claude Haiku 5.5 (thay GLM Flash) |
 | T-027 | Tính Elo và điều kiện xếp hạng | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + KYDAO | Claude Haiku 5.5 + GLM Flash + Claude Sonnet 5.5 |
 | T-028 | Bộ quản lý ván cờ | ⏳ T-020, T-021, T-022, T-027 | P0 | CORE + KYDAO + PK | — |
-| T-029 | Lưu bền dữ liệu Kỳ Đạo và kỷ lục 👤 merge | ⏳ T-020 | P0 | CORE + STORE | — |
+| T-029 | Lưu bền dữ liệu Kỳ Đạo và kỷ lục 👤 merge | ✅ Gộp tích hợp (chờ PR, 👤 merge) | P0 | CORE + STORE | Claude Sonnet 5.5 |
 | T-030 | Nối Kỳ Đạo vào máy chủ | ⏳ T-028, T-029, T-031, T-051 | P0 | CORE + KYDAO + HALL + AUTH | — |
 | T-031 | Vẽ bàn đá và ghế ở Sân chùa | ⏳ T-020 | P0 | CORE + HALL + KYDAO | — |
 | T-032 | Bảng bàn cờ: khung, cờ vua, cờ tướng | ⏳ T-020, T-021, T-022 | P0 | CORE + KYDAO | — |
@@ -444,13 +444,13 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: socket thật (T-030), lưu bền (T-029).
 
 ### T-029 · Lưu bền dữ liệu Kỳ Đạo và kỷ lục
-- **Trạng thái**: ⏳ Chờ T-020
+- **Trạng thái**: ✅ Gộp vào nhánh tích hợp. PR vào main: 👤 chủ dự án bấm merge (đổi hình dạng dữ liệu). Thợ: Claude Sonnet 5.5 (qua proxy). Soát: Sol 6.1.
 - **Ưu tiên**: P0 · **Đợt**: 2 · **👤 chủ dự án bấm merge**
 - **Gói ngữ cảnh**: CORE + STORE + AUTH
 - **Khu vực chạm**: lib/store-sections.js, lib/account.js (hàm mới `mergeKydaoGuest`), test/store-json.test.js, test/store-pg.test.js, test/account.test.js
 - **Phụ thuộc**: T-020
 - **Thợ**: Sonnet 5.5 (high) · **Soát**: Sol 6.1
-- **Người làm**: — · **Nhánh**: —
+- **Người làm**: Claude Sonnet 5.5 · **Nhánh**: `claude/T-029-luu-ben-kydao`
 - **Thiết kế**: KH §6.2, AGENTS.md §3.11
 - **Mục tiêu**: hai khóa cấp cao mới `db.kydao = { ratings:{}, games:[], active:{} }` và `db.records = { log:[] }` được lưu đủ ở JSON và PostgreSQL.
 - **Tiêu chí xong**:
