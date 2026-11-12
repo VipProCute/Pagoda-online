@@ -1343,6 +1343,8 @@ async function shutdown() {
 }
 process.on('SIGTERM', shutdown);
 process.on('SIGINT', shutdown);
+// Chỉ khi được chạy có kênh IPC (test e2e trên Windows, nơi SIGTERM giết tiến trình ngay): nhận 'shutdown' để tắt êm.
+if (typeof process.send === 'function') process.on('message', m => { if (m === 'shutdown') shutdown(); });
 
 async function main() {
   await store.init();     // JSON: đọc file · Postgres: kết nối, nạp, nhập từ JSON nếu CSDL còn trống

@@ -30,7 +30,7 @@ async function startServer(env = {}) {
   };
   const state = { logs: [], child: null };
   async function launch() {
-    const child = spawn(process.execPath, ['server.js'], { cwd: ROOT, env: { ...base, ...env, PORT: String(port) }, stdio: ['ignore', 'pipe', 'pipe'] });
+    const child = spawn(process.execPath, ['server.js'], { cwd: ROOT, env: { ...base, ...env, PORT: String(port) }, stdio: ['ignore', 'pipe', 'pipe', 'ipc'] });
     state.child = child;
     child.stdout.on('data', d => state.logs.push(String(d)));
     child.stderr.on('data', d => state.logs.push(String(d)));
@@ -45,7 +45,16 @@ async function startServer(env = {}) {
   async function stop() {
     const c = state.child;
     if (!c || c.exitCode != null) return;
-    await new Promise(res => { c.once('exit', res); c.kill('SIGTERM'); setTimeout(() => c.kill('SIGKILL'), 12000).unref(); });
+    // Windows: kill('SIGTERM') giết ngay, không chạy được store.flush → nhắn 'shutdown' qua IPC để máy chủ tự tắt êm; quá hạn mới kill.
+    await new Promise(res => {
+      c.once('exit', res);
+      const timer = setTimeout(() => c.kill('SIGKILL'), 12000);
+      timer.unref();
+      c.once('exit', () => clearTimeout(timer));
+      try {
+        if (c.connected) c.send('shutdown'); else c.kill('SIGTERM');
+      } catch (e) { c.kill('SIGTERM'); }
+    });
   }
   await launch();
   const url = `http://127.0.0.1:${port}`;
