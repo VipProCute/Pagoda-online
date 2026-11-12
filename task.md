@@ -40,7 +40,7 @@
 | T-033 | Bảng bàn cờ: cờ vây, caro, cờ úp | ⏳ T-032, T-024, T-025, T-026 | P1 | CORE + KYDAO | — |
 | T-034 | Nối bảng cờ vào chùa | ⏳ T-030, T-031, T-032 | P0 | CORE + KYDAO + NAV | — |
 | T-035 | ui-harness cho bàn cờ | ⏳ T-032, T-033 | P1 | CORE + KYDAO + OPS | — |
-| T-040 | Thống kê mùa, tính người giữ danh hiệu | ⏳ T-020, T-029, T-050 | P0 | CORE + RANK + MARTIAL | — |
+| T-040 | Thống kê mùa, tính người giữ danh hiệu | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + RANK + MARTIAL | Claude Sonnet 5.5 (thay Codex terra 6.1) |
 | T-041 | Phát danh hiệu từ máy chủ | ⏳ T-030, T-040 | P0 | CORE + RANK | — |
 | T-042 | Hiện danh hiệu trên đầu, hộp người chơi, Sân đấu | ⏳ T-041, T-031, T-034, T-064 | P1 | CORE + RANK + HALL | — |
 | T-043 | Bia Bảng Vàng ở Sân chùa | ⏳ T-042 | P1 | CORE + RANK + HALL | — |
@@ -577,13 +577,13 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 ### Epic DH · Danh hiệu, Bảng Vàng, màn đối đầu
 
 ### T-040 · Thống kê mùa và tính người giữ danh hiệu
-- **Trạng thái**: ⏳ Chờ T-020, T-029, T-050
+- **Trạng thái**: ✅ Gộp vào nhánh tích hợp (chờ PR). Thợ: Claude Sonnet 5.5 thay Codex terra 6.1 (kênh Codex lại hết hạn mức). Soát: Opus 5.5 thay Sol, PASS vòng 2. 118 test liên quan đạt.
 - **Ưu tiên**: P0 · **Đợt**: 2
 - **Gói ngữ cảnh**: CORE + RANK + MARTIAL
 - **Khu vực chạm**: lib/records.js (mới), lib/martial/service.js (`norm`: `season`, `name`; `recordResult` cộng điểm mùa; hàm `setName(uid, name)`), lib/account.js (gộp `season` trong `mergeMartialGuest`), test/records.test.js (mới), test/martial-service.test.js
 - **Phụ thuộc**: T-020 (khung), T-029 (`account.js`), T-050 (`lunar.js` xuất được bằng `require`)
 - **Thợ**: Codex terra 6.1 · **Soát**: Sol 6.1
-- **Người làm**: — · **Nhánh**: —
+- **Người làm**: Claude Sonnet 5.5 (thay Codex terra 6.1) · **Nhánh**: `claude/T-040-ky-luc-danh-hieu`
 - **Thiết kế**: KH §6.1 → §6.3, D5
 - **Mục tiêu**: hàm thuần biết ai đang giữ 14 danh hiệu.
 - **Tiêu chí xong**:

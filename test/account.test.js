@@ -164,3 +164,36 @@ test('Kỳ Đạo: tài khoản đã có ván dở thì ván dở của khách b
   undo();
   assert.deepEqual(clone(db), before);
 });
+
+test('gộp khách → tài khoản: điểm mùa PK cùng mùa thì cộng, khác mùa giữ mùa mới hơn, giữ tên', () => {
+  const db = mkdb();
+  db.martial.profiles['khach-1'] = profile('khach-1', { name: 'Khách', pkAt: 50, ptsAt: 40, season: { key: '2026-10', pts: 6, n: 3, at: 20 } });
+  db.martial.profiles['google:1'] = profile('google:1', { pkAt: 80, ptsAt: 30, season: { key: '2026-10', pts: 4, n: 2, at: 10 } });
+  mergeMartialGuest(db, 'khach-1', 'google:1');
+  const p = db.martial.profiles['google:1'];
+  assert.deepEqual(p.season, { key: '2026-10', pts: 10, n: 5, at: 20 }); // at lấy muộn nhất
+  assert.equal(p.pkAt, 80);
+  assert.equal(p.ptsAt, 40);
+  assert.equal(p.name, 'Khách');
+
+  const db2 = mkdb();
+  db2.martial.profiles['khach-1'] = profile('khach-1', { season: { key: '2026-11', pts: 3, n: 1, at: 5 } });
+  db2.martial.profiles['google:1'] = profile('google:1', { season: { key: '2026-10', pts: 9, n: 9, at: 1 } });
+  mergeMartialGuest(db2, 'khach-1', 'google:1');
+  assert.deepEqual(db2.martial.profiles['google:1'].season, { key: '2026-11', pts: 3, n: 1, at: 5 });
+});
+
+test('gộp khách → tài khoản: hoàn tác trả lại điểm mùa cũ; tài khoản chưa có hồ sơ nhận nguyên điểm mùa', () => {
+  const db = mkdb();
+  db.martial.profiles['khach-1'] = profile('khach-1', { season: { key: '2026-10', pts: 6, n: 3, at: 20 } });
+  db.martial.profiles['google:1'] = profile('google:1', { season: { key: '2026-10', pts: 1, n: 1, at: 2 } });
+  const before = clone(db);
+  const undo = mergeMartialGuest(db, 'khach-1', 'google:1');
+  assert.equal(db.martial.profiles['google:1'].season.pts, 7);
+  undo();
+  assert.deepEqual(clone(db), before);
+  const db2 = mkdb();
+  db2.martial.profiles['khach-1'] = profile('khach-1', { season: { key: '2026-10', pts: 6, n: 3, at: 20 } });
+  mergeMartialGuest(db2, 'khach-1', 'google:1');
+  assert.equal(db2.martial.profiles['google:1'].season.pts, 6);
+});
