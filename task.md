@@ -32,7 +32,7 @@
 | T-025 | Luật cờ vây thuần | ✅ Gộp tích hợp (chờ PR) | P1 | CORE + KYDAO | Codex terra 6.1 + Claude Sonnet 5.5 |
 | T-026 | Luật cờ caro thuần | ✅ Gộp tích hợp (chờ PR) | P1 | CORE + KYDAO | Claude Haiku 5.5 (thay GLM Flash) |
 | T-027 | Tính Elo và điều kiện xếp hạng | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + KYDAO | Claude Haiku 5.5 + GLM Flash + Claude Sonnet 5.5 |
-| T-028 | Bộ quản lý ván cờ | ⏳ T-020, T-021, T-022, T-027 | P0 | CORE + KYDAO + PK | — |
+| T-028 | Bộ quản lý ván cờ | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + KYDAO + PK | Codex terra 6.1 + Claude Sonnet 5.5 |
 | T-029 | Lưu bền dữ liệu Kỳ Đạo và kỷ lục 👤 merge | ✅ Gộp tích hợp (chờ PR, 👤 merge) | P0 | CORE + STORE | Claude Sonnet 5.5 |
 | T-030 | Nối Kỳ Đạo vào máy chủ | ⏳ T-028, T-029, T-031, T-051 | P0 | CORE + KYDAO + HALL + AUTH | — |
 | T-031 | Vẽ bàn đá và ghế ở Sân chùa | ⏳ T-020 | P0 | CORE + HALL + KYDAO | — |
@@ -421,13 +421,13 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: lưu bền.
 
 ### T-028 · Viết bộ quản lý ván cờ
-- **Trạng thái**: ⏳ Chờ T-020, T-021, T-022, T-027
+- **Trạng thái**: ✅ Gộp vào nhánh tích hợp (chờ PR). Thợ: Codex terra 6.1 (bản đầu, dừng sớm vì hạn mức), Claude Sonnet 5.5 sửa 2 vòng. Soát: Sol 6.1 (vòng 1), Opus 5.5 thay Sol (vòng 2–3) PASS. 51 test đạt, có quét mọi emit không lộ uid/quân úp.
 - **Ưu tiên**: P0 · **Đợt**: 2
 - **Gói ngữ cảnh**: CORE + KYDAO + PK (tham khảo khuôn `lib/pk/manager.js`)
 - **Khu vực chạm**: lib/kydao/manager.js (mới), lib/kydao/registry.js (mới), test/kydao-manager.test.js (mới)
 - **Phụ thuộc**: T-020, T-021, T-022, T-027 (vây/caro/úp nối thêm khi T-024–T-026 xong, không chặn)
 - **Thợ**: Codex terra 6.1 · **Soát**: Sol 6.1
-- **Người làm**: — · **Nhánh**: —
+- **Người làm**: Codex terra 6.1 + Claude Sonnet 5.5 · **Nhánh**: `claude/T-028-quan-ly-van`
 - **Thiết kế**: KH §5.5, §5.6, §5.8, `docs/KY-DAO-GIAO-THUC.md`
 - **Mục tiêu**: bộ quản lý thuần (deps tiêm vào) cho bàn, ghế, lời mời, đồng hồ, nước đi, người xem, kết quả, vào lại.
 - **Tiêu chí xong**:
