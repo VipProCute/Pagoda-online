@@ -723,6 +723,8 @@ io.use((socket, next) => {
 });
 
 const fortuneQueue = require('./lib/fortune-queue')({ broadcast: state => io.emit('fortune:queue', state) });
+const tarot = require('./lib/tarot-draw');
+const tarotDrawer = { normalizeAsk: tarot.normalizeAsk, ...tarot.createTarotDrawer({ vnDay: () => vnDay() }) };
 
 io.on('connection', socket => {
   let p = null;
@@ -814,12 +816,26 @@ io.on('connection', socket => {
   socket.on('fortune:join', (_, ack) => {
     if (!p || typeof ack !== 'function') return;
     if (p.scene !== 'hall' || (p.place && p.place !== 'hall')) return ack({ ok: false, reason: 'Mời bạn vào chánh điện để xin xăm.' });
+    if (!bucket('fortune', 0.5, 4)) return ack({ ok: false, reason: 'Bạn xin xăm hơi nhanh, đợi một chút nhé.' });   // sau kiểm tra cảnh; bị chặn thì không phát fortune:queue
     const person = p;
     const ok = fortuneQueue.join({ id: p.id, name: p.name, deliver: number => person.socket.emit('fortune:result', { number }) });
     if (ok) { p.tx = 0.5; p.tz = 0.20; }
     ack({ ok, reason: ok ? '' : 'Bạn đã có tên trong hàng chờ.' });
   });
-  socket.on('fortune:leave', () => { if (p) fortuneQueue.remove(p.id); });
+  socket.on('fortune:leave', () => {
+    if (!p) return;
+    if (p.scene !== 'hall' || (p.place && p.place !== 'hall')) return;   // sai cảnh: bỏ qua, không tiêu lượt
+    if (bucket('fortune', 0.5, 4)) fortuneQueue.remove(p.id);
+  });
+  /* ----- Tarot: máy chủ rút 5 lá theo hạt giống trong ngày; không cộng công đức, không lưu bền ----- */
+  socket.on('tarot:draw', (data, ack) => {
+    if (!p || typeof ack !== 'function') return;
+    if (!bucket('tarot', 0.2, 3)) return ack({ ok: false, reason: 'Bạn trải bài hơi nhanh, đợi một chút nhé.' });
+    const ask = tarotDrawer.normalizeAsk(data);
+    if (!ask.ok) return ack({ ok: false, reason: ask.reason });
+    const r = tarotDrawer.draw(p.uid, ask);
+    ack({ ok: true, cards: r.cards, again: r.again });
+  });
 
   socket.on('profile', (data, ack) => {
     if (!p || !data || typeof ack !== 'function') return;

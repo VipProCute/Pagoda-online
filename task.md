@@ -46,7 +46,7 @@
 | T-043 | Bia Bảng Vàng ở Sân chùa | ⏳ T-042 | P1 | CORE + RANK + HALL | — |
 | T-044 | Màn "Kẻ mạnh nhất lịch sử… đối đầu kẻ mạnh nhất hiện tại" | ⏳ T-041, T-030 | P1 | CORE + RANK + PK + KYDAO | — |
 | T-050 | Viết lại lịch âm (UTC+8 trước 1968, can chi đủ) | ⏳ T-004 | P0 | CORE + FORTUNE | — |
-| T-051 | Máy chủ: rút tarot theo hạt giống, giới hạn xin xăm | 🔵 Sẵn sàng | P0 | CORE + FORTUNE | — |
+| T-051 | Máy chủ: rút tarot theo hạt giống, giới hạn xin xăm | ✅ Gộp tích hợp (chờ PR) | P0 | CORE + FORTUNE | Claude Sonnet 5.5 |
 | T-052 | Nội dung 78 lá tarot theo 8 chủ đề | 🔵 Sẵn sàng | P1 | CORE + FORTUNE | — |
 | T-053 | Giao diện tarot theo chủ đề | ⏳ T-051, T-052, T-010 | P1 | CORE + FORTUNE | — |
 | T-054 | Bộ máy an sao Tử Vi | ⏳ T-050 | P0 | CORE + FORTUNE | — |
@@ -685,13 +685,13 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: tử vi.
 
 ### T-051 · Máy chủ: rút tarot theo hạt giống, giới hạn xin xăm
-- **Trạng thái**: 🔵 Sẵn sàng
+- **Trạng thái**: ✅ Gộp vào nhánh tích hợp (chờ PR). Thợ: Claude Sonnet 5.5 (đúng vai trong kế hoạch). Soát: Sol 6.1 (gpt-6.1-sol) NEEDS_FIX vòng 1 (2 lỗi), PASS vòng 2.
 - **Ưu tiên**: P0 · **Đợt**: 1
 - **Gói ngữ cảnh**: CORE + FORTUNE
 - **Khu vực chạm**: server.js (handler `tarot:draw`, `bucket` cho `fortune:join`/`fortune:leave`), lib/fortune-queue.js (`crypto.randomInt`), test/e2e-fortune.test.js (mới), test/fortune-queue.test.js (mới), test/e2e-scene.test.js (chỉ khi phải chỉnh), docs/agents/ARCHITECTURE.md (§4, chỉ thêm dòng `tarot:draw`)
 - **Phụ thuộc**: không
 - **Thợ**: Sonnet 5.5 (high) · **Soát**: Sol 6.1
-- **Người làm**: — · **Nhánh**: —
+- **Người làm**: Claude Sonnet 5.5 · **Nhánh**: `claude/T-051-tarot-may-chu`
 - **Thiết kế**: KH §7.1, §7.2 "Rút bài ở máy chủ", D10
 - **Mục tiêu**: tarot rút ở máy chủ, ổn định trong ngày; xin xăm không bị spam.
 - **Tiêu chí xong**:
