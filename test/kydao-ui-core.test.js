@@ -48,6 +48,86 @@ test('KydaoDraw: chạm → giao điểm cờ tướng, ngoài bàn thì null', 
   assert.strictEqual(KydaoDraw.parseSq('chess', 'a9'), null);
 });
 
+// Ghi lệnh Canvas để kiểm đường vẽ và bộ đệm trong Node, không cần DOM thật.
+function drawingContext(ownerDocument) {
+  const calls = [];
+  let saves = 0;
+  const ctx = { canvas: { ownerDocument }, calls, get saves() { return saves; } };
+  for (const method of ['beginPath', 'closePath', 'fill', 'stroke', 'clip', 'rect', 'arc', 'ellipse',
+    'moveTo', 'lineTo', 'bezierCurveTo', 'quadraticCurveTo', 'fillRect', 'strokeRect', 'clearRect',
+    'setTransform', 'translate', 'scale', 'drawImage', 'fillText']) {
+    ctx[method] = (...args) => {
+      for (const value of args) if (typeof value === 'number') assert.ok(Number.isFinite(value));
+      calls.push([method, ...args]);
+    };
+  }
+  ctx.save = () => { saves++; };
+  ctx.restore = () => { assert.ok(saves > 0); saves--; };
+  ctx.getTransform = () => ({ a: 2 });
+  ctx.createLinearGradient = ctx.createRadialGradient = (...args) => {
+    assert.ok(args.every(Number.isFinite));
+    return { addColorStop(stop) { assert.ok(stop >= 0 && stop <= 1); } };
+  };
+  return ctx;
+}
+
+test('KydaoDraw: vẽ đủ quân không có DOM, giữ hình học và dữ liệu ở ô 36/72px', () => {
+  for (const cell of [36, 72]) for (const flip of [false, true]) {
+    for (const game of ['chess', 'xiangqi', 'jieqi']) {
+      const chess = game === 'chess';
+      const state = (chess ? KyChess : KyXiangqi).create(chess ? {} : { variant: game, seed: 1 });
+      const board = state.board.slice();
+      const w = cell * (chess ? 8 : 9.2), h = cell * (chess ? 8 : 10.2);
+      for (const vi of [false, true]) {
+        const ctx = drawingContext();
+        const g = KydaoDraw.draw(ctx, { game, w, h, dpr: 2, board, flip, vi,
+          selected: 'e2', last: ['e2', 'e4'], checkSq: chess ? 'e1' : 'e0', targets: ['e3', 'e4'] });
+        assert.deepStrictEqual(g, KydaoDraw.layout(game, w, h));
+        assert.strictEqual(ctx.saves, 0);
+        if (game === 'jieqi') assert.ok(ctx.calls.some(call => call[0] === 'fillText' && call[1] === '?'));
+        if (game === 'xiangqi') assert.ok(ctx.calls.some(call => call[0] === 'fillText' && call[1] === (vi ? 'Tướng' : '帥')));
+      }
+      assert.deepStrictEqual(board, state.board);
+    }
+  }
+});
+
+test('KydaoDraw: dùng lại ảnh quân, tách bộ đệm theo cỡ ô, điểm ảnh và chữ Việt', () => {
+  const buffers = [];
+  const doc = { createElement(tag) {
+    assert.strictEqual(tag, 'canvas');
+    const buffer = drawingContext(doc);
+    buffers.push(buffer);
+    return { getContext: () => buffer };
+  } };
+  for (const game of ['chess', 'xiangqi']) {
+    const ctx = drawingContext(doc);
+    let scale = 1;
+    ctx.getTransform = () => ({ a: scale });
+    const board = (game === 'chess' ? KyChess : KyXiangqi).create({}).board;
+    const options = { game, w: game === 'chess' ? 288 : 331.2, h: game === 'chess' ? 288 : 367.2, board };
+    KydaoDraw.draw(ctx, options);
+    assert.strictEqual(ctx.calls.filter(call => call[0] === 'drawImage').length, 32);
+    let count = buffers.length;
+    assert.ok(count > 0);
+    KydaoDraw.draw(ctx, { ...options, flip: true, selected: 'e2' });
+    assert.strictEqual(buffers.length, count, 'Đổi hướng và chọn ô không dựng lại quân');
+    if (game === 'xiangqi') {
+      KydaoDraw.draw(ctx, { ...options, vi: true });
+      assert.ok(buffers.length > count);
+      assert.ok(buffers.slice(count).some(buffer => buffer.calls.some(call => call[0] === 'fillText' && call[1] === 'Tướng')));
+      count = buffers.length;
+    }
+    scale = 2;
+    KydaoDraw.draw(ctx, { ...options, dpr: scale });
+    assert.ok(buffers.length > count, 'Màn hình nhiều điểm ảnh cần ảnh quân nét hơn');
+    count = buffers.length;
+    KydaoDraw.draw(ctx, { ...options, w: options.w * 2, h: options.h * 2, dpr: scale });
+    assert.ok(buffers.length > count, 'Cỡ ô lớn dùng ảnh quân riêng');
+  }
+  assert.ok(buffers.every(buffer => buffer.saves === 0));
+});
+
 test('tapSquare: chọn quân, chấm ô đi được, đi nước', () => {
   const S = session('chess', KyChess, 'a');
   let r = core.tapSquare(S, 'e2');
