@@ -64,7 +64,7 @@
 | T-068 | Cho máy chủ thử tắt êm trên Windows (3 test e2e) | ✅ Xong · PR #43 | P0 | CORE + STORE + OPS | Claude Sonnet 5.5 |
 | T-069 | Mọi NPC đi lang thang, chạm NPC để trò chuyện, lớp nhân vật chung | ✅ Xong · PR #57 | P1 | CORE + HALL + MARTIAL | Claude Opus 5.5 |
 | **Đợt 3D** ([docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md)) | | | | | |
-| T-080 | Dựng nền 3D (Three.js, khung World3D, trang thử) | 🔵 Sẵn sàng | P0 | CORE + HALL + OPS | — |
+| T-080 | Dựng nền 3D (Three.js, khung World3D, trang thử) | 🟣 Chờ soát | P0 | CORE + HALL + OPS | gpt-6.1-sol (Codex CLI qua proxy) |
 | T-081 | Toán máy quay góc nhìn thứ nhất / thứ ba (thuần, có test) | 🔵 Sẵn sàng | P0 | CORE + HALL | — |
 | T-082 | Bộ khối dựng kiến trúc chùa (kit.mjs) | ⏳ T-080 | P0 | CORE + HALL | — |
 | T-083 | Nhân vật 3D low-poly và NPC | ⏳ T-080 | P0 | CORE + HALL | — |
@@ -1007,14 +1007,14 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (đọc §1, §2 trước khi làm bất kỳ thẻ nào dưới đây). Thợ mặc định là các mô hình GPT qua CLIProxyAPI (§4 của tài liệu đó).
 
 ### T-080 · Dựng nền 3D (Three.js, khung World3D, trang thử)
-- **Trạng thái**: 🔵 Sẵn sàng
+- **Trạng thái**: 🟣 Chờ soát. Thợ không chạy được test trong hộp cát (spawn EPERM); Điều phối đã chạy lại: `npm run check` 132 file sạch, `node --test test/world3d-static.test.js test/hall-npcs.test.js` 6/6, trang thử hiện cảnh 3D, console không lỗi.
 - **Ưu tiên**: P0
 - **Gói ngữ cảnh**: CORE + HALL + OPS
 - **Khu vực chạm**: package.json, package-lock.json, server.js (chỉ thêm 1 route tĩnh `/vendor/three`), tools/check.js (quét thêm `.mjs`), public/js/world3d/index.mjs (mới), public/world3d-test.html (mới, trang thử), public/data/NOTICE.txt, test/world3d-static.test.js (mới)
 - **Phụ thuộc**: không
 - **Thợ**: gpt-6.1-sol · **Soát**: Claude Sonnet 5.5
-- **Người làm**: —
-- **Nhánh**: —
+- **Người làm**: gpt-6.1-sol (Codex CLI qua proxy)
+- **Nhánh**: codex/T-080-nen-3d
 - **Mục tiêu**: Có Three.js chạy được không cần bundler và một khung `World3D` nạp lười, hiện một sàn + ánh sáng + khối thử trên trang thử. Game 2D không đổi gì.
 - **Tiêu chí xong**:
   - [ ] `three` nằm trong `dependencies` (khóa đúng một phiên bản); máy chủ phục vụ `GET /vendor/three/three.module.min.js` (hoặc tên tệp build tương đương) từ `node_modules/three/build`, có cache; không lộ thư mục khác của `node_modules`
@@ -1024,6 +1024,7 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
   - [ ] Test e2e: route trả 200 + `content-type` JavaScript, đường dẫn `..` bị từ chối; `npm test` không thêm ca trượt so với baseline
   - [ ] Ghi Three.js (MIT, phiên bản) vào `public/data/NOTICE.txt`
 - **Ngoài phạm vi**: không sửa `index.html`, `hall.js`, `app.js`; chưa dựng cảnh chùa; chưa làm máy quay.
+- **Ghi chú**: Đã có mã nền 3D và test trong worktree, chưa commit. `npm run check` bị `spawnSync EPERM`; `npm test`: 0 đạt, 53 file trượt ngay khi tạo tiến trình, không chạy được các ca bên trong nên chưa so baseline. Chạy `node --check` trực tiếp từ PowerShell: 132/132 file sạch. Cần môi trường cho phép Node tạo tiến trình con để tiếp tục kiểm tra và bàn giao Chờ soát. Báo cáo cục bộ: `BAN-GIAO-T-080.md` (không commit).
 
 ### T-081 · Toán máy quay góc nhìn thứ nhất / thứ ba (thuần, có test)
 - **Trạng thái**: 🔵 Sẵn sàng
