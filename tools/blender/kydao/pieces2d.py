@@ -14,16 +14,16 @@ Tham số (init_globals):
 
 Quy ước atlas (xem README.md): 896x256, lưới 7 cột x 2 hàng, mỗi ô 128x128, nền trong suốt.
     Hàng 0 = bên a (sáng), hàng 1 = bên b (tối). Cột: K Q R B N P disc.
-    Quân cờ vua: nhìn từ phía trước chếch xuống 22 độ, trực giao, 72 px/đơn vị mô hình, đáy quân cách mép dưới ô 10 px
-    (tức đáy ở y=118), Mã quay mặt sang trái. disc: nhìn thẳng từ trên xuống, đường kính 116 px, tâm ô.
+    Quân cờ vua: nhìn từ phía trước chếch xuống 22 độ, trực giao, 67 px/đơn vị mô hình, đáy quân cách mép dưới ô 10 px
+    (tức đáy ở y=118), Mã quay mặt sang trái. disc: nhìn thẳng từ trên xuống, đường kính thân 108 px (kể cả gai ~124 px), tâm ô.
 Mỗi quân render 256x256 rồi thu về 128 (siêu lấy mẫu) bằng Pillow của Python hệ thống (`python`), bước đóng gói.
 Làm việc trong cảnh riêng 'KyDaiPieces2D', không lưu .blend.
 """
 import json, math, os, runpy, subprocess, sys, tempfile
 
 ELEV = math.radians(22.0)
-PPU = 72.0              # px / đơn vị mô hình ở ô 128
-DISC_D = 116.0          # đường kính disc (px)
+PPU = 67.0              # px / đơn vị mô hình ở ô 128 (Vua cao ~108 px kể cả thánh giá)
+DISC_D = 108.0          # đường kính thân disc (px); gai trang trí nhô thêm ~8 px mỗi bên nên vẫn nằm trong ô
 BOTTOM_Y = 118          # hàng đáy quân trong ô 128 (cách mép dưới 10 px)
 KINDS = ['K', 'Q', 'R', 'B', 'N', 'P', 'disc']
 TILE, SS = 128, 2       # ô cuối và hệ số siêu lấy mẫu
@@ -48,9 +48,15 @@ def render_tiles(REPO, only, samples, tmp):
                 for k, ob in objs.items():
                     ob.hide_render = (k != kind)
                 path = os.path.join(tmp, '%s_%s_%s.png' % (sid, side, kind))
-                _shoot(bpy, sc, objs[kind], kind, side, path)
+                _shoot(bpy, sc, objs[kind], kind, side, path, _expo(lib['rgb'](p[side]['base']), lib['rgb'](p[side]['accent'])))
             out[sid + side] = True
     return out
+
+
+def _expo(c, a):
+    """Hệ số sáng theo độ chói màu thân và màu chi tiết: màu rất sáng (ngọc, băng) giảm đèn để khỏi cháy trắng."""
+    lum = lambda x: 0.2126 * x[0] + 0.7152 * x[1] + 0.0722 * x[2]
+    return min(1.0, 0.5 / max(lum(c), 0.9 * lum(a), 0.01))
 
 
 def _clean_disc(ob):
@@ -127,7 +133,7 @@ def _area(bpy, sc, name, loc, target, size, energy, color=(1, 1, 1)):
     return ob
 
 
-def _shoot(bpy, sc, ob, kind, side, path):
+def _shoot(bpy, sc, ob, kind, side, path, expo=1.0):
     from mathutils import Vector
     # dọn đèn, máy quay, sàn cũ của lần chụp trước
     for o in list(sc.collection.all_objects):
@@ -157,7 +163,7 @@ def _shoot(bpy, sc, ob, kind, side, path):
         key_t = (0, 0, 0.45)
     dark = side == 'b'
     # ánh sáng 3 điểm: chính trên-trái phía trước, phụ bên phải, ven phía sau
-    k = (0.5 if dark else 0.3) if top else 1.0       # disc nhìn từ trên: mặt phẳng hứng sáng trực diện nên giảm đèn
+    k = ((0.5 if dark else 0.3) if top else 1.0) * expo      # disc nhìn từ trên: mặt phẳng hứng sáng trực diện nên giảm đèn
     _area(bpy, sc, 'key', (-1.9, 1.7, 4.6), key_t, 2.6, (520 if dark else 250) * k, (1.0, 0.96, 0.9))
     f = _area(bpy, sc, 'fill', (3.2, 2.2, 1.6), key_t, 3.0, (260 if dark else 90) * k, (0.75, 0.85, 1.0))
     r = _area(bpy, sc, 'rim', (1.2, -3.2, 3.0), key_t, 1.6, (900 if dark else 380) * k, (1.0, 1.0, 1.0))
@@ -172,6 +178,7 @@ def _shoot(bpy, sc, ob, kind, side, path):
         gr = bpy.data.objects.new('shadow', me)
         sc.collection.objects.link(gr)
         gr.is_shadow_catcher = True
+    sc.world.node_tree.nodes['Background'].inputs[1].default_value = 0.75 * expo
     sc.render.filepath = path
     bpy.ops.render.render(write_still=True)
 
