@@ -2062,6 +2062,7 @@
     const actor = p => {
       const bowAge = p.bowAt ? (time - p.bowAt) / 1500 : 1;
       const aura = p.au && p.au.t && p.au.until > now ? { t: p.au.t, until: p.au.until, color: tierColor(p.au.t) } : null;
+      const dm = root.MERIT ? root.MERIT.visualDemonOf(p.mt) : null;
       // NPC trả lời dùng giờ máy chủ; lời tự nói và chat dùng đồng hồ hoạt ảnh.
       const bubbleAge = p.bubble ? (p.bubble.t > 1e11 ? now : time) - p.bubble.t : Infinity;
       const tag = scene === 'arena' && tagger ? tagger(p.id) : null;
@@ -2070,7 +2071,9 @@
         x: p.dx, z: p.dz, dx: p.dx, dz: p.dz, yaw: p.viewYaw ?? (p.front ? 0 : Math.PI), front: p.front,
         walking: !!p.walking, seated: !!p.seated, onTable: !!p.onTable,
         sit: p.seated ? (p.onTable ? 'bench' : p.sit) : -1, bow: bowAge >= 0 && bowAge < 1 ? Math.sin(Math.PI * bowAge) : 0,
-        aura, bubble: p.bubble && bubbleAge < 6500 ? { text: p.bubble.text } : null,
+        aura, meritRank: root.MERIT && p.mt !== 666 ? root.MERIT.rankOf(p.mt) : 0,
+        demon: dm ? { n: dm.n, alpha: dm.alpha } : null, obito: !!(p.npc && p.npc.role === 'obito'), now,
+        bubble: p.bubble && bubbleAge < 6500 ? { text: p.bubble.text } : null,
         talk: p.talk || 0, reading: p.rd || '', tag: tag ? tag.text : '', role: p.isNpc ? p.npc.role : ''
       };
     };

@@ -13,7 +13,7 @@ const QUALITY = { low: 1, medium: 1.5, high: 2 };
 const failure = reason => ({ ok: false, reason });
 const SCENES = {
   hall: () => import('./scenes/hall.mjs?v=1'),
-  arena: () => import('./scenes/arena.mjs?v=2'),
+  arena: () => import('./scenes/arena.mjs?v=3'),
   yard: () => import('./scenes/yard.mjs?v=3'),
   library: () => import('./scenes/library.mjs?v=1')
 };
@@ -39,7 +39,7 @@ function updatePeople(world, state, dt) {
     const pos = globalThis.ViewMath.toWorld(state.scene, person.x, person.z);
     entry.avatar.group.position.set(pos.x, world.content.surfaceHeight?.(person.x, person.z) || 0, pos.z);
     entry.person = person;
-    entry.avatar.update({ ...person, isSelf: person.id === state.me, view: world.ctx.view, reducedMotion: world.ctx.reducedMotion }, dt);
+    entry.avatar.update({ ...person, now: state.now, isSelf: person.id === state.me, view: world.ctx.view, reducedMotion: world.ctx.reducedMotion }, dt);
   }
   for (const [id, entry] of world.people) if (!seen.has(id)) {
     entry.avatar.dispose(); entry.avatar.group.removeFromParent(); world.people.delete(id);
@@ -218,7 +218,7 @@ export async function start({ canvas, scene = 'test', getState = () => ({}), on 
     if (!canvas || typeof canvas.getContext !== 'function') return failure('Chưa có khung vẽ 3D.');
     const context = canvas.getContext('webgl2', { antialias: true, alpha: false });
     if (!context) return failure('Máy chưa hỗ trợ WebGL2. Xin dùng giao diện 2D.');
-    const [THREE, kit, avatars] = await Promise.all([import('three'), import('./kit.mjs?v=2'), import('./avatar.mjs?v=2')]);
+    const [THREE, kit, avatars] = await Promise.all([import('three'), import('./kit.mjs?v=2'), import('./avatar.mjs?v=3')]);
     if (ticket !== generation) return failure('Đã hủy mở cảnh 3D.');
     renderer = new THREE.WebGLRenderer({ canvas, context });
     renderer.outputColorSpace = THREE.SRGBColorSpace;
