@@ -84,7 +84,7 @@
 | T-110 | Giao thức `kd:skin` trên máy chủ | 🔵 Sẵn sàng | P0 | CORE + KYDAO + KYDAI | — |
 | T-111 | Dây chuyền Blender và tài nguyên 8 sân, 8 bộ quân | 🟡 Đang làm | P0 | CORE + KYDAI | Điều phối (Claude Fable 5.2) |
 | T-112 | Module hiệu ứng 2D `KydaoFx`: khai mở, chấn động phong cấp, chiến thắng | 🔵 Sẵn sàng | P0 | CORE + KYDAO + KYDAI | — |
-| T-113 | Bàn 3D: nạp `.glb`, skin nửa sân, skin quân, `playFx` | 🔵 Sẵn sàng | P0 | CORE + KYDAO + KYDAI | — |
+| T-113 | Bàn 3D: nạp `.glb`, skin nửa sân, skin quân, `playFx` | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | Claude Opus 5.5 |
 | T-114 | Bàn 2D: vẽ skin nửa sân, skin quân, `jolt` | ⏳ T-111 | P0 | CORE + KYDAO + KYDAI | — |
 | T-115 | Nối skin và hiệu ứng vào bảng cờ | ⏳ T-110, T-112, T-113, T-114 | P0 | CORE + KYDAO + KYDAI | — |
 | T-116 | ui-harness, ảnh chụp, Sổ tay, README cho Kỳ Đài | ⏳ T-115 | P1 | CORE + KYDAI + DOCS | — |
@@ -1314,21 +1314,22 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
 - **Ngoài phạm vi**: sửa `kydao-ui.js`, `kydao-draw.js`, `index.html` (T-115 nối sau); bàn 3D.
 
 ### T-113 · Bàn 3D: nạp `.glb`, skin nửa sân, skin quân, `playFx`
-- **Trạng thái**: 🔵 Sẵn sàng
+- **Trạng thái**: 🟣 Chờ soát
 - **Ưu tiên**: P0
 - **Gói ngữ cảnh**: CORE + KYDAO + KYDAI
 - **Khu vực chạm**: public/js/world3d/board3d.mjs, public/js/world3d/board-assets.mjs (mới), public/world3d-board.html (trang thử), test/kydao-board3d.test.js
 - **Phụ thuộc**: không (thiếu `.glb` thì dùng `palette`) · **Thợ**: Claude Opus 5.5 · **Soát**: Điều phối
-- **Người làm**: — · **Nhánh**: —
+- **Người làm**: Claude Opus 5.5 · **Nhánh**: claude/T-113-ban-3d-skin
 - **Mục tiêu**: bàn 3D hiện skin từng nửa sân, skin quân từng bên và ba hiệu ứng, cùng dữ liệu `o.skins` như bàn 2D.
 - **Tiêu chí xong**:
-  - [ ] `board-assets.mjs`: nạp lười `GLTFLoader` từ `/vendor/three-addons/loaders/GLTFLoader.js`, có bộ nhớ đệm, lỗi/404 thì trả `null` và bàn vẫn chạy
-  - [ ] `setState(o)` đọc `o.skins`: mỗi nửa sân đổi vật liệu theo `palette` và gắn mô hình `fieldModel(id)` nếu có; quân mỗi bên đổi chất liệu theo `PIECES[id]`, dùng mô hình `piecesModel(id)` nếu có
-  - [ ] `playFx('domain'|'promote'|'win', opts)`: khai mở (nửa sân trồi lên/đổi màu dần), phong cấp (máy quay rung, các quân nảy theo khoảng cách tới ô phong cấp, vòng sóng), chiến thắng (Vua thua đổ, ánh sáng dội)
-  - [ ] Giảm chuyển động: đổi tức thì, không rung; mức đồ họa Thấp: không hạt
-  - [ ] `dispose()` giải phóng hình, vật liệu, texture của skin; đổi skin 20 lần không tăng `renderer.info.memory`
-  - [ ] Trang thử có bộ chọn skin từng bên và nút cho từng hiệu ứng; ảnh chụp trong bàn giao
+  - [x] `board-assets.mjs`: nạp lười `GLTFLoader` từ `/vendor/three-addons/loaders/GLTFLoader.js`, có bộ nhớ đệm, lỗi/404 thì trả `null` và bàn vẫn chạy
+  - [x] `setState(o)` đọc `o.skins`: mỗi nửa sân đổi vật liệu theo `palette` và gắn mô hình `fieldModel(id)` nếu có; quân mỗi bên đổi chất liệu theo `PIECES[id]`, dùng mô hình `piecesModel(id)` nếu có
+  - [x] `playFx('domain'|'promote'|'win', opts)`: khai mở (nửa sân trồi lên/đổi màu dần), phong cấp (máy quay rung, các quân nảy theo khoảng cách tới ô phong cấp, vòng sóng), chiến thắng (Vua thua đổ, ánh sáng dội)
+  - [x] Giảm chuyển động: đổi tức thì, không rung; mức đồ họa Thấp: không hạt
+  - [x] `dispose()` giải phóng hình, vật liệu, texture của skin; đổi skin 20 lần không tăng `renderer.info.memory` (đo bằng renderer giả lập trong Node; trên trình duyệt thật có nút "Đổi skin 20 lần" ở trang thử)
+  - [ ] Trang thử có bộ chọn skin từng bên và nút cho từng hiệu ứng; ảnh chụp trong bàn giao (trang đã có; **ảnh chụp chưa có**: thợ không được dùng trình duyệt, điều phối chụp)
 - **Ngoài phạm vi**: `kydao-ui.js`, giao thức, cờ vây/caro (chỉ cần `playFx('win')`).
+- **Ghi chú**: API mới `setState(o.skins)`, `playFx`, `stopFx`, `setQuality`, `stats`; tham số `createBoard3D({ skins, quality, assets, models })`. T-115 phải nâng `board3d.mjs?v=1` → `?v=2` trong `kydao-ui.js`. Chạy từ worktree `.claude/…` thì GLTFLoader 404 do `server.js` (đã ghi Hộp thư đến).
 
 ### T-114 · Bàn 2D: vẽ skin nửa sân, skin quân, `jolt`
 - **Trạng thái**: ⏳ Chờ T-111 (ảnh nửa sân)
@@ -1404,6 +1405,7 @@ Lấy từ README "Việc nên làm tiếp" và lúc rà repo. Điều phối vi
 - 👤 Hỏi luật sư về Nghị định 147/2024/NĐ-CP (mạng xã hội) và bảo vệ dữ liệu cá nhân trước khi mở rộng.
 - 👤 Xin phép người giữ bản quyền tài liệu Trần Đại Sỹ (Dịch Cân Kinh) trước khi phát hành rộng.
 - Gom hằng số PK về một nguồn (`lib/pk/rules.js` gửi qua `/api/config`) thay vì chép tay ở `martial.js` và `arena.js`. Làm sau T-005. Gói: PK.
+- ⚪ `/vendor/three-addons/:dir/:file` trong `server.js` gọi `res.sendFile(đường-dẫn-tuyệt-đối)` không có `root`: thư viện `send` từ chối mọi đường dẫn có đoạn bắt đầu bằng dấu chấm, nên chạy từ worktree `.claude/worktrees/…` thì GLTFLoader luôn 404 (bàn 3D lùi về vẽ bằng mã, không hỏng). Repo gốc và Render không dính. Sửa: `res.sendFile(rel, { root: path.join(__dirname, 'node_modules', 'three', 'examples', 'jsm'), maxAge: '10m' })` và thêm test e2e tải được ba file. Khi `NODE_ENV` khác production, lỗi này còn trả trang lỗi kèm stack của Express. Gói: OPS + KYDAI. (T-113 phát hiện 2026-11-13.)
 - **Sau đợt 2026-11** (chi tiết ở KH §5.10 và §9; Điều phối viết thành thẻ đủ trường khi chủ dự án chọn):
   - T-036 Học luật tương tác 5 môn cờ. Gói: KYDAO. Thợ gợi ý: Gemini Flash (nội dung) + Sonnet (giao diện).
   - T-037 Sư Kỳ: đối thủ máy chạy trên trình duyệt (Web Worker, 3 mức, chỉ giao hữu). Gói: KYDAO. Thợ gợi ý: Codex.
