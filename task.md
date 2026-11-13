@@ -86,9 +86,11 @@
 | T-112 | Module hiệu ứng 2D `KydaoFx`: khai mở, chấn động phong cấp, chiến thắng | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | Claude Sonnet 5.5 |
 | T-113 | Bàn 3D: nạp `.glb`, skin nửa sân, skin quân, `playFx` | 🔵 Sẵn sàng | P0 | CORE + KYDAO + KYDAI | — |
 | T-114 | Bàn 2D: vẽ skin nửa sân, skin quân, `jolt` | 🔵 Sẵn sàng | P0 | CORE + KYDAO + KYDAI | — |
-| T-115 | Nối skin và hiệu ứng vào bảng cờ | ⏳ T-110, T-112, T-113, T-114 | P0 | CORE + KYDAO + KYDAI | — |
-| T-116 | ui-harness, ảnh chụp, Sổ tay, README cho Kỳ Đài | ⏳ T-115 | P1 | CORE + KYDAI + DOCS | — |
-| T-117 | Đồ họa 2D bằng Canva: khung khẩu hiệu, biểu tượng bộ chọn | ⏳ T-115 | P2 | CORE + KYDAI | — |
+| T-115a | Bảng cờ: nạp module, giữ trạng thái skin, truyền vào hàm vẽ | ⏳ T-113, T-114 | P0 | CORE + KYDAO + KYDAI | — |
+| T-115b | Bảng cờ: bộ chọn Lãnh địa, gửi skin, màn khai mở | ⏳ T-115a | P0 | CORE + KYDAO + KYDAI | — |
+| T-115c | Bảng cờ: chấn động phong cấp, hiệu ứng chiến thắng | ⏳ T-115b | P0 | CORE + KYDAO + KYDAI | — |
+| T-116 | ui-harness, ảnh chụp, Sổ tay, README cho Kỳ Đài | ⏳ T-115c | P1 | CORE + KYDAI + DOCS | — |
+| T-117 | Đồ họa 2D bằng Canva: khung khẩu hiệu, biểu tượng bộ chọn | ⏳ T-115c | P2 | CORE + KYDAI | — |
 | T-120 | Bản mẫu nhân vật 3D dựng bằng Blender, đo hiệu năng 👤 duyệt | ⏳ T-111 | P1 | CORE + HALL + KYDAI | — |
 
 Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạm `package.json`). **T-005**, **T-007**, **T-002** làm song song được với nhóm trên.
@@ -1347,28 +1349,58 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
   - [ ] Trang thử hiện 8 sân × 8 bộ quân cho cờ vua và cờ tướng
 - **Ngoài phạm vi**: `kydao-ui.js`, hiệu ứng.
 
-### T-115 · Nối skin và hiệu ứng vào bảng cờ
-- **Trạng thái**: ⏳ Chờ T-110, T-112, T-113, T-114
+### T-115a · Bảng cờ: nạp module, giữ trạng thái skin, truyền vào hàm vẽ
+- **Trạng thái**: ⏳ Chờ T-110, T-113, T-114
 - **Ưu tiên**: P0
 - **Gói ngữ cảnh**: CORE + KYDAO + KYDAI
-- **Khu vực chạm**: public/js/kydao-ui.js, public/css/kydao.css, public/js/app.js (chỉ danh sách sự kiện `kd:*` chuyển cho KydaoUI), public/index.html (nạp `kydao-skins.js`, `kydao-fx.js`, CSS, `?v=`), test/kydao-ui-core.test.js, test/kydao-ui-games.test.js
-- **Phụ thuộc**: T-110, T-112, T-113, T-114 · **Thợ**: Claude Opus 5.5 · **Soát**: Điều phối
+- **Đặc tả từng bước (BẮT BUỘC làm theo)**: [docs/ky-dai/T-115-DAC-TA.md](docs/ky-dai/T-115-DAC-TA.md), phần T-115a
+- **Khu vực chạm**: public/index.html (nạp script, `?v=`), public/js/app.js (chỉ mảng sự kiện `kd:*`), public/js/kydao-ui.js, test/kydao-ui-core.test.js
+- **Phụ thuộc**: T-110, T-113, T-114 · **Thợ**: gpt-6.1-terra (Codex CLI qua proxy) · **Soát**: Gemini 4 Argon (hoặc GPT Sol) + Điều phối chạy test và xem trình duyệt
 - **Người làm**: — · **Nhánh**: —
-- **Mục tiêu**: trong ván thật, người chơi chọn skin, bấm khai mở, thấy khẩu hiệu; phong cấp làm chấn động bàn; kết thúc ván có hiệu ứng chiến thắng ở cả 5 môn, cả 2D và 3D.
+- **Mục tiêu**: bảng cờ biết skin hai bên từ `kd:start` và `kd:skin`, vẽ đúng trên 2D và 3D; chưa có nút bấm.
 - **Tiêu chí xong**:
-  - [ ] Nút "Lãnh địa" mở bộ chọn: hàng skin sân, hàng skin quân (ảnh xem trước, tên), nút "Khai mở"; lựa chọn lưu `localStorage`; skin quân tự gửi lúc bắt đầu ván, skin sân chỉ gửi khi bấm
-  - [ ] Nhận `kd:skin`: cập nhật `o.skins`, `opened` thì chạy `domain` (2D hoặc 3D tuỳ bàn đang bật); người xem cũng thấy
-  - [ ] Công tắc "Ẩn skin của đối thủ" (lưu `localStorage`)
-  - [ ] `handleMoved` giữ `info` của luật: cờ vua có `promotion` thì chạy `promote` + âm thanh
-  - [ ] `kd:end`: chạy `win` trước rồi mới hiện `.kd-result`; caro tự tính dãy thắng bằng `KyGomoku`
-  - [ ] Nút chạm ≥ 44px; 375×812 không che đồng hồ và bàn; giảm chuyển động chạy đúng
-- **Ngoài phạm vi**: luật cờ, máy chủ, mở khóa skin.
+  - [ ] Đủ 7 bước a1 → a7 của đặc tả
+  - [ ] 3 test mới (makeSession đọc skins, applySkin đúng ván/bên, khóa nguy hiểm) đạt
+  - [ ] `npm run check` sạch; `node --test test/kydao-ui-core.test.js test/kydao-ui-games.test.js test/kydao-app.test.js` đạt
+- **Ngoài phạm vi**: mọi thứ không ghi trong phần T-115a của đặc tả; luật cờ; máy chủ; mở khóa skin.
+
+### T-115b · Bảng cờ: bộ chọn Lãnh địa, gửi skin, màn khai mở
+- **Trạng thái**: ⏳ Chờ T-115a
+- **Ưu tiên**: P0
+- **Gói ngữ cảnh**: CORE + KYDAO + KYDAI
+- **Đặc tả từng bước (BẮT BUỘC làm theo)**: [docs/ky-dai/T-115-DAC-TA.md](docs/ky-dai/T-115-DAC-TA.md), phần T-115b
+- **Khu vực chạm**: public/js/kydao-ui.js, public/css/kydao.css, public/index.html (chỉ `?v=`), test/kydao-ui-games.test.js
+- **Phụ thuộc**: T-115a · **Thợ**: Claude Sonnet 5.5 · **Soát**: Gemini 4 Argon (hoặc GPT Sol) + Điều phối chạy test và xem trình duyệt
+- **Người làm**: — · **Nhánh**: —
+- **Mục tiêu**: người chơi bấm "Lãnh địa", chọn skin sân và skin quân, bấm "Khai mở"; cả bàn thấy khẩu hiệu và nửa sân đổi.
+- **Tiêu chí xong**:
+  - [ ] Đủ 9 bước b1 → b9 của đặc tả
+  - [ ] Skin quân tự gửi lúc vào ván; skin sân chỉ gửi khi bấm "Khai mở"; người xem, cờ vây, caro không thấy nút
+  - [ ] Công tắc "Ẩn skin đối thủ" lưu `localStorage`
+  - [ ] Không có `innerHTML`; nút ≥ 44px; `npm run check` + 4 file test trong đặc tả đạt
+- **Ngoài phạm vi**: mọi thứ không ghi trong phần T-115b của đặc tả; luật cờ; máy chủ; mở khóa skin.
+
+### T-115c · Bảng cờ: chấn động phong cấp, hiệu ứng chiến thắng
+- **Trạng thái**: ⏳ Chờ T-115b
+- **Ưu tiên**: P0
+- **Gói ngữ cảnh**: CORE + KYDAO + KYDAI
+- **Đặc tả từng bước (BẮT BUỘC làm theo)**: [docs/ky-dai/T-115-DAC-TA.md](docs/ky-dai/T-115-DAC-TA.md), phần T-115c
+- **Khu vực chạm**: public/js/kydao-ui.js, public/index.html (chỉ `?v=`), test/kydao-ui-core.test.js
+- **Phụ thuộc**: T-115b · **Thợ**: gpt-6.1-terra (Codex CLI qua proxy) · **Soát**: Gemini 4 Argon (hoặc GPT Sol) + Điều phối chạy test và xem trình duyệt
+- **Người làm**: — · **Nhánh**: —
+- **Mục tiêu**: Tốt phong cấp làm rung bàn và hất các quân khác; hết ván có hiệu ứng theo lý do thắng ở cả 5 môn, cả 2D và 3D.
+- **Tiêu chí xong**:
+  - [ ] Đủ 7 bước c1 → c7 của đặc tả
+  - [ ] Phong cấp phát đúng một lần cho mỗi bên (nhánh `synced` không phát lại)
+  - [ ] `kd:end`: hiệu ứng chạy trước, bảng kết quả hiện sau; giảm chuyển động thì hiện ngay
+  - [ ] `npm run check` sạch; `node --test test/kydao-*.test.js test/e2e-kydao.test.js` đạt
+- **Ngoài phạm vi**: mọi thứ không ghi trong phần T-115c của đặc tả; luật cờ; máy chủ; mở khóa skin.
 
 ### T-116 · ui-harness, ảnh chụp, Sổ tay, README cho Kỳ Đài
 - **Trạng thái**: ⏳ Chờ T-115
 - **Ưu tiên**: P1 · **Gói ngữ cảnh**: CORE + KYDAI + DOCS
 - **Khu vực chạm**: tools/ui-harness/kydao/*, README.md, public/js/guide.js (mục Kỳ Đạo), docs/agents/ARCHITECTURE.md
-- **Phụ thuộc**: T-115 · **Thợ**: Claude Haiku 5.5 · **Soát**: Điều phối
+- **Phụ thuộc**: T-115c · **Thợ**: Gemini 3.8 Flash (tài liệu) + Claude Haiku 5.5 (harness) · **Soát**: GPT Sol
 - **Mục tiêu**: kịch bản giả lập khai mở, phong cấp, 5 kiểu thắng; ảnh 375/768/1280; tài liệu người chơi và bản đồ mã cập nhật.
 - **Tiêu chí xong**:
   - [ ] Harness phát `kd:skin`, nước phong cấp, `kd:end` từng `reason`; lỗi console là trượt
@@ -1378,7 +1410,7 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
 - **Trạng thái**: ⏳ Chờ T-115 (cần biết kích thước thật)
 - **Ưu tiên**: P2 · **Gói ngữ cảnh**: CORE + KYDAI
 - **Khu vực chạm**: public/img/kydao/ui/* (mới), public/img/NOTICE.txt
-- **Người làm**: Điều phối (Canva)
+- **Thợ**: Claude Sonnet 5.5 (có công cụ Canva) · **Soát**: Điều phối xem ảnh
 - **Mục tiêu**: khung nền khẩu hiệu theo từng chủ đề và 8 biểu tượng chủ đề cho bộ chọn; mỗi ảnh ≤ 40 KB, ghi nguồn.
 
 ### T-120 · Bản mẫu nhân vật 3D dựng bằng Blender, đo hiệu năng

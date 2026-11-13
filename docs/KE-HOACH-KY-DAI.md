@@ -96,12 +96,21 @@ Mọi tài nguyên nạp lười khi người chơi thật sự bật skin. Ghi 
 | 1 | T-112 | Module hiệu ứng 2D `KydaoFx` (file mới, có trang thử) | Claude Sonnet 5.5 | không |
 | 1 | T-113 | Bàn 3D: nạp `.glb`, skin nửa sân, skin quân, `playFx` | Claude Opus 5.5 | `board3d.mjs` |
 | 2 | T-114 | Bàn 2D: vẽ skin nửa sân và skin quân, `jolt` | Claude Sonnet 5.5 | `kydao-draw.js` |
-| 2 | T-115 | Nối tất cả vào bảng cờ: bộ chọn skin, nút khai mở, phong cấp, chiến thắng | Claude Opus 5.5 | `kydao-ui.js`, `index.html` |
-| 3 | T-116 | ui-harness, ảnh chụp 3 cỡ, Sổ tay, README | Claude Haiku 5.5 | tài liệu |
-| 3 | T-117 | Đồ họa 2D bằng Canva: khung khẩu hiệu, biểu tượng bộ chọn | Điều phối (Canva) | không |
-| 4 | T-120 → T-125 | Nhân vật, trang phục, hào quang 3D bằng Blender | chờ 👤 duyệt bản mẫu T-120 | `avatar.mjs` |
+| 3 | T-115a | Bảng cờ: nạp module, giữ trạng thái skin | gpt-6.1-terra | `kydao-ui.js`, `index.html`, `app.js` |
+| 3 | T-115b | Bảng cờ: bộ chọn Lãnh địa, màn khai mở | Claude Sonnet 5.5 | `kydao-ui.js` |
+| 3 | T-115c | Bảng cờ: chấn động phong cấp, hiệu ứng thắng | gpt-6.1-terra | `kydao-ui.js` |
+| 4 | T-116 | ui-harness, ảnh chụp 3 cỡ, Sổ tay, README | Gemini 3.8 Flash + Claude Haiku 5.5 | tài liệu |
+| 4 | T-117 | Đồ họa 2D bằng Canva: khung khẩu hiệu, biểu tượng bộ chọn | Claude Sonnet 5.5 (công cụ Canva) | không |
+| 5 | T-120 → T-125 | Nhân vật, trang phục, hào quang 3D bằng Blender | Claude Sonnet 5.5 (công cụ Blender), chờ 👤 duyệt bản mẫu T-120 | `avatar.mjs` |
 
-Độ khó quyết định mô hình: giao thức và bảo mật, đồ họa 3D, chỗ nối nhiều module → Opus. Module mới có hợp đồng rõ → Sonnet. Tài liệu, harness → Haiku.
+### 5.1 Quy tắc chọn mô hình (chủ dự án chốt ngày 2026-11-13)
+
+- **Điều phối**: Opus 5.5 (hoặc phiên chính). Điều phối viết thẻ, viết đặc tả từng bước, soát diff, chạy test, gộp nhánh; **không** tự lập trình thẻ đã giao.
+- **Thực thi** (lập trình, dùng công cụ): ưu tiên mô hình nhẹ: Claude Sonnet 5.5, Claude Haiku 5.5, Gemini 3.8 Flash, gpt-6-luna, gpt-6.1-terra, GLM Flash. Thẻ đã giao cho Opus trước ngày 13/11 (T-110, T-113) giữ nguyên.
+- **Nghiệm thu**: Gemini 4 Argon, GPT Sol (gpt-6.1-sol) hoặc Opus, luôn **khác** mô hình đã làm thẻ. Người soát chỉ đọc, không sửa.
+- Mô hình ngoài Claude chạy bằng Codex CLI trỏ vào CLIProxyAPI (`http://127.0.0.1:8317/v1`). Sandbox của Codex trên Windows không chạy được `npm` và `git commit`: điều phối chạy test và commit thay thợ.
+- Vì thợ là mô hình nhẹ, **mỗi thẻ phải có đặc tả từng bước**: file, chuỗi để tìm chỗ sửa, mã mẫu, lệnh kiểm, và danh sách "không làm". Mẫu: [ky-dai/T-115-DAC-TA.md](ky-dai/T-115-DAC-TA.md). Thẻ nào thợ phải tự thiết kế thì chưa đủ điều kiện "Sẵn sàng".
+- Thợ chỉ sửa **thẻ của mình** trong `task.md`, không sửa bảng Tổng quan (điều phối cập nhật), để tránh xung đột khi gộp.
 
 ## 6. Rủi ro
 
