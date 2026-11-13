@@ -321,7 +321,8 @@ const THREE_ADDONS = new Set(['loaders/GLTFLoader.js', 'utils/BufferGeometryUtil
 app.get('/vendor/three-addons/:dir/:file', (req, res) => {
   const rel = req.params.dir + '/' + req.params.file;
   if (!THREE_ADDONS.has(rel)) return res.status(404).end();
-  res.sendFile(path.join(__dirname, 'node_modules', 'three', 'examples', 'jsm', rel), { maxAge: '10m' });
+  // root + đường dẫn tương đối: sendFile với đường dẫn tuyệt đối sẽ từ chối khi thư mục cha có dấu chấm đầu tên (ví dụ .claude).
+  res.sendFile(rel, { root: path.join(__dirname, 'node_modules', 'three', 'examples', 'jsm'), maxAge: '10m' });
 });
 app.use(express.static(path.join(__dirname, 'public'), {
   maxAge: '10m',

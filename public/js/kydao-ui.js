@@ -342,7 +342,7 @@
     const panel = ui, session = S, token = {};
     panel.boardLoad = token; panel.boardBtn.disabled = true; panel.boardBtn.textContent = 'Đang mở…';
     try {
-      const { createBoard3D } = await import('/js/world3d/board3d.mjs?v=1');
+      const { createBoard3D } = await import('/js/world3d/board3d.mjs?v=2');
       if (ui !== panel || S !== session || panel.boardLoad !== token) return;
       panel.canvas3d = h('canvas', { class: 'kd-canvas', tabindex: '0', 'aria-label': 'Bàn cờ 3D. Kéo hoặc dùng phím mũi tên để xoay; cuộn để thu phóng.' });
       panel.canvas3d.style.width = panel.canvas._w + 'px'; panel.canvas3d.style.height = panel.canvas._h + 'px';
@@ -675,7 +675,7 @@
   function playPromote(sq, piece) {
     if (!ui || ui.panel.hidden) return;
     sound('check');
-    if (ui.board3d && typeof ui.board3d.playFx === 'function') { ui.board3d.playFx('promote', { square: sq, piece }); return; }
+    if (ui.board3d && typeof ui.board3d.playFx === 'function') { ui.board3d.playFx('promote', { at: sq, piece }); return; }
     const at = fxPoint(sq);
     if (!root.KydaoFx || !at) return;
     const session = S, o = boardOffset();
@@ -693,7 +693,7 @@
     const boardGame = S.game === 'chess' || S.game === 'xiangqi' || S.game === 'jieqi';
     const kingSq = boardGame && loser ? kingSquare(S, loser) : null;
     if (ui.board3d && typeof ui.board3d.playFx === 'function') {
-      ui.board3d.playFx('win', { game: S.game, reason: ev.reason, result: ev.result, mine, kingSquare: kingSq, line: S.win || [] });
+      ui.board3d.playFx('win', { game: S.game, reason: ev.reason, result: ev.result, mine, king: kingSq, line: S.win || [] });
       return 2400;
     }
     if (!root.KydaoFx) return 0;
