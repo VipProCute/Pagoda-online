@@ -79,6 +79,8 @@ test('Cờ úp: hai người chơi, vào lại và khán giả chỉ nhận view
       assert.ok(!json.includes(JSON.stringify(secret.hidden)), event.ev);
       if (p.state) assert.deepEqual(p.state, mod.view(secret), event.ev);
       if (event.ev === 'kd:moved') assert.deepEqual(p.reveal, expectedReveal);
+      // kd:skin (T-110) chỉ mang mã skin của một bên, không có gì về quân.
+      if (event.ev === 'kd:skin') assert.deepEqual(Object.keys(p).sort(), ['field', 'gameId', 'opened', 'pieces', 'side']);
       if (event.uid) assert.notEqual(event.uid, outsider.uid);
     }
     e.sent.length = e.rooms.length = 0;
@@ -86,7 +88,16 @@ test('Cờ úp: hai người chơi, vào lại và khán giả chỉ nhận view
   let expectedReveal;
   assert.equal(e.manager.watch(viewer, { table: 1 }).ok, true);
   scan();
+  assert.equal(e.manager.skin(a, { gameId, field: 'volcano', pieces: 'magma' }).ok, true);
+  assert.equal(e.manager.skin(b, { gameId, field: 'ocean', pieces: 'coral' }).ok, true);
+  assert.equal(e.rooms.filter(x => x.ev === 'kd:skin').length, 2, 'người xem nhận kd:skin');
+  scan();
   for (let ply = 0; ply < 40 && !mod.status(secret).over; ply++) {
+    if (ply === 10) {
+      e.clock.advance(20000);
+      assert.equal(e.manager.skin(b, { gameId, field: 'thunder', pieces: 'storm' }).ok, true);
+      scan();
+    }
     const who = mod.turn(secret) === 'a' ? a : b;
     assert.equal(e.manager.move(viewer, { gameId, ply, move: 'a3a4' }).ok, false);
     assert.equal(e.manager.move(who, { gameId, ply, move: 'a0a9' }).ok, false);
@@ -702,4 +713,180 @@ test('Đủ KYDAO_MAX_GAMES: bắt đầu từ bàn ngồi (ready) bị từ ch�
   assert.match(r.reason, /quá nhiều ván/);
   assert.equal(m.tables(c).tables.find(t => t.table === 2).seats[1].ready, false);
   m.shutdown();
+});
+
+/* ----- T-110: skin sân / skin quân (kd:skin) ----- */
+
+const NULL_SKINS = { a: { field: null, pieces: null }, b: { field: null, pieces: null } };
+
+test('kd:skin: hai người chơi và người xem nhận cùng gói; ảnh chụp ván có skins; không lộ uid', () => {
+  const e = managerEnv(); const m = e.manager;
+  const { a, b, gameId, start } = startGame(e);
+  const viewer = { uid: 'uid-secret-viewer', pid: 'pv', name: 'Khách' };
+  assert.deepEqual(start.skins, NULL_SKINS, 'ván mới bắt đầu bằng null');
+  for (const ev of e.sent.filter(x => x.ev === 'kd:start')) assert.deepEqual(ev.payload.skins, NULL_SKINS);
+  for (const ev of e.rooms.filter(x => x.ev === 'kd:start')) assert.deepEqual(ev.payload.skins, NULL_SKINS);
+  assert.equal(m.watch(viewer, { table: 1 }).ok, true);
+  e.sent.length = e.rooms.length = 0;
+
+  assert.deepEqual(m.skin(a, { gameId, field: 'volcano', pieces: 'magma' }), { ok: true, field: 'volcano', pieces: 'magma' });
+  const expected = { gameId, side: 'a', field: 'volcano', pieces: 'magma', opened: true };
+  assert.deepEqual(e.sent.filter(x => x.ev === 'kd:skin').map(x => [x.uid, x.payload]), [[a.uid, expected], [b.uid, expected]]);
+  assert.deepEqual(e.rooms.filter(x => x.ev === 'kd:skin').map(x => [x.room, x.payload]), [['kd:1', expected]]);
+
+  // Đổi quân (không đổi sân) thì không chạy màn khai mở.
+  e.clock.advance(3000);
+  assert.equal(m.skin(b, { gameId, pieces: 'jade' }).ok, true);
+  assert.deepEqual(e.rooms.at(-1).payload, { gameId, side: 'b', field: null, pieces: 'jade', opened: false });
+  // Đổi từ skin này sang skin khác vẫn là khai mở.
+  assert.equal(m.move(a, { gameId, ply: 0, move: 'e2e4' }).ok, true);   // qua mốc 30 giây "không đi nước đầu"
+  e.clock.advance(20000);
+  assert.equal(m.skin(a, { gameId, field: 'river' }).ok, true);
+  assert.deepEqual(e.rooms.at(-1).payload, { gameId, side: 'a', field: 'river', pieces: 'magma', opened: true });
+  // Bỏ sân: field null, opened false.
+  e.clock.advance(20000);
+  assert.equal(m.skin(a, { gameId, field: null }).ok, true);
+  assert.deepEqual(e.rooms.at(-1).payload, { gameId, side: 'a', field: null, pieces: 'magma', opened: false });
+  e.clock.advance(20000);
+  assert.equal(m.skin(a, { gameId, field: 'lotus' }).ok, true);
+
+  const want = { a: { field: 'lotus', pieces: 'magma' }, b: { field: null, pieces: 'jade' } };
+  assert.deepEqual(m.resume(a).start.skins, want);
+  assert.deepEqual(m.resume(b).start.skins, want);
+  assert.equal(m.watch(viewer, { table: 1 }).ok, true);
+  assert.deepEqual(e.sent.filter(x => x.ev === 'kd:start' && x.uid === viewer.uid).at(-1).payload.skins, want);
+  for (const event of [...e.sent, ...e.rooms]) {
+    const json = JSON.stringify(event.payload);
+    for (const u of [a, b, viewer]) assert.ok(!json.includes(u.uid), event.ev);
+  }
+  m.shutdown();
+});
+
+test('kd:skin: chỉ người chơi; mã lạ, kiểu lạ, __proto__ thành null; môn không hỗ trợ bị từ chối', () => {
+  const e = managerEnv(); const m = e.manager;
+  const { a, b, gameId } = startGame(e);
+  assert.equal(m.move(a, { gameId, ply: 0, move: 'e2e4' }).ok, true);
+  const viewer = { uid: 'uid-v', pid: 'pv', name: 'Khách' };
+  assert.equal(m.watch(viewer, { table: 1 }).ok, true);
+  assert.equal(m.skin(viewer, { gameId, field: 'volcano' }).reason, 'Bạn không phải người chơi của ván này.');
+  assert.equal(m.skin({ uid: 'uid-o', pid: 'po', name: 'Ngoài' }, { gameId, field: 'volcano' }).ok, false);
+  assert.equal(m.skin(a, { gameId: 'khong-co', field: 'volcano' }).code, 'stale');
+  assert.equal(m.skin(a, { gameId: { toString: () => gameId }, field: 'volcano' }).ok, false);
+  assert.equal(m.skin(a, { gameId }).reason, 'Chưa chọn skin.');
+  assert.equal(m.skin(a, null).ok, false);
+  assert.equal(e.sent.filter(x => x.ev === 'kd:skin').length, 0);
+
+  // Khóa lạ bị bỏ; khóa kế thừa (không phải khóa riêng) không được đọc.
+  const inherited = Object.create({ field: 'volcano' }); inherited.gameId = gameId;
+  assert.equal(m.skin(a, inherited).reason, 'Chưa chọn skin.');
+  assert.equal(m.skin(a, { gameId, side: 'b', fields: 'volcano' }).reason, 'Chưa chọn skin.');
+
+  // Mỗi lần đặt skin thật trước, rồi gửi mã xấu: về null (mặc định). Đồng hồ của b vẫn chạy nên giữ tổng thời gian dưới 300 giây.
+  const bad = ['__proto__', 'constructor', 'toString', 'hasOwnProperty', 'VOLCANO', 'volcano ', '', 7, true, ['volcano'], { id: 'volcano' }];
+  for (const v of bad) {
+    e.clock.advance(3000);
+    assert.equal(m.skin(a, { gameId, pieces: 'wood' }).ok, true);
+    e.clock.advance(3000);
+    const r = m.skin(a, JSON.parse(JSON.stringify({ gameId, field: v, pieces: v })));
+    assert.deepEqual(r, { ok: true, field: null, pieces: null }, JSON.stringify(v));
+  }
+  for (const v of ['__proto__', 'toString', { id: 'volcano' }]) {
+    e.clock.advance(20000);
+    assert.equal(m.skin(a, { gameId, field: 'forest' }).ok, true);
+    e.clock.advance(20000);
+    const r = m.skin(a, JSON.parse(JSON.stringify({ gameId, field: v })));
+    assert.deepEqual(r, { ok: true, field: null, pieces: null }, JSON.stringify(v));
+    assert.equal(e.rooms.at(-1).payload.opened, false);
+  }
+  // __proto__ là khóa riêng (như JSON.parse tạo ra) cũng không làm bẩn gì.
+  e.clock.advance(20000);
+  const r = m.skin(a, JSON.parse(`{"gameId":"${gameId}","__proto__":{"field":"volcano"},"pieces":"ice"}`));
+  assert.deepEqual(r, { ok: true, field: null, pieces: 'ice' });
+  assert.equal({}.field, undefined);
+  // Bên b không bị đổi bởi bất cứ yêu cầu nào của a (side không lấy từ client).
+  assert.deepEqual(m.resume(b).start.skins.b, { field: null, pieces: null });
+  m.shutdown();
+
+  for (const game of ['go', 'gomoku']) {
+    const g = managerEnv();
+    const s = startGame(g, game);
+    assert.deepEqual(s.start.skins, NULL_SKINS);
+    assert.equal(g.manager.skin(s.a, { gameId: s.gameId, field: 'volcano' }).reason, 'Môn này chưa có skin.');
+    assert.equal(g.sent.some(x => x.ev === 'kd:skin'), false);
+    g.manager.shutdown();
+  }
+});
+
+test('kd:skin: giới hạn sân 20 giây, quân 3 giây, theo đồng hồ tiêm và KYDAO_TIME_SCALE', () => {
+  const e = managerEnv(); const m = e.manager;
+  const { a, b, gameId } = startGame(e);
+  assert.equal(m.move(a, { gameId, ply: 0, move: 'e2e4' }).ok, true);
+  const t0 = e.clock.now();
+  assert.equal(m.skin(a, { gameId, field: 'volcano', pieces: 'magma' }).ok, true);
+  const count = () => e.sent.filter(x => x.ev === 'kd:skin').length;
+  const sent = count();
+
+  // Gửi lại đúng mã đang dùng: không phải thay đổi, không tính lượt, không phát.
+  assert.deepEqual(m.skin(a, { gameId, field: 'volcano', pieces: 'magma' }), { ok: true, field: 'volcano', pieces: 'magma' });
+  assert.equal(count(), sent);
+
+  e.clock.advance(2999);
+  let r = m.skin(a, { gameId, pieces: 'jade' });
+  assert.equal(r.ok, false); assert.equal(r.code, 'rate'); assert.equal(r.retryAt, t0 + 3000);
+  assert.match(r.reason, /quân/);
+  e.clock.advance(1);
+  assert.equal(m.skin(a, { gameId, pieces: 'jade' }).ok, true);
+
+  // Sân còn khóa thì cả yêu cầu bị từ chối, phần quân cũng không đổi.
+  e.clock.advance(5000);
+  r = m.skin(a, { gameId, field: 'river', pieces: 'ice' });
+  assert.equal(r.code, 'rate'); assert.equal(r.retryAt, t0 + 20000);
+  assert.equal(r.reason, 'Đợi 12 giây nữa mới đổi được sân.');
+  assert.equal(m.resume(a).start.skins.a.pieces, 'jade');
+  // Giới hạn tính riêng từng người.
+  assert.equal(m.skin(b, { gameId, field: 'river' }).ok, true);
+  e.clock.advance(t0 + 20000 - e.clock.now());
+  assert.equal(m.skin(a, { gameId, field: 'river', pieces: 'ice' }).ok, true);
+  m.shutdown();
+
+  const fast = managerEnv({ timeScale: 0.05 });
+  const s = startGame(fast);
+  assert.equal(fast.manager.skin(s.a, { gameId: s.gameId, field: 'volcano' }).ok, true);
+  fast.clock.advance(999);
+  assert.equal(fast.manager.skin(s.a, { gameId: s.gameId, field: 'river' }).code, 'rate');
+  fast.clock.advance(1);
+  assert.equal(fast.manager.skin(s.a, { gameId: s.gameId, field: 'river' }).ok, true);
+  fast.manager.shutdown();
+});
+
+test('kd:skin: ván đã kết thúc bị từ chối; đấu lại bắt đầu bằng null; bàn trong chỉ gửi hai người chơi', () => {
+  const e = managerEnv(); const m = e.manager;
+  const { a, b, gameId } = startGame(e);
+  assert.equal(m.skin(a, { gameId, field: 'volcano' }).ok, true);
+  assert.equal(m.resign(b, { gameId }).ok, true);
+  const r = m.skin(a, { gameId, field: 'river' });
+  assert.equal(r.ok, false); assert.equal(r.code, 'stale');
+  // Biên bản ván không mang skin (không lưu bền, K3).
+  assert.equal(JSON.stringify(e.saved).includes('volcano'), false);
+  assert.equal(m.ready(a, { table: 1, ready: true }).ok, true);
+  assert.equal(m.ready(b, { table: 1, ready: true }).ok, true);
+  const again = m.resume(a).start;
+  assert.notEqual(again.gameId, gameId);
+  assert.deepEqual(again.skins, NULL_SKINS);
+  m.shutdown();
+
+  // Hết bàn: ván mời thành bàn trong, không có phòng người xem.
+  const f = managerEnv(); const n = f.manager;
+  for (let i = 1; i <= 4; i++) assert.equal(n.sit({ uid: 'us' + i, pid: 'ps' + i, name: 'S' + i }, { table: i, seat: 0 }).ok, true);
+  const c = { uid: 'uc', pid: 'pc', name: 'C' }, d = { uid: 'ud', pid: 'pd', name: 'D' };
+  assert.equal(n.invite(c, { target: d, game: 'xiangqi', pace: 'fast', rated: false }).ok, true);
+  const inviteId = f.sent.filter(x => x.ev === 'kd:invited').at(-1).payload.inviteId;
+  assert.equal(n.respond(d, { inviteId, accept: true }).ok, true);
+  const inner = n.resume(c).start;
+  assert.equal(inner.table, null);
+  f.rooms.length = 0;
+  assert.equal(n.skin(d, { gameId: inner.gameId, pieces: 'bronze' }).ok, true);
+  assert.equal(f.rooms.some(x => x.ev === 'kd:skin'), false);
+  assert.deepEqual(f.sent.filter(x => x.ev === 'kd:skin').map(x => x.uid), [c.uid, d.uid]);
+  n.shutdown();
 });
