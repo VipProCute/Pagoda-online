@@ -388,6 +388,7 @@
     if (!r.ok) { say(r.reason); return; }
     say('');
     sound(r.info.capture ? 'capture' : r.info.check ? 'check' : 'move');
+    if (S.game === 'chess' && move.length === 5) { redraw(); playPromote(move.slice(2, 4), move[4]); }
     send('kd:move', { gameId: gid, ply: before, move }, ack => {
       if (!S || S.gameId !== gid || (ack && ack.ok)) return;
       if (ack && ack.code === 'stale') { resume(); return; }
@@ -663,6 +664,44 @@
     const bottom = (side === 'a') !== flip;
     return { rect: { x: o.x, y: o.y + (bottom ? o.h / 2 : 0), w: o.w, h: o.h / 2 }, fromBottom: bottom };
   }
+  function fxPoint(sq) {
+    const D = root.KydaoDraw;
+    if (!geom || !sq) return null;
+    const q = D.parseSq(S.game, sq, S.state.size);
+    if (!q) return null;
+    const p = D.cellXY(geom, q.col, q.row, S.you === 'b'), o = boardOffset();
+    return { x: o.x + p.x, y: o.y + p.y };
+  }
+  function playPromote(sq, piece) {
+    if (!ui || ui.panel.hidden) return;
+    sound('check');
+    if (ui.board3d && typeof ui.board3d.playFx === 'function') { ui.board3d.playFx('promote', { square: sq, piece }); return; }
+    const at = fxPoint(sq);
+    if (!root.KydaoFx || !at) return;
+    const session = S, o = boardOffset();
+    root.KydaoFx.mount(ui.wrap, { reduced: reduced() });
+    root.KydaoFx.play('promote', { at, piece, cell: geom.cell, onJolt: get => {
+      if (S !== session || !ui) return;
+      S.jolt = get ? (x, y) => get(x + o.x, y + o.y) : null;
+      redraw();
+    } });
+  }
+  function playWin(ev) {
+    if (!ui || ui.panel.hidden || ev.result === 'abort' || reduced()) return 0;
+    const mine = S.you ? (ev.result === 'draw' ? null : ev.result === S.you) : null;
+    const loser = ev.result === 'a' ? 'b' : ev.result === 'b' ? 'a' : null;
+    const boardGame = S.game === 'chess' || S.game === 'xiangqi' || S.game === 'jieqi';
+    const kingSq = boardGame && loser ? kingSquare(S, loser) : null;
+    if (ui.board3d && typeof ui.board3d.playFx === 'function') {
+      ui.board3d.playFx('win', { game: S.game, reason: ev.reason, result: ev.result, mine, kingSquare: kingSq, line: S.win || [] });
+      return 2400;
+    }
+    if (!root.KydaoFx) return 0;
+    root.KydaoFx.mount(ui.wrap, { reduced: false });
+    const line = (S.win || []).map(fxPoint).filter(Boolean);
+    root.KydaoFx.play('win', { game: S.game, reason: ev.reason, result: ev.result, mine, king: kingSq ? fxPoint(kingSq) : null, line });
+    return 2400;
+  }
   function onSkinEvent(ev) {
     if (ui && !ui.skins.hidden) renderSkins();
     if (!ev.opened || !ev.field || !ui || ui.panel.hidden) return;
@@ -719,6 +758,7 @@
       sound(ev.capture ? 'capture' : ev.check ? 'check' : 'move');
       if (S.offer && S.offer !== mover) S.offer = null; // đối thủ đi một nước = từ chối lời xin hòa của mình
       render();
+      if (S.game === 'chess' && typeof ev.move === 'string' && ev.move.length === 5) playPromote(ev.move.slice(2, 4), ev.move[4]);
     } else if (r === 'synced') { updateClocks(); renderMoves(); }
     if (was === S.ply && r !== 'synced') updateClocks();
   }
@@ -731,6 +771,7 @@
       stopBoard3D();
       hooks = h2 || hooks || {};
       clearTimeout(resultTimer);
+      if (root.KydaoFx) root.KydaoFx.stop();
       S = makeSession(start, mod);
       rematchSent = false; confirmOpen = false; minimized = false;
       if (!ui) {
@@ -780,7 +821,9 @@
         confirmOpen = false;
         hidePromo(); render(); tick();
         clearTimeout(resultTimer);
-        resultTimer = setTimeout(() => { if (S && S.over && ui) showResult(ev); }, reduced() ? 0 : 450);
+        S.jolt = null;
+        const wait = playWin(ev);
+        resultTimer = setTimeout(() => { if (S && S.over && ui) showResult(ev); }, reduced() ? 0 : Math.max(450, wait));
       }
     },
     core
