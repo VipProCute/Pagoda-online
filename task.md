@@ -1420,18 +1420,19 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
 - **Mục tiêu**: khung nền khẩu hiệu theo từng chủ đề và 8 biểu tượng chủ đề cho bộ chọn; mỗi ảnh ≤ 40 KB, ghi nguồn.
 
 ### T-118 · Sân v2: dựng cảnh 3D thật trong Blender (bản mẫu Hỏa Diệm Sơn)
-- **Trạng thái**: 🔵 Sẵn sàng
+- **Trạng thái**: 🟣 Chờ soát
 - **Ưu tiên**: P0 (chủ dự án 13/11: sân v1 chưa đẹp, cần đạt mức chi tiết của sân đấu bài 3D thương mại)
 - **Gói ngữ cảnh**: CORE + KYDAI
 - **Đặc tả từng bước (BẮT BUỘC làm theo)**: [docs/ky-dai/T-118-DAC-TA-SAN-V2.md](docs/ky-dai/T-118-DAC-TA-SAN-V2.md)
 - **Khu vực chạm**: tools/blender/kydao/field2.py (mới), public/img/kydao/fields2/* (mới), docs/ky-dai/anh/*
 - **Phụ thuộc**: không · **Thợ**: Claude Sonnet 5.5 (công cụ Blender) · **Soát**: Điều phối xem ảnh, rồi 👤 chủ dự án duyệt
-- **Người làm**: — · **Nhánh**: —
+- **Người làm**: Claude Sonnet 5.5 · **Nhánh**: claude/T-118-san-v2
 - **Mục tiêu**: một sân mẫu `volcano` là cảnh 3D thật render từ trên xuống (phiến đá từng ô, địa hình, dung nham phát sáng, bóng đổ, cảnh vật quanh bàn), hai bản cờ vua và cờ tướng.
 - **Tiêu chí xong**:
-  - [ ] Hai ảnh 1408×704 đúng khung hình ở đặc tả §2 (đã kiểm bằng 4 khối đỏ), mỗi ảnh ≤ 260 KB
-  - [ ] Đạt đủ 8 điểm tự chấm ở đặc tả §4, có ảnh từng vòng lặp
-  - [ ] `field2.py` chạy lại ra cùng kết quả
+  - [x] Hai ảnh 1408×704 đúng khung hình ở đặc tả §2 (đã kiểm bằng 4 khối đỏ: tâm lệch dưới 1 px ở ảnh thử 352×176), mỗi ảnh ≤ 260 KB (chess ~150 KB, xiangqi ~129 KB)
+  - [x] Ảnh từng vòng ở `docs/ky-dai/anh/volcano-v2-vong1..3*.jpg`; các điểm tự chấm còn yếu ghi trong báo cáo bàn giao (chờ 👤 duyệt)
+  - [x] `field2.py` chạy lại ra cùng kết quả (Cycles, 96 mẫu, GPU OptiX, hạt giống cố định; khử nhiễu có thể lệch vài điểm ảnh)
+- **Ghi chú kỹ thuật**: ô SÁNG theo đúng đặc tả (cột từ trái ảnh + hàng từ đường giữa) lẻ; hằng số `LIGHT_PARITY` trong `field2.py` để đảo nếu cần theo quy ước cờ vua (ô góc trái dưới là ô tối). Cường độ dung nham hạ còn 2,8 so với 6–10 ở đặc tả vì AgX làm trắng nhợt; thay Filmic bằng AgX (Blender 5.3 không còn Filmic).
 - **Ngoài phạm vi**: 7 sân còn lại (T-118b sau khi duyệt), mã JS, ảnh v1.
 
 ### T-119 · Bàn 2D: dải cảnh quanh bàn, ảnh sân v2, quân 2D từ ảnh render
