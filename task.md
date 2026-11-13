@@ -1268,7 +1268,7 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
 > Thiết kế và hợp đồng: [docs/KE-HOACH-KY-DAI.md](docs/KE-HOACH-KY-DAI.md). Nhánh tích hợp: `claude/chess-game-graphics-upgrade-553ef6` (thợ tách nhánh từ đây). Danh mục skin `public/js/kydao-skins.js` do điều phối giữ: thợ **không sửa**, cần đổi thì ghi vào bàn giao.
 
 ### T-110 · Thêm giao thức `kd:skin` trên máy chủ
-- **Trạng thái**: 🟣 Chờ soát
+- **Trạng thái**: 🟣 Chờ soát. Đã gộp vào nhánh tích hợp (commit b35815d). Điều phối chạy lại: check sạch, 220 test Kỳ Đạo đạt. Soát độc lập Gemini 4 Argon (13/11, chỉ đọc): PASS, không lỗi chặn; góp ý thêm 3 ca test (đã ghi Hộp thư đến).
 - **Ưu tiên**: P0
 - **Gói ngữ cảnh**: CORE + KYDAO + KYDAI
 - **Khu vực chạm**: lib/kydao/manager.js, server.js (chỉ thêm handler `kd:skin` cạnh các handler `kd:*`), docs/KY-DAO-GIAO-THUC.md, test/kydao-manager.test.js, test/e2e-kydao.test.js, test/kydao-skins.test.js (mới)
@@ -1429,6 +1429,7 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
 
 Lấy từ README "Việc nên làm tiếp" và lúc rà repo. Điều phối viết lại thành thẻ đủ trường khi muốn làm.
 
+- ⚪ Thêm 3 ca test cho `kd:skin` (soát T-110, Gemini 4 Argon, 2026-11-13): (1) gọi `skin` khi đồng hồ vừa quá hạn mà hẹn giờ chưa nổ (nhánh `expired` trong `lib/kydao/manager.js`); (2) e2e gọi `kd:skin` khi đang ở Chánh điện để ghim `where: 'any'`; (3) gửi `field` giữ nguyên + `pieces` mới khi `field` còn trong hạn 20 giây. Gói: KYDAO + KYDAI. Thợ gợi ý: gpt-6-luna.
 - ⚪ Cờ vua: nhận diện thế cờ chết tổng quát (hàng rào Tốt khóa có Tốt phụ, ví dụ FEN `4k3/8/8/p1p1p1p1/P1P1P1P1/P7/8/4K3 w - - 0 1`); hiện chỉ có 4 ca thiếu quân + một mẫu hàng rào đúng khớp. Đổi tên biến tiếng Việt (`ten`, `ca`, `ds`) trong test sang tiếng Anh. Gói: KYDAO. (Soát T-021, 2026-11-11.)
 - ⚪ Chưa có test nào cho `lib/moderation.js` (`checkMessage`, `checkName`, `clean`), trong khi đây là bất biến AGENTS.md §3.6 (chặn link, dãy số chống lừa đảo). Thêm test cả ca dương và ca âm ("chim cút", "đi ngủ" không bị bắt). Gói: SOCIAL. (Soát T-003 phát hiện 2026-11-11.)
 - 👤 Thu âm bài tụng thật của chư tăng chùa đối tác (có sự đồng ý), thay giọng tổng hợp. Gói: CHANT.
