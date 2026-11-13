@@ -19,7 +19,7 @@
 <link rel="stylesheet" href="/css/arena.css?v=vohoc7">
 <link rel="stylesheet" href="/css/guide.css?v=sotay3">
 <link rel="stylesheet" href="/css/view3d.css?v=1">
-<link rel="stylesheet" href="/css/kydao.css?v=1">
+<link rel="stylesheet" href="/css/kydao.css?v=2">
 <script type="importmap">{"imports":{"three":"/vendor/three/three.module.js?v=0.187.0"}}</script>
 </head>
 <body>
@@ -441,8 +441,8 @@
     <div class="dlg-head"><div><h2 id="kd-lobby-title">Bàn cờ</h2><p id="kd-lobby-info" role="status"></p></div><button type="button" class="x" data-close aria-label="Đóng">×</button></div>
     <fieldset id="kd-rules">
       <legend>Luật ván cờ</legend>
-      <div class="choices"><label class="chipr"><input type="radio" name="kd-game" value="chess" checked><span>Cờ vua</span></label><label class="chipr"><input type="radio" name="kd-game" value="xiangqi"><span>Cờ tướng</span></label></div>
-      <p class="hint">Cờ vây, caro và cờ úp: sắp có.</p>
+      <div class="choices"><label class="chipr"><input type="radio" name="kd-game" value="chess" checked><span>Cờ vua</span></label><label class="chipr"><input type="radio" name="kd-game" value="xiangqi"><span>Cờ tướng</span></label><label class="chipr"><input type="radio" name="kd-game" value="jieqi"><span>Cờ úp</span></label><label class="chipr"><input type="radio" name="kd-game" value="go"><span>Cờ vây</span></label><label class="chipr"><input type="radio" name="kd-game" value="gomoku"><span>Caro</span></label></div>
+      <label id="kd-size-label" hidden>Cỡ bàn vây <select id="kd-size" style="min-height:44px"><option value="9">9 × 9</option><option value="13">13 × 13 · Giao hữu</option><option value="19">19 × 19 · Giao hữu</option></select></label>
       <div class="choices"><label class="chipr"><input type="radio" name="kd-mode" value="friendly" checked><span>Giao hữu</span></label><label class="chipr"><input type="radio" name="kd-mode" value="rated"><span>Xếp hạng</span></label></div>
       <div class="choices"><label class="chipr"><input type="radio" name="kd-pace" value="normal" checked><span>Thường</span></label><label class="chipr"><input type="radio" name="kd-pace" value="fast"><span>Nhanh</span></label></div>
     </fieldset>
@@ -564,8 +564,10 @@
 <script src="/js/view3d-ui.js?v=5"></script>
 <script src="/js/kydao/chess.js?v=1"></script>
 <script src="/js/kydao/xiangqi.js?v=1"></script>
-<script src="/js/kydao-draw.js?v=pieces2"></script>
-<script src="/js/kydao-ui.js?v=board3d1"></script>
-<script src="/js/app.js?v=kydao-music1"></script>
+<script src="/js/kydao/go.js?v=1"></script>
+<script src="/js/kydao/gomoku.js?v=1"></script>
+<script src="/js/kydao-draw.js?v=pieces3"></script>
+<script src="/js/kydao-ui.js?v=five-games1"></script>
+<script src="/js/app.js?v=five-games1"></script>
 </body>
 </html>

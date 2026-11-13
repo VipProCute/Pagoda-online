@@ -1,5 +1,5 @@
 /*
- * Kỳ Đạo · Vẽ bàn cờ bằng Canvas 2D (KydaoDraw): cờ vua 8×8 và cờ tướng 9×10.
+ * Kỳ Đạo · Vẽ bàn cờ bằng Canvas 2D: vua, tướng/úp, vây 9/13/19, caro 15×15.
  * Quân cờ vua vẽ bằng mã (không dùng ký tự ♔, không có tệp ảnh nên không cần ghi NOTICE).
  * Phần hình học (layout, squareAt, cellXY, nameOf, parseSq) thuần, chạy được trong Node để test.
  *
@@ -16,17 +16,23 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  const FILES = 'abcdefghi';
+  const FILES = 'abcdefghijklmnopqrs';
+  const GO_FILES = 'ABCDEFGHJKLMNOPQRST';
+  const isGrid = game => game === 'go' || game === 'gomoku';
   const DIMS = { chess: { cols: 8, rows: 8 }, xiangqi: { cols: 9, rows: 10 } };
-  const dimOf = game => (game === 'chess' ? DIMS.chess : DIMS.xiangqi); // jieqi dùng bàn cờ tướng
+  const dimOf = (game, size) => isGrid(game) ? { cols: size || (game === 'go' ? 9 : 15), rows: size || (game === 'go' ? 9 : 15) } : (game === 'chess' ? DIMS.chess : DIMS.xiangqi);
   const isChess = game => game === 'chess';
 
   /** Tỉ lệ rộng/cao nên có của canvas. */
-  function aspect(game) { return isChess(game) ? 1 : 9.2 / 10.2; }
+  function aspect(game) { return isChess(game) || isGrid(game) ? 1 : 9.2 / 10.2; }
 
   /** Hình học cho canvas w×h (px CSS). */
-  function layout(game, w, h) {
-    const d = dimOf(game);
+  function layout(game, w, h, size) {
+    const d = dimOf(game, size);
+    if (isGrid(game)) {
+      const cell = Math.min(w, h) / (d.cols + 1);
+      return { game, cols: d.cols, rows: d.rows, cell, ox: (w - cell * (d.cols - 1)) / 2, oy: (h - cell * (d.rows - 1)) / 2, w, h };
+    }
     if (isChess(game)) {
       const cell = Math.floor(Math.min(w, h) / 8);
       return { game, cols: 8, rows: 8, cell, ox: Math.round((w - cell * 8) / 2), oy: Math.round((h - cell * 8) / 2), w, h };
@@ -39,20 +45,23 @@
   function cellXY(g, col, row, flip) {
     const c = flip ? g.cols - 1 - col : col, r = flip ? g.rows - 1 - row : row;
     if (isChess(g.game)) return { x: g.ox + c * g.cell + g.cell / 2, y: g.oy + (7 - r) * g.cell + g.cell / 2 };
-    return { x: g.ox + c * g.cell, y: g.oy + (9 - r) * g.cell };
+    return { x: g.ox + c * g.cell, y: g.oy + (g.rows - 1 - r) * g.cell };
   }
 
-  const nameOf = (game, col, row) => FILES[col] + (isChess(game) ? row + 1 : row);
-  function parseSq(game, name) {
+  const nameOf = (game, col, row) => (game === 'go' ? GO_FILES : FILES)[col] + (isChess(game) || isGrid(game) ? row + 1 : row);
+  function parseSq(game, name, size) {
     if (typeof name !== 'string' || name.length < 2) return null;
-    const col = FILES.indexOf(name[0]);
-    const row = isChess(game) ? Number(name.slice(1)) - 1 : Number(name.slice(1));
-    const d = dimOf(game);
+    const col = (game === 'go' ? GO_FILES : FILES).indexOf(name[0]);
+    const row = isChess(game) || isGrid(game) ? Number(name.slice(1)) - 1 : Number(name.slice(1));
+    const d = dimOf(game, size);
     if (col < 0 || col >= d.cols || !Number.isInteger(row) || row < 0 || row >= d.rows) return null;
     return { col, row };
   }
   /** Chỉ số trong board của state. */
-  const boardIndex = (game, col, row) => row * dimOf(game).cols + col;
+  const boardIndex = (game, col, row, size) => {
+    const d = dimOf(game, size);
+    return (game === 'gomoku' ? d.rows - 1 - row : row) * d.cols + col;
+  };
 
   /** Chạm px,py → tên ô; null nếu ngoài bàn (cờ tướng: phải đủ gần một giao điểm). */
   function squareAt(g, px, py, flip) {
@@ -62,7 +71,7 @@
       r = 7 - Math.floor((py - g.oy) / g.cell);
     } else {
       c = Math.round((px - g.ox) / g.cell);
-      r = 9 - Math.round((py - g.oy) / g.cell);
+      r = g.rows - 1 - Math.round((py - g.oy) / g.cell);
       const p = cellXY(g, flip ? g.cols - 1 - c : c, flip ? g.rows - 1 - r : r, flip);
       if (Math.hypot(px - p.x, py - p.y) > g.cell * 0.62) return null;
     }
@@ -405,13 +414,55 @@
    * o = { game, w, h, dpr, board, flip, selected, targets:[tên ô], last:[từ, đến], checkSq, vi }
    * Trả về hình học (layout) dùng để đổi chạm → ô.
    */
+  function starPoints(size) {
+    const edge = size === 9 ? 2 : 3, mid = (size - 1) / 2;
+    return size === 9 ? [[edge, edge], [edge, size - 1 - edge], [size - 1 - edge, edge], [size - 1 - edge, size - 1 - edge], [mid, mid]] : [edge, mid, size - 1 - edge].flatMap(x => [edge, mid, size - 1 - edge].map(y => [x, y]));
+  }
+
+  function drawGridBoard(ctx, g, flip) {
+    const wood = ctx.createLinearGradient(0, 0, g.w, g.h);
+    wood.addColorStop(0, '#efcf94'); wood.addColorStop(1, '#bd8d50');
+    ctx.fillStyle = wood; ctx.fillRect(0, 0, g.w, g.h);
+    ctx.strokeStyle = '#634525'; ctx.lineWidth = 1;
+    for (let i = 0; i < g.cols; i++) {
+      const a = cellXY(g, i, 0, false), b = cellXY(g, i, g.rows - 1, false);
+      const c = cellXY(g, 0, i, false), d = cellXY(g, g.cols - 1, i, false);
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.moveTo(c.x, c.y); ctx.lineTo(d.x, d.y); ctx.stroke();
+    }
+    if (g.game === 'go') starPoints(g.cols).forEach(([x, y]) => {
+      const p = cellXY(g, x, y, flip); ball(ctx, p.x, p.y, Math.max(2, g.cell * 0.09)); ctx.fillStyle = '#53391e'; ctx.fill();
+    });
+    ctx.font = Math.max(9, g.cell * 0.32) + 'px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#53391e';
+    for (let i = 0; i < g.cols; i++) {
+      const p = cellXY(g, i, 0, flip), q = cellXY(g, 0, i, flip);
+      ctx.fillText((g.game === 'go' ? GO_FILES : FILES)[i], p.x, g.h - g.cell * 0.3);
+      ctx.fillText(String(i + 1), g.cell * 0.3, q.y);
+    }
+  }
+
+  function drawStone(ctx, p, cell, side, game) {
+    const r = cell * 0.44;
+    if (game === 'gomoku') {
+      ctx.strokeStyle = side === 'a' ? '#8f2520' : '#252d37'; ctx.lineWidth = Math.max(2, cell * 0.1); ctx.lineCap = 'round';
+      ctx.beginPath();
+      if (side === 'a') { ctx.moveTo(p.x - r * 0.7, p.y - r * 0.7); ctx.lineTo(p.x + r * 0.7, p.y + r * 0.7); ctx.moveTo(p.x + r * 0.7, p.y - r * 0.7); ctx.lineTo(p.x - r * 0.7, p.y + r * 0.7); }
+      else ctx.arc(p.x, p.y, r * 0.8, 0, Math.PI * 2);
+      ctx.stroke(); return;
+    }
+    ctx.save(); ctx.shadowColor = 'rgba(25,15,5,.45)'; ctx.shadowBlur = cell * 0.14; ctx.shadowOffsetY = cell * 0.07;
+    const shade = ctx.createRadialGradient(p.x - r * 0.35, p.y - r * 0.4, r * 0.1, p.x, p.y, r);
+    shade.addColorStop(0, side === 'a' ? '#65666a' : '#fffef4'); shade.addColorStop(1, side === 'a' ? '#0c0e12' : '#bdb9ad');
+    ball(ctx, p.x, p.y, r); ctx.fillStyle = shade; ctx.fill(); ctx.restore();
+  }
+
   function draw(ctx, o) {
-    const g = layout(o.game, o.w, o.h);
+    const g = layout(o.game, o.w, o.h, o.size);
     const flip = !!o.flip, chess = isChess(o.game);
     ctx.setTransform((o.dpr || 1), 0, 0, (o.dpr || 1), 0, 0);
     ctx.clearRect(0, 0, o.w, o.h);
-    if (chess) drawChessBoard(ctx, g, flip); else drawXiangqiBoard(ctx, g, flip, !!o.vi);
-    const at = name => { const q = parseSq(o.game, name); return q ? cellXY(g, q.col, q.row, flip) : null; };
+    if (isGrid(o.game)) drawGridBoard(ctx, g, flip);
+    else if (chess) drawChessBoard(ctx, g, flip); else drawXiangqiBoard(ctx, g, flip, !!o.vi);
+    const at = name => { const q = parseSq(o.game, name, o.size); return q ? cellXY(g, q.col, q.row, flip) : null; };
     const mark = (name, style) => {
       const p = at(name); if (!p) return;
       ctx.fillStyle = style;
@@ -430,11 +481,21 @@
     }
     const cols = g.cols, rows = g.rows;
     for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
-      const ch = o.board && o.board[boardIndex(o.game, c, r)];
+      const ch = o.board && o.board[boardIndex(o.game, c, r, o.size)];
       if (!ch) continue;
       const p = cellXY(g, c, r, flip);
-      if (chess) drawChessPiece(ctx, p.x, p.y, g.cell * 0.92, ch);
-      else drawXiangqiPiece(ctx, p.x, p.y, g.cell, ch, !!o.vi);
+      if (isGrid(o.game)) drawStone(ctx, p, g.cell, ch, o.game);
+      else if (chess) drawChessPiece(ctx, p.x, p.y, g.cell * 0.92, ch);
+      else {
+        const reveal = o.reveal && o.reveal.square === nameOf(o.game, c, r) ? o.reveal.progress : 1;
+        ctx.save(); ctx.translate(p.x, p.y); ctx.scale(Math.max(0.08, Math.abs(2 * reveal - 1)), 1);
+        drawXiangqiPiece(ctx, 0, 0, g.cell, reveal < 0.5 ? (ch === ch.toUpperCase() ? 'X' : 'x') : ch, !!o.vi); ctx.restore();
+      }
+    }
+    (o.dead || []).forEach(n => { const p = at(n); if (!p) return; ctx.strokeStyle = '#e43c27'; ctx.lineWidth = Math.max(2, g.cell * 0.08); ctx.beginPath(); ctx.moveTo(p.x - g.cell * 0.22, p.y - g.cell * 0.22); ctx.lineTo(p.x + g.cell * 0.22, p.y + g.cell * 0.22); ctx.moveTo(p.x + g.cell * 0.22, p.y - g.cell * 0.22); ctx.lineTo(p.x - g.cell * 0.22, p.y + g.cell * 0.22); ctx.stroke(); });
+    if (o.win && o.win.length) {
+      ctx.strokeStyle = '#208349'; ctx.lineWidth = Math.max(3, g.cell * 0.14); ctx.beginPath();
+      o.win.forEach((n, i) => { const p = at(n); if (p) { if (i) ctx.lineTo(p.x, p.y); else ctx.moveTo(p.x, p.y); } }); ctx.stroke();
     }
     // chấm ô đi được (vẽ sau quân để thấy cả ô có quân bị ăn)
     (o.targets || []).forEach(n => {
@@ -453,5 +514,5 @@
     return g;
   }
 
-  return { aspect, layout, cellXY, squareAt, nameOf, parseSq, boardIndex, draw, HAN, VIET };
+  return { aspect, layout, cellXY, squareAt, nameOf, parseSq, boardIndex, draw, starPoints, HAN, VIET };
 });

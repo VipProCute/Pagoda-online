@@ -37,7 +37,7 @@
 | T-030 | Nối Kỳ Đạo vào máy chủ | ✅ Xong · PR #51 | P0 | CORE + KYDAO + HALL + AUTH | Claude Sonnet 5.5 |
 | T-031 | Vẽ bàn đá và ghế ở Sân chùa | ✅ Xong · PR #42 | P0 | CORE + HALL + KYDAO | Claude Sonnet 5.5 |
 | T-032 | Bảng bàn cờ: khung, cờ vua, cờ tướng | ✅ Xong · PR #41 | P0 | CORE + KYDAO | Claude Sonnet 5.5 |
-| T-033 | Bảng bàn cờ: cờ vây, caro, cờ úp | ⏳ T-032, T-024, T-025, T-026 | P1 | CORE + KYDAO | — |
+| T-033 | Bảng bàn cờ: cờ vây, caro, cờ úp | 🟣 Chờ soát | P1 | CORE + KYDAO | gpt-6.1-sol (Codex CLI qua proxy) |
 | T-034 | Nối bảng cờ vào chùa | 🟣 Chờ soát | P0 | CORE + KYDAO + NAV | gpt-6-astra (Codex CLI qua proxy) |
 | T-035 | ui-harness cho bàn cờ | ⏳ T-032, T-033 | P1 | CORE + KYDAO + OPS | — |
 | T-040 | Thống kê mùa, tính người giữ danh hiệu | ✅ Xong · PR #46 | P0 | CORE + RANK + MARTIAL | Claude Sonnet 5.5 (thay Codex terra 6.1) |
@@ -543,21 +543,22 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: cờ vây, caro, cờ úp (T-033); nối socket (T-034).
 
 ### T-033 · Bảng bàn cờ: cờ vây, caro, cờ úp
-- **Trạng thái**: ⏳ Chờ T-032, T-024, T-025, T-026
+- **Trạng thái**: 🟣 Chờ soát. Điều phối soát 13/11 (thợ gpt-6.1-sol): check sạch 158 file, npm test 857 đạt 0 trượt 3 bỏ qua. Đọc diff manager/registry: cờ úp chỉ phát view đã che, có test khẳng định payload không chứa quân úp, seed. Thử hai trình duyệt: bảng chọn luật đủ 5 môn; ván cờ vây 9×9 mở được, hai bên đi quân đồng bộ, đồng hồ và điểm tạm tính chạy. CHƯA đánh thử caro và cờ úp trên trình duyệt, chưa thử 375×812, chưa thử giai đoạn đánh dấu quân chết.
 - **Ưu tiên**: P1 · **Đợt**: 3
 - **Gói ngữ cảnh**: CORE + KYDAO
 - **Khu vực chạm**: public/js/kydao-ui.js, public/js/kydao-draw.js, public/css/kydao.css
 - **Phụ thuộc**: T-032, T-024, T-025, T-026
 - **Thợ**: Sonnet 5.5 (high) · **Soát**: Gemini Argon + Sol 6.1
-- **Người làm**: — · **Nhánh**: —
+- **Người làm**: gpt-6.1-sol (Codex CLI qua proxy) · **Nhánh**: `codex/T-033-bang-co-vay-caro-up`
 - **Thiết kế**: KH §5.4, §5.9
 - **Mục tiêu**: đủ 5 môn trên bảng bàn cờ.
 - **Tiêu chí xong**:
-  - [ ] Cờ vây 9/13/19 có điểm sao; giai đoạn đánh dấu (chạm nhóm, Đồng ý / Đánh tiếp, đếm ngược 3 phút, điểm tạm tính)
-  - [ ] Caro 15×15 X/O, tô 5 quân thắng
-  - [ ] Cờ úp: quân úp vẽ mặt lưng; lật có hiệu ứng ngắn (tắt khi giảm chuyển động)
+  - [x] Cờ vây 9/13/19 có điểm sao; giai đoạn đánh dấu (chạm nhóm, Đồng ý / Đánh tiếp, đếm ngược 3 phút, điểm tạm tính)
+  - [x] Caro 15×15 X/O, tô 5 quân thắng
+  - [x] Cờ úp: quân úp vẽ mặt lưng; lật có hiệu ứng ngắn (tắt khi giảm chuyển động)
   - [ ] 375×812: caro và vây 19×19 dùng được (phóng to/kéo nếu cần)
 - **Ngoài phạm vi**: bot.
+- **Ghi chú bàn giao**: Đã nối đủ năm môn vào chọn luật, lời mời, nhạc và bảng thật; vây 13/19 chỉ giao hữu. Mở rộng theo giao việc: registry/manager để bật jieqi, seed máy chủ và chuyển reveal/final; index nạp luật/cache; app chọn môn/cỡ và chuyển tiếp kd:marks (bắt buộc để tính điểm trong game); test và docs Kỳ Đạo. Test trực tiếp Node v25: 187 đạt, 0 trượt, 1 bỏ qua (perft sâu); node --check 9 file sạch. npm run check, node --test, npm test gặp spawn EPERM; E2E trực tiếp 1 đạt, 9 lỗi spawn EPERM. Test DOM giả + manager thật đã qua vây 19 đánh dấu/đánh tiếp/đồng ý, caro thắng, cờ úp lật/giảm chuyển động; quét gói tin jieqi 40 nước cho hai người chơi, vào lại và người xem. Chưa thử trình duyệt thật/ảnh 375×812, cần điều phối xác minh. Không add/commit/push theo chỉ dẫn sandbox cuối giao việc. Báo cáo BAN-GIAO-T-033.md không commit.
 
 ### T-034 · Nối bảng cờ vào chùa
 - **Trạng thái**: 🟣 Chờ soát. Điều phối soát 13/11 (thợ gpt-6-astra): check sạch, npm test 841 đạt 0 trượt 3 bỏ qua. Thử trên trình duyệt 2D: chạm Bàn 3 ở Sân chùa thì ngồi được, hiện bảng chọn luật (cờ vua, cờ tướng; ba môn kia ghi sắp có). CHƯA thử ván hai người từ đầu tới cuối, chưa thử mời từ hộp người chơi, chưa thử chạm bàn trong 3D.
