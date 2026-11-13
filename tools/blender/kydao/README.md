@@ -42,3 +42,17 @@ runpy.run_path(r'<repo>/tools/blender/kydao/build.py', init_globals={'REPO': r'<
 1. Thêm mục vào `FIELDS` hoặc `PIECES` trong `public/js/kydao-skins.js`.
 2. Sân: thêm một nhánh `fx` trong `ground_material` và `build_field` (hoặc dùng lại `fx` có sẵn). Quân: thêm một dòng vào `STYLE`.
 3. Chạy lại script với mã mới; kiểm ngân sách ở `docs/KE-HOACH-KY-DAI.md` §4.5 (script in số tam giác và dung lượng).
+
+## Atlas quân 2D (`pieces2d.py`, T-126a)
+
+Render quân cờ 2D từ mô hình 3D của `build.py` (Cycles, 64 mẫu, nền trong suốt, siêu lấy mẫu 2x). Chạy trong Blender:
+
+    import runpy; runpy.run_path(r'<repo>/tools/blender/kydao/pieces2d.py', init_globals={'REPO': r'<repo>', 'ONLY': ['magma']})
+
+Tham số: `ONLY` (danh sách mã, mặc định cả 8 bộ), `PREVIEW` (24 mẫu, ảnh xem thử vào thư mục tạm, không đụng `public/`), `DOCS` (bộ được ghi thêm `docs/ky-dai/anh/quan-2d-<id>.jpg`), `SAMPLES`. Mỗi bộ mất khoảng một phút; gọi từng 1-2 bộ một lần. Bước ghép atlas gọi `python` hệ thống (cần Pillow).
+
+Đầu ra `public/img/kydao/pieces2d/<id>.webp`: 896x256, lưới **7 cột x 2 hàng**, mỗi ô **128x128**, nền trong suốt.
+- Hàng 0 = bên `a` (sáng), hàng 1 = bên `b` (tối). Cột: `K Q R B N P disc`.
+- Quân cờ vua: nhìn từ phía trước chếch xuống 22 độ, 67 px/đơn vị mô hình, đáy quân ở y=118 (cách mép dưới 10 px), canh giữa theo chiều ngang. Chiều cao (kể cả thánh giá, chóp): K 108, Q 93, B 86, N 86, R 72, P 58 px. Mã quay mặt sang trái.
+- `disc`: nhìn thẳng từ trên xuống, tâm ô, thân tròn đường kính 108 px (gai trang trí của magma, wood, ice, coral, storm nhô tới 122 px), mặt trên trống.
+- Có bóng đổ mềm nhỏ dưới chân quân (alpha thấp, lệch sang trái ảnh). Không sửa tay atlas; sửa script rồi chạy lại.

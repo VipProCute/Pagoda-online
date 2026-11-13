@@ -701,5 +701,6 @@ def main():
     return report
 
 
-result = main()
-print(json.dumps(result, indent=1))
+if globals().get('RUN_MAIN', True):     # RUN_MAIN=False: chỉ nạp làm thư viện (pieces2d.py)
+    result = main()
+    print(json.dumps(result, indent=1))
