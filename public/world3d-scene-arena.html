@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Sân đấu 3D · Chùa Tâm An</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #2c332d; color: #f8ebd2; font-family: system-ui, sans-serif; }
+    #ar-world { display: block; width: 100%; height: 100dvh; touch-action: none; outline-offset: -4px; }
+    .ar-panel { position: fixed; top: 22px; left: 24px; max-width: calc(100% - 48px); padding: 20px 24px; border: 1px solid #e3c68a40; border-radius: 4px 22px 22px 22px; background: #242d26e8; box-shadow: 0 10px 40px #17231d33; }
+    .ar-kicker { margin: 0 0 7px; color: #dac38e; font-size: 10px; font-weight: 700; letter-spacing: .19em; }
+    h1 { margin: 0; font: 38px/1.05 Georgia, serif; font-weight: 400; }
+    .ar-subtitle { margin: 9px 0 15px; font-size: 12px; color: #c2c5b6; }
+    .ar-controls { display: flex; gap: 8px; align-items: end; flex-wrap: wrap; }
+    button, select { min-height: 44px; border: 1px solid #b59b6560; border-radius: 8px; background: #3a4539; color: #f8ebd2; font: inherit; font-size: 12px; padding: 8px 12px; cursor: pointer; }
+    button:hover, select:hover { background: #505c47; }
+    button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid #f4cf82; outline-offset: 3px; }
+    label { display: grid; gap: 4px; color: #c2c5b6; font-size: 11px; }
+    .ar-reduced { display: flex; align-items: center; min-height: 44px; gap: 8px; margin-top: 4px; }
+    .ar-reduced input { width: 18px; height: 18px; accent-color: #d3b271; }
+    .ar-footer { position: fixed; bottom: 20px; left: 24px; max-width: min(600px, calc(100% - 210px)); font-size: 12px; text-shadow: 0 1px 4px #000; pointer-events: none; }
+    .ar-footer p { margin: 7px 0; }
+    .ar-footer a { color: #fff0ca; pointer-events: auto; min-height: 44px; display: inline-flex; align-items: center; }
+    #ar-result { padding: 8px 12px; border-radius: 8px; background: #242d26e8; color: #f2d79f; overflow-wrap: anywhere; }
+    .ar-pad { position: fixed; right: 24px; bottom: 24px; display: grid; grid-template-columns: repeat(3, 48px); gap: 5px; }
+    .ar-pad button { height: 48px; font-size: 20px; background: #263429d9; touch-action: none; user-select: none; }
+    .ar-pad button[data-key="w"] { grid-column: 2; }
+    .ar-pad button[data-key="a"] { grid-column: 1; }
+    .ar-mark { position: fixed; right: 26px; top: 28px; writing-mode: vertical-rl; letter-spacing: .25em; font: 12px Georgia, serif; color: #fff1d0; text-shadow: 0 1px 4px #25332c; pointer-events: none; }
+    @media (max-width: 600px) {
+      .ar-panel { left: 12px; top: 12px; padding: 12px 14px; max-width: calc(100% - 24px); }
+      h1 { font-size: 27px; } .ar-subtitle { display: none; } .ar-controls { margin-top: 10px; gap: 6px; }
+      .ar-controls label { display: block; } .ar-controls label span { display: none; }
+      .ar-reduced { margin-top: 0; } .ar-mark { display: none; }
+      .ar-footer { bottom: 9px; left: 12px; max-width: calc(100% - 174px); font-size: 10px; }
+      .ar-pad { bottom: 18px; right: 12px; gap: 3px; }
+    }
+    @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto; } }
+  </style>
+  <script type="importmap">{ "imports": { "three": "/vendor/three/three.module.js?v=0.187.0" } }</script>
+  <script src="/js/view-math.js?v=1"></script>
+</head>
+<body>
+  <canvas id="ar-world" tabindex="0" aria-label="Sân đấu 3D. Chạm sàn để đi; kéo để nhìn quanh; WASD để di chuyển."></canvas>
+  <section class="ar-panel" aria-label="Điều khiển cảnh thử">
+    <p class="ar-kicker">CHÙA TÂM AN / CẢNH THỬ 03</p>
+    <h1>Luận Võ Đường</h1>
+    <p class="ar-subtitle">Giữ tâm tĩnh giữa những bước chân.</p>
+    <div class="ar-controls">
+      <button id="ar-view" type="button">Góc nhìn: thứ ba</button>
+      <label><span>Đồ họa</span><select id="ar-quality" aria-label="Mức đồ họa"><option value="low">Thấp</option><option value="medium" selected>Vừa</option><option value="high">Cao</option></select></label>
+      <button id="ar-reset" type="button">Về đầu sân</button>
+    </div>
+    <label class="ar-reduced"><input id="ar-reduced" type="checkbox"> Giảm chuyển động</label>
+  </section>
+  <div class="ar-mark" aria-hidden="true">TĨNH TÂM · LUYỆN THÂN</div>
+  <div class="ar-footer">
+    <p id="ar-result" role="status" aria-live="polite">Đang mở sân…</p>
+    <p>Chạm sàn để đi · Kéo để nhìn · Cuộn để gần xa · WASD / nút mũi tên · V đổi góc nhìn</p>
+    <a href="/">Về chùa</a>
+  </div>
+  <div class="ar-pad" aria-label="Di chuyển bằng cảm ứng">
+    <button type="button" data-key="w" aria-label="Đi tới">↑</button>
+    <button type="button" data-key="a" aria-label="Sang trái">←</button>
+    <button type="button" data-key="s" aria-label="Đi lùi">↓</button>
+    <button type="button" data-key="d" aria-label="Sang phải">→</button>
+  </div>
+  <script type="module">
+    import * as THREE from 'three';
+    import * as kit from '/js/world3d/kit.mjs?v=1';
+    import { build } from '/js/world3d/scenes/arena.mjs?v=1';
+
+    const byId = id => document.getElementById(id);
+    const canvas = byId('ar-world'), result = byId('ar-result'), quality = byId('ar-quality'), reduced = byId('ar-reduced');
+    const params = new URLSearchParams(location.search);
+    quality.value = ['low', 'medium', 'high'].includes(params.get('quality')) ? params.get('quality') : 'medium';
+    reduced.checked = matchMedia('(prefers-reduced-motion: reduce)').matches || params.get('reduced') === '1';
+    const view = ViewMath.createView({ mode: params.get('view') === 'first' ? 'first' : 'third' });
+    const me = { id: 'demo-self', name: 'An Nhiên', x: 0.5, z: 0.78, yaw: Math.PI, look: { g: 'nu', c: 9, h: 1 } };
+    const names = ['Minh Tâm', 'Thiện Duyên', 'Tuệ An', 'Thanh Phong', 'Bình Minh', 'Diệu Hòa'];
+    const players = [me, ...names.map((name, i) => ({ id: 'demo-' + i, name, x: 0.2, z: 0.7,
+      look: { g: i % 2 ? 'nu' : 'nam', c: [8, 0, 5, 3, 6, 1][i], h: i % 4 }, yaw: 0 }))];
+    // Sáu đường đi giả; chỉ minh họa, không gửi vị trí lên máy chủ.
+    const routes = [
+      [[0.23, 0.7], [0.21, 0.33], [0.16, 0.4], [0.19, 0.7]],
+      [[0.39, 0.42], [0.56, 0.42], [0.63, 0.51], [0.4, 0.51]],
+      [[0.71, 0.73], [0.77, 0.51], [0.82, 0.34], [0.79, 0.72]],
+      [[0.34, 0.85], [0.56, 0.86], [0.65, 0.79], [0.36, 0.75]],
+      [[0.36, 0.18], [0.65, 0.18], [0.7, 0.14], [0.37, 0.14]],
+      [[0.7, 0.9], [0.78, 0.84], [0.66, 0.69], [0.57, 0.73]]
+    ];
+    const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(64, 1, 0.06, 180);
+    const raycaster = new THREE.Raycaster(), pointer = new THREE.Vector2(), keys = new Set();
+    let renderer, content, context, frame = 0, last = 0, elapsed = 0, target = null, drag = null, stopped = false;
+    function reset() {
+      me.x = 0.5; me.z = 0.78; me.yaw = Math.PI; target = null;
+      view.yaw = -0.18; view.pitch = view.mode === 'first' ? 0 : 0.32; view.dist = 6;
+    }
+    function labelView() { byId('ar-view').textContent = 'Góc nhìn: ' + (view.mode === 'first' ? 'thứ nhất' : 'thứ ba'); }
+    function switchView() {
+      view.setMode(view.mode === 'first' ? 'third' : 'first');
+      view.pitch = view.mode === 'first' ? 0 : 0.32; labelView();
+    }
+    function resize() {
+      if (!renderer) return;
+      const rect = canvas.getBoundingClientRect();
+      renderer.setPixelRatio(quality.value === 'low' ? 1 : Math.min(devicePixelRatio || 1, quality.value === 'high' ? 2 : 1.5));
+      renderer.setSize(rect.width, rect.height, false);
+      camera.aspect = rect.width / Math.max(rect.height, 1); camera.updateProjectionMatrix();
+    }
+    function rebuild() {
+      content?.dispose(); kit.disposeKit();
+      context = { THREE, kit, size: ViewMath.SCENE_SIZE.arena, quality: quality.value, reduceMotion: reduced.checked };
+      content = build(context); scene.add(content.group);
+      renderer.shadowMap.enabled = quality.value !== 'low'; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      resize(); result.textContent = 'Sân đã sẵn sàng. Chạm người hoặc sàn để xem kết quả chọn.';
+    }
+    function advance(player, destination, speed, dt) {
+      const a = ViewMath.toWorld('arena', player.x, player.z), b = ViewMath.toWorld('arena', destination.x, destination.z);
+      const distance = Math.hypot(b.x - a.x, b.z - a.z), step = Math.min(speed * dt, distance);
+      if (distance < 0.00001) { player.walking = false; return true; }
+      const yaw = Math.atan2(b.x - a.x, a.z - b.z);
+      Object.assign(player, ViewMath.moveTarget('arena', player.x, player.z, yaw, 1, 0, step / ViewMath.SCENE_SIZE.arena.depth));
+      player.yaw = Math.atan2(b.x - a.x, b.z - a.z); player.walking = true; return false;
+    }
+    function draw(now) {
+      if (stopped) return;
+      const dt = last ? Math.min(0.05, (now - last) / 1000) : 0; last = now;
+      if (!reduced.checked) elapsed += dt;
+      for (let i = 0; i < routes.length; i++) {
+        const route = routes[i], phase = (elapsed / (6 + i * 0.5) + i * 0.63) % route.length;
+        const index = Math.floor(phase), t = phase - index, a = route[index], b = route[(index + 1) % route.length];
+        const player = players[i + 1]; player.x = a[0] + (b[0] - a[0]) * t; player.z = a[1] + (b[1] - a[1]) * t;
+        player.yaw = Math.atan2((b[0] - a[0]) * context.size.width, (b[1] - a[1]) * context.size.depth);
+        player.walking = !reduced.checked;
+      }
+      const fwd = Number(keys.has('w')) - Number(keys.has('s')), strafe = Number(keys.has('d')) - Number(keys.has('a'));
+      me.walking = false;
+      if (fwd || strafe) {
+        target = null;
+        const next = ViewMath.moveTarget('arena', me.x, me.z, view.yaw, fwd, strafe, 2.4 * dt / context.size.depth);
+        advance(me, next, 2.4, dt);
+      } else if (target && advance(me, target, 2.4, dt)) target = null;
+      context.reduceMotion = reduced.checked;
+      content.update({ players, me: me.id, view: view.mode }, dt);
+      const pos = ViewMath.toWorld('arena', me.x, me.z); pos.y = content.surfaceHeight(me.x, me.z);
+      const pose = ViewMath.cameraPose(view, pos, content.bounds);
+      camera.position.set(pose.pos.x, pose.pos.y, pose.pos.z); camera.lookAt(pose.look.x, pose.look.y, pose.look.z);
+      renderer.render(scene, camera);
+      frame = requestAnimationFrame(draw);
+    }
+    canvas.addEventListener('pointerdown', event => {
+      if (event.button !== 0) return;
+      canvas.focus({ preventScroll: true });
+      drag = { id: event.pointerId, x: event.clientX, y: event.clientY, total: 0 }; canvas.setPointerCapture(event.pointerId);
+    });
+    canvas.addEventListener('pointermove', event => {
+      if (!drag || drag.id !== event.pointerId) return;
+      const dx = event.clientX - drag.x, dy = event.clientY - drag.y;
+      drag.total += Math.abs(dx) + Math.abs(dy);
+      if (drag.total > 5) view.rotate(-dx * 0.005, dy * 0.005);
+      drag.x = event.clientX; drag.y = event.clientY;
+    });
+    canvas.addEventListener('pointerup', event => {
+      if (!drag || drag.id !== event.pointerId) return;
+      if (drag.total <= 5 && content) {
+        const rect = canvas.getBoundingClientRect();
+        pointer.set((event.clientX - rect.left) / rect.width * 2 - 1, -(event.clientY - rect.top) / rect.height * 2 + 1);
+        camera.updateMatrixWorld(); raycaster.setFromCamera(pointer, camera);
+        const hit = content.pick(raycaster);
+        result.textContent = hit ? 'pick → ' + JSON.stringify(hit) : 'pick → null · Vật trang trí hoặc trời';
+        if (hit?.kind === 'floor') target = { x: hit.x, z: hit.z };
+      }
+      drag = null;
+    });
+    for (const type of ['pointercancel', 'lostpointercapture']) canvas.addEventListener(type, () => { drag = null; });
+    canvas.addEventListener('wheel', event => { event.preventDefault(); view.zoom(Math.exp(event.deltaY * 0.001)); }, { passive: false });
+    window.addEventListener('keydown', event => {
+      if (event.target.closest('select, input, button, a')) return;
+      const key = event.key.toLowerCase();
+      if ('wasd'.includes(key) && key.length === 1) { keys.add(key); event.preventDefault(); }
+      if (key === 'v' && !event.repeat) switchView();
+    });
+    window.addEventListener('keyup', event => keys.delete(event.key.toLowerCase()));
+    window.addEventListener('blur', () => { keys.clear(); drag = null; });
+    document.addEventListener('visibilitychange', () => { keys.clear(); last = 0; });
+    for (const button of document.querySelectorAll('[data-key]')) {
+      button.addEventListener('pointerdown', event => { event.preventDefault(); keys.add(button.dataset.key); button.setPointerCapture(event.pointerId); });
+      for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) button.addEventListener(type, () => keys.delete(button.dataset.key));
+    }
+    byId('ar-view').addEventListener('click', switchView);
+    byId('ar-reset').addEventListener('click', reset);
+    quality.addEventListener('change', () => { if (renderer) rebuild(); });
+    window.addEventListener('resize', resize);
+    function stop() {
+      stopped = true; cancelAnimationFrame(frame); content?.dispose(); kit.disposeKit(); renderer?.dispose();
+    }
+    window.addEventListener('pagehide', stop, { once: true });
+    canvas.addEventListener('webglcontextlost', event => { event.preventDefault(); stop(); result.textContent = 'Cảnh 3D đã tạm dừng. Xin tải lại trang.'; });
+    try {
+      renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+      renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1;
+      reset(); labelView(); rebuild(); frame = requestAnimationFrame(draw);
+    } catch (error) {
+      stop(); result.textContent = 'Chưa mở được cảnh 3D trên máy này. Xin trở về chùa hoặc thử lại.';
+      console.error('Chưa mở được cảnh Sân đấu 3D:', error);
+    }
+  </script>
+</body>
+</html>
