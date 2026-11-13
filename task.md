@@ -73,7 +73,7 @@
 | T-086 | Cảnh Tàng Kinh Các 3D | ⏳ T-082 | P1 | CORE + HALL | — |
 | T-087 | Cảnh Sân đấu (khu đi lại) 3D | ⏳ T-082 | P1 | CORE + HALL + PK | — |
 | T-088 | Nối 3D vào game: nút 2D/3D, góc nhìn 1/3, điều khiển | ⏳ T-081, T-083, T-084 | P0 | CORE + HALL + NAV | — |
-| T-089 | Cài đặt đồ họa, tự dò máy yếu | ⏳ T-080 | P1 | CORE + HALL | — |
+| T-089 | Cài đặt đồ họa, tự dò máy yếu | 🟣 Chờ soát | P1 | CORE + HALL | gpt-6-luna |
 | T-090 | Vẽ lại quân cờ 2D đẹp hơn | 🔵 Sẵn sàng | P1 | CORE + KYDAO | — |
 | T-091 | Bàn cờ 3D, quân tiện tròn | ⏳ T-080, T-090 | P1 | CORE + KYDAO | — |
 | T-092 | ui-harness và ảnh chụp cho 3D | ⏳ T-088 | P2 | CORE + OPS | — |
@@ -1142,13 +1142,15 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
 - **Ngoài phạm vi**: không đổi giao thức socket, không sửa `server.js`, không sửa các hàm `draw*` của `hall.js`.
 
 ### T-089 · Cài đặt đồ họa, tự dò máy yếu
-- **Trạng thái**: ⏳ Chờ T-080 · **Ưu tiên**: P1 · **Gói ngữ cảnh**: CORE + HALL
+- **Trạng thái**: 🟣 Chờ soát. Điều phối chạy lại: npm run check sạch, node --test test/gfx-detect.test.js 5/5. Lưu ý: điện thoại hiện luôn vào mức Thấp; nới sau khi đo máy thật. · **Ưu tiên**: P1 · **Gói ngữ cảnh**: CORE + HALL
 - **Khu vực chạm**: public/js/world3d/quality.mjs (mới), public/js/gfx-detect.js (mới, UMD thuần), test/gfx-detect.test.js (mới)
-- **Phụ thuộc**: T-080 · **Thợ**: gpt-6-luna · **Soát**: gpt-6-sol
+- **Phụ thuộc**: T-080 (đã có trên nhánh) · **Thợ**: gpt-6-luna · **Soát**: gpt-6-sol
+- **Người làm**: gpt-6-luna (Codex CLI qua proxy) · **Nhánh**: `codex/T-089-cai-dat-do-hoa`
 - **Mục tiêu**: Chọn mức Thấp / Vừa / Cao tự động và tự hạ mức khi giật.
 - **Tiêu chí xong**:
-  - [ ] `gfx-detect.js`: `pickQuality({ webgl2, cores, memory, dpr, mobile, reduceMotion })` thuần + bộ đếm `createFpsGovernor({ low:30, windowMs:3000 })` (tiêm `now`); có test
-  - [ ] `quality.mjs` áp mức vào renderer (tỉ lệ điểm ảnh, bóng đổ, hạt, khoảng nhìn)
+  - [x] `gfx-detect.js`: `pickQuality({ webgl2, cores, memory, dpr, mobile, reduceMotion })` thuần + bộ đếm `createFpsGovernor({ low:30, windowMs:3000 })` (tiêm `now`); có test
+  - [x] `quality.mjs` áp mức vào renderer (tỉ lệ điểm ảnh, bóng đổ, hạt, khoảng nhìn)
+- **Ghi chú bàn giao**: 5 test qua; do môi trường chặn tiến trình con, đã kiểm cú pháp từng file bằng `node --check` và chạy trực tiếp `node test/gfx-detect.test.js`. Chi tiết ở `BAN-GIAO-T-089.md`.
 - **Ngoài phạm vi**: giao diện cài đặt (T-088 gọi).
 
 ### T-090 · Vẽ lại quân cờ 2D đẹp hơn
