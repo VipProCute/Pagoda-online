@@ -271,7 +271,7 @@
     el.movesBtn = btn('', 'Nước đi ▾', () => { el.moves.hidden = !el.moves.hidden; el.movesBtn.setAttribute('aria-expanded', String(!el.moves.hidden)); }, { 'aria-expanded': 'false' });
     el.viBtn = btn('', 'Chữ Việt', () => setVi(!vi), { 'aria-pressed': 'false' });
     el.boardBtn = btn('', 'Bàn 3D', toggleBoard3D, { 'aria-pressed': 'false' });
-    el.skinBtn = btn('', 'Lãnh địa', () => { el.skins.hidden = !el.skins.hidden; el.skinBtn.setAttribute('aria-expanded', String(!el.skins.hidden)); if (!el.skins.hidden) renderSkins(); }, { 'aria-expanded': 'false' });
+    el.skinBtn = btn('', 'Lãnh địa', () => { el.skins.hidden = !el.skins.hidden; el.skinBtn.setAttribute('aria-expanded', String(!el.skins.hidden)); if (!el.skins.hidden) { renderSkins(); if (typeof el.skins.scrollIntoView === 'function') el.skins.scrollIntoView({ block: 'nearest', behavior: reduced() ? 'auto' : 'smooth' }); } }, { 'aria-expanded': 'false' });
     el.skins = h('div', { class: 'kd-skins', hidden: true });
     el.webgl = hasBoardWebGL();
     el.boardBtn.hidden = !el.webgl;

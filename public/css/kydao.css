@@ -57,7 +57,8 @@
 }
 
 /* Bộ chọn Lãnh địa */
-.kd-skins { display: grid; gap: 8px; padding: 8px; border-radius: 10px; background: rgba(0,0,0,.28); max-height: 46vh; overflow: auto; }
+/* flex: 0 0 auto: khung bảng cờ là flex cột có giới hạn cao, không có dòng này bộ chọn bị bóp còn vài chục px. */
+.kd-skins { display: grid; gap: 8px; padding: 8px; border-radius: 10px; background: rgba(0,0,0,.28); max-height: 46vh; overflow: auto; flex: 0 0 auto; }
 .kd-skin-title { font-size: 13px; color: var(--muted); margin-bottom: 4px; }
 .kd-skin-row { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; scroll-snap-type: x proximity; }
 .kd-skin { flex: 0 0 auto; width: 104px; min-height: 44px; padding: 4px; display: grid; gap: 2px; justify-items: center; border-radius: 8px; border: 2px solid transparent; background: rgba(255,255,255,.06); color: inherit; cursor: pointer; scroll-snap-align: start; }
