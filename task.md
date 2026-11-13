@@ -74,7 +74,7 @@
 | T-087 | Cảnh Sân đấu (khu đi lại) 3D | ⏳ T-082 | P1 | CORE + HALL + PK | — |
 | T-088 | Nối 3D vào game: nút 2D/3D, góc nhìn 1/3, điều khiển | ⏳ T-081, T-083, T-084 | P0 | CORE + HALL + NAV | — |
 | T-089 | Cài đặt đồ họa, tự dò máy yếu | ⏳ T-080 | P1 | CORE + HALL | — |
-| T-090 | Vẽ lại quân cờ 2D đẹp hơn | 🔵 Sẵn sàng | P1 | CORE + KYDAO | — |
+| T-090 | Vẽ lại quân cờ 2D đẹp hơn | 🟣 Chờ soát | P1 | CORE + KYDAO | gpt-6.1-sol |
 | T-091 | Bàn cờ 3D, quân tiện tròn | ⏳ T-080, T-090 | P1 | CORE + KYDAO | — |
 | T-092 | ui-harness và ảnh chụp cho 3D | ⏳ T-088 | P2 | CORE + OPS | — |
 | T-093 | README, Sổ tay cho 3D và góc nhìn | ⏳ T-088 | P2 | CORE + DOCS | — |
@@ -1151,21 +1151,23 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
 - **Ngoài phạm vi**: giao diện cài đặt (T-088 gọi).
 
 ### T-090 · Vẽ lại quân cờ 2D đẹp hơn
-- **Trạng thái**: 🔵 Sẵn sàng
+- **Trạng thái**: 🟣 Chờ soát. Vòng 1 (gpt-6.1-terra) chưa đạt, vòng 2 (gpt-6.1-sol) đạt. Điều phối chạy lại: npm run check sạch, node --test test/kydao-ui-core.test.js 12/12, xem trang /kydao-pieces-test.html: vẽ một bàn 32 quân 0,1–0,2 ms, console không lỗi. Chưa tăng ?v= vì index.html chưa nạp kydao-draw.js (T-034 nối).
 - **Ưu tiên**: P1
 - **Gói ngữ cảnh**: CORE + KYDAO
 - **Khu vực chạm**: public/js/kydao-draw.js (chỉ `CHESS_SHAPES`, `drawChessPiece`, `drawXiangqiPiece`, `drawChessBoard`, `drawXiangqiBoard`), public/index.html (chỉ dòng `?v=` của `kydao-draw.js`), test có sẵn của kydao-draw
 - **Phụ thuộc**: không (T-033 gộp `main` sau thẻ này)
-- **Thợ**: gpt-6.1-terra · **Soát**: gpt-6-sol + Gemini Argon (ảnh)
-- **Người làm**: —
-- **Nhánh**: —
+- **Thợ**: gpt-6.1-sol · **Soát**: gpt-6-sol + Gemini Argon (ảnh)
+- **Người làm**: gpt-6.1-sol (Codex CLI qua proxy)
+- **Nhánh**: `codex/T-090-quan-co-2d`
 - **Mục tiêu**: Quân cờ vua và cờ tướng trên bảng 2D trông như đồ thật: quân vua kiểu Staunton có khối (chuyển sắc, viền sáng, bóng đổ), quân cờ tướng là đĩa gỗ dày có vành, chữ khắc chìm; bàn có vân gỗ và viền.
 - **Tiêu chí xong**:
-  - [ ] Vẫn vẽ hoàn toàn bằng mã (không tệp ảnh, không ký tự ♔), không đổi API xuất (`layout`, `squareAt`, `cellXY`, `parseSq`, `nameOf`, `draw`…) và không đổi hình học; test hiện có vẫn đạt
+  - [x] Vẫn vẽ hoàn toàn bằng mã (không tệp ảnh, không ký tự ♔), không đổi API xuất (`layout`, `squareAt`, `cellXY`, `parseSq`, `nameOf`, `draw`…) và không đổi hình học; test hiện có vẫn đạt
   - [ ] Phân biệt rõ 6 loại quân cờ vua ở cỡ ô 36px (điện thoại 375px); quân Đen/Trắng, Đỏ/Đen tương phản tốt trên nền
   - [ ] Một lần vẽ cả bàn 32 quân < 4 ms trên máy bàn (lưu sẵn quân vào canvas đệm theo cỡ ô; ghi số đo)
   - [ ] Ảnh trước/sau cho cờ vua và cờ tướng (cả chế độ chữ Việt) ở 375px và 1280px
   - [ ] `npm run check` sạch; tăng `?v=`
+  - [x] Trang thử `public/kydao-pieces-test.html` nạp `/js/kydao-draw.js`, có mọi quân hai bên ở ô 36/72px, chữ Hán/Việt/quân úp, hai thế khai cuộc và đo trung bình 120 lần vẽ sau 20 lần làm nóng
+- **Ghi chú vòng 2**: Chạy trực tiếp `node test/kydao-ui-core.test.js` đạt 12/12 (thêm 2 ca kiểm đường vẽ và bộ đệm); `node --check` hai file JS và kiểm cú pháp script trang thử đạt. `npm run check` / `node --test` gặp EPERM khi tạo tiến trình, điều phối sẽ chạy lại; không coi là bị chặn theo giao việc. Chưa có ảnh hoặc số đo thực tế. Trang thử bổ sung theo yêu cầu vòng 2; không tăng `?v=` vì index.html chưa nạp module. Chưa add/commit theo chỉ dẫn vòng 2; bàn giao trong `BAN-GIAO-T-090.md` (không commit).
 - **Ngoài phạm vi**: `kydao-ui.js`, luật cờ, cờ vây/caro (T-033).
 
 ### T-091 · Bàn cờ 3D, quân tiện tròn

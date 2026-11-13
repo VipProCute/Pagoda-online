@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kỳ Đạo · Thử quân cờ 2D</title>
+  <style>
+    :root { color-scheme: light; font-family: system-ui, sans-serif; color: #37291f; background: #f4eee3; }
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 20px; }
+    main { max-width: 1360px; margin: auto; }
+    h1 { font-family: Georgia, serif; font-size: clamp(26px, 4vw, 40px); margin: 0 0 10px; }
+    h2 { margin: 28px 0 14px; }
+    h3 { margin: 0 0 12px; font-size: 17px; }
+    p { line-height: 1.6; margin: 8px 0 16px; }
+    .kd-test-panel { background: #fffaf0; border: 1px solid #d5bea0; border-radius: 10px; padding: 14px; margin-bottom: 14px; min-width: 0; }
+    .kd-test-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
+    figure { margin: 0; text-align: center; }
+    figcaption { font-size: 12px; padding-top: 3px; }
+    canvas { display: block; }
+    .kd-test-sample { border-radius: 4px; overflow: hidden; }
+    .kd-test-boards { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 16px; }
+    .kd-test-boards .kd-test-panel { max-width: 100%; }
+    .kd-test-scroll { max-width: 100%; overflow: auto; }
+    table { border-collapse: collapse; width: 100%; font-size: 14px; }
+    th, td { padding: 10px; text-align: left; border-bottom: 1px solid #dfceb7; }
+    output { font-variant-numeric: tabular-nums; }
+    button { min-height: 44px; padding: 8px 16px; color: #fff8ea; background: #654329; border: 0; border-radius: 6px; font: inherit; cursor: pointer; }
+    button:disabled { opacity: .6; cursor: wait; }
+    @media (max-width: 420px) { body { padding: 12px; } .kd-test-panel { padding: 8px; } th, td { padding: 8px 4px; } }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Kỳ Đạo · Quân gỗ trên bàn</h1>
+    <p>Sáu dáng Staunton màu ngà và gỗ mun; đĩa cờ tướng chữ Hán, chữ Việt và quân úp.
+      Mẫu giữ đúng cỡ ô 36px và 72px. Trên điện thoại, vuốt ngang để xem hết bàn lớn.</p>
+    <section class="kd-test-panel" aria-labelledby="kd-test-timing-title">
+      <h2 id="kd-test-timing-title">Thời gian vẽ bàn 32 quân</h2>
+      <p id="kd-test-device"></p>
+      <div class="kd-test-scroll">
+        <table>
+          <thead><tr><th>Môn</th><th>Cỡ ô</th><th>Trung bình / bàn</th><th>Mốc 4 ms</th></tr></thead>
+          <tbody id="kd-test-times"></tbody>
+        </table>
+      </div>
+      <p>Đo toàn bộ nền và 32 quân bằng Canvas 2D, sau 20 lần làm nóng bộ đệm, lấy trung bình 120 lần vẽ.
+        Số đo bao gồm lệnh vẽ vào canvas, chưa đo thời gian trình duyệt đưa ảnh lên màn hình.</p>
+      <button id="kd-test-measure" type="button">Đo lại</button>
+      <output id="kd-test-status" role="status">Đang chuẩn bị mẫu…</output>
+    </section>
+    <div id="kd-test-sizes"></div>
+  </main>
+  <script src="/js/kydao-draw.js"></script>
+  <script src="/js/kydao/chess.js"></script>
+  <script src="/js/kydao/xiangqi.js"></script>
+  <script>
+    'use strict';
+    (async function () {
+      const dpr = Math.max(1, window.devicePixelRatio || 1);
+      const samples = [];
+      const button = document.getElementById('kd-test-measure');
+      const status = document.getElementById('kd-test-status');
+      const rows = document.getElementById('kd-test-times');
+      document.getElementById('kd-test-device').textContent = 'Tỉ lệ điểm ảnh: ' + dpr +
+        ' · Khung nhìn: ' + window.innerWidth + ' × ' + window.innerHeight + 'px.';
+
+      function element(tag, text, className) {
+        const node = document.createElement(tag);
+        if (text) node.textContent = text;
+        if (className) node.className = className;
+        return node;
+      }
+      function canvas(w, h, label) {
+        const node = element('canvas');
+        node.width = Math.ceil(w * dpr); node.height = Math.ceil(h * dpr);
+        node.style.width = w + 'px'; node.style.height = h + 'px';
+        node.setAttribute('role', 'img'); node.setAttribute('aria-label', label);
+        return node;
+      }
+      function dimensions(game, cell) {
+        return game === 'chess' ? { w: cell * 8, h: cell * 8 } : { w: cell * 9.2, h: cell * 10.2 };
+      }
+      function gallery(parent, game, cell, vi) {
+        const chess = game === 'chess';
+        const types = chess ? 'kqbnrp' : 'krnbacpx';
+        const labels = chess ? ['Vua', 'Hậu', 'Tượng', 'Mã', 'Xe', 'Tốt'] :
+          ['Tướng', 'Xe', 'Mã', 'Tượng', 'Sĩ', 'Pháo', 'Tốt', 'Úp'];
+        const panel = element('section', '', 'kd-test-panel');
+        panel.append(element('h3', chess ? 'Cờ vua · Trắng / Đen' : 'Cờ tướng · ' + (vi ? 'Chữ Việt' : 'Chữ Hán') + ' · Đỏ / Đen'));
+        const size = dimensions(game, cell);
+        const source = canvas(size.w, size.h, 'Bộ mẫu');
+        const board = Array(chess ? 64 : 90).fill('');
+        const cols = chess ? 8 : 9, lastRow = chess ? 7 : 9;
+        for (let i = 0; i < types.length; i++) {
+          board[i] = types[i].toUpperCase();
+          board[lastRow * cols + i] = types[i];
+        }
+        const g = KydaoDraw.draw(source.getContext('2d'), { game, ...size, dpr, board, vi });
+        for (const side of ['a', 'b']) {
+          const row = element('div', '', 'kd-test-row');
+          for (let i = 0; i < types.length; i++) {
+            const label = labels[i] + ' · ' + (side === 'a' ? (chess ? 'Trắng' : 'Đỏ') : 'Đen');
+            const figure = element('figure');
+            const tile = canvas(cell, cell, label);
+            tile.className = 'kd-test-sample';
+            const p = KydaoDraw.cellXY(g, i, side === 'a' ? 0 : lastRow, false);
+            tile.getContext('2d').drawImage(source, (p.x - cell / 2) * dpr, (p.y - cell / 2) * dpr,
+              cell * dpr, cell * dpr, 0, 0, tile.width, tile.height);
+            figure.append(tile, element('figcaption', labels[i]));
+            row.append(figure);
+          }
+          panel.append(row);
+        }
+        parent.append(panel);
+      }
+      function opening(parent, game, cell) {
+        const chess = game === 'chess';
+        const size = dimensions(game, cell);
+        const board = (chess ? KyChess : KyXiangqi).create({}).board;
+        const title = (chess ? 'Cờ vua' : 'Cờ tướng') + ' · Khai cuộc · ' + cell + 'px';
+        const panel = element('section', '', 'kd-test-panel');
+        panel.append(element('h3', title));
+        const scroller = element('div', '', 'kd-test-scroll');
+        const node = canvas(size.w, size.h, title + ', đủ 32 quân');
+        const ctx = node.getContext('2d');
+        const options = { game, ...size, dpr, board, vi: false };
+        KydaoDraw.draw(ctx, options);
+        scroller.append(node); panel.append(scroller);
+        if (!chess) {
+          const toggle = element('button', 'Đổi sang chữ Việt');
+          toggle.type = 'button'; toggle.setAttribute('aria-pressed', 'false');
+          toggle.addEventListener('click', () => {
+            options.vi = !options.vi;
+            toggle.textContent = options.vi ? 'Đổi sang chữ Hán' : 'Đổi sang chữ Việt';
+            toggle.setAttribute('aria-pressed', String(options.vi));
+            KydaoDraw.draw(ctx, options);
+          });
+          panel.append(toggle);
+        }
+        parent.append(panel);
+        const row = element('tr');
+        const result = element('td', 'Chờ đo…'), verdict = element('td', '—');
+        row.append(element('td', chess ? 'Cờ vua' : 'Cờ tướng'), element('td', cell + 'px'), result, verdict);
+        rows.append(row);
+        samples.push({ ctx, options, result, verdict });
+      }
+      async function measure() {
+        button.disabled = true;
+        status.textContent = 'Đang đo…';
+        try {
+          for (const sample of samples) {
+            await new Promise(resolve => requestAnimationFrame(resolve));
+            for (let i = 0; i < 20; i++) KydaoDraw.draw(sample.ctx, sample.options);
+            const start = performance.now();
+            for (let i = 0; i < 120; i++) KydaoDraw.draw(sample.ctx, sample.options);
+            const ms = (performance.now() - start) / 120;
+            sample.result.textContent = ms.toFixed(3) + ' ms';
+            sample.verdict.textContent = ms < 4 ? 'Đạt' : 'Cần soát';
+          }
+          status.textContent = 'Đã đo xong.';
+        } finally {
+          button.disabled = false;
+        }
+      }
+      // Đợi phông sẵn sàng trước khi chữ được lưu vào canvas đệm.
+      await document.fonts.ready;
+      for (const cell of [36, 72]) {
+        const section = element('section');
+        section.append(element('h2', 'Cỡ ô ' + cell + 'px'));
+        gallery(section, 'chess', cell, false);
+        gallery(section, 'xiangqi', cell, false);
+        gallery(section, 'xiangqi', cell, true);
+        const boards = element('div', '', 'kd-test-boards');
+        opening(boards, 'chess', cell); opening(boards, 'xiangqi', cell);
+        section.append(boards);
+        document.getElementById('kd-test-sizes').append(section);
+      }
+      button.addEventListener('click', measure);
+      await measure();
+    })();
+  </script>
+</body>
+</html>
