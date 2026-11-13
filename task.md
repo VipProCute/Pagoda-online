@@ -76,7 +76,7 @@
 | T-089 | Cài đặt đồ họa, tự dò máy yếu | 🟣 Chờ soát | P1 | CORE + HALL | gpt-6-luna |
 | T-090 | Vẽ lại quân cờ 2D đẹp hơn | 🟣 Chờ soát | P1 | CORE + KYDAO | gpt-6.1-sol |
 | T-091 | Bàn cờ 3D, quân tiện tròn | 🟣 Chờ soát | P1 | CORE + KYDAO | gpt-6.1-sol |
-| T-092 | ui-harness và ảnh chụp cho 3D | ⏳ T-088 | P2 | CORE + OPS | — |
+| T-092 | ui-harness và ảnh chụp cho 3D | 🟣 Chờ soát | P2 | CORE + OPS | gpt-6-luna (Codex CLI qua proxy) |
 | T-093 | README, Sổ tay cho 3D và góc nhìn | ⏳ T-088 | P2 | CORE + DOCS | — |
 
 Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạm `package.json`). **T-005**, **T-007**, **T-002** làm song song được với nhóm trên.
@@ -1207,9 +1207,10 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
 - **Ngoài phạm vi**: luật cờ, giao thức `kd:*`.
 
 ### T-092 · ui-harness và ảnh chụp cho 3D
-- **Trạng thái**: ⏳ Chờ T-088 · **Ưu tiên**: P2 · **Gói ngữ cảnh**: CORE + OPS · **Thợ**: gpt-6-luna · **Soát**: Gemini Argon
+- **Trạng thái**: 🟣 Chờ soát. Điều phối soát 13/11 (thợ gpt-6-luna): check sạch, đã đọc mã. HARNESS CHƯA CHẠY LẦN NÀO vì máy chưa cài Playwright (chưa có trình duyệt Chromium của Playwright); cần chủ dự án đồng ý cài rồi chạy node tools/ui-harness/world3d/run.js. Đã thêm .gitignore cho thư mục artifacts. · **Ưu tiên**: P2 · **Gói ngữ cảnh**: CORE + OPS · **Thợ**: gpt-6-luna (Codex CLI qua proxy) · **Soát**: Gemini Argon
 - **Khu vực chạm**: tools/ui-harness/world3d/* (mới)
 - **Mục tiêu**: Kịch bản Playwright mở 4 cảnh × 2 góc nhìn × 3 cỡ màn, chụp ảnh, báo lỗi console và số khung hình/giây.
+- **Ghi chú bàn giao**: Thêm `run.js`, phục vụ trang thử cùng Three.js, chạy 24 tổ hợp bằng Chromium + SwiftShader, xuất PNG và `report.json` vào `tools/ui-harness/world3d/artifacts/`. `node --check` sạch; môi trường thợ không cho chạy npm/Playwright hoặc git commit; xem `BAN-GIAO-T-092.md` để điều phối chạy và commit.
 
 ### T-093 · README, Sổ tay cho 3D và góc nhìn
 - **Trạng thái**: ⏳ Chờ T-088 · **Ưu tiên**: P2 · **Gói ngữ cảnh**: CORE + DOCS · **Thợ**: Gemini 3.8 Flash · **Soát**: Gemini Argon
