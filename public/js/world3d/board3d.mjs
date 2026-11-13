@@ -822,7 +822,9 @@ export function createBoard3D({ canvas, game, skins: catalogInput, quality: qual
       const holder = new THREE.Group(); holder.add(inst.root);
       holder.rotation.y = h.side === 'a' ? Math.PI : 0;
       holder.scale.set(1, 1, layout.chess ? 1 : 4.5 / 4);
-      const item = new THREE.Group(); item.userData = { f: 0.1, s: 1 }; item.add(holder);
+      // Neo ở mặt sàn (y = -0,5) như đồ dựng bằng mã để khi khai mở mô hình trồi từ sàn lên.
+      holder.position.y = 0.5;
+      const item = new THREE.Group(); item.position.y = -0.5; item.userData = { f: 0.1, s: 1 }; item.add(holder);
       for (const c of [...h.decor.children]) h.decor.remove(c);
       for (const r of h.decorRes) r.dispose();
       h.decorRes.clear(); h.decor.add(item); setProgress(h, h.progress); requestRender();
