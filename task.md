@@ -94,6 +94,8 @@
 | T-118 | Sân v2: dựng cảnh 3D thật trong Blender, bản mẫu Hỏa Diệm Sơn 👤 duyệt | 🔵 Sẵn sàng | P0 | CORE + KYDAI | — |
 | T-119 | Bàn 2D: dải cảnh quanh bàn, dùng ảnh sân v2, quân 2D từ ảnh render | ⏳ T-118 (👤 duyệt) | P0 | CORE + KYDAO + KYDAI | — |
 | T-120 | Bản mẫu nhân vật 3D dựng bằng Blender, đo hiệu năng 👤 duyệt | ⏳ T-111 | P1 | CORE + HALL + KYDAI | — |
+| T-121 | Bàn 2D: dòng sông sinh động giữa bàn cờ tướng và cờ úp | 🔵 Sẵn sàng | P0 | CORE + KYDAO + KYDAI | — |
+| T-122 | Bàn 3D: dòng sông sinh động giữa bàn cờ tướng và cờ úp | 🔵 Sẵn sàng | P0 | CORE + KYDAO + KYDAI | — |
 
 Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạm `package.json`). **T-005**, **T-007**, **T-002** làm song song được với nhóm trên.
 Đợt 2026-11: làm **T-003, T-004, T-006** trước (T-004 gỡ nút thắt `package.json` cho mọi thẻ thêm file JS; T-006 là cổng "CI xanh"). Sau đó theo lịch 6 đợt ở [docs/KE-HOACH-DOT-2026-11.md §10.3](docs/KE-HOACH-DOT-2026-11.md#103-lịch-theo-đợt-và-khóa-vùng-nóng).
@@ -1437,6 +1439,36 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
 - **Ưu tiên**: P0 · **Gói ngữ cảnh**: CORE + KYDAO + KYDAI
 - **Khu vực chạm**: public/js/kydao-draw.js, public/js/kydao-ui.js (chỉ `fit`), public/js/kydao-skins.js (điều phối sửa), tools/blender/kydao/build.py (ảnh quân)
 - **Mục tiêu**: bàn 2D có dải cảnh vật quanh bàn (tự thu lại trên màn hẹp để ô cờ không nhỏ đi), dùng ảnh sân v2 theo môn; quân cờ vua 2D lấy ảnh render từ mô hình 3D của từng bộ skin.
+
+### T-121 · Bàn 2D: dòng sông sinh động giữa bàn cờ tướng
+- **Trạng thái**: 🔵 Sẵn sàng
+- **Ưu tiên**: P0 (chủ dự án 13/11: giữa bàn cờ tướng phải là dòng sông sinh động, hai bên skin gì cũng vậy)
+- **Gói ngữ cảnh**: CORE + KYDAO + KYDAI
+- **Đặc tả từng bước (BẮT BUỘC làm theo)**: [docs/ky-dai/T-121-DAC-TA-DONG-SONG.md](docs/ky-dai/T-121-DAC-TA-DONG-SONG.md), phần T-121
+- **Khu vực chạm**: public/js/kydao-draw.js, public/js/kydao-ui.js (chỉ vòng lặp chuyển động), public/index.html (`?v=`), test/kydao-draw-skins.test.js, test/kydao-draw-river.test.js (mới)
+- **Phụ thuộc**: không · **Thợ**: gpt-6.1-terra (Codex CLI qua proxy) · **Soát**: Điều phối chạy test và xem trình duyệt
+- **Người làm**: — · **Nhánh**: —
+- **Mục tiêu**: bàn cờ tướng và cờ úp 2D có dòng sông nước chảy, gợn sóng, lá sen trôi ở giữa hai phe.
+- **Tiêu chí xong**:
+  - [ ] Đủ các bước của đặc tả; sông có ở cờ tướng và cờ úp kể cả khi không có skin, không có ở cờ vua
+  - [ ] Quân, dấu nước đi, ô chọn luôn nằm trên sông; chữ Sở Hà / Hán Giới đọc rõ
+  - [ ] Giảm chuyển động thì sông đứng yên; `npm run check` và test trong đặc tả đạt
+- **Ngoài phạm vi**: luật cờ, giao thức, skin.
+
+### T-122 · Bàn 3D: dòng sông sinh động giữa bàn cờ tướng
+- **Trạng thái**: 🔵 Sẵn sàng
+- **Ưu tiên**: P0 (chủ dự án 13/11: giữa bàn cờ tướng phải là dòng sông sinh động, hai bên skin gì cũng vậy)
+- **Gói ngữ cảnh**: CORE + KYDAO + KYDAI
+- **Đặc tả từng bước (BẮT BUỘC làm theo)**: [docs/ky-dai/T-121-DAC-TA-DONG-SONG.md](docs/ky-dai/T-121-DAC-TA-DONG-SONG.md), phần T-122
+- **Khu vực chạm**: public/js/world3d/board3d.mjs, test/kydao-board3d.test.js, public/world3d-board.html (`?v=`), public/js/kydao-ui.js (chỉ `?v=` của import)
+- **Phụ thuộc**: không · **Thợ**: Claude Sonnet 5.5 · **Soát**: Điều phối chạy test và xem trình duyệt
+- **Người làm**: — · **Nhánh**: —
+- **Mục tiêu**: bàn cờ tướng và cờ úp 3D có mặt nước chảy ở dải giữa thay cho dải gỗ.
+- **Tiêu chí xong**:
+  - [ ] Đủ các bước của đặc tả; sông có ở cờ tướng và cờ úp kể cả khi không có skin, không có ở cờ vua
+  - [ ] Quân, dấu nước đi, ô chọn luôn nằm trên sông; chữ Sở Hà / Hán Giới đọc rõ
+  - [ ] Giảm chuyển động thì sông đứng yên; `npm run check` và test trong đặc tả đạt
+- **Ngoài phạm vi**: luật cờ, giao thức, skin.
 
 ### T-120 · Bản mẫu nhân vật 3D dựng bằng Blender, đo hiệu năng
 - **Trạng thái**: ⏳ Chờ T-111 · 👤 chủ dự án duyệt bản mẫu trước khi làm tiếp T-121 → T-125 (trang phục, tóc, hào quang 9 bậc, pháp tướng, NPC)
