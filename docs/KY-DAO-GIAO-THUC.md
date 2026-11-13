@@ -355,6 +355,8 @@ Sự kiện xếp hạng cần `accountReady(p)`, không thì `{ ok:false, code:
 6. `kd:offer` trạng thái `open` tới đối thủ **sau** `kd:moved` gần nhất của cùng ván.
 7. Cờ vây: hai lần `pass` → `kd:moved` (có `status.phase:'scoring'`) rồi ngay sau là `kd:marks`. "Đánh tiếp" (`kd:resume-play`) → máy chủ gửi `kd:marks` với `dead:[]`, `agreed` cả hai `false`, `deadlineAt:null` (dấu hiệu đã thoát giai đoạn đánh dấu) và `clock` mới (lượt thuộc người bấm). **(chốt ở T-020)** `kd:marks` luôn có trường `clock` (cùng dạng như ở `kd:moved`); trong giai đoạn đánh dấu `clock.turn` là `null` (đồng hồ dừng).
 
+Giao diện T-033 nhận đủ năm mã môn (`chess`, `xiangqi`, `jieqi`, `go`, `gomoku`), dùng cùng mã để chọn nhạc. Bàn vây 13/19 chỉ cho chọn giao hữu. `app.js` chuyển tiếp cả `kd:marks` tới bảng cờ; bảng dùng `dead` và luật `score()` để hiện điểm tạm tính, dùng `deadlineAt` theo giờ máy chủ để đếm ngược. Khán giả chỉ xem dấu và điểm. Với cờ úp, giao diện chờ `kd:moved.reveal` rồi gọi `apply`, không áp thử nước có quân úp. Mọi `kd:start` (kể cả xem và vào lại) chỉ chứa `view()` đã che; `final` chỉ lật toàn bộ sau khi ván đã kết thúc. Không thêm trường giao thức mới.
+
 ### 6.2 Vào lại (`kd:resume`) và khi máy chủ khởi động lại
 
 `kd:resume` (không tham số, **mọi nơi**) → ack `{ ok:true, start:null | StartPayload, message? }`:

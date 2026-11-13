@@ -5,6 +5,8 @@ const assert = require('node:assert');
 const KyChess = require('../public/js/kydao/chess.js');
 const KyXiangqi = require('../public/js/kydao/xiangqi.js');
 const KydaoDraw = require('../public/js/kydao-draw.js');
+const KyGo = require('../public/js/kydao/go');
+const KyGomoku = require('../public/js/kydao/gomoku');
 
 global.KyChess = KyChess;
 global.KyXiangqi = KyXiangqi;
@@ -15,6 +17,63 @@ function session(game, mod, you, extra) {
   return core.makeSession(Object.assign({ gameId: 'g1', table: 1, game, you, state: mod.create({}), ply: 0, moves: [],
     clock: { a: 60000, b: 60000, turn: 'a', turnStartedAt: 1000, incMs: 0 }, a: {}, b: {} }, extra || {}), mod);
 }
+
+test('Bàn vây 9/13/19 và caro: mọi giao điểm chạm đúng ở 375px, hai hướng và khi phóng to', () => {
+  for (const [game, size] of [['go', 9], ['go', 13], ['go', 19], ['gomoku', 15]]) {
+    for (const width of [355, 887]) for (const flip of [false, true]) {
+      const g = KydaoDraw.layout(game, width, width, size);
+      for (let col = 0; col < size; col++) for (let row = 0; row < size; row++) {
+        const name = KydaoDraw.nameOf(game, col, row), p = KydaoDraw.cellXY(g, col, row, flip);
+        assert.equal(KydaoDraw.squareAt(g, p.x, p.y, flip), name);
+        assert.deepEqual(KydaoDraw.parseSq(game, name, size), { col, row });
+        assert.equal(KydaoDraw.boardIndex(game, col, row, size), (game === 'gomoku' ? size - row - 1 : row) * size + col);
+      }
+      assert.equal(KydaoDraw.squareAt(g, -50, -50, flip), null);
+    }
+    assert.equal(KydaoDraw.starPoints(size).length, size === 9 ? 5 : 9);
+  }
+});
+
+test('Cờ vây: chạm đặt đá, bỏ lượt và đánh dấu không phụ thuộc bên tới lượt', () => {
+  const s = session('go', KyGo, 'a');
+  assert.deepEqual(core.tapSquare(s, 'A1'), { kind: 'move', move: 'A1' });
+  assert.equal(core.pushMove(s, 'A1', 'A1', null).ok, true);
+  assert.equal(s.state.board[0], 'a'); assert.deepEqual(s.last, ['A1']);
+  assert.equal(core.handleMoved(s, { ply: 2, move: 'pass' }), 'applied');
+  assert.equal(core.pushMove(s, 'pass', 'Bỏ lượt', null).ok, true);
+  assert.equal(s.state.phase, 'mark'); assert.deepEqual(s.last, []);
+  s.marks = { dead: [], agreed: {}, deadlineAt: 180000 }; s.you = 'b';
+  assert.deepEqual(core.tapSquare(s, 'A1'), { kind: 'mark', point: 'A1' });
+  s.you = null; assert.deepEqual(core.tapSquare(s, 'A1'), { kind: 'none' });
+});
+
+test('Caro: X/O và dãy thắng theo luật; cờ úp áp reveal máy chủ cho cả hai bên', () => {
+  const s = session('gomoku', KyGomoku, 'a');
+  for (const [i, move] of ['a1', 'a2', 'b1', 'b2', 'c1', 'c2', 'd1', 'd2', 'e1'].entries()) {
+    assert.equal(core.handleMoved(s, { ply: i + 1, move }), 'applied');
+  }
+  assert.deepEqual(s.win, ['a1', 'b1', 'c1', 'd1', 'e1']);
+  assert.deepEqual(s.last, ['e1']);
+  let secret = KyXiangqi.create({ variant: 'jieqi', seed: 'bí mật' });
+  for (const you of ['a', 'b', undefined]) {
+    const q = session('jieqi', KyXiangqi, you, { state: KyXiangqi.view(secret) });
+    const result = KyXiangqi.play(secret, 'a3a4');
+    assert.equal(core.handleMoved(q, { ply: 1, move: 'a3a4', reveal: result.info.reveal }), 'applied');
+    assert.deepEqual(q.state, KyXiangqi.view(result.state));
+  }
+});
+
+test('Nét vẽ vây, X/O, quân chết, dãy thắng và quân úp dùng được không DOM', () => {
+  for (const game of ['go', 'gomoku', 'jieqi']) {
+    const mod = { go: KyGo, gomoku: KyGomoku, jieqi: KyXiangqi }[game];
+    let state = mod.create(game === 'jieqi' ? { variant: 'jieqi', seed: 1 } : { size: 19 });
+    if (game !== 'jieqi') state = mod.play(state, game === 'go' ? 'T19' : 'o15').state;
+    const ctx = drawingContext();
+    KydaoDraw.draw(ctx, { game, size: state.size, board: state.board || state.cells, w: 355, h: 355, dead: ['T19'], win: ['a1', 'e1'], reveal: { square: 'a0', progress: 0.3 } });
+    assert.equal(ctx.saves, 0);
+    if (game === 'jieqi') assert.equal(ctx.calls.filter(x => x[0] === 'fillText' && x[1] === '?').length, 60);
+  }
+});
 
 test('KydaoDraw: chạm → ô cờ vua, hai hướng nhìn', () => {
   const g = KydaoDraw.layout('chess', 400, 400);

@@ -64,6 +64,59 @@ function startGame(env, game = 'chess', rated = false) {
   return { a, b, gameId: start.gameId, start };
 }
 
+test('Cờ úp: hai người chơi, vào lại và khán giả chỉ nhận view đã che và quân vừa lật', () => {
+  const e = managerEnv(), mod = get('jieqi').module;
+  const { a, b, gameId } = startGame(e, 'jieqi');
+  const viewer = { uid: 'uid-secret-viewer', pid: 'pv', name: 'Khách' };
+  const outsider = { uid: 'uid-secret-outside', pid: 'po', name: 'Người ngoài' };
+  let secret = mod.create({ seed: 'seed' });
+  const scan = () => {
+    for (const event of [...e.sent, ...e.rooms]) {
+      const p = event.payload;
+      const json = JSON.stringify(p);
+      for (const u of [a, b, viewer, outsider]) assert.ok(!json.includes(u.uid), event.ev);
+      assert.ok(!json.includes('"seed"'), event.ev);
+      assert.ok(!json.includes(JSON.stringify(secret.hidden)), event.ev);
+      if (p.state) assert.deepEqual(p.state, mod.view(secret), event.ev);
+      if (event.ev === 'kd:moved') assert.deepEqual(p.reveal, expectedReveal);
+      if (event.uid) assert.notEqual(event.uid, outsider.uid);
+    }
+    e.sent.length = e.rooms.length = 0;
+  };
+  let expectedReveal;
+  assert.equal(e.manager.watch(viewer, { table: 1 }).ok, true);
+  scan();
+  for (let ply = 0; ply < 40 && !mod.status(secret).over; ply++) {
+    const who = mod.turn(secret) === 'a' ? a : b;
+    assert.equal(e.manager.move(viewer, { gameId, ply, move: 'a3a4' }).ok, false);
+    assert.equal(e.manager.move(who, { gameId, ply, move: 'a0a9' }).ok, false);
+    const moves = mod.legalMoves(secret);
+    // Ưu tiên quân còn úp để liên tục kiểm ranh giới giữa bí mật và reveal.
+    const move = moves.find(m => /[Xx]/.test(secret.board[Number(m[1]) * 9 + m.charCodeAt(0) - 97] || '')) || moves[ply % moves.length];
+    const result = mod.play(secret, move); expectedReveal = result.info.reveal;
+    const before = mod.view(secret);
+    secret = result.state;
+    assert.equal(e.manager.move(who, { gameId, ply, move }).ok, true);
+    assert.deepEqual(mod.apply(before, move, expectedReveal).state, mod.view(secret));
+    scan();
+    if (mod.status(secret).over) break;
+    for (const p of [a, b]) {
+      assert.deepEqual(e.manager.resume(p).start.state, mod.view(secret));
+    }
+    assert.equal(e.manager.watch(viewer, { table: 1 }).ok, true);
+    scan();
+  }
+  if (e.manager.resume(a).start) e.manager.resign(b, { gameId });
+  const end = e.sent.find(x => x.ev === 'kd:end');
+  if (end) {
+    assert.equal(end.payload.final.hidden, null);
+    assert.ok(!end.payload.final.board.some(p => p === 'X' || p === 'x'));
+  }
+  assert.equal(e.saved[0].seed, 'seed');
+  assert.ok(e.saved[0].moves.some(m => m.r && m.r.mover));
+  e.manager.shutdown();
+});
+
 test('Đồng hồ Fischer, nước cũ, đầu hàng và bảo vệ uid', () => {
   const e = managerEnv();
   const { a, b, gameId, start } = startGame(e);
@@ -136,7 +189,7 @@ test('Cờ vây qua tính điểm rồi đánh tiếp với lượt của ngư�
 });
 
 test('Danh mục đăng ký các môn đã có và chặn khóa prototype', () => {
-  assert.deepEqual(Object.keys(registry), ['chess', 'xiangqi', 'go', 'gomoku']);
+  assert.deepEqual(Object.keys(registry), ['chess', 'xiangqi', 'jieqi', 'go', 'gomoku']);
   for (const id of Object.keys(registry)) {
     const rule = get(id);
     assert.equal(rule.id, id);
@@ -151,19 +204,19 @@ test('Danh mục đăng ký các môn đã có và chặn khóa prototype', () =
     assert.equal(state.ply, 0, `${id}: state gốc không đổi`);
     assert.equal(played.state.ply, 1, id);
   }
-  assert.equal(get('jieqi'), null); // Cờ úp chưa có trong module luật.
+  assert.equal(get('jieqi').module.create({ seed: 'thử' }).variant, 'jieqi');
   assert.equal(get('__proto__'), null);
   assert.equal(get('constructor'), null);
   assert.equal(get(null), null);
 });
 
 test('Áp nước công khai khớp thế do máy chủ gửi', () => {
-  for (const [id, move] of [['chess', 'e2e4'], ['xiangqi', 'b0c2'], ['go', 'D4'], ['gomoku', 'h8']]) {
+  for (const [id, move] of [['chess', 'e2e4'], ['xiangqi', 'b0c2'], ['jieqi', 'a3a4'], ['go', 'D4'], ['gomoku', 'h8']]) {
     const rules = get(id).module;
     const state = rules.create({});
     const played = rules.play(state, move);
     assert.equal(played.ok, true, id);
-    assert.deepEqual(rules.apply(rules.view(state), move).state, rules.view(played.state), id);
+    assert.deepEqual(rules.apply(rules.view(state), move, played.info.reveal).state, rules.view(played.state), id);
     assert.equal(rules.view(played.state).ply, 1, id);
   }
 });
@@ -253,7 +306,7 @@ test('Ngồi, chọn luật, sẵn sàng: chỉ chủ bàn chọn luật, đổi
   assert.equal(m.sit(b, { table: 1, seat: 0 }).ok, false, 'ghế có người');
   assert.equal(m.sit(b, { table: 1, seat: 1 }).ok, true);
   assert.equal(m.setup(b, { table: 1, game: 'chess', pace: 'fast', rated: false }).ok, false);
-  assert.equal(m.setup(a, { table: 1, game: 'jieqi', pace: 'fast', rated: false }).ok, false);
+  assert.equal(m.setup(a, { table: 1, game: 'jieqi', pace: 'fast', rated: false }).ok, true);
   assert.equal(m.setup(a, { table: 1, game: 'go', size: 13, pace: 'fast', rated: true }).ok, false, 'vây 13 không xếp hạng');
   assert.equal(m.setup(a, { table: 1, game: '__proto__', pace: 'fast', rated: false }).ok, false);
   assert.equal(m.setup(a, { table: 1, game: 'chess', pace: 'fast', rated: false }).ok, true);
