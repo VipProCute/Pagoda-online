@@ -69,7 +69,7 @@
 | T-082 | Bộ khối dựng kiến trúc chùa (kit.mjs) | 🟣 Chờ soát | P0 | CORE + HALL | gpt-6.1-sol (Codex CLI qua proxy) |
 | T-083 | Nhân vật 3D low-poly và NPC | 🟣 Chờ soát | P0 | CORE + HALL | gpt-6.1-sol (Codex CLI qua proxy) |
 | T-084 | Cảnh Chánh điện 3D | ⏳ T-082 | P0 | CORE + HALL | — |
-| T-085 | Cảnh Sân chùa 3D | ⏳ T-082 | P1 | CORE + HALL + KYDAO | — |
+| T-085 | Cảnh Sân chùa 3D | 🟣 Chờ soát | P1 | CORE + HALL + KYDAO | gpt-6.1-terra (Codex CLI qua proxy) |
 | T-086 | Cảnh Tàng Kinh Các 3D | ⏳ T-082 | P1 | CORE + HALL | — |
 | T-087 | Cảnh Sân đấu (khu đi lại) 3D | ⏳ T-082 | P1 | CORE + HALL + PK | — |
 | T-088 | Nối 3D vào game: nút 2D/3D, góc nhìn 1/3, điều khiển | ⏳ T-081, T-083, T-084 | P0 | CORE + HALL + NAV | — |
@@ -1100,7 +1100,8 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
 - **Ngoài phạm vi**: không nối vào game (T-088).
 
 ### T-085 · Cảnh Sân chùa 3D
-- **Trạng thái**: ⏳ Chờ T-082 · **Ưu tiên**: P1 · **Gói ngữ cảnh**: CORE + HALL + KYDAO
+- **Trạng thái**: 🟣 Chờ soát · **Ưu tiên**: P1 · **Gói ngữ cảnh**: CORE + HALL + KYDAO
+- **Người làm**: gpt-6.1-terra (Codex CLI qua proxy) · **Nhánh**: codex/T-085-canh-san-chua
 - **Khu vực chạm**: public/js/world3d/scenes/yard.mjs (mới)
 - **Phụ thuộc**: T-080, T-082 · **Thợ**: gpt-6.1-terra · **Soát**: gpt-6-sol + Gemini Argon
 - **Mục tiêu**: Sân chùa 3D: mặt tiền chánh điện, 4 bàn đá đúng `YARD_TABLES` (biển tên bàn, người ngồi), hai thầy bói, cây, trời ngày/đêm theo `state.daylight`.

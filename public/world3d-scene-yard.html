@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Thử cảnh Sân chùa</title>
+<style>html,body{margin:0;height:100%;background:#201b1a;color:#fff;font:15px sans-serif}canvas{display:block;width:100%;height:100%;touch-action:none}#tools{position:absolute;top:12px;left:12px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;background:#33271ddd;padding:8px;border-radius:8px}button,select{min-height:44px;font:inherit}#result{max-width:300px}</style>
+<script type="importmap">{"imports":{"three":"/vendor/three/three.module.js"}}</script><script src="/js/view-math.js"></script></head><body>
+<div id="tools"><button id="view">Góc nhìn: thứ ba</button><button id="day">Ngày / đêm</button><label>Đồ họa <select id="quality"><option value="low">Thấp</option><option value="medium" selected>Vừa</option><option value="high">Cao</option></select></label><span id="result">WASD để đi · kéo để nhìn · chạm sàn để tới</span></div><canvas id="canvas"></canvas>
+<script type="module">
+import * as THREE from 'three';
+import * as kit from '/js/world3d/kit.mjs';
+import { createAvatar } from '/js/world3d/avatar.mjs';
+import { build } from '/js/world3d/scenes/yard.mjs';
+const canvas = document.querySelector('#canvas'), result = document.querySelector('#result');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true }); renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(52, 1, 0.1, 150);
+const view = ViewMath.createView(), raycaster = new THREE.Raycaster(), pointer = new THREE.Vector2();
+const tables = [
+  { id: 1, x: .17, z: .50, seats: [[.125,.50],[.215,.50]], occupants: ['An', 'Bình'] },
+  { id: 2, x: .83, z: .50, seats: [[.785,.50],[.875,.50]] },
+  { id: 3, x: .18, z: .76, seats: [[.12,.76],[.24,.76]] },
+  { id: 4, x: .82, z: .76, seats: [[.76,.76],[.88,.76]] }
+];
+let daylight = true, yard, destination = null;
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+function rebuild() {
+  yard?.dispose(); const quality = document.querySelector('#quality').value;
+  renderer.shadowMap.enabled = quality === 'high'; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  yard = build({ THREE, kit, quality, reduceMotion: reduced, size: ViewMath.SCENE_SIZE.yard }); scene.add(yard.group); yard.update({ daylight, tables });
+}
+rebuild(); document.querySelector('#quality').onchange = rebuild;
+document.querySelector('#day').onclick = () => { daylight = !daylight; yard.update({ daylight, tables }); };
+document.querySelector('#view').onclick = () => { view.setMode(view.mode === 'third' ? 'first' : 'third'); document.querySelector('#view').textContent = 'Góc nhìn: ' + (view.mode === 'first' ? 'thứ nhất' : 'thứ ba'); };
+const avatars = Array.from({ length: 7 }, (_, index) => {
+  const avatar = createAvatar({ color: index % 12 }, { reducedMotion: reduced }); scene.add(avatar.group);
+  return { avatar, x: index ? .32 + (index % 3) * .16 : .5, z: index ? .48 + Math.floor(index / 3) * .13 : .88, phase: index * 2 };
+});
+const keys = new Set(); addEventListener('keydown', event => { keys.add(event.key.toLowerCase()); if (event.key.toLowerCase() === 'v' && !event.repeat) document.querySelector('#view').click(); });
+addEventListener('keyup', event => keys.delete(event.key.toLowerCase()));
+let down;
+canvas.addEventListener('pointerdown', event => { down = { x: event.clientX, y: event.clientY, moved: false }; canvas.setPointerCapture(event.pointerId); });
+canvas.addEventListener('pointermove', event => { if (!down) return; const dx = event.clientX - down.x, dy = event.clientY - down.y; if (Math.abs(dx) + Math.abs(dy) > 2) down.moved = true; view.rotate(-dx * .006, -dy * .006); down.x = event.clientX; down.y = event.clientY; });
+canvas.addEventListener('pointerup', event => { if (!down) return; if (!down.moved) { const rect = canvas.getBoundingClientRect(); pointer.set((event.clientX - rect.left) / rect.width * 2 - 1, 1 - (event.clientY - rect.top) / rect.height * 2); raycaster.setFromCamera(pointer, camera); const hit = yard.pick(raycaster); result.textContent = hit ? JSON.stringify(hit) : 'Không trúng vật'; if (hit?.type === 'floor') destination = hit; } down = null; });
+canvas.addEventListener('wheel', event => { event.preventDefault(); view.zoom(Math.exp(event.deltaY * .001)); }, { passive: false });
+let previous = performance.now();
+function frame(now) {
+  const dt = Math.min((now - previous) / 1000, .05); previous = now;
+  const self = avatars[0], forward = Number(keys.has('w')) - Number(keys.has('s')), sideways = Number(keys.has('d')) - Number(keys.has('a'));
+  if (forward || sideways) { Object.assign(self, ViewMath.moveTarget('yard', self.x, self.z, view.yaw, forward, sideways, dt * .22)); destination = null; }
+  else if (destination) { const dx = (destination.x - self.x) * 24, dz = (destination.z - self.z) * 15, distance = Math.hypot(dx, dz); if (distance < .1) destination = null; else { const step = Math.min(distance, dt * 3); self.x += dx / distance * step / 24; self.z += dz / distance * step / 15; } }
+  avatars.forEach((person, index) => {
+    if (index && !reduced) { person.x += Math.cos(now / 1800 + person.phase) * dt * .004; person.z += Math.sin(now / 2100 + person.phase) * dt * .004; }
+    const position = ViewMath.toWorld('yard', person.x, person.z); person.avatar.group.position.set(position.x, 0, position.z);
+    person.avatar.update({ name: index ? 'Khách ' + index : 'Mình', walking: index ? !reduced : !!(forward || sideways || destination), isSelf: !index, view: view.mode, yaw: view.yaw }, dt);
+  });
+  const target = ViewMath.toWorld('yard', self.x, self.z), pose = ViewMath.cameraPose(view, target, yard.bounds);
+  camera.position.set(pose.pos.x, pose.pos.y, pose.pos.z); camera.lookAt(pose.look.x, pose.look.y, pose.look.z);
+  const w = canvas.clientWidth, h = canvas.clientHeight; if (canvas.width !== Math.round(w * renderer.getPixelRatio()) || canvas.height !== Math.round(h * renderer.getPixelRatio())) { renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
+  yard.update({ daylight, tables }, dt); renderer.render(scene, camera); requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script></body></html>
