@@ -116,7 +116,16 @@ export function build({ THREE, kit, size, quality = 'medium', reduceMotion = fal
     const [wx, wz] = world(x, -22 / 300);
     box(wood, wx, 0.24, wz, scale * 2.2, 0.48, 1.9);
     box(gold, wx, 0.49, wz, scale * 2.24, 0.05, 1.95);
-    place(kit.createBuddhaStatue, x, -22 / 300, 0.52, scale, 'statue');
+    // Tượng giữa mang mặt meme "Phật nhảy tường" như bản 2D: ảnh luôn quay về máy quay.
+    const faced = x === 0.5 && typeof document !== 'undefined';
+    const statue = place(q => kit.createBuddhaStatue(q, { headless: faced }), x, -22 / 300, 0.52, scale, 'statue');
+    if (faced) {
+      const texture = new THREE.TextureLoader().load('/img/fx/phat-nhay-tuong-dau.webp');
+      texture.colorSpace = THREE.SRGBColorSpace; textures.add(texture);
+      const material = new THREE.SpriteMaterial({ map: texture, transparent: true, alphaTest: 0.05 }); materials.add(material);
+      const head = new THREE.Sprite(material); head.position.set(0, 2.06, 0.02); head.scale.set(0.68, 0.90, 1);
+      statue.add(head);
+    }
   }
   label('TỪ BI HỶ XẢ', 0, 5.55, back + 0.30, 5.7, 0.80);
   const altarZ = 22 / 300, [, altarWorldZ] = world(0.5, altarZ);
