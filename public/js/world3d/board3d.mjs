@@ -198,6 +198,19 @@ export function decorAnchors(layout, side) {
   }));
 }
 
+/** T-125 · Mặt phẳng ảnh sân v2 của một nửa (toạ độ bàn, trục y là mặt bàn). Ảnh 1408x704, 128 px = 1 ô:
+ * mép trên ảnh = đường giữa bàn, mép dưới = phía người chơi, dải cảnh 1,5 ô ở hai bên và sau lưng.
+ * Cờ vua: 4 ô ảnh = 4 hàng ô của nửa đó (đường giữa ở z = 0). Cờ tướng/cờ úp: 4 ô ảnh = từ hàng sát sông
+ * (z = ±0,5) tới hàng cuối (z = ±4,5), dải sông ở giữa không phủ ảnh.
+ * w, d = kích thước mặt phẳng; x, z = tâm; rotY = góc xoay quanh trục đứng (nửa b xoay 180°);
+ * near/far = z của mép đường giữa và mép ngoài (cùng dấu với nửa sân). Trả null nếu môn/bên không hợp lệ. */
+export const FIELD_MARGIN = 1.5;
+export function fieldPlane(game, side) {
+  if (!['chess', 'xiangqi', 'jieqi'].includes(game) || (side !== 'a' && side !== 'b')) return null;
+  const sign = side === 'a' ? 1 : -1, near = game === 'chess' ? 0 : 0.5, d = 4 + FIELD_MARGIN;
+  return { w: 8 + 2 * FIELD_MARGIN, d, x: 0, z: sign * (near + d / 2), rotY: side === 'a' ? 0 : Math.PI, near: sign * near, far: sign * (near + d), sign };
+}
+
 function rgb(color) {
   const m = /^#([0-9a-f]{6})$/i.exec(String(color || ''));
   if (!m) return null;
@@ -256,10 +269,12 @@ export function fieldTones(palette, chess) {
  * o suit KydaoDraw.draw; vây thêm size, caro nhận board hoặc cells của luật (hàng trên trước).
  * o.skins = { a:{field,pieces}, b:{field,pieces} } theo danh mục KydaoSkins (mã lạ bỏ qua, thiếu = mặc định).
  * skins: danh mục KydaoSkins (mặc định globalThis.KydaoSkins); quality: 'low'|'medium'|'high';
- * assets: thay bộ nạp mô hình (test); models:false thì không bao giờ nạp .glb.
+ * assets: thay bộ nạp mô hình và ảnh (test; cần loadModel/instantiate và loadImage); models:false thì không bao giờ nạp .glb.
+ * fieldImages (mặc định true): nửa sân có skin dùng ảnh sân v2 (KydaoSkins.fieldImage2) làm mặt sân kèm dải cảnh;
+ * ảnh 404 hoặc fieldImages:false thì giữ cách cũ (lớp phủ palette + đồ trang trí).
  * Mặc định vẽ hoàn toàn bằng mã; chỉ nạp .glb (qua board-assets.mjs) khi có skin. Tài nguyên GPU dùng chung trong mỗi bàn.
  */
-export function createBoard3D({ canvas, game, skins: catalogInput, quality: qualityInput, assets, models = true }) {
+export function createBoard3D({ canvas, game, skins: catalogInput, quality: qualityInput, assets, models = true, fieldImages = true }) {
   let layout = boardLayout(game), state = {}, previous = [], pieces = new Map(), captured = [];
   let flip = false, pick = () => {}, stopped = false, frame = 0, drag = null, pinching = false;
   let yaw = 0.16, elevation = 0.93, zoom = 1, width = 0, height = 0, vi = null;
@@ -270,7 +285,7 @@ export function createBoard3D({ canvas, game, skins: catalogInput, quality: qual
   const NO_SKIN = Object.freeze({ field: null, pieces: null });
   let skins = { a: NO_SKIN, b: NO_SKIN };
   const halves = { a: null, b: null }, pieceSkins = new Map(), effects = new Set();
-  let retired = [], aftermath = null, shake = { x: 0, y: 0 }, shaken = false, assetsPromise = null;
+  let retired = [], sceneMargin = 0, labels = null, aftermath = null, shake = { x: 0, y: 0 }, shaken = false, assetsPromise = null;
   const media = window.matchMedia('(prefers-reduced-motion: reduce)');
   // Người chơi tắt hiệu ứng (localStorage 'ta-fx' = '0') thì coi như giảm chuyển động.
   const fxOff = () => { try { return window.localStorage.getItem('ta-fx') === '0'; } catch (e) { return false; } };
@@ -636,11 +651,11 @@ export function createBoard3D({ canvas, game, skins: catalogInput, quality: qual
     wrap.userData.top = size.y; wrap.userData.radius = Math.max(size.x, size.z) / 2;
     return wrap;
   }
-  function assetApi() {
-    if (!models) return Promise.resolve(null);
-    if (!assetsPromise) assetsPromise = assets ? Promise.resolve(assets) : import('/js/world3d/board-assets.mjs?v=1').catch(() => null);
+  function imageApi() {
+    if (!assetsPromise) assetsPromise = assets ? Promise.resolve(assets) : import('/js/world3d/board-assets.mjs?v=2').catch(() => null);
     return assetsPromise;
   }
+  function assetApi() { return models ? imageApi() : Promise.resolve(null); }
   function loadAsset(url) {
     if (!url) return Promise.resolve(null);
     return assetApi().then(api => (api && typeof api.loadModel === 'function' && typeof api.instantiate === 'function'
@@ -721,6 +736,16 @@ export function createBoard3D({ canvas, game, skins: catalogInput, quality: qual
     record.from.copy(record.group.position); record.target.copy(target);
     record.started = animate && !calm() ? performance.now() : 0;
     if (!record.started) record.group.position.copy(target);
+  }
+  // Chỗ xếp quân bị ăn ở mép bàn; có dải cảnh (ảnh sân v2) thì lùi ra ngoài dải đó.
+  const capturedSpot = (side, slot) => new THREE.Vector3(
+    (layout.cols / 2 + 0.95 + sceneMargin + Math.floor(slot / layout.rows) * 0.65) * (side ? -1 : 1), -0.18, (slot % layout.rows) * 0.65 - (layout.rows - 1) * 0.325);
+  function relayoutCaptured() {
+    const count = { true: 0, false: 0 };
+    for (const record of captured) {
+      const side = layout.stones ? record.ch === 'a' : record.ch === record.ch.toUpperCase();
+      travel(record, capturedSpot(side, count[side]++), true);
+    }
   }
   const markGeometry = keep(new THREE.PlaneGeometry(0.92, 0.92));
   const dotGeometry = keep(new THREE.CircleGeometry(0.12, 24));
@@ -807,10 +832,11 @@ export function createBoard3D({ canvas, game, skins: catalogInput, quality: qual
     const rimBox = new THREE.Mesh(own(new THREE.BoxGeometry(w + 0.27, 0.335, E)), rimMat);
     rimBox.position.set(0, -0.22, -sign * E / 2); rimBox.castShadow = true; rimBox.receiveShadow = true; rimPivot.add(rimBox);
     const decor = new THREE.Group(); group.add(decor);
-    const h = { id, side, def, tones, group, pivot, rimPivot, map, overlay, rimMat, decor, res, decorRes: new Set(), progress: 1 };
+    const h = { id, side, def, tones, group, pivot, rimPivot, map, overlay, rimMat, decor, res, decorRes: new Set(), progress: 1, v2: null, dead: false };
     buildDecor(h);
     board.add(group);
     loadFieldModel(h);
+    loadFieldImage(h);
     return h;
   }
   // Đồ trang trí rẻ dựng bằng mã theo `fx` của sân (vài chục tam giác mỗi món), dùng khi chưa có .glb.
@@ -876,6 +902,98 @@ export function createBoard3D({ canvas, game, skins: catalogInput, quality: qual
       h.decor.add(item);
     }
   }
+  /* ---- T-125 · Ảnh sân v2: mặt phẳng ảnh phủ nửa bàn + dải cảnh; thay lớp phủ palette, đồ trang trí và thành gỗ của nửa đó.
+   * Ảnh nạp qua board-assets (dùng chung, nhớ cả kết quả thiếu); mỗi bàn tự bọc thành THREE.Texture riêng và dispose cùng nửa sân. ---- */
+  function loadFieldImage(h) {
+    if (!fieldImages || !catalog || typeof catalog.fieldImage2 !== 'function') return;
+    let url = null;
+    try { url = catalog.fieldImage2(h.id, game); } catch (e) { url = null; }
+    if (!url) return;
+    imageApi().then(api => (api && typeof api.loadImage === 'function' ? api.loadImage(url) : null)).then(img => {
+      if (!img || stopped || h.dead || h.v2 || halves[h.side] !== h) return;
+      attachFieldImage(h, img);
+    }).catch(() => {});
+  }
+  // Nét lưới cờ tướng của một nửa, vẽ trong toạ độ bàn (x, z) rồi ánh xạ sang ảnh của mặt phẳng.
+  function paintHalfGrid(ctx, tw, th, h, fp) {
+    const k = h.tones, x = c => c - (layout.cols - 1) / 2, z = r => (layout.rows - 1) / 2 - r;
+    const r0 = h.side === 'a' ? 0 : 5, r1 = h.side === 'a' ? 4 : 9, paths = [];
+    for (let r = r0; r <= r1; r++) paths.push([[x(0), z(r)], [x(layout.cols - 1), z(r)]]);
+    for (let c = 0; c < layout.cols; c++) paths.push([[x(c), z(r0)], [x(c), z(r1)]]);
+    const p = h.side === 'a' ? 0 : 7;
+    paths.push([[x(3), z(p)], [x(5), z(p + 2)]], [[x(5), z(p)], [x(3), z(p + 2)]]);
+    const marks = [];
+    for (const r of h.side === 'a' ? [2, 3] : [6, 7]) for (const c of (r === 2 || r === 7 ? [1, 7] : [0, 2, 4, 6, 8])) {
+      for (const dx of [-1, 1]) for (const dz of [-1, 1]) {
+        if (c + dx < 0 || c + dx > 8) continue;
+        marks.push([[x(c) + dx * 0.22, z(r) + dz * 0.09], [x(c) + dx * 0.09, z(r) + dz * 0.09], [x(c) + dx * 0.09, z(r) + dz * 0.22]]);
+      }
+    }
+    ctx.save();
+    ctx.scale(tw / fp.w, th / fp.d); ctx.translate(fp.w / 2, fp.d / 2);
+    if (fp.sign < 0) ctx.scale(-1, -1);
+    ctx.translate(0, -fp.z);
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    // Viền tương phản (đen nếu nét sáng, sáng nếu nét tối) để lưới đọc được trên mọi cảnh.
+    const halo = contrastRatio(k.line, '#000000') >= contrastRatio(k.line, '#ffffff') ? 'rgba(0,0,0,0.6)' : 'rgba(255,246,220,0.6)';
+    for (const [color, wide, thin] of [[halo, 0.085, 0.05], [k.line, 0.04, 0.024]]) {
+      ctx.strokeStyle = color;
+      for (const [list, width] of [[paths, wide], [marks, thin]]) {
+        ctx.lineWidth = width;
+        for (const pts of list) { ctx.beginPath(); pts.forEach(([px, pz], i) => (i ? ctx.lineTo(px, pz) : ctx.moveTo(px, pz))); ctx.stroke(); }
+      }
+    }
+    ctx.restore();
+  }
+  function attachFieldImage(h, img) {
+    const fp = fieldPlane(game, h.side);
+    if (!fp) return;
+    const own = r => { h.res.add(r); return r; };
+    const tex = own(new THREE.Texture(img)); tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy()); tex.needsUpdate = true;
+    // Trục co giãn đặt ở mép NGOÀI (phía người chơi): khai mở lộ dần từ đó ra giữa bàn.
+    const pivot = new THREE.Group(); pivot.position.z = fp.sign * (Math.abs(fp.near) + fp.d);
+    const geometry = sharedGeo('v2plane:' + fp.w + 'x' + fp.d, () => new THREE.PlaneGeometry(fp.w, fp.d));
+    const plane = new THREE.Mesh(geometry, own(new THREE.MeshStandardMaterial({ map: tex, roughness: 0.92, metalness: 0 })));
+    plane.name = 'kd-field-image-' + h.side;
+    plane.rotation.set(-Math.PI / 2, 0, fp.rotY); plane.position.set(fp.x, 0.0045, -fp.sign * fp.d / 2);
+    plane.receiveShadow = true; pivot.add(plane);
+    // Bệ gỗ dưới mặt phẳng: dải cảnh nhô ra khỏi thành bàn không lơ lửng.
+    const skirt = new THREE.Mesh(own(new THREE.BoxGeometry(fp.w, 0.3, fp.d)), own(new THREE.MeshStandardMaterial({ color: h.tones.rim, roughness: 0.6 })));
+    skirt.position.set(fp.x, -0.215, -fp.sign * fp.d / 2); skirt.receiveShadow = true; pivot.add(skirt);
+    const v2 = { pivot, tex, gridTex: null };
+    if (!layout.chess) {
+      v2.gridTex = texture(1536, Math.round(1536 * fp.d / fp.w), (ctx, tw, th) => paintHalfGrid(ctx, tw, th, h, fp), own);
+      const grid = new THREE.Mesh(geometry, own(new THREE.MeshBasicMaterial({ map: v2.gridTex, transparent: true, depthWrite: false })));
+      grid.name = 'kd-field-grid-' + h.side; grid.renderOrder = 1;
+      grid.rotation.copy(plane.rotation); grid.position.set(fp.x, 0.0055, plane.position.z); pivot.add(grid);
+    }
+    h.group.add(pivot); h.v2 = v2;
+    h.pivot.visible = false; h.rimPivot.visible = false; h.decor.visible = false; // ảnh đã có sẵn cảnh vật
+    setProgress(h, h.progress);
+    syncScene(); requestRender();
+  }
+  // Có ảnh v2 ở ít nhất một nửa: nới máy quay và chỗ xếp quân bị ăn cho vừa dải cảnh; chữ toạ độ cờ vua vẽ lại trên ảnh.
+  function syncScene() {
+    const has = side => !!(halves[side] && halves[side].v2);
+    const next = has('a') || has('b') ? FIELD_MARGIN : 0;
+    if (next !== sceneMargin) { sceneMargin = next; relayoutCaptured(); orbit(); }
+    if (labels) { board.remove(labels.mesh); for (const r of [labels.mesh.material.map, labels.mesh.material, labels.mesh.geometry]) { resources.delete(r); r.dispose(); } labels = null; }
+    if (!layout.chess || !next) return;
+    const { w, d } = boardSize(layout), map = texture(1024, Math.round(1024 * d / w), (ctx, tw, th) => {
+      ctx.scale(tw / w, th / d); ctx.translate(w / 2, d / 2);
+      ctx.font = 'bold .23px Georgia, serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.lineJoin = 'round'; ctx.lineWidth = 0.07; ctx.strokeStyle = 'rgba(20,12,6,.8)'; ctx.fillStyle = '#f5dfaf';
+      const put = (text, px, pz) => { if (has(pz > 0 ? 'a' : 'b')) { ctx.strokeText(text, px, pz); ctx.fillText(text, px, pz); } };
+      for (let i = 0; i < 8; i++) {
+        put(FILES[i], i - 3.5, 4.32); put(String(i + 1), -4.32, 3.5 - i);
+        put(FILES[7 - i], 3.5 - i, -4.32); put(String(8 - i), 4.32, i - 3.5);
+      }
+    });
+    const mesh = new THREE.Mesh(keep(new THREE.PlaneGeometry(w, d)), keep(new THREE.MeshBasicMaterial({ map, transparent: true, depthWrite: false })));
+    mesh.rotation.x = -Math.PI / 2; mesh.position.y = 0.006; mesh.renderOrder = 1; mesh.name = 'kd-field-labels'; board.add(mesh);
+    labels = { mesh };
+  }
   function loadFieldModel(h) {
     loadAsset(catalog.fieldModel && catalog.fieldModel(h.id)).then(got => {
       if (!got || stopped || halves[h.side] !== h) return;
@@ -899,6 +1017,10 @@ export function createBoard3D({ canvas, game, skins: catalogInput, quality: qual
     h.pivot.scale.z = q; h.rimPivot.scale.z = q;
     // Texture co theo cùng tỉ lệ để hình không bị bóp: chỉ lộ phần từ mép người chơi tới mép sáng.
     h.map.repeat.set(1, q); h.map.offset.set(0, h.side === 'a' ? 0 : 1 - q);
+    if (h.v2) { // ảnh v2: v = 0 luôn là mép người chơi (nửa b đã xoay 180° trong mặt phẳng)
+      h.v2.pivot.scale.z = q; h.v2.tex.repeat.set(1, q); h.v2.tex.offset.set(0, 0);
+      if (h.v2.gridTex) { h.v2.gridTex.repeat.set(1, q); h.v2.gridTex.offset.set(0, 0); }
+    }
     for (const item of h.decor.children) {
       const r = p >= 1 ? 1 : riseAt(p, item.userData.f), s = item.userData.s || 1, k = 0.55 + 0.45 * Math.min(1, r);
       item.visible = r > 0.002; item.scale.set(s * k, s * Math.max(1e-3, r), s * k);
@@ -906,6 +1028,7 @@ export function createBoard3D({ canvas, game, skins: catalogInput, quality: qual
     h.progress = p;
   }
   function disposeHalf(h) {
+    h.dead = true; h.v2 = null;
     board.remove(h.group);
     for (const r of h.res) r.dispose();
     for (const r of h.decorRes) r.dispose();
@@ -916,6 +1039,7 @@ export function createBoard3D({ canvas, game, skins: catalogInput, quality: qual
     if ((old ? old.id : null) === id) return;
     if (old) retired.push(old); // giữ tới khung kế để playFx('domain') gọi ngay sau có thể đổi dần từ sân cũ
     halves[side] = id ? buildHalf(side, id) : null;
+    syncScene();
   }
   function flushRetired() { for (const h of retired) disposeHalf(h); retired = []; }
   function readSkins(o) {
@@ -1181,7 +1305,8 @@ export function createBoard3D({ canvas, game, skins: catalogInput, quality: qual
 
   function orbit() {
     const aspect = width / height || 1;
-    const distance = Math.max((layout.rows + 1) * 1.55, (layout.cols + 3) / aspect * 1.55) * zoom;
+    const pad = sceneMargin * 2; // dải cảnh của ảnh sân v2 nằm ngoài bàn: nới khung hình cho vừa
+    const distance = Math.max((layout.rows + 1 + pad) * 1.55, (layout.cols + 3 + pad) / aspect * 1.55) * zoom;
     camera.position.set(Math.sin(yaw) * Math.cos(elevation) * distance, Math.sin(elevation) * distance, Math.cos(yaw) * Math.cos(elevation) * distance);
     camera.lookAt(0, 0, 0); camera.updateMatrixWorld();
   }
@@ -1256,8 +1381,7 @@ export function createBoard3D({ canvas, game, skins: catalogInput, quality: qual
         captured.push(record);
         const side = layout.stones ? record.ch === 'a' : record.ch === record.ch.toUpperCase();
         const slot = captured.filter(p => (layout.stones ? p.ch === 'a' : p.ch === p.ch.toUpperCase()) === side).length - 1;
-        const edge = (layout.cols / 2 + 0.95 + Math.floor(slot / layout.rows) * 0.65) * (side ? -1 : 1);
-        travel(record, new THREE.Vector3(edge, -0.18, (slot % layout.rows) * 0.65 - (layout.rows - 1) * 0.325), true);
+        travel(record, capturedSpot(side, slot), true);
         record.group.scale.multiplyScalar(0.68);
       } else board.remove(record.group);
     }
@@ -1325,7 +1449,7 @@ export function createBoard3D({ canvas, game, skins: catalogInput, quality: qual
     /** Số hình và texture đang nằm trên GPU (renderer.info.memory), để kiểm rò rỉ khi đổi skin. */
     stats() {
       const m = (renderer.info && renderer.info.memory) || {};
-      return { geometries: m.geometries | 0, textures: m.textures | 0, pieceSkins: pieceSkins.size, halves: +!!halves.a + +!!halves.b, effects: effects.size };
+      return { geometries: m.geometries | 0, textures: m.textures | 0, pieceSkins: pieceSkins.size, halves: +!!halves.a + +!!halves.b, effects: effects.size, fieldImages: +!!(halves.a && halves.a.v2) + +!!(halves.b && halves.b.v2) };
     },
     dispose() {
       if (stopped) return; stopped = true; cancelAnimationFrame(frame); observer.disconnect();

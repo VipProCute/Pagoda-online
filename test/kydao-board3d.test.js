@@ -309,7 +309,7 @@ test('Kỳ Đài: o.skins đổi từng nửa sân và quân từng bên; mã l�
   view.setState({ board: st.board, skins: { a: { field: 'volcano', pieces: 'magma' }, b: { field: 'hack', pieces: '__proto__' }, __proto__: { field: 'river' } } });
   env.flush();
   assert.ok(halfNode('a')); assert.equal(halfNode('b'), undefined);
-  assert.deepEqual({ ...view.stats(), geometries: 0, textures: 0 }, { geometries: 0, textures: 0, pieceSkins: 1, halves: 1, effects: 0 });
+  assert.deepEqual({ ...view.stats(), geometries: 0, textures: 0 }, { geometries: 0, textures: 0, pieceSkins: 1, halves: 1, effects: 0, fieldImages: 0 });
   const colors = meshes(renderedScene).map(hex);
   assert.equal(colors.filter(c => c === Skins.PIECES.magma.a.base).length >= 16, true, 'thân 16 quân trắng mang màu Dung Nham');
   assert.ok(colors.includes(Skins.PIECES.magma.a.accent), 'viền quân theo accent');
@@ -686,4 +686,191 @@ test('ta-fx tắt thì bàn 3D không rung khi phong cấp', async () => {
     delete global.window.localStorage;
     view.dispose();
   }
+});
+
+/* ---- T-125 · Bàn 3D dùng ảnh sân v2 làm mặt sân, có dải cảnh quanh bàn ---- */
+
+const fakeImage = () => ({ width: 1408, height: 704 });
+// Bộ nạp giả: ảnh có sẵn cho mã trong `have` (hoặc mọi mã nếu true), còn lại 404 (null).
+function imageAssets(have) {
+  const asked = [];
+  return { asked, loadModel: async () => null, instantiate: () => { throw new Error('không có mô hình'); },
+    loadImage: async url => { asked.push(url); return have === true || (have && have.some(id => url.includes('/' + id + '-'))) ? fakeImage() : null; } };
+}
+const imagePlane = side => renderedScene.getObjectByName('kd-field-image-' + side);
+const worldBox = (THREE, o) => { renderedScene.updateMatrixWorld(true); return new THREE.Box3().setFromObject(o); };
+
+test('Kỳ Đài 3D: fieldPlane tính đúng kích thước, vị trí và hướng mặt phẳng ảnh v2', async () => {
+  const { fieldPlane, FIELD_MARGIN } = await modulePromise;
+  assert.equal(FIELD_MARGIN, 1.5);
+  const chessA = fieldPlane('chess', 'a'), chessB = fieldPlane('chess', 'b');
+  assert.deepEqual([chessA.w, chessA.d, chessA.x, chessA.z, chessA.rotY], [11, 5.5, 0, 2.75, 0]);
+  assert.deepEqual([chessB.w, chessB.d, chessB.z, chessB.rotY], [11, 5.5, -2.75, Math.PI]);
+  assert.equal(chessA.near, 0); assert.equal(chessA.far, 5.5);
+  for (const game of ['xiangqi', 'jieqi']) {
+    const a = fieldPlane(game, 'a'), b = fieldPlane(game, 'b');
+    assert.equal(a.z, 3.25); assert.equal(b.z, -3.25); // đường giữa ảnh ở hàng sát sông (z = ±0,5)
+    assert.equal(a.near, 0.5); assert.equal(a.far, 6); assert.equal(b.far, -6);
+    assert.equal(a.far - 1.5, 4.5, 'mép bàn của ảnh = hàng cuối (z = 4,5)');
+  }
+  assert.equal(fieldPlane('go', 'a'), null); assert.equal(fieldPlane('chess', 'c'), null);
+});
+
+test('Kỳ Đài 3D: cờ vua có ảnh v2 thì nửa sân dùng mặt phẳng ảnh, ẩn lớp phủ palette và đồ trang trí; 404 thì như cũ', async () => {
+  const THREE = await import(threeURL), st = Chess.create({});
+  const assets = imageAssets(['volcano']);
+  const { env, view } = await openBoard('chess', { assets });
+  view.setState({ board: st.board }); env.flush();
+  view.setState({ board: st.board, skins: { a: { field: 'volcano' }, b: { field: 'river' } } }); await settle(); env.flush();
+  const planeA = imagePlane('a');
+  assert.ok(planeA, 'nửa a có mặt phẳng ảnh'); assert.equal(imagePlane('b'), undefined, 'nửa b 404 nên không có');
+  assert.ok(assets.asked.every(url => url.startsWith('/img/kydao/fields2/') && url.endsWith('-chess.webp')));
+  assert.equal(view.stats().fieldImages, 1);
+  const box = worldBox(THREE, planeA);
+  assert.ok(Math.abs(box.min.x + 5.5) < 1e-6 && Math.abs(box.max.x - 5.5) < 1e-6 && Math.abs(box.min.z) < 1e-6 && Math.abs(box.max.z - 5.5) < 1e-6);
+  assert.ok(box.max.y > 0.004 && box.max.y < 0.022, 'cao hơn mặt bàn, thấp hơn dấu nước đi');
+  assert.equal(planeA.receiveShadow, true); assert.equal(planeA.material.map.colorSpace, THREE.SRGBColorSpace);
+  assert.ok(planeA.material.roughness >= 0.8);
+  // Nửa a: lớp phủ palette, thành palette và đồ trang trí đều bị ẩn. Nửa b (không có ảnh) vẫn như cũ.
+  const a = halfNode('a'), b = halfNode('b');
+  assert.deepEqual(a.children.slice(0, 3).map(c => c.visible), [false, false, false]);
+  assert.deepEqual(b.children.slice(0, 3).map(c => c.visible), [true, true, true]);
+  assert.ok(renderedScene.getObjectByName('kd-field-labels'), 'chữ toạ độ vẫn có (lớp riêng phía trên ảnh)');
+  view.dispose();
+});
+
+test('Kỳ Đài 3D: ảnh v2 cờ vua hai nửa; nửa b xoay 180° và nằm ở z âm; không có lưới', async () => {
+  const THREE = await import(threeURL), st = Chess.create({});
+  const { env, view } = await openBoard('chess', { assets: imageAssets(true) });
+  view.setState({ board: st.board, skins: { a: { field: 'volcano' }, b: { field: 'glacier' } } }); await settle(); env.flush();
+  const pa = imagePlane('a'), pb = imagePlane('b');
+  assert.ok(pa && pb);
+  const boxB = worldBox(THREE, pb);
+  assert.ok(Math.abs(boxB.min.z + 5.5) < 1e-6 && Math.abs(boxB.max.z) < 1e-6);
+  // Đỉnh ảnh (v = 1) nằm ở đường giữa bàn cho cả hai nửa.
+  const topZ = o => { const v = new THREE.Vector3(0, 2.75, 0); o.localToWorld(v); return v.z; };
+  assert.ok(Math.abs(topZ(pa)) < 1e-6 && Math.abs(topZ(pb)) < 1e-6);
+  assert.equal(view.stats().fieldImages, 2);
+  assert.equal(renderedScene.getObjectByName('kd-field-grid-a'), undefined);
+  view.dispose();
+});
+
+test('Kỳ Đài 3D: cờ tướng/cờ úp có ảnh v2 bắt đầu từ hàng sát sông, có lưới phía trên và sông giữ nguyên', async () => {
+  const THREE = await import(threeURL);
+  for (const game of ['xiangqi', 'jieqi']) {
+    const st = Xiangqi.view(Xiangqi.create({ variant: game, seed: 5 }));
+    const assets = imageAssets(true), { env, view } = await openBoard(game, { assets });
+    view.setState({ game, ...st, skins: { a: { field: 'river' }, b: { field: 'desert' } } }); await settle(); env.flush();
+    assert.ok(assets.asked.length && assets.asked.every(url => url.endsWith('-xiangqi.webp')), game + ': dùng bản -xiangqi');
+    for (const side of ['a', 'b']) {
+      const box = worldBox(THREE, imagePlane(side)), sign = side === 'a' ? 1 : -1;
+      assert.ok(Math.abs(Math.min(sign * box.min.z, sign * box.max.z) - 0.5) < 1e-6, game + side + ': mép giữa ở hàng sát sông');
+      assert.ok(Math.abs(Math.max(sign * box.min.z, sign * box.max.z) - 6) < 1e-6);
+      assert.ok(Math.abs(box.max.x - 5.5) < 1e-6);
+      const grid = renderedScene.getObjectByName('kd-field-grid-' + side);
+      assert.ok(grid, 'lưới kẻ nằm trên ảnh'); assert.ok(grid.position.y > imagePlane(side).position.y && grid.position.y < 0.022);
+      assert.equal(grid.material.transparent, true); assert.equal(grid.material.depthWrite, false);
+    }
+    const water = riverParts().find(o => o.name === 'kd-river-water');
+    assert.ok(water && water.visible, 'sông vẫn còn');
+    assert.ok(Math.abs(water.position.y - 0.004) < 1e-9 && water.geometry.parameters.height === 1);
+    view.dispose();
+  }
+});
+
+test('Kỳ Đài 3D: fieldImages:false, thiếu loadImage hoặc lỗi mạng thì giữ cách cũ, không lỗi', async () => {
+  const { createBoard3D } = await modulePromise, st = Chess.create({});
+  const assets = imageAssets(true);
+  const env = fakeSurface(), off = createBoard3D({ canvas: env.canvas, game: 'chess', skins: Skins, assets, fieldImages: false });
+  off.setState({ board: st.board, skins: { a: { field: 'volcano' } } }); await settle(); env.flush();
+  assert.equal(assets.asked.length, 0); assert.equal(imagePlane('a'), undefined);
+  assert.equal(halfNode('a').children[0].visible, true);
+  off.dispose();
+  const bare = await openBoard('chess'); // noModels không có loadImage
+  bare.view.setState({ board: st.board, skins: { a: { field: 'volcano' } } }); await settle(); bare.env.flush();
+  assert.equal(imagePlane('a'), undefined); assert.equal(halfNode('a').children[2].visible, true);
+  bare.view.dispose();
+  const boom = { ...imageAssets(true), loadImage: async () => { throw new Error('mạng'); } };
+  const err = await openBoard('chess', { assets: boom });
+  err.view.setState({ board: st.board, skins: { a: { field: 'volcano' } } }); await settle(); err.env.flush();
+  assert.equal(imagePlane('a'), undefined);
+  err.view.dispose();
+});
+
+test('Kỳ Đài 3D: có ảnh v2 thì quân bị ăn lùi ra ngoài dải cảnh và máy quay lùi xa hơn', async () => {
+  const { env, view } = await openBoard('chess', { assets: imageAssets(true) });
+  let state = Chess.create({});
+  view.setState({ board: state.board }); env.flush();
+  for (const move of ['e2e4', 'd7d5', 'e4d5']) { state = Chess.play(state, move).state; view.setState({ board: state.board, last: [move.slice(0, 2), move.slice(2)] }); env.flush(); }
+  const taken = () => { const out = []; renderedScene.traverse(m => { if (m.type === 'Group' && m.position.y === -0.18) out.push(m); }); return out; };
+  env.media.matches = true; // giảm chuyển động: quân vào chỗ ngay
+  const before = taken()[0].position.x, camBefore = renderedCamera.position.length();
+  assert.ok(Math.abs(before) < 5.5);
+  view.setState({ board: state.board, skins: { a: { field: 'volcano' } } }); await settle(); env.flush();
+  assert.ok(Math.abs(taken()[0].position.x) >= 5.5 + 0.9, 'ngoài dải cảnh (|x| > 5,5)');
+  assert.ok(renderedCamera.position.length() > camBefore, 'máy quay lùi để cả dải cảnh nằm trong khung');
+  view.dispose();
+});
+
+test('Kỳ Đài 3D: khai mở lộ dần ảnh v2 từ mép người chơi; giảm chuyển động hiện ngay', async () => {
+  const { FX } = await modulePromise, T0 = performance.now() + 5000;
+  const { env, view } = await openBoard('chess', { assets: imageAssets(true) }), st = Chess.create({});
+  view.setState({ board: st.board }); env.flushAt(T0);
+  view.setState({ board: st.board, skins: { a: { field: 'volcano' } } });
+  const done = view.playFx('domain', { side: 'a' });
+  await settle(); env.flushAt(T0 + 10);
+  const pivot = () => imagePlane('a').parent;
+  assert.ok(pivot().scale.z < 0.05, 'mới bắt đầu: ảnh gần như chưa lộ');
+  assert.equal(imagePlane('a').material.map.repeat.y, pivot().scale.z, 'texture co cùng tỉ lệ, ảnh không bị bóp');
+  env.flushAt(T0 + 10 + FX.front / 3);
+  const mid = pivot().scale.z; assert.ok(mid > 0.3 && mid < 1);
+  env.flushAt(T0 + 10 + FX.domain + 1);
+  assert.equal(pivot().scale.z, 1); assert.equal(imagePlane('a').material.map.repeat.y, 1); assert.equal(await done, true);
+  env.media.matches = true;
+  view.setState({ board: st.board, skins: { a: { field: 'river' } } }); await settle();
+  assert.equal(await view.playFx('domain', { side: 'a' }), true);
+  assert.equal(pivot().scale.z, 1);
+  view.dispose();
+});
+
+test('Kỳ Đài 3D: đổi skin 20 lần với ảnh v2 không tăng bộ nhớ GPU; dispose trả hết; ảnh dùng chung không bị giải phóng', async () => {
+  const fields = ['volcano', 'river', 'forest', 'glacier', 'ocean'];
+  for (const game of ['chess', 'xiangqi']) {
+    const image = fakeImage(); let disposedImage = 0; image.dispose = () => disposedImage++;
+    const assets = { ...imageAssets(true), loadImage: async () => image };
+    const { env, view } = await openBoard(game, { assets });
+    const st = game === 'chess' ? Chess.create({}) : Xiangqi.view(Xiangqi.create({ variant: 'xiangqi', seed: 5 }));
+    let T = performance.now() + 5000;
+    const show = async i => {
+      view.setState({ game, ...st, skins: { a: { field: fields[i % 5] }, b: { field: fields[(i + 2) % 5] } } });
+      await settle(); env.flushAt(T += 10); env.flushAt(T += 1e4);
+    };
+    view.setState({ game, ...st }); env.flushAt(T);
+    await show(0);
+    const first = view.stats();
+    assert.equal(first.fieldImages, 2);
+    for (let i = 1; i <= 20; i++) await show(i);
+    await show(0);
+    assert.deepEqual(view.stats(), first, game + ': bộ nhớ giữ nguyên sau 20 lần đổi');
+    view.setState({ game, ...st }); env.flush();
+    assert.equal(view.stats().fieldImages, 0);
+    view.setState({ game, ...st, skins: { a: { field: 'volcano' } } }); await settle(); env.flush();
+    view.dispose();
+    const after = view.stats();
+    assert.deepEqual([after.geometries, after.textures], [0, 0], game + ': dispose giải phóng mọi hình và texture');
+    assert.equal(disposedImage, 0, 'ảnh giải mã nằm trong bộ đệm dùng chung nên không bị dispose');
+  }
+});
+
+test('board-assets: nạp ảnh một lần, nhớ cả kết quả thiếu, lỗi trả null', async () => {
+  const A = await import(assetsURL);
+  let made = 0;
+  const loader = A.createImageLoader({ make: async url => { made++; if (url === '/a.webp') return { width: 4, height: 2 }; if (url === '/bad.webp') return { width: 0, height: 0 }; throw new Error('404'); } });
+  const [x, y] = await Promise.all([loader.loadImage('/a.webp'), loader.loadImage('/a.webp')]);
+  assert.equal(x, y); assert.equal(x.width, 4);
+  assert.equal(await loader.loadImage('/thieu.webp'), null); assert.equal(await loader.loadImage('/thieu.webp'), null);
+  assert.equal(await loader.loadImage('/bad.webp'), null);
+  assert.equal(made, 3, 'mỗi đường dẫn chỉ nạp một lần');
+  assert.equal(await loader.loadImage('https://x.test/a.webp'), null); assert.equal(await loader.loadImage(null), null);
+  assert.equal(typeof A.loadImage, 'function');
 });

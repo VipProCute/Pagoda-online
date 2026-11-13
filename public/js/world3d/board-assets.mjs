@@ -40,7 +40,36 @@ export function createAssetLoader({ importer = url => import(url), loaderUrl = L
   };
 }
 
+/** T-125 · Nạp ẢNH (sân v2) một lần mỗi đường dẫn; kết quả (kể cả "không có") được nhớ.
+ * Cái được nhớ là ảnh đã giải mã (HTMLImageElement/ImageBitmap), KHÔNG phải THREE.Texture: mỗi bàn tự bọc ảnh
+ * thành texture riêng rồi tự dispose(), còn ảnh dùng chung nên không bao giờ bị giải phóng theo bàn.
+ * Lỗi mạng/404/ảnh hỏng: trả null, không ném lỗi, không ghi console.
+ * make(url) → Promise<ảnh> (tiêm để test); mặc định dùng new Image() của trình duyệt. */
+export function createImageLoader({ make } = {}) {
+  const cache = new Map();
+  const decode = make || (url => new Promise((resolve, reject) => {
+    const img = new Image();
+    img.decoding = 'async';
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error('Không nạp được ảnh.'));
+    img.src = url;
+  }));
+  function loadImage(url) {
+    if (typeof url !== 'string' || !url.startsWith('/')) return Promise.resolve(null);
+    if (!cache.has(url)) {
+      cache.set(url, Promise.resolve().then(() => decode(url))
+        .then(img => (img && img.width > 0 && img.height > 0 ? img : null))
+        .catch(() => null));
+    }
+    return cache.get(url);
+  }
+  return { loadImage, has: url => cache.has(url), clear() { cache.clear(); } };
+}
+
 const shared = createAssetLoader();
+const sharedImages = createImageLoader();
+/** Bộ nạp ảnh dùng chung cho cả trang. */
+export const loadImage = url => sharedImages.loadImage(url);
 /** Bộ nạp dùng chung cho cả trang (mọi bàn 3D cùng chia bộ nhớ đệm). */
 export const loadModel = url => shared.loadModel(url);
 
