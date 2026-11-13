@@ -1456,18 +1456,18 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
 - **Ngoài phạm vi**: luật cờ, giao thức, skin.
 
 ### T-122 · Bàn 3D: dòng sông sinh động giữa bàn cờ tướng
-- **Trạng thái**: 🔵 Sẵn sàng
+- **Trạng thái**: 🟣 Chờ soát
 - **Ưu tiên**: P0 (chủ dự án 13/11: giữa bàn cờ tướng phải là dòng sông sinh động, hai bên skin gì cũng vậy)
 - **Gói ngữ cảnh**: CORE + KYDAO + KYDAI
 - **Đặc tả từng bước (BẮT BUỘC làm theo)**: [docs/ky-dai/T-121-DAC-TA-DONG-SONG.md](docs/ky-dai/T-121-DAC-TA-DONG-SONG.md), phần T-122
 - **Khu vực chạm**: public/js/world3d/board3d.mjs, test/kydao-board3d.test.js, public/world3d-board.html (`?v=`), public/js/kydao-ui.js (chỉ `?v=` của import)
 - **Phụ thuộc**: không · **Thợ**: Claude Sonnet 5.5 · **Soát**: Điều phối chạy test và xem trình duyệt
-- **Người làm**: — · **Nhánh**: —
+- **Người làm**: Claude Sonnet 5.5 · **Nhánh**: `claude/T-122-dong-song-3d`
 - **Mục tiêu**: bàn cờ tướng và cờ úp 3D có mặt nước chảy ở dải giữa thay cho dải gỗ.
 - **Tiêu chí xong**:
-  - [ ] Đủ các bước của đặc tả; sông có ở cờ tướng và cờ úp kể cả khi không có skin, không có ở cờ vua
-  - [ ] Quân, dấu nước đi, ô chọn luôn nằm trên sông; chữ Sở Hà / Hán Giới đọc rõ
-  - [ ] Giảm chuyển động thì sông đứng yên; `npm run check` và test trong đặc tả đạt
+  - [x] Đủ các bước của đặc tả; sông có ở cờ tướng và cờ úp kể cả khi không có skin, không có ở cờ vua
+  - [x] Quân, dấu nước đi, ô chọn luôn nằm trên sông; chữ Sở Hà / Hán Giới đọc rõ
+  - [x] Giảm chuyển động thì sông đứng yên; `npm run check` và test trong đặc tả đạt
 - **Ngoài phạm vi**: luật cờ, giao thức, skin.
 
 ### T-120 · Bản mẫu nhân vật 3D dựng bằng Blender, đo hiệu năng
