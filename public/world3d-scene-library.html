@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tàng Kinh Các · Thử cảnh 3D</title><style>
+*{box-sizing:border-box}body{margin:0;background:#17110e;color:#f5e7cc;font:14px system-ui}header{padding:14px 22px;background:#352219;display:flex;align-items:center;gap:14px;flex-wrap:wrap}h1{font:24px Georgia,serif;margin:0 auto 0 0;color:#f2cf8a}button,select{min-height:44px;border:1px solid #aa7e4a;background:#543626;color:#fff2d5;border-radius:6px;padding:8px 12px;font:inherit}canvas{display:block;width:100%;height:calc(100vh - 120px);min-height:360px;touch-action:none}footer{padding:10px 22px;color:#d9ba88}#result{color:#fff1ce}
+</style><script src="/js/view-math.js"></script><script type="importmap">{"imports":{"three":"/vendor/three/three.module.js"}}</script></head>
+<body><header><h1>Tàng Kinh Các</h1><button id="view">Góc nhìn thứ nhất</button><label>Đồ họa <select id="quality"><option value="low">Thấp</option><option value="medium" selected>Vừa</option><option value="high">Cao</option></select></label></header><canvas id="world"></canvas><footer>WASD để đi · kéo để nhìn · cuộn để thu phóng · chạm sàn hoặc vật · <span id="result">An trú trong không gian tĩnh lặng</span></footer>
+<script type="module">
+import * as THREE from 'three';
+import * as kit from '/js/world3d/kit.mjs';
+import { createAvatar } from '/js/world3d/avatar.mjs';
+import { build } from '/js/world3d/scenes/library.mjs';
+const canvas = document.querySelector('#world'), result = document.querySelector('#result');
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); renderer.outputColorSpace = THREE.SRGBColorSpace;
+const scene = new THREE.Scene(); scene.background = new THREE.Color('#241811');
+scene.add(new THREE.HemisphereLight('#ffe7bd','#4b2a1a',2.1));
+const sun = new THREE.DirectionalLight('#ffdda4',2.4); sun.position.set(-3,6,-4); scene.add(sun);
+const camera = new THREE.PerspectiveCamera(52,1,0.05,80), view = ViewMath.createView();
+const seats = [[0.22,0.44],[0.41,0.44],[0.59,0.44],[0.78,0.44],[0.22,0.72],[0.41,0.72],[0.59,0.72],[0.78,0.72]];
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let library, players = [], last = 0, elapsed = 0, destination = null;
+const self = { x:0.5,z:0.82 }, keys = new Set(), ray = new THREE.Raycaster(), pointer = new THREE.Vector2();
+function rebuild() {
+  if (library) library.dispose();
+  players.forEach(player => { player.avatar.group.removeFromParent(); player.avatar.dispose(); }); players = [];
+  const quality = document.querySelector('#quality').value;
+  renderer.shadowMap.enabled = quality === 'high'; sun.castShadow = quality === 'high';
+  renderer.setPixelRatio(quality === 'low' ? 1 : Math.min(devicePixelRatio,2));
+  library = build({THREE,kit,quality,reduceMotion:reduced,size:ViewMath.SCENE_SIZE.library}); scene.add(library.group); library.update({seats,daylight:true},0);
+  for (let index=0; index<7; index++) {
+    const avatar = createAvatar({c:index+2,h:index%4},{reducedMotion:reduced,isSelf:index===0});
+    scene.add(avatar.group); players.push({avatar,index});
+  }
+}
+rebuild(); document.querySelector('#quality').addEventListener('change',rebuild);
+document.querySelector('#view').addEventListener('click', event => { view.setMode(view.mode === 'first' ? 'third':'first'); event.currentTarget.textContent = view.mode === 'first' ? 'Góc nhìn thứ ba':'Góc nhìn thứ nhất'; });
+addEventListener('keydown',event=>{ keys.add(event.key.toLowerCase()); if(event.key.toLowerCase()==='v'&&!event.repeat) document.querySelector('#view').click(); });
+addEventListener('keyup',event=>keys.delete(event.key.toLowerCase()));
+addEventListener('blur',()=>keys.clear());
+let down = null;
+canvas.addEventListener('pointerdown', event => { down={x:event.clientX,y:event.clientY,lastX:event.clientX,lastY:event.clientY,moved:false}; canvas.setPointerCapture(event.pointerId); });
+canvas.addEventListener('pointermove', event => { if(!down)return; const dx=event.clientX-down.lastX,dy=event.clientY-down.lastY; if(Math.hypot(event.clientX-down.x,event.clientY-down.y)>5)down.moved=true; if(down.moved)view.rotate(-dx*0.006,-dy*0.006); down.lastX=event.clientX;down.lastY=event.clientY; });
+canvas.addEventListener('pointerup', event => { if(!down)return; if(!down.moved) { const rect=canvas.getBoundingClientRect(); pointer.set((event.clientX-rect.left)/rect.width*2-1,-(event.clientY-rect.top)/rect.height*2+1); ray.setFromCamera(pointer,camera); const hit=library.pick(ray); result.textContent=hit ? JSON.stringify(hit) : 'Không trúng vật'; if(hit?.kind==='floor')destination={x:hit.x,z:hit.z}; } down=null; });
+canvas.addEventListener('pointercancel',()=>{down=null;});
+canvas.addEventListener('wheel',event=>{event.preventDefault();view.zoom(Math.exp(event.deltaY*0.001));},{passive:false});
+function frame(now) {
+  const dt = Math.min((now-last)/1000 || 0,0.05); last=now; elapsed+=dt;
+  const fwd=(keys.has('w')?1:0)-(keys.has('s')?1:0), strafe=(keys.has('d')?1:0)-(keys.has('a')?1:0);
+  let moving=!!(fwd||strafe);
+  if(moving) { Object.assign(self,ViewMath.moveTarget('library',self.x,self.z,view.yaw,fwd,strafe,dt*0.23)); destination=null; }
+  else if(destination) { const here=ViewMath.toWorld('library',self.x,self.z), there=ViewMath.toWorld('library',destination.x,destination.z), dx=there.x-here.x,dz=there.z-here.z, distance=Math.hypot(dx,dz); if(distance<0.06)destination=null; else { const yaw=Math.atan2(dx,-dz); Object.assign(self,ViewMath.moveTarget('library',self.x,self.z,yaw,1,0,Math.min(dt*0.23,distance/10))); moving=true; } }
+  players.forEach(({avatar,index})=>{ let position, sit=-1, walking=false; if(index===0){position=self;walking=moving;} else if(index<=2){sit=index;position={x:seats[sit][0],z:seats[sit][1]};} else {position={x:0.5+0.29*Math.sin(elapsed*0.15+index),z:0.57+0.16*Math.cos(elapsed*0.15+index)};walking=true;} const world=ViewMath.toWorld('library',position.x,position.z); avatar.group.position.set(world.x,0,world.z); avatar.update({name:index===0?'Mình':'Phật tử '+index,sit,walking,yaw:index===0?view.yaw:Math.sin(elapsed*0.15+index),isSelf:index===0,view:view.mode,reducedMotion:reduced},dt); });
+  library.update({seats,daylight:true},dt);
+  const world=ViewMath.toWorld('library',self.x,self.z), pose=ViewMath.cameraPose(view,{x:world.x,y:0,z:world.z},library.bounds); camera.position.set(pose.pos.x,pose.pos.y,pose.pos.z); camera.lookAt(pose.look.x,pose.look.y,pose.look.z);
+  const width=canvas.clientWidth,height=canvas.clientHeight; if(canvas.width!==Math.round(width*renderer.getPixelRatio())||canvas.height!==Math.round(height*renderer.getPixelRatio())){renderer.setSize(width,height,false);camera.aspect=width/height;camera.updateProjectionMatrix();} renderer.render(scene,camera); requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script></body></html>
