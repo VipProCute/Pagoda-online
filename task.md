@@ -71,7 +71,7 @@
 | T-084 | Cảnh Chánh điện 3D | ⏳ T-082 | P0 | CORE + HALL | — |
 | T-085 | Cảnh Sân chùa 3D | ⏳ T-082 | P1 | CORE + HALL + KYDAO | — |
 | T-086 | Cảnh Tàng Kinh Các 3D | ⏳ T-082 | P1 | CORE + HALL | — |
-| T-087 | Cảnh Sân đấu (khu đi lại) 3D | ⏳ T-082 | P1 | CORE + HALL + PK | — |
+| T-087 | Cảnh Sân đấu (khu đi lại) 3D | 🟣 Chờ soát | P1 | CORE + HALL + PK | gpt-6-astra (Codex CLI qua proxy) |
 | T-088 | Nối 3D vào game: nút 2D/3D, góc nhìn 1/3, điều khiển | ⏳ T-081, T-083, T-084 | P0 | CORE + HALL + NAV | — |
 | T-089 | Cài đặt đồ họa, tự dò máy yếu | 🟣 Chờ soát | P1 | CORE + HALL | gpt-6-luna |
 | T-090 | Vẽ lại quân cờ 2D đẹp hơn | 🟣 Chờ soát | P1 | CORE + KYDAO | gpt-6.1-sol |
@@ -1121,13 +1121,16 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
 - **Ngoài phạm vi**: không sửa `LIB_SEATS`.
 
 ### T-087 · Cảnh Sân đấu (khu đi lại) 3D
-- **Trạng thái**: ⏳ Chờ T-082 · **Ưu tiên**: P1 · **Gói ngữ cảnh**: CORE + HALL + PK
-- **Khu vực chạm**: public/js/world3d/scenes/arena.mjs (mới)
+- **Trạng thái**: 🟣 Chờ soát. Điều phối chạy lại: npm run check sạch, test cảnh 10/10, xem /world3d-scene-arena.html: võ đài thái cực, giá binh khí, cờ phướn, console không lỗi. Không đụng arena.js. · **Ưu tiên**: P1 · **Gói ngữ cảnh**: CORE + HALL + PK
+- **Người làm**: gpt-6-astra (Codex CLI qua proxy)
+- **Nhánh**: `codex/T-087-canh-san-dau`
+- **Khu vực chạm**: public/js/world3d/scenes/arena.mjs (mới); bổ sung theo giao việc: public/world3d-scene-arena.html, test/world3d-scene-arena.test.js (mới)
 - **Phụ thuộc**: T-080, T-082 · **Thợ**: gpt-6-astra · **Soát**: gpt-6-sol + Gemini Argon
 - **Mục tiêu**: Khu đi lại của Sân đấu ở dạng 3D (đối chiếu `drawArenaYard`, `drawArenaLive` trong `hall.js`): võ đài đá, giá binh khí, trống, cờ.
 - **Tiêu chí xong**:
-  - [ ] Cùng giao diện cảnh; `pick` trả `person`, `floor`
-  - [ ] **Không** đụng sàn PK trong `arena.js` (PK giữ nguyên góc nhìn thứ ba hiện tại)
+  - [x] Cùng giao diện cảnh; `pick` trả `person`, `floor`
+  - [x] **Không** đụng sàn PK trong `arena.js` (PK giữ nguyên góc nhìn thứ ba hiện tại)
+- **Ghi chú bàn giao**: Cảnh dùng kit, khớp PLAT và vị trí đồ vật 2D; trang thử có 6 khách + mình, WASD/chạm sàn, góc nhìn 1/3, đồ họa và giảm chuyển động. `node --check` hai file mới sạch; chạy trực tiếp test cảnh 10/10 và hall-npcs 4/4. Theo giao việc, để điều phối chạy npm check / node --test, chụp ảnh và commit; chưa add/commit. Browser host không khả dụng nên chưa kiểm ảnh WebGL. Hợp đồng state/pick và hướng dẫn soát ở `BAN-GIAO-T-087.md` (không commit). Không đổi index.html vì chưa nạp cảnh này vào game (T-088).
 - **Ngoài phạm vi**: mọi thứ trong `arena.js`.
 
 ### T-088 · Nối 3D vào game: nút 2D/3D, góc nhìn 1/3, điều khiển
