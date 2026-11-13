@@ -1,4 +1,4 @@
-# task.md · Bảng việc cho agent
+| T-115c | | 🟣 Chờ soát |  | | gpt-6.1-terra || T-115b | | 🟣 Chờ soát |  | | Claude Sonnet 5.5 || T-115a | | 🟣 Chờ soát |  | | gpt-6.1-terra || T-113 | | 🟣 Chờ soát |  | | Claude Opus 5.5 |# task.md · Bảng việc cho agent
 
 > Cách dùng: xem [docs/agents/ORCHESTRATION.md](docs/agents/ORCHESTRATION.md). Mỗi thẻ ghi rõ **gói ngữ cảnh** (xem [docs/agents/CONTEXT-PACKS.md](docs/agents/CONTEXT-PACKS.md)) và **khu vực chạm** để không ai đụng ai.
 > Chỉ sửa thẻ của mình. Kéo bản mới nhất trước khi sửa file này.
@@ -1319,12 +1319,12 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
 - **Ngoài phạm vi**: sửa `kydao-ui.js`, `kydao-draw.js`, `index.html` (T-115 nối sau); bàn 3D.
 
 ### T-113 · Bàn 3D: nạp `.glb`, skin nửa sân, skin quân, `playFx`
-- **Trạng thái**: 🔵 Sẵn sàng
+- **Trạng thái**: 🟣 Chờ soát. Đã gộp vào nhánh tích hợp (commit 136e24b). Thợ báo 17/17 test bàn 3D; điều phối chạy lại và xem WebGL thật.
 - **Ưu tiên**: P0
 - **Gói ngữ cảnh**: CORE + KYDAO + KYDAI
 - **Khu vực chạm**: public/js/world3d/board3d.mjs, public/js/world3d/board-assets.mjs (mới), public/world3d-board.html (trang thử), test/kydao-board3d.test.js
 - **Phụ thuộc**: không (thiếu `.glb` thì dùng `palette`) · **Thợ**: Claude Opus 5.5 · **Soát**: Điều phối
-- **Người làm**: — · **Nhánh**: —
+- **Người làm**: Claude Opus 5.5 · **Nhánh**: claude/T-113-ban-3d-skin
 - **Mục tiêu**: bàn 3D hiện skin từng nửa sân, skin quân từng bên và ba hiệu ứng, cùng dữ liệu `o.skins` như bàn 2D.
 - **Tiêu chí xong**:
   - [ ] `board-assets.mjs`: nạp lười `GLTFLoader` từ `/vendor/three-addons/loaders/GLTFLoader.js`, có bộ nhớ đệm, lỗi/404 thì trả `null` và bàn vẫn chạy
@@ -1352,7 +1352,7 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
 - **Ngoài phạm vi**: `kydao-ui.js`, hiệu ứng.
 
 ### T-115a · Bảng cờ: nạp module, giữ trạng thái skin, truyền vào hàm vẽ
-- **Trạng thái**: 🟣 Chờ soát
+- **Trạng thái**: 🟣 Chờ soát. Đã gộp. Diff đúng đặc tả; điều phối chạy lại test đạt.
 - **Ưu tiên**: P0
 - **Gói ngữ cảnh**: CORE + KYDAO + KYDAI
 - **Đặc tả từng bước (BẮT BUỘC làm theo)**: [docs/ky-dai/T-115-DAC-TA.md](docs/ky-dai/T-115-DAC-TA.md), phần T-115a
@@ -1368,7 +1368,7 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
 - **Ngoài phạm vi**: mọi thứ không ghi trong phần T-115a của đặc tả; luật cờ; máy chủ; mở khóa skin.
 
 ### T-115b · Bảng cờ: bộ chọn Lãnh địa, gửi skin, màn khai mở
-- **Trạng thái**: 🟣 Chờ soát
+- **Trạng thái**: 🟣 Chờ soát. Đã gộp (commit 025225a). Điều phối chạy lại test đạt; đã thấy chạy trên trang thử.
 - **Ưu tiên**: P0
 - **Gói ngữ cảnh**: CORE + KYDAO + KYDAI
 - **Đặc tả từng bước (BẮT BUỘC làm theo)**: [docs/ky-dai/T-115-DAC-TA.md](docs/ky-dai/T-115-DAC-TA.md), phần T-115b
@@ -1384,7 +1384,7 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
 - **Ngoài phạm vi**: mọi thứ không ghi trong phần T-115b của đặc tả; luật cờ; máy chủ; mở khóa skin.
 
 ### T-115c · Bảng cờ: chấn động phong cấp, hiệu ứng chiến thắng
-- **Trạng thái**: 🟣 Chờ soát
+- **Trạng thái**: 🟣 Chờ soát. Đã gộp. Diff đúng đặc tả; điều phối chạy lại test đạt.
 - **Ưu tiên**: P0
 - **Gói ngữ cảnh**: CORE + KYDAO + KYDAI
 - **Đặc tả từng bước (BẮT BUỘC làm theo)**: [docs/ky-dai/T-115-DAC-TA.md](docs/ky-dai/T-115-DAC-TA.md), phần T-115c
