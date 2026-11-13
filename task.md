@@ -1350,18 +1350,19 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
 - **Ngoài phạm vi**: `kydao-ui.js`, hiệu ứng.
 
 ### T-115a · Bảng cờ: nạp module, giữ trạng thái skin, truyền vào hàm vẽ
-- **Trạng thái**: ⏳ Chờ T-110, T-113, T-114
+- **Trạng thái**: 🟣 Chờ soát
 - **Ưu tiên**: P0
 - **Gói ngữ cảnh**: CORE + KYDAO + KYDAI
 - **Đặc tả từng bước (BẮT BUỘC làm theo)**: [docs/ky-dai/T-115-DAC-TA.md](docs/ky-dai/T-115-DAC-TA.md), phần T-115a
 - **Khu vực chạm**: public/index.html (nạp script, `?v=`), public/js/app.js (chỉ mảng sự kiện `kd:*`), public/js/kydao-ui.js, test/kydao-ui-core.test.js
 - **Phụ thuộc**: T-110, T-113, T-114 · **Thợ**: gpt-6.1-terra (Codex CLI qua proxy) · **Soát**: Gemini 4 Argon (hoặc GPT Sol) + Điều phối chạy test và xem trình duyệt
-- **Người làm**: — · **Nhánh**: —
+- **Người làm**: gpt-6.1-terra · **Nhánh**: codex/T-115a-trang-thai-skin
 - **Mục tiêu**: bảng cờ biết skin hai bên từ `kd:start` và `kd:skin`, vẽ đúng trên 2D và 3D; chưa có nút bấm.
 - **Tiêu chí xong**:
-  - [ ] Đủ 7 bước a1 → a7 của đặc tả
-  - [ ] 3 test mới (makeSession đọc skins, applySkin đúng ván/bên, khóa nguy hiểm) đạt
+  - [x] Đủ 7 bước a1 → a7 của đặc tả
+  - [x] 3 test mới (makeSession đọc skins, applySkin đúng ván/bên, khóa nguy hiểm) đạt
   - [ ] `npm run check` sạch; `node --test test/kydao-ui-core.test.js test/kydao-ui-games.test.js test/kydao-app.test.js` đạt
+- **Ghi chú**: Sandbox chặn tạo tiến trình con (`spawn EPERM`); chạy trực tiếp 3 file test đạt 38/38, hai file JS qua `node --check`. Cần điều phối chạy lại `npm run check` và `node --test`.
 - **Ngoài phạm vi**: mọi thứ không ghi trong phần T-115a của đặc tả; luật cờ; máy chủ; mở khóa skin.
 
 ### T-115b · Bảng cờ: bộ chọn Lãnh địa, gửi skin, màn khai mở
