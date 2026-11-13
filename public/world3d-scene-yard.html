@@ -1,60 +1,193 @@
 <!doctype html>
-<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Thử cảnh Sân chùa</title>
-<style>html,body{margin:0;height:100%;background:#201b1a;color:#fff;font:15px sans-serif}canvas{display:block;width:100%;height:100%;touch-action:none}#tools{position:absolute;top:12px;left:12px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;background:#33271ddd;padding:8px;border-radius:8px}button,select{min-height:44px;font:inherit}#result{max-width:300px}</style>
-<script type="importmap">{"imports":{"three":"/vendor/three/three.module.js"}}</script><script src="/js/view-math.js"></script></head><body>
-<div id="tools"><button id="view">Góc nhìn: thứ ba</button><button id="day">Ngày / đêm</button><label>Đồ họa <select id="quality"><option value="low">Thấp</option><option value="medium" selected>Vừa</option><option value="high">Cao</option></select></label><span id="result">WASD để đi · kéo để nhìn · chạm sàn để tới</span></div><canvas id="canvas"></canvas>
-<script type="module">
-import * as THREE from 'three';
-import * as kit from '/js/world3d/kit.mjs';
-import { createAvatar } from '/js/world3d/avatar.mjs';
-import { build } from '/js/world3d/scenes/yard.mjs';
-const canvas = document.querySelector('#canvas'), result = document.querySelector('#result');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true }); renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-renderer.outputColorSpace = THREE.SRGBColorSpace;
-const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(52, 1, 0.1, 150);
-const view = ViewMath.createView(), raycaster = new THREE.Raycaster(), pointer = new THREE.Vector2();
-const tables = [
-  { id: 1, x: .17, z: .50, seats: [[.125,.50],[.215,.50]], occupants: ['An', 'Bình'] },
-  { id: 2, x: .83, z: .50, seats: [[.785,.50],[.875,.50]] },
-  { id: 3, x: .18, z: .76, seats: [[.12,.76],[.24,.76]] },
-  { id: 4, x: .82, z: .76, seats: [[.76,.76],[.88,.76]] }
-];
-let daylight = true, yard, destination = null;
-const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-function rebuild() {
-  yard?.dispose(); const quality = document.querySelector('#quality').value;
-  renderer.shadowMap.enabled = quality === 'high'; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-  yard = build({ THREE, kit, quality, reduceMotion: reduced, size: ViewMath.SCENE_SIZE.yard }); scene.add(yard.group); yard.update({ daylight, tables });
-}
-rebuild(); document.querySelector('#quality').onchange = rebuild;
-document.querySelector('#day').onclick = () => { daylight = !daylight; yard.update({ daylight, tables }); };
-document.querySelector('#view').onclick = () => { view.setMode(view.mode === 'third' ? 'first' : 'third'); document.querySelector('#view').textContent = 'Góc nhìn: ' + (view.mode === 'first' ? 'thứ nhất' : 'thứ ba'); };
-const avatars = Array.from({ length: 7 }, (_, index) => {
-  const avatar = createAvatar({ color: index % 12 }, { reducedMotion: reduced }); scene.add(avatar.group);
-  return { avatar, x: index ? .32 + (index % 3) * .16 : .5, z: index ? .48 + Math.floor(index / 3) * .13 : .88, phase: index * 2 };
-});
-const keys = new Set(); addEventListener('keydown', event => { keys.add(event.key.toLowerCase()); if (event.key.toLowerCase() === 'v' && !event.repeat) document.querySelector('#view').click(); });
-addEventListener('keyup', event => keys.delete(event.key.toLowerCase()));
-let down;
-canvas.addEventListener('pointerdown', event => { down = { x: event.clientX, y: event.clientY, moved: false }; canvas.setPointerCapture(event.pointerId); });
-canvas.addEventListener('pointermove', event => { if (!down) return; const dx = event.clientX - down.x, dy = event.clientY - down.y; if (Math.abs(dx) + Math.abs(dy) > 2) down.moved = true; view.rotate(-dx * .006, -dy * .006); down.x = event.clientX; down.y = event.clientY; });
-canvas.addEventListener('pointerup', event => { if (!down) return; if (!down.moved) { const rect = canvas.getBoundingClientRect(); pointer.set((event.clientX - rect.left) / rect.width * 2 - 1, 1 - (event.clientY - rect.top) / rect.height * 2); raycaster.setFromCamera(pointer, camera); const hit = yard.pick(raycaster); result.textContent = hit ? JSON.stringify(hit) : 'Không trúng vật'; if (hit?.type === 'floor') destination = hit; } down = null; });
-canvas.addEventListener('wheel', event => { event.preventDefault(); view.zoom(Math.exp(event.deltaY * .001)); }, { passive: false });
-let previous = performance.now();
-function frame(now) {
-  const dt = Math.min((now - previous) / 1000, .05); previous = now;
-  const self = avatars[0], forward = Number(keys.has('w')) - Number(keys.has('s')), sideways = Number(keys.has('d')) - Number(keys.has('a'));
-  if (forward || sideways) { Object.assign(self, ViewMath.moveTarget('yard', self.x, self.z, view.yaw, forward, sideways, dt * .22)); destination = null; }
-  else if (destination) { const dx = (destination.x - self.x) * 24, dz = (destination.z - self.z) * 15, distance = Math.hypot(dx, dz); if (distance < .1) destination = null; else { const step = Math.min(distance, dt * 3); self.x += dx / distance * step / 24; self.z += dz / distance * step / 15; } }
-  avatars.forEach((person, index) => {
-    if (index && !reduced) { person.x += Math.cos(now / 1800 + person.phase) * dt * .004; person.z += Math.sin(now / 2100 + person.phase) * dt * .004; }
-    const position = ViewMath.toWorld('yard', person.x, person.z); person.avatar.group.position.set(position.x, 0, position.z);
-    person.avatar.update({ name: index ? 'Khách ' + index : 'Mình', walking: index ? !reduced : !!(forward || sideways || destination), isSelf: !index, view: view.mode, yaw: view.yaw }, dt);
-  });
-  const target = ViewMath.toWorld('yard', self.x, self.z), pose = ViewMath.cameraPose(view, target, yard.bounds);
-  camera.position.set(pose.pos.x, pose.pos.y, pose.pos.z); camera.lookAt(pose.look.x, pose.look.y, pose.look.z);
-  const w = canvas.clientWidth, h = canvas.clientHeight; if (canvas.width !== Math.round(w * renderer.getPixelRatio()) || canvas.height !== Math.round(h * renderer.getPixelRatio())) { renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
-  yard.update({ daylight, tables }, dt); renderer.render(scene, camera); requestAnimationFrame(frame);
-}
-requestAnimationFrame(frame);
-</script></body></html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chánh điện 3D · Chùa Tâm An</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;background:#211914;color:#f3dfba;font:14px/1.5 system-ui,sans-serif}
+    header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 22px;border-bottom:1px solid #80623f;flex-wrap:wrap}
+    h1{margin:0;font:500 26px Georgia,serif}p{margin:3px 0;color:#c9b796;font-size:12px}
+    .yard-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}button,select,a{font:inherit;color:#f3dfba;background:#39291f;border:1px solid #94764c;border-radius:6px;min-height:44px;padding:10px 12px}button{cursor:pointer}a{text-decoration:none}select{margin-left:5px}
+    #stage{height:calc(100dvh - 105px);min-height:420px;position:relative;overflow:hidden}canvas{width:100%;height:100%;display:block;touch-action:none}
+    .yard-caption{position:absolute;left:18px;top:18px;pointer-events:none;border-left:2px solid #d4ae6a;padding:6px 12px;background:#211914ba;max-width:275px;font-size:12px;color:#dfcda9}
+    .yard-caption strong{display:block;letter-spacing:.13em;font-size:10px;color:#e8bd70;margin-bottom:5px}
+    #pick{position:absolute;left:16px;bottom:14px;right:16px;background:#211914d9;border:1px solid #94764c77;padding:9px 12px;border-radius:5px;pointer-events:none;font-size:12px;white-space:pre-wrap;overflow-wrap:anywhere}
+    @media(max-width:650px){header{padding:10px 12px;gap:8px}h1{font-size:21px}.yard-controls{gap:5px}button,select,a{font-size:12px;padding:10px 8px}#stage{height:calc(100dvh - 165px)}.yard-caption{left:10px;top:10px;max-width:220px;font-size:11px}}
+    @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+  </style>
+  <script type="importmap">{"imports":{"three":"/vendor/three/three.module.js?v=0.187.0"}}</script>
+  <script src="/js/view-math.js?v=1"></script>
+</head>
+<body>
+  <header>
+    <div><h1>Chánh điện · Tâm An</h1><p>Gỗ son, ánh nến và một khoảng lặng</p></div>
+    <div class="yard-controls">
+      <button id="view" type="button">Góc nhìn thứ nhất · V</button>
+      <label>Đồ họa<select id="quality"><option value="low">Thấp</option><option value="medium" selected>Vừa</option><option value="high">Cao</option></select></label>
+      <button id="day" type="button">Chuy?n sang ??m</button><button id="reset" type="button">Về lối giữa</button><a href="/">Về chùa</a>
+    </div>
+  </header>
+  <main id="stage" aria-label="Trang thử Chánh điện ba chiều">
+    <div class="yard-caption"><strong>CHÁNH ĐIỆN / TRANG THỬ</strong>WASD hoặc chạm sàn để đi.<br>Kéo để nhìn quanh. Cuộn/chụm để thu phóng.<br>Chạm tượng, bát hương, ống xăm, tủ kinh để thử chọn vật.</div>
+    <output id="pick" role="status">Đang thắp đèn Chánh điện…</output>
+  </main>
+  <script type="module">
+    import * as THREE from 'three';
+    import * as Kit from '/js/world3d/kit.mjs?v=2';
+    import { createAvatar } from '/js/world3d/avatar.mjs?v=1';
+    import { build } from '/js/world3d/scenes/yard.mjs?v=2';
+
+    const stage = document.getElementById('stage'), output = document.getElementById('pick');
+    const quality = document.getElementById('quality'), viewButton = document.getElementById('view');
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+    const options = new URLSearchParams(location.search);
+    if (['low', 'medium', 'high'].includes(options.get('quality'))) quality.value = options.get('quality');
+    try {
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.15; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      stage.prepend(renderer.domElement);
+      const scene = new THREE.Scene(); scene.background = new THREE.Color(0x33251b);
+      const camera = new THREE.PerspectiveCamera(62, 1, 0.06, 150);
+      const view = ViewMath.createView(); view.dist = 5.7; view.pitch = 0.34;
+      const raycaster = new THREE.Raycaster(), cursor = new THREE.Vector2();
+      const keys = new Set(), pointers = new Map();
+      const self = { x: 0.5, z: 0.60, yaw: Math.PI };
+      const hero = createAvatar({ g: 'nam', c: 6, h: 1 }, { isSelf: true }); scene.add(hero.group);
+      const names = ['Thiện Tâm', 'An Nhiên', 'Minh Tuệ', 'Tịnh Âm', 'Diệu Liên', 'Tâm Hòa'];
+      const guests = names.map((name, i) => {
+        const avatar = createAvatar({ g: i % 2 ? 'nu' : 'nam', c: [2, 8, 4, 10, 1, 7][i], h: i % 4 });
+        scene.add(avatar.group); return { avatar, name, phase: i * Math.PI / 3 };
+      });
+      // Bầu phản xạ tự vẽ giúp tượng và đồng bắt ánh ấm, không tải ảnh ngoài.
+      const sky = document.createElement('canvas'); sky.width = 256; sky.height = 128;
+      const c = sky.getContext('2d'), gradient = c.createLinearGradient(0, 0, 0, 128);
+      gradient.addColorStop(0, '#e1c7a2'); gradient.addColorStop(0.5, '#82705b'); gradient.addColorStop(1, '#35291f');
+      c.fillStyle = gradient; c.fillRect(0, 0, 256, 128); c.fillStyle = '#ffe6ac';
+      c.fillRect(35, 30, 30, 30); c.fillRect(170, 30, 24, 32);
+      const environment = new THREE.CanvasTexture(sky); environment.colorSpace = THREE.SRGBColorSpace;
+      environment.mapping = THREE.EquirectangularReflectionMapping; scene.environment = environment; scene.environmentIntensity = 0.65;
+      let yard, destination = null, dragging = null, pinch = null, previous = 0, time = 0, stopped = false;
+      // B?n sao fixture YARD_TABLES t? hall.js; c?nh kh?ng gi? t?a ?? d? ph?ng.
+      const tables = [
+        { id: 1, x: .17, z: .50, seats: [[.125,.50],[.215,.50]], name: 'B?n 1 ? C? t??ng', occupants: [{ name: 'Thi?n An', look: {g:'nam',c:9,h:2} }, { name: 'T?m B?nh', look: {g:'nu',c:4,h:1} }] },
+        { id: 2, x: .83, z: .50, seats: [[.785,.50],[.875,.50]], name: 'B?n 2 ? C? vua', occupants: ['Minh ??c', null] },
+        { id: 3, x: .18, z: .76, seats: [[.12,.76],[.24,.76]], name: 'B?n 3 ? tr?ng' },
+        { id: 4, x: .82, z: .76, seats: [[.76,.76],[.88,.76]], name: 'B?n 4 ? C? v?y', occupants: ['Di?u T?m', 'An L?c'] }
+      ];
+      let daylight = options.get('time') !== 'night';
+      const dayButton = document.getElementById('day');
+      function refreshDayButton() { dayButton.textContent = daylight ? 'Chuy?n sang ??m' : 'Chuy?n sang ng?y'; }
+      dayButton.addEventListener('click', () => { daylight = !daylight; refreshDayButton(); });
+      refreshDayButton();
+
+      function rebuild() {
+        yard?.dispose(); Kit.disposeKit();
+        yard = build({ THREE, kit: Kit, size: ViewMath.SCENE_SIZE.yard, quality: quality.value, reduceMotion: reduced.matches });
+        scene.add(yard.group); renderer.shadowMap.enabled = quality.value === 'high';
+        renderer.setPixelRatio(quality.value === 'low' ? 1 : Math.min(devicePixelRatio, 2));
+        output.textContent = 'Đã dựng cảnh. Chạm một vật để xem kết quả pick.';
+      }
+      function resize() {
+        renderer.setSize(stage.clientWidth, stage.clientHeight, false);
+        camera.aspect = stage.clientWidth / stage.clientHeight; camera.updateProjectionMatrix();
+      }
+      function toggleView() {
+        view.setMode(view.mode === 'first' ? 'third' : 'first');
+        view.pitch = view.mode === 'first' ? 0.04 : 0.34;
+        viewButton.textContent = view.mode === 'first' ? 'Góc nhìn thứ ba · V' : 'Góc nhìn thứ nhất · V';
+      }
+      function choose(event) {
+        const rect = renderer.domElement.getBoundingClientRect();
+        cursor.set((event.clientX - rect.left) / rect.width * 2 - 1, 1 - (event.clientY - rect.top) / rect.height * 2);
+        raycaster.setFromCamera(cursor, camera);
+        const hit = yard.pick(raycaster);
+        output.textContent = hit ? JSON.stringify(hit) : 'Không chạm vật tương tác.';
+        if (hit?.kind === 'floor') destination = { x: hit.x, z: hit.z };
+      }
+      const canvas = renderer.domElement;
+      canvas.addEventListener('pointerdown', event => {
+        if (event.pointerType === 'mouse' && event.button !== 0) return;
+        canvas.setPointerCapture(event.pointerId);
+        pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+        if (pointers.size === 1) dragging = { id: event.pointerId, x: event.clientX, y: event.clientY, travel: 0 };
+        else { if (dragging) dragging.travel = Infinity; const [a, b] = [...pointers.values()]; pinch = Math.hypot(a.x - b.x, a.y - b.y); }
+      });
+      canvas.addEventListener('pointermove', event => {
+        if (!pointers.has(event.pointerId)) return;
+        pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+        if (pointers.size === 2) {
+          const [a, b] = [...pointers.values()], distance = Math.hypot(a.x - b.x, a.y - b.y);
+          if (pinch && distance) view.zoom(pinch / distance); pinch = distance; return;
+        }
+        if (!dragging || dragging.id !== event.pointerId) return;
+        const dx = event.clientX - dragging.x, dy = event.clientY - dragging.y;
+        dragging.travel += Math.hypot(dx, dy); dragging.x = event.clientX; dragging.y = event.clientY;
+        view.rotate(-dx * 0.005, dy * 0.004);
+      });
+      function endPointer(event) {
+        if (event.type === 'pointerup' && dragging?.id === event.pointerId && dragging.travel < 7) choose(event);
+        pointers.delete(event.pointerId); pinch = null;
+        if (!pointers.size) dragging = null;
+      }
+      canvas.addEventListener('pointerup', endPointer); canvas.addEventListener('pointercancel', endPointer);
+      canvas.addEventListener('wheel', event => { event.preventDefault(); view.zoom(Math.exp(event.deltaY * 0.001)); }, { passive: false });
+      function keyDown(event) {
+        if (event.target.closest('select,input')) return;
+        const key = event.key.toLowerCase();
+        if (['w', 'a', 's', 'd', 'v', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(key)) event.preventDefault();
+        keys.add(key); if (key === 'v' && !event.repeat) toggleView();
+      }
+      function keyUp(event) { keys.delete(event.key.toLowerCase()); }
+      function clearKeys() { keys.clear(); }
+      addEventListener('keydown', keyDown); addEventListener('keyup', keyUp); addEventListener('blur', clearKeys);
+      document.getElementById('reset').addEventListener('click', () => {
+        self.x = 0.5; self.z = 0.60; destination = null; view.yaw = 0; view.dist = 5.7;
+        view.pitch = view.mode === 'first' ? 0.04 : 0.34;
+      });
+      viewButton.addEventListener('click', toggleView); quality.addEventListener('change', rebuild);
+      reduced.addEventListener('change', rebuild);
+      const observer = new ResizeObserver(resize); observer.observe(stage);
+      function animate(timestamp) {
+        if (stopped) return;
+        const dt = Math.min(0.05, (timestamp - (previous || timestamp)) / 1000); previous = timestamp;
+        if (!reduced.matches) time += dt;
+        const fwd = Number(keys.has('w') || keys.has('arrowup')) - Number(keys.has('s') || keys.has('arrowdown'));
+        const strafe = Number(keys.has('d') || keys.has('arrowright')) - Number(keys.has('a') || keys.has('arrowleft'));
+        let next = null;
+        if (fwd || strafe) { destination = null; next = ViewMath.moveTarget('yard', self.x, self.z, view.yaw, fwd, strafe, dt * 0.23); }
+        else if (destination) {
+          const from = ViewMath.toWorld('yard', self.x, self.z), to = ViewMath.toWorld('yard', destination.x, destination.z);
+          const dx = to.x - from.x, dz = to.z - from.z, distance = Math.hypot(dx, dz);
+          if (distance < 0.035) { self.x = destination.x; self.z = destination.z; destination = null; }
+          else next = ViewMath.moveTarget('yard', self.x, self.z, Math.atan2(dx, -dz), 1, 0, Math.min(dt * 0.23, distance / ViewMath.SCENE_SIZE.yard.depth));
+        }
+        if (next) { self.yaw = Math.atan2((next.x - self.x) * 24, (next.z - self.z) * 15); Object.assign(self, next); }
+        const position = ViewMath.toWorld('yard', self.x, self.z); hero.group.position.set(position.x, 0, position.z);
+        hero.update({ isSelf: true, name: 'Mình', yaw: self.yaw, view: view.mode, walking: !!next, reducedMotion: reduced.matches }, dt);
+        guests.forEach(({ avatar, name, phase }, i) => {
+          const a = time * 0.13 + phase, x = 0.5 + Math.sin(a) * (0.15 + i % 2 * 0.04), z = 0.66 + Math.cos(a) * 0.14;
+          const p = ViewMath.toWorld('yard', x, z); avatar.group.position.set(p.x, 0, p.z);
+          avatar.update({ name, walking: !reduced.matches, yaw: Math.atan2(Math.cos(a) * 24 * (0.15 + i % 2 * 0.04), -Math.sin(a) * 2.1), reducedMotion: reduced.matches }, dt);
+        });
+        yard.update({ daylight, tables }, dt); scene.environmentIntensity = daylight ? 0.65 : 0.13;
+        const pose = ViewMath.cameraPose(view, hero.group.position, yard.bounds);
+        camera.position.set(pose.pos.x, pose.pos.y, pose.pos.z);
+        camera.lookAt(pose.look.x, pose.look.y, pose.look.z); camera.updateMatrixWorld(); renderer.render(scene, camera);
+        requestAnimationFrame(animate);
+      }
+      function cleanup() {
+        stopped = true; observer.disconnect(); yard.dispose(); hero.dispose(); guests.forEach(guest => guest.avatar.dispose());
+        Kit.disposeKit(); environment.dispose(); renderer.dispose();
+        removeEventListener('keydown', keyDown); removeEventListener('keyup', keyUp); removeEventListener('blur', clearKeys);
+        reduced.removeEventListener('change', rebuild);
+      }
+      addEventListener('pagehide', cleanup, { once: true });
+      rebuild(); resize(); if (options.get('view') === 'first') toggleView(); requestAnimationFrame(animate);
+    } catch (error) {
+      output.textContent = 'Chưa dựng được cảnh: ' + error.message;
+    }
+  </script>
+</body>
+</html>
