@@ -72,6 +72,8 @@
   function fieldImage2(id, game) { return has(FIELDS, id) ? '/img/kydao/fields2/' + id + (game === 'chess' ? '-chess' : '-xiangqi') + '.webp' : null; }
   /** Huy hiệu tròn của chủ đề sân (256x256), dùng trong bộ chọn và cạnh khẩu hiệu. */
   function crest(id) { return has(FIELDS, id) ? '/img/kydao/ui/crest-' + id + '.webp' : null; }
+  /** Ảnh quân 2D render từ mô hình 3D: lưới 7 cột (K Q R B N P disc) x 2 hàng (a trên, b dưới), mỗi ô 128 px. */
+  function piecesAtlas(id) { return has(PIECES, id) ? '/img/kydao/pieces2d/' + id + '.webp' : null; }
   function fieldModel(id) { return has(FIELDS, id) ? '/models/kydao/fields/' + id + '.glb' : null; }
   function piecesModel(id) { return has(PIECES, id) ? '/models/kydao/pieces/' + id + '.glb' : null; }
   function thumb(kind, id) {
@@ -79,5 +81,5 @@
     return ok ? '/img/kydao/thumbs/' + kind + '-' + id + '.webp' : null;
   }
 
-  return { GAMES, FIELDS, PIECES, supports, normalize, field, pieces, fieldImage, fieldImage2, crest, fieldModel, piecesModel, thumb };
+  return { GAMES, FIELDS, PIECES, supports, normalize, field, pieces, fieldImage, fieldImage2, crest, piecesAtlas, fieldModel, piecesModel, thumb };
 });
