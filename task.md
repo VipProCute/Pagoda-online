@@ -79,7 +79,7 @@
 | T-092 | ui-harness và ảnh chụp cho 3D | 🟣 Chờ soát | P2 | CORE + OPS | gpt-6-luna (Codex CLI qua proxy) |
 | T-093 | README, Sổ tay cho 3D và góc nhìn | 🟣 Chờ soát | P2 | CORE + DOCS | gemini-3.8-flash-high (Codex CLI qua proxy) |
 | T-100 | Nhân vật 3D bám sát 2D: hào quang, pháp tướng, quỷ, trang phục, Obito | 🟣 Chờ soát | P0 | CORE + HALL | gpt-6.1-sol |
-| T-101 | Nhạc riêng cho từng môn cờ | ⏳ T-034, 👤 file nhạc | P2 | CORE + KYDAO | — |
+| T-101 | Nhạc riêng cho từng môn cờ | 🟣 Chờ soát | P2 | CORE + KYDAO | gpt-6-luna (Codex CLI qua proxy) |
 
 Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạm `package.json`). **T-005**, **T-007**, **T-002** làm song song được với nhóm trên.
 Đợt 2026-11: làm **T-003, T-004, T-006** trước (T-004 gỡ nút thắt `package.json` cho mọi thẻ thêm file JS; T-006 là cổng "CI xanh"). Sau đó theo lịch 6 đợt ở [docs/KE-HOACH-DOT-2026-11.md §10.3](docs/KE-HOACH-DOT-2026-11.md#103-lịch-theo-đợt-và-khóa-vùng-nóng).
@@ -1239,11 +1239,14 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
 - **Ghi chú bàn giao**: Avatar 11/11, hall-view3d 10/10, hall-npcs 4/4, scene-arena 10/10 đạt khi chạy trực tiếp; cú pháp các file sửa và module trang thử đạt. `npm run check` / `node --test` bị sandbox chặn spawn EPERM; chờ điều phối chạy lại và xem trình duyệt. Hiệu ứng Canvas dùng hình tĩnh chung có nhịp thở; chi tiết chuyển động được giản lược. Một dòng ngoài khu vực: tăng import avatar ở scenes/arena.mjs để tránh cache cũ. Báo cáo: BAN-GIAO-T-100.md (không commit); để nguyên chưa commit theo chỉ dẫn điều phối.
 
 ### T-101 · Nhạc riêng cho từng môn cờ
-- **Trạng thái**: ⏳ Chờ T-034 và file nhạc do chủ dự án tạo (prompt ở báo cáo 13/11)
+- **Trạng thái**: 🟣 Chờ soát. Điều phối soát 13/11 (thợ gpt-6-luna): check sạch, npm test 849 đạt 0 trượt 3 bỏ qua; đã đổi nhạc cờ tướng và cờ úp cho nhau theo ý chủ dự án và sửa NOTICE cho khớp. CHƯA nghe thử trong game (điều phối không nghe được âm thanh): cần chủ dự án mở một ván để nghe chuyển nhạc và trả nhạc.
 - **Ưu tiên**: P2
 - **Gói ngữ cảnh**: CORE + KYDAO
 - **Khu vực chạm**: public/js/audio.js, public/js/kydao-ui.js, public/audio/kydao/*.mp3, public/audio/NOTICE.txt, public/index.html (?v=)
+- **Người làm**: gpt-6-luna (Codex CLI qua proxy)
+- **Nhánh**: codex/T-101-nhac-co
 - **Mục tiêu**: mở bàn cờ thì nhạc nền chùa nhỏ dần, phát nhạc riêng của môn (cờ vua, cờ tướng, cờ úp, cờ vây, caro); rời bàn thì trả lại nhạc cũ; theo nút tắt tiếng chung.
+- **Ghi chú bàn giao**: Ánh xạ mã môn → MP3, chuyển nhạc nền và khôi phục theo cảnh; test audio 3/3, kydao-app 16/16 đạt. `npm run check` bị sandbox chặn spawn `node.exe` (EPERM); `git add`/commit bị từ chối tạo `.git/worktrees/T-101/index.lock` (Permission denied). Cú pháp file sửa đã kiểm bằng `node --check`. Xem `BAN-GIAO-T-101.md`.
 
 **Ý tưởng của đợt 3D (⚪, chờ chủ dự án chọn; mô tả ở KE-HOACH-3D §3):** T-094 ngày đêm và đèn lồng · T-095 tiếng nói theo khoảng cách · T-096 trang trí lễ theo âm lịch · T-097 sàn PK 3D máy quay thứ ba cố định · T-098 chụp ảnh lưu niệm · T-099 bản đồ nhỏ.
 

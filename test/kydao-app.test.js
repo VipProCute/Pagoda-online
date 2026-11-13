@@ -13,7 +13,7 @@ const table = (extra = {}) => ({ table: 1, seats: [null, null], status: 'free', 
 const start = (extra = {}) => ({ gameId: 'van-1', game: 'chess', table: 1, you: 'a', a: { pid: 7 }, b: { pid: 8 }, ...extra });
 
 function setup() {
-  const elements = new Map(), events = new Map(), sent = [], applied = [], draws = [], messages = [], logins = [], timers = new Map();
+  const elements = new Map(), events = new Map(), sent = [], applied = [], draws = [], messages = [], logins = [], timers = new Map(), musicGames = [];
   let tables = [table()], response = null, opened = null, hooks = null, timer = 0;
   function el(id) {
     if (!elements.has(id)) {
@@ -45,7 +45,7 @@ function setup() {
   };
   const ctx = {
     $, $$: select, socket, KydaoUI: ui, me: 7, joined: true, cfg: { kydao: { enabled: true } }, curScene: 'yard', personId: 8,
-    Places: { current: 'hall' }, SFX: { ting() {}, pop() {}, mo() {} },
+    Places: { current: 'hall' }, SFX: { ting() {}, pop() {}, mo() {}, setMusicGame(game) { musicGames.push(game); } },
     Hall: { setTables(t) { draws.push(copy(t)); }, player(id) { return { id, name: '<img onerror=1>' }; } },
     serverNow: () => 1000, toast: text => messages.push(text), needLogin: text => logins.push(text), stopTalk() {},
     openDlg: id => { el('dlg-' + id).open = true; }, closeDlg: id => { el('dlg-' + id).open = false; },
@@ -55,7 +55,7 @@ function setup() {
   function $(s) { return select(s); }
   vm.createContext(ctx); vm.runInContext(block, ctx);
   return {
-    ctx, sent, applied, draws, messages, logins, el, radios, timers, ui,
+    ctx, sent, applied, draws, messages, logins, el, radios, timers, ui, musicGames,
     push: (name, data) => events.get(name)(data), click: id => el(id).listeners.click(),
     setTables(t) { tables = t; }, respond(fn) { response = fn; },
     get opened() { return opened; }, get hooks() { return hooks; }
@@ -105,7 +105,9 @@ test('Bàn đang đấu mở người xem; đóng bảng gửi unwatch', () => {
     h.push('kd:start', start({ you: undefined })); cb({ ok: true }); return true;
   });
   h.ctx.openKydaoTable(1, -1); assert.equal(h.opened.you, undefined);
+  assert.deepEqual(h.musicGames, ['chess']);
   h.ui.close(); assert.deepEqual(h.sent.at(-1), { name: 'kd:unwatch', data: { table: 1 } });
+  assert.deepEqual(h.musicGames, ['chess', null]);
 });
 
 test('Môn chưa có bảng không xem hoặc sẵn sàng được', () => {
@@ -127,7 +129,7 @@ test('Đổi lựa chọn luật khóa sẵn sàng tới khi máy chủ xác nh�
 
 test('Đấu lại dùng ready rồi start mới đổi bên, giữ đường âm thanh của chùa', () => {
   const h = setup(), sounds = [];
-  h.ctx.SFX = { mo: () => sounds.push('đi'), pop: () => sounds.push('ăn'), ting: () => sounds.push('chiếu') };
+  h.ctx.SFX = { mo: () => sounds.push('đi'), pop: () => sounds.push('ăn'), ting: () => sounds.push('chiếu'), setMusicGame() {} };
   h.push('kd:start', start()); h.push('kd:end', { gameId: 'van-1', result: 'draw' });
   h.hooks.send('kd:ready', { table: 1, ready: true });
   h.push('kd:start', start({ gameId: 'van-2', you: 'b', a: { pid: 8 }, b: { pid: 7 } }));

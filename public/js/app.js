@@ -333,12 +333,13 @@
   socket.on('connect_error', err => { $('#conn').hidden = false; if (err && err.message && /kết nối/.test(err.message)) $('#conn').textContent = err.message; });
 
   /* ---------- Kỳ Đạo: bàn đá, lời mời và bảng cờ ---------- */
-  const KD_NAMES = { chess: 'Cờ vua', xiangqi: 'Cờ tướng' };
+  const KD_NAMES = { chess: 'Cờ vua', xiangqi: 'Cờ tướng', jieqi: 'Cờ tướng úp', go: 'Cờ vây', gomoku: 'Caro' };
+  const KD_BOARD_GAMES = new Set(['chess', 'xiangqi']);
   let kdTables = [], kdLobby = null, kdTarget = null, kdStart = null, kdReconnectWatch = null;
   let kdPlayerPid = null;                                  // ván phục hồi có thể vẫn giữ pid trước khi nối lại
   let kdFetch = 0, kdOffers = [], kdOfferTimer = 0;
   const kydaoEnabled = () => !!(cfg && cfg.kydao && cfg.kydao.enabled);
-  const kdSupported = game => Object.prototype.hasOwnProperty.call(KD_NAMES, game);
+  const kdSupported = game => KD_BOARD_GAMES.has(game);
   const kdIsMe = pid => pid === me || (kdPlayerPid != null && pid === kdPlayerPid);
   function kdSend(event, data, cb) {
     socket.emit(event, data, r => {
@@ -369,12 +370,14 @@
     if (!start || !kdSupported(start.game)) { toast('Môn cờ này sắp có bảng chơi.'); return; }
     closeDlg('kd-lobby'); closeDlg('person'); kdLobby = null; kdTarget = null;
     kdStart = start;
+    SFX.setMusicGame(start.game);
     if (start.you) kdPlayerPid = start[start.you].pid;
     KydaoUI.open(start, {
       send: kdSend, now: serverNow,
       sound(kind) { if (kind === 'check') SFX.ting(); else if (kind === 'capture') SFX.pop(); else SFX.mo(); },
       onClose() {
         const old = kdStart; kdStart = null;
+        SFX.setMusicGame(null);
         if (old && !old.you) kdSend('kd:unwatch', { table: old.table });
       }
     });
