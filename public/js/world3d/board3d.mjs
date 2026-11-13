@@ -144,6 +144,14 @@ export function pillarPose(elapsed, o = FX) {
   return { reach, opacity, done: elapsed >= o.pillar };
 }
 
+/** T-122 · Độ dịch ngang của texture nước ở thời điểm now (ms): chảy từ trái sang phải, một vòng khoảng 33 giây. */
+export function riverOffset(now) {
+  const t = Number.isFinite(now) ? now : 0;
+  return -((t * 0.00003) % 1) || 0; // `|| 0` để t = 0 ra 0 chứ không phải -0
+}
+/** Khoảng cách tối thiểu (ms) giữa hai lần vẽ lại để sông chảy: ~30 khung/giây ở Vừa/Cao, ~10 ở Thấp. */
+export function riverFrameGap(quality) { return quality === 'low' ? 100 : 33; }
+
 /** Số giả ngẫu nhiên tất định theo chỉ số (không dùng Math.random: hình phải giống nhau mọi lần vẽ). */
 export function hash01(n) {
   let x = Math.imul((n | 0) ^ 0x9e3779b9, 0x85ebca6b);
@@ -320,7 +328,7 @@ export function createBoard3D({ canvas, game, skins: catalogInput, quality: qual
   }
   const floor = mesh(new THREE.PlaneGeometry(180, 180), material('#354b3e', 0.95), scene, 0, -0.5);
   floor.rotation.x = -Math.PI / 2; floor.castShadow = false;
-  let slab, trim, surface, boardMaterial;
+  let slab, trim, surface, boardMaterial, water = null, river = [], lastRiver = 0, dirty = true;
 
   // Màu gỗ mặc định của mặt bàn; skin nửa sân vẽ lại đúng các nét này bằng màu palette.
   const WOOD = { light: '#ecd5a4', dark: '#886044', vein: 'rgba(75,39,13,.07)', line: '#654522', text: '#71502e', frameOuter: '#e2bb72', frameInner: '#58361f', label: '#f5dfaf' };
@@ -355,10 +363,7 @@ export function createBoard3D({ canvas, game, skins: catalogInput, quality: qual
       }
       if (!layout.stones) {
         for (const r of [0, 7]) { line(3, r, 5, r + 2); line(5, r, 3, r + 2); }
-        if (k.river) {
-          ctx.font = 'bold .38px "SimSun", "Times New Roman", serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-          ctx.fillStyle = k.text; ctx.fillText(state.vi ? 'Sở Hà' : '楚河', -2, 0); ctx.fillText(state.vi ? 'Hán Giới' : '漢界', 2, 0);
-        }
+        // Dải sông (nước, bờ cát, chữ) là mô hình riêng trong rebuildBoard, không vẽ vào mặt bàn.
         // Dấu chân pháo và tốt, ngắt ở đường biên.
         ctx.lineWidth = 0.018;
         for (const r of [2, 3, 6, 7]) for (const c of (r === 2 || r === 7 ? [1, 7] : [0, 2, 4, 6, 8])) {
@@ -387,6 +392,61 @@ export function createBoard3D({ canvas, game, skins: catalogInput, quality: qual
     }
   }
 
+  /** Mặt nước 256x64: nền sâu–sáng và 12 vệt sóng trắng mờ; số chu kỳ nguyên nên cuộn vòng không lộ mối nối. */
+  function waterTexture() {
+    const map = texture(256, 64, (ctx, tw, th) => {
+      const g = ctx.createLinearGradient(0, 0, 0, th);
+      g.addColorStop(0, '#9fc7d2'); g.addColorStop(0.5, '#ffffff'); g.addColorStop(1, '#9fc7d2');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, tw, th);
+      ctx.lineCap = 'round';
+      for (let i = 0; i < 12; i++) {
+        const y0 = (i + 0.5) * th / 12, cycles = 2 + (i % 3), amp = 1.2 + (i % 4) * 0.5;
+        ctx.strokeStyle = 'rgba(255,255,255,' + (0.16 + (i % 3) * 0.07) + ')'; ctx.lineWidth = 1.2 + (i % 2) * 0.8;
+        ctx.beginPath();
+        for (let x = 0; x <= tw; x += 8) {
+          const y = y0 + Math.sin(x / tw * Math.PI * 2 * cycles + i * 1.9) * amp;
+          if (!x) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      }
+    });
+    map.wrapS = THREE.RepeatWrapping;
+    return map;
+  }
+  /** Chữ Sở Hà / Hán Giới: texture trong suốt, chữ trắng ngà có viền tối. */
+  function riverLabelTexture(width) {
+    return texture(1024, Math.round(1024 / width), (ctx, tw, th) => {
+      ctx.scale(tw / width, th); ctx.translate(width / 2, 0.5);
+      ctx.font = 'bold .38px "SimSun", "Times New Roman", serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.lineJoin = 'round'; ctx.lineWidth = 0.06; ctx.strokeStyle = 'rgba(8,30,40,.75)'; ctx.fillStyle = '#fff8e2';
+      for (const [text, x] of [[state.vi ? 'Sở Hà' : '楚河', -2], [state.vi ? 'Hán Giới' : '漢界', 2]]) { ctx.strokeText(text, x, 0); ctx.fillText(text, x, 0); }
+    });
+  }
+  function disposeRiver() {
+    for (const m of river) {
+      board.remove(m); resources.delete(m.geometry); m.geometry.dispose();
+      if (m.material.map) { resources.delete(m.material.map); m.material.map.dispose(); }
+      resources.delete(m.material); m.material.dispose();
+    }
+    river = []; water = null;
+  }
+  /** Dòng sông giữa bàn cờ tướng và cờ úp: nước, hai bờ cát, chữ. Mọi skin nửa sân dừng ở bờ nên không phủ lên đây. */
+  function buildRiver() {
+    disposeRiver();
+    if (layout.chess || layout.stones) return;
+    const width = boardSize(layout).w - 0.4;
+    water = mesh(new THREE.PlaneGeometry(width, 1), material('#2f8aa3', 0.15, { metalness: 0.1, transparent: true, opacity: 0.92, map: waterTexture() }), board, 0, 0.004);
+    water.rotation.x = -Math.PI / 2; water.castShadow = false; water.name = 'kd-river-water';
+    water.material.map.offset.x = media.matches ? 0 : riverOffset(performance.now());
+    river.push(water);
+    const sand = material('#d9c08a', 0.8);
+    for (const sign of [-1, 1]) {
+      const bank = mesh(new THREE.BoxGeometry(width, 0.02, 0.05), sand, board, 0, 0.01, sign * 0.475); bank.name = 'kd-river-bank'; river.push(bank);
+    }
+    const label = mesh(new THREE.PlaneGeometry(width, 1), keep(new THREE.MeshBasicMaterial({ map: riverLabelTexture(width), transparent: true, depthWrite: false, toneMapped: false })), board, 0, 0.006);
+    label.rotation.x = -Math.PI / 2; label.castShadow = false; label.receiveShadow = false; label.name = 'kd-river-label'; river.push(label);
+  }
+
   function rebuildBoard() {
     for (const m of [slab, trim, surface]) if (m) { board.remove(m); resources.delete(m.geometry); m.geometry.dispose(); }
     const { w, d } = boardSize(layout);
@@ -396,6 +456,7 @@ export function createBoard3D({ canvas, game, skins: catalogInput, quality: qual
     boardMaterial = material('#ffffff', 0.48, { map: boardTexture() });
     surface = mesh(new THREE.PlaneGeometry(w, d), boardMaterial, board);
     surface.rotation.x = -Math.PI / 2; surface.castShadow = false;
+    buildRiver();
     vi = !!state.vi;
   }
 
@@ -1121,8 +1182,16 @@ export function createBoard3D({ canvas, game, skins: catalogInput, quality: qual
     camera.position.set(Math.sin(yaw) * Math.cos(elevation) * distance, Math.sin(elevation) * distance, Math.cos(yaw) * Math.cos(elevation) * distance);
     camera.lookAt(0, 0, 0); camera.updateMatrixWorld();
   }
+  /** Sông chỉ chảy khi có sông, canvas còn trong trang, tab đang hiện và không giảm chuyển động. */
+  function riverLive() {
+    return !!water && !stopped && !media.matches && !!canvas.isConnected && document.visibilityState !== 'hidden';
+  }
   function render(now) {
     frame = 0; if (stopped) return;
+    const live = riverLive(), tick = live && !(now - lastRiver < riverFrameGap(quality));
+    if (!dirty && !tick) { if (live) frame = requestAnimationFrame(render); return; } // chỉ chờ tới nhịp sông kế tiếp
+    dirty = false;
+    if (tick) { lastRiver = now; water.material.map.offset.x = riverOffset(now); }
     if (retired.length) flushRetired();
     let moving = false;
     for (const p of [...pieces.values(), ...captured]) if (p.started) {
@@ -1138,9 +1207,9 @@ export function createBoard3D({ canvas, game, skins: catalogInput, quality: qual
       shaken = !!(shake.x || shake.y);
     }
     renderer.render(scene, camera);
-    if (moving || busy) requestRender();
+    if (moving || busy) requestRender(); else if (riverLive() && !frame) frame = requestAnimationFrame(render);
   }
-  function requestRender() { if (!stopped && !frame) frame = requestAnimationFrame(render); }
+  function requestRender() { dirty = true; if (!stopped && !frame) frame = requestAnimationFrame(render); }
   function resize() {
     if (stopped) return;
     const rect = canvas.getBoundingClientRect();
@@ -1243,6 +1312,8 @@ export function createBoard3D({ canvas, game, skins: catalogInput, quality: qual
   const events = { pointerdown: down, pointermove: move, pointerup: up, pointercancel: up, lostpointercapture: up, wheel, keydown };
   for (const [name, fn] of Object.entries(events)) canvas.addEventListener(name, fn, name === 'wheel' ? { passive: false } : undefined);
   media.addEventListener('change', requestRender);
+  const onVisible = () => { if (riverLive()) requestRender(); };
+  if (typeof document.addEventListener === 'function') document.addEventListener('visibilitychange', onVisible);
   const observer = new ResizeObserver(resize); observer.observe(canvas); resize();
   return {
     setState, setFlip, resize, playFx, setQuality,
@@ -1262,7 +1333,9 @@ export function createBoard3D({ canvas, game, skins: catalogInput, quality: qual
       pieceSkins.clear();
       for (const [name, fn] of Object.entries(events)) canvas.removeEventListener(name, fn);
       for (const id of pointers.keys()) if (canvas.hasPointerCapture(id)) canvas.releasePointerCapture(id);
-      pointers.clear(); media.removeEventListener('change', requestRender); canvas.style.touchAction = oldTouchAction;
+      pointers.clear(); media.removeEventListener('change', requestRender);
+      if (typeof document.removeEventListener === 'function') document.removeEventListener('visibilitychange', onVisible);
+      canvas.style.touchAction = oldTouchAction;
       for (const resource of resources) resource.dispose();
       resources.clear(); templates.clear(); pieces.clear(); captured = []; scene.clear();
       key.shadow.dispose(); renderer.dispose(); renderer.forceContextLoss(); pick = () => {};

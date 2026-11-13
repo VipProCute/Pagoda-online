@@ -103,7 +103,7 @@ test('Bàn 3D: ghép quân đi, quân bị ăn, nhập thành, bắt qua đườ
 
 function fakeSurface() {
   const texts = [], listeners = new Map(), queue = new Map(); let serial = 0;
-  const ctx = new Proxy({ fillText: text => texts.push(text) }, { get(target, key) { return key in target ? target[key] : () => {}; } });
+  const ctx = new Proxy({ fillText: text => texts.push(text), createLinearGradient: () => ({ addColorStop() {} }) }, { get(target, key) { return key in target ? target[key] : () => {}; } });
   global.document = { createElement: () => ({ getContext: () => ctx }) };
   const media = { matches: false, addEventListener() {}, removeEventListener() {} };
   global.window = { devicePixelRatio: 1, matchMedia: () => media };
@@ -605,4 +605,68 @@ test('Trang thử: có import map cho GLTFLoader, nạp danh mục skin, nước
   for (const move of JSON.parse(m[1].replace(/'/g, '"'))) { const r = Xiangqi.play(state, move); assert.equal(r.ok, true, move); state = r.state; }
   const chess = html.match(/addBoard\('chess',[^\n]*window\.KyChess, (\[[^\]]+\])/);
   assert.ok(JSON.parse(chess[1].replace(/'/g, '"')).some(move => move.length === 5), 'chuỗi cờ vua có nước phong cấp để thử chấn động');
+});
+
+/* ---- T-122 · Dòng sông giữa bàn cờ tướng ---- */
+
+const riverParts = () => { const out = []; renderedScene.traverse(o => { if (o.name && o.name.startsWith('kd-river')) out.push(o); }); return out; };
+
+test('sông cờ tướng: có ở xiangqi và jieqi, không có ở cờ vua', async () => {
+  const { riverOffset, riverFrameGap } = await modulePromise;
+  for (const [game, expected] of [['xiangqi', true], ['jieqi', true], ['chess', false]]) {
+    const { env, view } = await openBoard(game);
+    const st = game === 'chess' ? Chess.create({}) : Xiangqi.view(Xiangqi.create({ variant: game, seed: 5 }));
+    view.setState({ game, ...st }); env.flush();
+    const parts = riverParts(), water = parts.find(o => o.name === 'kd-river-water');
+    assert.equal(!!water, expected, game);
+    if (expected) {
+      assert.equal(parts.filter(o => o.name === 'kd-river-bank').length, 2);
+      assert.ok(parts.some(o => o.name === 'kd-river-label'));
+      assert.equal('#' + water.material.color.getHexString(), '#2f8aa3');
+      assert.equal(water.material.transparent, true); assert.equal(water.material.opacity, 0.92);
+      assert.equal(water.material.roughness, 0.15); assert.ok(Math.abs(water.position.y - 0.004) < 1e-9);
+      assert.equal(water.material.map.wrapS, 1000); // RepeatWrapping
+      assert.equal(water.geometry.parameters.height, 1); // đúng khoảng giữa hàng 4 và hàng 5
+    }
+    view.dispose();
+  }
+  assert.equal(riverOffset(0), 0); assert.ok(riverOffset(1000) < 0 && riverOffset(1000) > -1);
+  assert.ok(riverOffset(1e9) <= 0 && riverOffset(1e9) > -1); assert.equal(riverOffset(NaN), 0);
+  assert.notEqual(riverOffset(1000), riverOffset(2000));
+  assert.ok(riverFrameGap('low') > riverFrameGap('medium') && riverFrameGap('high') === riverFrameGap('medium'));
+});
+
+test('sông cờ tướng: chảy liên tục khi canvas hiện, dừng khi ẩn, tháo khỏi trang hoặc dispose', async () => {
+  const { env, view } = await openBoard('xiangqi');
+  const st = Xiangqi.view(Xiangqi.create({ variant: 'xiangqi', seed: 5 }));
+  env.canvas.isConnected = true; global.document.visibilityState = 'visible';
+  view.setState({ game: 'xiangqi', ...st }); env.flushAt(1000);
+  const water = riverParts().find(o => o.name === 'kd-river-water'), at = () => water.material.map.offset.x;
+  const first = at();
+  assert.equal(env.queue.size, 1, 'còn khung kế tiếp để sông tiếp tục chảy');
+  env.flushAt(1010); assert.equal(at(), first, 'chưa tới nhịp 33ms thì chưa đổi offset');
+  env.flushAt(1100); assert.notEqual(at(), first);
+  global.document.visibilityState = 'hidden'; env.flushAt(1200);
+  assert.equal(env.queue.size, 0, 'tab ẩn thì dừng vòng lặp');
+  global.document.visibilityState = 'visible'; view.setFlip(false); env.flushAt(1300);
+  assert.equal(env.queue.size, 1);
+  env.canvas.isConnected = false; env.flushAt(1400); env.flushAt(1500);
+  assert.equal(env.queue.size, 0, 'canvas rời khỏi trang thì dừng');
+  env.canvas.isConnected = true; view.setFlip(true); env.flushAt(1600);
+  assert.equal(env.queue.size, 1);
+  view.dispose(); assert.equal(env.queue.size, 0);
+  delete global.document.visibilityState;
+});
+
+test('giảm chuyển động thì sông không đổi offset', async () => {
+  const { env, view } = await openBoard('jieqi');
+  const st = Xiangqi.view(Xiangqi.create({ variant: 'jieqi', seed: 5 }));
+  env.canvas.isConnected = true; env.media.matches = true;
+  view.setState({ game: 'jieqi', ...st }); env.flushAt(5000);
+  const water = riverParts().find(o => o.name === 'kd-river-water');
+  assert.equal(water.material.map.offset.x, 0);
+  view.setFlip(true); env.flushAt(9000); view.setFlip(false); env.flushAt(20000);
+  assert.equal(water.material.map.offset.x, 0);
+  assert.equal(env.queue.size, 0, 'không giữ vòng lặp khi giảm chuyển động');
+  view.dispose();
 });
