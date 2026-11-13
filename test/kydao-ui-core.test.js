@@ -224,6 +224,14 @@ test('tapSquare: chọn quân, chấm ô đi được, đi nước', () => {
   assert.strictEqual(core.tapSquare(session('chess', KyChess, 'b'), 'e7').kind, 'none'); // chưa tới lượt
 });
 
+test('nước phong cấp có 5 ký tự và pushMove giữ info.promotion', () => {
+  const state = KyChess.fromFen('8/4P2k/8/8/8/8/8/K7 w - - 0 1');
+  const S = session('chess', KyChess, 'a', { state });
+  const result = core.pushMove(S, 'e7e8q', 'e8=Q');
+  assert.strictEqual(result.ok, true);
+  assert.strictEqual(result.info.promotion, 'q');
+});
+
 test('tapSquare: phong cấp hỏi chọn quân', () => {
   const state = KyChess.fromFen('8/4P2k/8/8/8/8/8/K7 w - - 0 1');
   const S = session('chess', KyChess, 'a', { state });

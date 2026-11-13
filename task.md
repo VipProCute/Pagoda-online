@@ -1384,19 +1384,20 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
 - **Ngoài phạm vi**: mọi thứ không ghi trong phần T-115b của đặc tả; luật cờ; máy chủ; mở khóa skin.
 
 ### T-115c · Bảng cờ: chấn động phong cấp, hiệu ứng chiến thắng
-- **Trạng thái**: ⏳ Chờ T-115b
+- **Trạng thái**: 🟣 Chờ soát
 - **Ưu tiên**: P0
 - **Gói ngữ cảnh**: CORE + KYDAO + KYDAI
 - **Đặc tả từng bước (BẮT BUỘC làm theo)**: [docs/ky-dai/T-115-DAC-TA.md](docs/ky-dai/T-115-DAC-TA.md), phần T-115c
 - **Khu vực chạm**: public/js/kydao-ui.js, public/index.html (chỉ `?v=`), test/kydao-ui-core.test.js
 - **Phụ thuộc**: T-115b · **Thợ**: gpt-6.1-terra (Codex CLI qua proxy) · **Soát**: Gemini 4 Argon (hoặc GPT Sol) + Điều phối chạy test và xem trình duyệt
-- **Người làm**: — · **Nhánh**: —
+- **Người làm**: gpt-6.1-terra · **Nhánh**: codex/T-115c-phong-cap-chien-thang
 - **Mục tiêu**: Tốt phong cấp làm rung bàn và hất các quân khác; hết ván có hiệu ứng theo lý do thắng ở cả 5 môn, cả 2D và 3D.
 - **Tiêu chí xong**:
-  - [ ] Đủ 7 bước c1 → c7 của đặc tả
-  - [ ] Phong cấp phát đúng một lần cho mỗi bên (nhánh `synced` không phát lại)
-  - [ ] `kd:end`: hiệu ứng chạy trước, bảng kết quả hiện sau; giảm chuyển động thì hiện ngay
+  - [x] Đủ 7 bước c1 → c7 của đặc tả
+  - [x] Phong cấp phát đúng một lần cho mỗi bên (nhánh `synced` không phát lại)
+  - [x] `kd:end`: hiệu ứng chạy trước, bảng kết quả hiện sau; giảm chuyển động thì hiện ngay
   - [ ] `npm run check` sạch; `node --test test/kydao-*.test.js test/e2e-kydao.test.js` đạt
+- **Ghi chú**: Đã nối hiệu ứng và test phong cấp; sandbox chặn tiến trình con (`spawn EPERM`), cần điều phối chạy lại kiểm tra và xem giao diện.
 - **Ngoài phạm vi**: mọi thứ không ghi trong phần T-115c của đặc tả; luật cờ; máy chủ; mở khóa skin.
 
 ### T-116 · ui-harness, ảnh chụp, Sổ tay, README cho Kỳ Đài
