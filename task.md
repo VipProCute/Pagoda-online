@@ -91,6 +91,8 @@
 | T-115c | Bảng cờ: chấn động phong cấp, hiệu ứng chiến thắng | ⏳ T-115b | P0 | CORE + KYDAO + KYDAI | — |
 | T-116 | ui-harness, ảnh chụp, Sổ tay, README cho Kỳ Đài | ⏳ T-115c | P1 | CORE + KYDAI + DOCS | — |
 | T-117 | Đồ họa 2D bằng Canva: khung khẩu hiệu, biểu tượng bộ chọn | ⏳ T-115c | P2 | CORE + KYDAI | — |
+| T-118 | Sân v2: dựng cảnh 3D thật trong Blender, bản mẫu Hỏa Diệm Sơn 👤 duyệt | 🔵 Sẵn sàng | P0 | CORE + KYDAI | — |
+| T-119 | Bàn 2D: dải cảnh quanh bàn, dùng ảnh sân v2, quân 2D từ ảnh render | ⏳ T-118 (👤 duyệt) | P0 | CORE + KYDAO + KYDAI | — |
 | T-120 | Bản mẫu nhân vật 3D dựng bằng Blender, đo hiệu năng 👤 duyệt | ⏳ T-111 | P1 | CORE + HALL + KYDAI | — |
 
 Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạm `package.json`). **T-005**, **T-007**, **T-002** làm song song được với nhóm trên.
@@ -1413,6 +1415,27 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
 - **Khu vực chạm**: public/img/kydao/ui/* (mới), public/img/NOTICE.txt
 - **Thợ**: Claude Sonnet 5.5 (có công cụ Canva) · **Soát**: Điều phối xem ảnh
 - **Mục tiêu**: khung nền khẩu hiệu theo từng chủ đề và 8 biểu tượng chủ đề cho bộ chọn; mỗi ảnh ≤ 40 KB, ghi nguồn.
+
+### T-118 · Sân v2: dựng cảnh 3D thật trong Blender (bản mẫu Hỏa Diệm Sơn)
+- **Trạng thái**: 🔵 Sẵn sàng
+- **Ưu tiên**: P0 (chủ dự án 13/11: sân v1 chưa đẹp, cần đạt mức chi tiết của sân đấu bài 3D thương mại)
+- **Gói ngữ cảnh**: CORE + KYDAI
+- **Đặc tả từng bước (BẮT BUỘC làm theo)**: [docs/ky-dai/T-118-DAC-TA-SAN-V2.md](docs/ky-dai/T-118-DAC-TA-SAN-V2.md)
+- **Khu vực chạm**: tools/blender/kydao/field2.py (mới), public/img/kydao/fields2/* (mới), docs/ky-dai/anh/*
+- **Phụ thuộc**: không · **Thợ**: Claude Sonnet 5.5 (công cụ Blender) · **Soát**: Điều phối xem ảnh, rồi 👤 chủ dự án duyệt
+- **Người làm**: — · **Nhánh**: —
+- **Mục tiêu**: một sân mẫu `volcano` là cảnh 3D thật render từ trên xuống (phiến đá từng ô, địa hình, dung nham phát sáng, bóng đổ, cảnh vật quanh bàn), hai bản cờ vua và cờ tướng.
+- **Tiêu chí xong**:
+  - [ ] Hai ảnh 1408×704 đúng khung hình ở đặc tả §2 (đã kiểm bằng 4 khối đỏ), mỗi ảnh ≤ 260 KB
+  - [ ] Đạt đủ 8 điểm tự chấm ở đặc tả §4, có ảnh từng vòng lặp
+  - [ ] `field2.py` chạy lại ra cùng kết quả
+- **Ngoài phạm vi**: 7 sân còn lại (T-118b sau khi duyệt), mã JS, ảnh v1.
+
+### T-119 · Bàn 2D: dải cảnh quanh bàn, ảnh sân v2, quân 2D từ ảnh render
+- **Trạng thái**: ⏳ Chờ T-118 và 👤 duyệt bản mẫu. Điều phối viết đặc tả từng bước sau khi có ảnh thật.
+- **Ưu tiên**: P0 · **Gói ngữ cảnh**: CORE + KYDAO + KYDAI
+- **Khu vực chạm**: public/js/kydao-draw.js, public/js/kydao-ui.js (chỉ `fit`), public/js/kydao-skins.js (điều phối sửa), tools/blender/kydao/build.py (ảnh quân)
+- **Mục tiêu**: bàn 2D có dải cảnh vật quanh bàn (tự thu lại trên màn hẹp để ô cờ không nhỏ đi), dùng ảnh sân v2 theo môn; quân cờ vua 2D lấy ảnh render từ mô hình 3D của từng bộ skin.
 
 ### T-120 · Bản mẫu nhân vật 3D dựng bằng Blender, đo hiệu năng
 - **Trạng thái**: ⏳ Chờ T-111 · 👤 chủ dự án duyệt bản mẫu trước khi làm tiếp T-121 → T-125 (trang phục, tóc, hào quang 9 bậc, pháp tướng, NPC)
