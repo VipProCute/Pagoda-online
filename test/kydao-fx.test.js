@@ -59,8 +59,22 @@ test('shakeAt: rung rồi tắt hẳn', () => {
   assert.deepEqual(Fx.shakeAt(-1), { dx: 0, dy: 0 });
   assert.deepEqual(Fx.shakeAt(10000), { dx: 0, dy: 0 });
   let max = 0;
-  for (let t = 0; t < 420; t += 3) { const s = Fx.shakeAt(t, 5); max = Math.max(max, Math.abs(s.dx), Math.abs(s.dy)); assert.ok(max <= 5.01); }
+  for (let t = 0; t < Fx.SHAKE_MS; t += 3) { const s = Fx.shakeAt(t, 5); max = Math.max(max, Math.abs(s.dx), Math.abs(s.dy)); assert.ok(max <= 5.01); }
   assert.ok(max > 1);
+});
+
+test('bàn rung đủ mạnh: biên độ lớn nhất trong 120 ms đầu vượt 60% biên độ truyền vào', () => {
+  let max = 0;
+  for (let t = 0; t <= 120; t += 4) {
+    const s = Fx.shakeAt(t, 10);
+    max = Math.max(max, Math.hypot(s.dx, s.dy));
+  }
+  assert.ok(max > 6);
+});
+
+test('bàn rung tắt hẳn sau SHAKE_MS', () => {
+  assert.deepEqual(Fx.shakeAt(Fx.SHAKE_MS), { dx: 0, dy: 0 });
+  assert.deepEqual(Fx.shakeAt(700), { dx: 0, dy: 0 });
 });
 
 test('domainSweep: quét từ mép người chơi ra giữa trong tối đa 1,8 giây', () => {
