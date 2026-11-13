@@ -380,7 +380,7 @@ def water_material(name, shallow, deep, alpha=0.6, ripple=0.5, scale=3.0, rough=
     n = M.noise(w, scale * 3.0, 3.0, 0.5, 0.25)
     v = M.voronoi(M.warp(w, 0.35, 2.0), scale * 2.0, 'F1', 'Distance')
     col = M.mixc(rgb(deep), rgb(shallow), M.ramp_f(n, 0.35, 0.7))
-    nrm = M.bump(M.math('ADD', n, M.math('MULTIPLY', v, 0.5)), ripple, 0.05)
+    nrm = M.bump(M.math('ADD', n, M.math('MULTIPLY', v, 0.15)), ripple, 0.05)
     em = rgb(glow) if glow else None
     p = M.principled(col, rough, nrm, em, 0.6 if glow else 0.0, 0.0, 1.0)
     p.node.inputs['Alpha'].default_value = alpha
@@ -445,8 +445,8 @@ def slab_material(name, tone_hex, glow_hex=None, glossy=0.5, big=False, bank=Non
     col = M.mixc(col, scaled(t, 1.5), M.math('MULTIPLY', M.ramp_f(n3, 0.6, 0.8), 0.55))
     ve = M.voronoi(M.warp(w, 0.6), 1.05 if not big else 0.8, 'DISTANCE_TO_EDGE', 'Distance')
     vem = M.math('SUBTRACT', ve, M.math('MULTIPLY', n2, 0.03))
-    cm = M.math('SUBTRACT', 1.0, M.ramp_f(vem, 0.0, 0.035))
-    col = M.mixc(col, scaled(t, 0.1), M.math('MULTIPLY', cm, 0.9))
+    cm = M.math('SUBTRACT', 1.0, M.ramp_f(vem, 0.0, 0.013 if big else 0.035))
+    col = M.mixc(col, scaled(t, 0.1), M.math('MULTIPLY', cm, 0.55 if big else 0.9))
     col = M.ao(col, 0.12)
     hgt = M.math('SUBTRACT', M.math('ADD', M.math('MULTIPLY', n2, 0.5), M.math('MULTIPLY', n3, 0.2)), M.math('MULTIPLY', cm, 0.8))
     rough = glossy
@@ -1025,6 +1025,253 @@ FIELDS['volcano'] = dict(
     slab=('#dc8450', '#46241a', '#ff4a10'), under=('#ff5a1a', 1.8), plinth='#6a4333', ledge='#86503a',
     groove=('#b02a08', 0.55), pillar='#7a4834', bowl='#1c110e', fire=('#ff9a30', 6.0), top='flame',
     xq='#6a3a28', bank=('#2a1612', '#4a2a20', 'pebble'), build=build_volcano)
+# ───────────────────────── chủ đề: Trường Giang (river) ─────────────────────────
+def sweep(b, path, w, th):
+    """Quét một mặt cắt chữ nhật (rộng w theo trục x, dày th) dọc đường đi 3D: dùng cho cầu cong, bậc, tay vịn."""
+    rings = []
+    for (x, y, z) in path:
+        rings.append([b.bm.verts.new((x - w / 2, y, z)), b.bm.verts.new((x + w / 2, y, z)),
+                      b.bm.verts.new((x + w / 2, y, z - th)), b.bm.verts.new((x - w / 2, y, z - th))])
+    for a, c in zip(rings[:-1], rings[1:]):
+        for i in range(4):
+            j = (i + 1) % 4
+            b.bm.faces.new((a[i], a[j], c[j], c[i]))
+    b.bm.faces.new(list(reversed(rings[0])))
+    b.bm.faces.new(rings[-1])
+
+
+def reeds(b, x, y, rng, n=9, hmin=0.45, hmax=0.85, r=0.016):
+    for k in range(n):
+        a = rng.uniform(0, 6.28)
+        d = rng.uniform(0.0, 0.16)
+        tilt = rng.uniform(0.05, 0.4)
+        b.cone((x + d * math.cos(a), y + d * math.sin(a), -0.05), r, 0.002, rng.uniform(hmin, hmax), 3,
+               rot_xyz(tilt * math.sin(a), -tilt * math.cos(a), 0))
+
+
+def build_river(ctx):
+    sc, rng = ctx.sc, ctx.rng
+    # cầu đá cong bắc qua dòng nước phía sau lưng
+    br = B('bridge', basalt_material('bridge', '#9a9c92', 0.7, bump=1.5))
+    n = 14
+    path = [(0.0, 4.46 + 1.2 * t / n, 0.03 + 0.4 * math.sin(math.pi * t / n) ** 0.8) for t in range(n + 1)]
+    sweep(br, path, 0.74, 0.13)
+    for sx in (-0.33, 0.33):
+        sweep(br, [(sx, y, z + 0.1) for (_, y, z) in path], 0.08, 0.1)
+    for (_, y, z) in (path[0], path[-1]):
+        br.box((-0.4, y - 0.06, -0.2), (0.4, y + 0.06, z + 0.02), bevel=0.02, seg=1, flat_big=False)
+    br.box((-0.42, 4.44, -0.1), (-0.3, 4.56, 0.42), bevel=0.02, seg=1, flat_big=False)
+    br.box((0.3, 4.44, -0.1), (0.42, 4.56, 0.42), bevel=0.02, seg=1, flat_big=False)
+    br.box((-0.42, 5.58, -0.1), (-0.3, 5.7, 0.42), bevel=0.02, seg=1, flat_big=False)
+    br.box((0.3, 5.58, -0.1), (0.42, 5.7, 0.42), bevel=0.02, seg=1, flat_big=False)
+    br.finish(sc)
+    gl = B('bridge_lamps', glow_material('lamp', '#ffd890', 7.0))
+    for (x, y) in ((-0.36, 4.5), (0.36, 4.5), (-0.36, 5.64), (0.36, 5.64)):
+        gl.ico((x, y, 0.5), 0.055, 2)
+    gl.finish(sc)
+    ctx.light(0.0, 5.05, 0.8, '#ffd9a0', 10.0, 0.2)
+    # cối xay nước nằm (bánh xe ngang) ở góc sau trái
+    wood = B('mill_wood', basalt_material('mill_wood', '#7a5434', 0.65, bump=1.6))
+    thatch = B('mill_roof', basalt_material('mill_roof', '#b09a60', 0.9, bump=2.0))
+    x, y, _ = W(-5.0, 5.05)
+    wood.box((x - 0.4, y - 0.34, -0.25), (x + 0.4, y + 0.34, 0.5), bevel=0.02, seg=1, flat_big=False)
+    thatch.cone((x, y, 0.5), 0.52, 0.03, 0.36, 4, rzm(math.pi / 4))
+    wx, wy, _ = W(-4.45, 4.55)
+    wood.lathe([(0.17, 0.0), (0.46, 0.0), (0.46, 0.1), (0.17, 0.1), (0.17, 0.0)], 18, (wx, wy, -0.12), False, cap=False)
+    for k in range(10):
+        a = 2 * math.pi * k / 10
+        cx_, cy_ = wx + 0.32 * math.cos(a), wy + 0.32 * math.sin(a)
+        wood.box((cx_ - 0.17, cy_ - 0.025, -0.14), (cx_ + 0.17, cy_ + 0.025, 0.2), bevel=0.0, seg=1, flat_big=False, rot=rzm(a))
+    wood.box((wx - 0.04, wy - 0.04, -0.2), (wx + 0.04, wy + 0.04, 0.3), flat_big=False)
+    wood.box((x + 0.3, y - 0.05, 0.05), (wx - 0.1, y + 0.05, 0.12), flat_big=False)   # trục dẫn
+    wood.finish(sc)
+    thatch.finish(sc)
+    ctx.light(-4.8, 4.85, 0.9, '#ffd8a0', 8.0, 0.2)
+    # thuyền thúng buộc ở bờ sau phải
+    bt = B('boat', basalt_material('basket_boat', '#b58c52', 0.8, bump=2.2))
+    bx, by, _ = W(3.5, 5.05)
+    bt.lathe([(0.0, 0.0), (0.3, 0.02), (0.42, 0.1), (0.46, 0.2), (0.43, 0.22), (0.39, 0.13), (0.0, 0.08)], 22, (bx, by, -0.2), True, cap=False)
+    bt.lathe([(0.46, 0.2), (0.48, 0.22), (0.44, 0.25), (0.42, 0.22)], 22, (bx, by, -0.2), True, cap=False)
+    px, py, _ = W(4.35, 4.7)
+    bt.cone((px, py, -0.2), 0.05, 0.035, 0.62, 6)
+    bt.box((bx - 0.03, by - 0.5, 0.0), (bx + 0.03, by + 0.5, 0.05), flat_big=False, rot=rzm(0.4))   # mái chèo
+    bt.finish(sc)
+    ctx.light(3.5, 5.05, 0.7, '#fff0d0', 5.0, 0.2)
+    # lau sậy dọc bờ
+    rd = B('reeds', basalt_material('reed', '#b9b078', 0.9, bump=0.5))
+    spots = [(-4.55, 0.5), (-4.6, 1.3), (-4.45, 2.4), (-4.55, 3.5), (-4.0, 4.7), (-2.3, 4.58), (-1.2, 4.62), (1.6, 4.6), (2.6, 4.6),
+             (4.1, 4.66), (4.55, 3.7), (4.6, 2.5), (4.5, 1.3), (4.6, 0.4), (5.35, 2.0), (-5.4, 1.8)]
+    for (u, v) in spots:
+        x, y, _ = W(u + rng.uniform(-0.08, 0.08), v)
+        reeds(rd, x, y, rng, 10)
+    rd.finish(sc)
+    # sỏi to và tảng đá ven bờ
+    rk = B('boulders', basalt_material('boulder', '#7b8478', 0.8, bump=1.4))
+    for (u, v, r) in ((-4.7, 0.9, 0.3), (-4.65, 2.9, 0.26), (-5.4, 4.4, 0.3), (4.75, 1.0, 0.3), (4.7, 3.2, 0.28), (5.3, 4.7, 0.34),
+                      (-3.3, 4.62, 0.2), (2.4, 4.6, 0.18), (-5.45, 0.4, 0.2)):
+        x, y, _ = W(u, v)
+        rk.ico((x, y, max(ctx.tz(u, v), -0.1) + r * 0.2), r, 3, (1.2, 1.0, 0.65), 0.3, rng, rot=rzm(rng.uniform(0, 6)), seedv=u * 3.1, smooth=True)
+    rk.finish(sc)
+    # lá trôi trên mặt nước
+    lf = B('leaves', basalt_material('leaf', '#c0924a', 0.7))
+    lg = B('leaves_g', basalt_material('leaf_g', '#6c8a3c', 0.7))
+    for k in range(26):
+        t = rng.uniform(0, 1)
+        if t < 0.5:
+            u, v = -5.05 + rng.uniform(-0.15, 0.15), t * 9.0 - 0.3
+        else:
+            u, v = (t - 0.5) * 8.0 - 3.8, 5.05 + rng.uniform(-0.2, 0.2)
+        if not ctx.free(u, v) or v < 0.0:
+            continue
+        x, y, _ = W(u, v)
+        (lf if k % 2 else lg).ico((x, y, -0.17), 0.07, 1, (1.0, 0.6, 0.12), rot=rzm(rng.uniform(0, 6)), smooth=True)
+    lf.finish(sc)
+    lg.finish(sc)
+
+
+FIELDS['river'] = dict(
+    world=('#bcd4e4', 0.8), sun=('#fff0d8', 3.2, 60), glare=(1.1, 0.12, 0.3), exposure=0.0,
+    ground=lambda: ground_material('terrain', 'pebble', '#59675f', '#9ba89e', '#b4b8a6', wet='#17282a', bump=1.1),
+    liquid=lambda: water_material('water', '#8fd0cc', '#1b5c68', alpha=0.45, ripple=0.3, scale=2.0), liquid_z=-0.18,
+    T=dict(off=0.2, amp=0.5, freq=0.5, lo=-0.3, hi=0.34, cap=0.24, depth=-0.7, rim=0.05,
+           carve=[('poly', [(-5.35, -0.8), (-5.2, 0.6), (-5.3, 1.8), (-5.2, 3.0), (-5.25, 4.0), (-4.4, 5.0), (-3.4, 5.2), (-2.0, 5.1),
+                            (-0.8, 5.2), (0.8, 5.2), (2.0, 5.1), (3.4, 5.2), (4.4, 5.0), (5.2, 4.0), (5.15, 3.0), (5.3, 1.8),
+                            (5.2, 0.6), (5.35, -0.8)], 0.5)],
+           flat=[(-5.0, 5.0, 0.8)], flat_h=0.12),
+    slab=('#b3c0bd', '#3f5c4e', None), under=('#6fb0b0', 0.6), plinth='#8a948c', ledge='#98a49c',
+    groove=('#3b8f8a', 0.4), pillar='#8a958d', bowl='#2c3a34', fire=('#ffd890', 4.0), top='orb',
+    xq='#8c8f82', bank=('#3a4a44', '#8a9c92', 'pebble'), build=build_river)
+
+# ───────────────────────── chủ đề: Cổ Mộc Lâm (forest) ─────────────────────────
+def limb(b, p0, p1, r0, r1, seg=6, smooth=True):
+    """Một đoạn thân/rễ/lá hình nón cụt đi từ p0 tới p1."""
+    p0, p1 = Vector(p0), Vector(p1)
+    d = p1 - p0
+    up = 'X' if abs(d.normalized().y) > 0.99 else 'Y'
+    m = Matrix.Translation((p0 + p1) / 2) @ d.to_track_quat('Z', up).to_matrix().to_4x4()
+    res = bmesh.ops.create_cone(b.bm, cap_ends=True, cap_tris=False, segments=seg, radius1=r0, radius2=max(r1, 0.001),
+                                depth=d.length, matrix=m)
+    for f in {f for v in res['verts'] for f in v.link_faces}:
+        f.smooth = smooth
+
+
+def fern(b, x, y, z, rng, n=8, ln=0.42, w=0.05):
+    for k in range(n):
+        a = 2 * math.pi * k / n + rng.uniform(-0.2, 0.2)
+        d = Vector((math.cos(a), math.sin(a), 0))
+        ll = ln * rng.uniform(0.75, 1.1)
+        p0 = Vector((x, y, z + 0.04))
+        p1 = p0 + d * ll * 0.55 + Vector((0, 0, 0.2))
+        p2 = p0 + d * ll + Vector((0, 0, 0.06))
+        limb(b, p0, p1, w, w * 0.8, 4)
+        limb(b, p1, p2, w * 0.8, 0.004, 4)
+
+
+def mushroom(b, cap, x, y, z, r, rng):
+    limb(b, (x, y, z), (x, y, z + r * 1.5), r * 0.28, r * 0.22, 6)
+    cap.ico((x, y, z + r * 1.5), r, 2, (1, 1, 0.5), 0.0, rng, smooth=True)
+
+
+def build_forest(ctx):
+    sc, rng = ctx.sc, ctx.rng
+    # gốc cổ thụ rỗng ở góc sau trái: hốc sáng đom đóm
+    bark = B('stump', basalt_material('bark', '#4e3a26', 0.9, bump=2.2))
+    glow = B('stump_glow', glow_material('hollow', '#c8ff60', 2.6))
+    sx, sy, _ = W(-4.95, 4.95)
+    bark.lathe([(0.8, -0.3), (0.66, 0.02), (0.54, 0.22), (0.5, 0.52), (0.47, 0.66), (0.39, 0.64), (0.33, 0.46), (0.0, 0.42)],
+               22, (sx, sy, 0), True, cap=False, jitter=0.12, seedv=2.1)
+    glow.lathe([(0.0, 0.47), (0.3, 0.47)], 18, (sx, sy, 0), True, cap=True)
+    for k in range(7):
+        a = 2 * math.pi * k / 7 + 0.3
+        d = Vector((math.cos(a), math.sin(a), 0))
+        p0 = Vector((sx, sy, 0.2)) + d * 0.42
+        p1 = Vector((sx, sy, 0.02)) + d * 0.95
+        p2 = Vector((sx, sy, -0.12)) + d * 1.35
+        limb(bark, p0, p1, 0.14, 0.09, 6)
+        limb(bark, p1, p2, 0.09, 0.015, 6)
+    bark.finish(sc)
+    glow.finish(sc)
+    ctx.light(-4.95, 4.95, 0.9, '#c8ff70', 22.0, 0.2)
+    # tảng đá phủ rêu + nấm ở góc sau phải
+    moss = B('mossrock', basalt_material('mossrock', '#4c6a34', 0.9, bump=2.0))
+    mx, my, _ = W(4.95, 4.9)
+    moss.ico((mx, my, 0.05), 0.6, 3, (1.15, 1.0, 0.85), 0.28, rng, rot=rzm(0.7), seedv=4.0, smooth=True)
+    moss.ico((mx + 0.5, my - 0.2, 0.0), 0.32, 3, (1.1, 0.9, 0.7), 0.3, rng, seedv=9.0, smooth=True)
+    moss.finish(sc)
+    cap = B('caps_red', basalt_material('cap_red', '#b8402a', 0.5))
+    capg = B('caps_glow', gem_material('cap_glow', '#7fe8d0', 1.4, 0.3))
+    stem = B('stems', basalt_material('stem', '#e8e0c8', 0.7))
+    for k in range(5):
+        a = rng.uniform(0, 6.28)
+        rr = rng.uniform(0.0, 0.32)
+        mushroom(stem, cap if k % 2 else capg, mx + rr * math.cos(a), my + rr * math.sin(a), 0.5, rng.uniform(0.07, 0.12), rng)
+    ctx.light(4.95, 4.9, 0.9, '#7fe8d0', 12.0, 0.2)
+    # miếu thổ thần gỗ ở giữa dải sau
+    wood = B('shrine_wood', basalt_material('shrine_wood', '#7a3e2a', 0.7, bump=1.6))
+    roof = B('shrine_roof', basalt_material('shrine_roof', '#5d6e3e', 0.9, bump=2.2))
+    base = B('shrine_base', basalt_material('shrine_base', '#6a6a5a', 0.8))
+    x, y, _ = W(0.0, 5.0)
+    base.box((x - 0.55, y - 0.45, -0.2), (x + 0.55, y + 0.45, 0.08), bevel=0.03, seg=1, flat_big=False)
+    for dx in (-0.36, 0.36):
+        for dy in (-0.28, 0.28):
+            wood.box((x + dx - 0.04, y + dy - 0.04, 0.08), (x + dx + 0.04, y + dy + 0.04, 0.5), flat_big=False)
+    wood.box((x - 0.34, y - 0.26, 0.08), (x + 0.34, y + 0.26, 0.44), bevel=0.01, seg=1, flat_big=False)
+    door = B('shrine_door', glow_material('shrine_door', '#ffcf80', 2.5))
+    door.box((x - 0.1, y - 0.28, 0.1), (x + 0.1, y - 0.255, 0.36))
+    door.finish(sc)
+    roof.cone((x, y, 0.5), 0.72, 0.1, 0.3, 4, rzm(math.pi / 4))
+    wood.box((x - 0.14, y - 0.04, 0.78), (x + 0.14, y + 0.04, 0.84), flat_big=False)
+    wood.finish(sc)
+    roof.finish(sc)
+    base.finish(sc)
+    ctx.light(0.0, 4.8, 0.7, '#ffd9a0', 8.0, 0.15)
+    # dương xỉ
+    fr = B('ferns', basalt_material('fern', '#3f7a2c', 0.8, bump=0.6))
+    for (u, v) in ((-4.6, 0.7), (-5.2, 2.0), (-4.65, 3.3), (-3.6, 5.1), (-2.6, 4.85), (2.4, 4.9), (3.4, 5.15), (4.7, 3.8), (5.25, 2.4),
+                   (4.6, 0.9), (-5.3, 0.4), (5.3, 0.4), (-1.5, 5.25), (1.5, 5.25)):
+        x, y, _ = W(u, v)
+        fern(fr, x, y, max(ctx.tz(u, v), -0.05), rng)
+    fr.finish(sc)
+    # nấm nhỏ rải
+    st2 = B('stems2', basalt_material('stem2', '#e8e0c8', 0.7))
+    cp2 = B('caps2', basalt_material('cap2', '#c8782a', 0.5))
+    for (u, v) in ((-4.5, 1.6), (-4.55, 3.9), (-3.0, 5.25), (3.0, 4.85), (4.55, 2.0), (4.5, 4.2), (-2.0, 4.8), (1.0, 5.3)):
+        x, y, _ = W(u, v)
+        for k in range(3):
+            mushroom(st2, cp2, x + rng.uniform(-0.15, 0.15), y + rng.uniform(-0.15, 0.15), max(ctx.tz(u, v), -0.05), rng.uniform(0.04, 0.08), rng)
+    st2.finish(sc)
+    cp2.finish(sc)
+    stem.finish(sc)
+    cap.finish(sc)
+    capg.finish(sc)
+    # đá nhỏ phủ rêu + lá rụng
+    rk = B('rocks', basalt_material('rock_m', '#5f6e50', 0.85, bump=1.6))
+    for (u, v, r) in ((-4.7, 1.2, 0.26), (-5.35, 3.0, 0.3), (-3.3, 5.0, 0.2), (3.0, 5.2, 0.22), (5.3, 1.4, 0.3), (4.65, 3.0, 0.2)):
+        x, y, _ = W(u, v)
+        rk.ico((x, y, max(ctx.tz(u, v), -0.1) + r * 0.2), r, 3, (1.2, 1.0, 0.65), 0.3, rng, rot=rzm(rng.uniform(0, 6)), seedv=u * 2.7, smooth=True)
+    rk.finish(sc)
+    lv = [B('leaves%d' % i, basalt_material('leaf%d' % i, hx, 0.7)) for i, hx in enumerate(('#c07a2a', '#d0a038', '#8a4a22'))]
+    for k in range(46):
+        u, v = rng.uniform(-5.4, 5.4), rng.uniform(0.1, 5.4)
+        if not ctx.free(u, v, 0.1):
+            continue
+        x, y, _ = W(u, v)
+        lv[k % 3].ico((x, y, max(ctx.tz(u, v), -0.05) + 0.03), 0.08, 1, (1.0, 0.55, 0.1), rot=rzm(rng.uniform(0, 6)), smooth=True)
+    for b in lv:
+        b.finish(sc)
+    ctx.motes('#d8ff70', 30.0, 38, 0.2, 0.8, 0.016, 0.034, 'fireflies')
+
+
+FIELDS['forest'] = dict(
+    world=('#a8cf92', 0.7), sun=('#ffe9b8', 3.0, 60), glare=(1.0, 0.15, 0.4), exposure=0.1,
+    ground=lambda: ground_material('terrain', 'moss', '#1f3a1c', '#4f7a30', '#93b552', bump=1.4),
+    liquid=lambda: water_material('pond', '#5a8a62', '#0f2a1e', alpha=0.8, ripple=0.3, scale=2.0), liquid_z=-0.18,
+    T=dict(off=0.2, amp=0.6, freq=0.6, lo=-0.25, hi=0.4, cap=0.28, depth=-0.6, rim=0.06,
+           carve=[('ell', 3.0, 5.05, 0.9, 0.5)], flat=[(-4.95, 4.95, 0.9), (4.95, 4.9, 0.8)], flat_h=0.05),
+    slab=('#a9b890', '#4a3322', None), under=('#3f7a3c', 0.5), plinth='#76805e', ledge='#7a6a50',
+    groove=('#9acd50', 0.35), pillar='#7a6448', bowl='#2a2018', fire=('#d8ff70', 5.0), top='orb',
+    xq='#80805e', bank=('#26361a', '#5a8a38', 'fine'), build=build_forest)
+
 # ==== HẾT CHỦ ĐỀ ====
 
 
