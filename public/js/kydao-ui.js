@@ -176,7 +176,17 @@
     return r.ok ? 'applied' : 'gap';
   }
 
-  const core = { clockRemaining, settleClock,fmtClock, makeSession, tapSquare, pushMove, handleMoved, canPlay, kingSquare, sideOfPiece, readSkins, applySkin };
+  /** Mục kế tiếp trong nhóm chọn skin theo phím mũi tên / Home / End (vòng tròn); -1 nếu phím không dùng. */
+  function nextSkinIndex(len, cur, key) {
+    if (!(len > 0)) return -1;
+    if (key === 'ArrowRight' || key === 'ArrowDown') return (cur + 1) % len;
+    if (key === 'ArrowLeft' || key === 'ArrowUp') return (cur - 1 + len) % len;
+    if (key === 'Home') return 0;
+    if (key === 'End') return len - 1;
+    return -1;
+  }
+
+  const core = { nextSkinIndex, clockRemaining, settleClock,fmtClock, makeSession, tapSquare, pushMove, handleMoved, canPlay, kingSquare, sideOfPiece, readSkins, applySkin };
 
   /* ================= Giao diện ================= */
   if (typeof document === 'undefined') return { core };
@@ -212,6 +222,7 @@
   }
   function savePref(p) { try { root.localStorage.setItem(SKIN_KEY, JSON.stringify(p)); } catch (e) { /* bỏ qua */ } }
   let pref = { field: null, pieces: null };
+  let skinFocus = null;                   // { kind, id } nút skin cần trả tiêu điểm sau khi dựng lại bộ chọn
   let fieldSentAt = 0;                    // lần gần nhất gửi khai mở (ms), chặn bấm liên tục
 
   let ui = null;        // các phần tử DOM
@@ -567,18 +578,33 @@
     clearInterval(timer); timer = 0;
     if (!S || S.over) { updateClocks(); return; }
     updateClocks();
-    timer = setInterval(updateClocks, 250);
+    timer = setInterval(() => { updateClocks(); if (ui && !ui.skins.hidden) refreshSkinLock(); }, 250);
   }
 
   function renderSkins() {
     if (!ui || !S) return;
     const K = root.KydaoSkins, box = ui.skins;
+    const ae = root.document && root.document.activeElement;
+    if (!skinFocus && ae && typeof ae.getAttribute === 'function' && ae.getAttribute('data-kind')) skinFocus = { kind: ae.getAttribute('data-kind'), id: ae.getAttribute('data-id') || '' };
     box.textContent = '';
     if (!K) return;
+    const skinBtns = [];
     const row = (title, kind, catalog, current, pick) => {
       const list = h('div', { class: 'kd-skin-row', role: 'radiogroup', 'aria-label': title });
+      const ids = [null].concat(Object.keys(catalog));
+      const cur = current != null && ids.indexOf(current) !== -1 ? current : null;
+      const choose = id => { skinFocus = { kind, id: id == null ? '' : id }; pick(id); };
       const item = (id, name) => {
-        const b = h('button', { type: 'button', class: 'kd-skin' + (current === id ? ' is-on' : ''), role: 'radio', 'aria-checked': String(current === id), onclick: () => pick(id) });
+        const b = h('button', { type: 'button', class: 'kd-skin' + (current === id ? ' is-on' : ''), role: 'radio', 'aria-checked': String(current === id),
+          tabindex: cur === id ? '0' : '-1', 'data-kind': kind, 'data-id': id == null ? '' : id,
+          onclick: () => choose(id),
+          onkeydown: ev => {
+            const ni = nextSkinIndex(ids.length, ids.indexOf(id), ev && ev.key);
+            if (ni < 0) return;
+            if (typeof ev.preventDefault === 'function') ev.preventDefault();
+            choose(ids[ni]);
+          } });
+        skinBtns.push({ kind, id: id == null ? '' : id, el: b });
         if (id) {
           const im = h('img', { class: 'kd-skin-img', alt: '', loading: 'lazy', width: '96', height: '60' });
           if (kind === 'field' && K.crest) {
@@ -595,7 +621,7 @@
         return b;
       };
       list.appendChild(item(null, 'Mặc định'));
-      Object.keys(catalog).forEach(id => list.appendChild(item(id, catalog[id].name)));
+      ids.slice(1).forEach(id => list.appendChild(item(id, catalog[id].name)));
       return h('div', { class: 'kd-skin-group' }, h('div', { class: 'kd-skin-title' }, title), list);
     };
     box.appendChild(row('Sân của bạn', 'field', K.FIELDS, pref.field, id => { pref.field = id; savePref(pref); renderSkins(); }));
@@ -608,7 +634,27 @@
       hideFoe = !hideFoe; try { root.localStorage.setItem(HIDE_KEY, hideFoe ? '1' : '0'); } catch (e) { /* bỏ qua */ } renderSkins(); fit(); redraw();
     } }, hideFoe ? 'Hiện skin đối thủ' : 'Ẩn skin đối thủ');
     box.appendChild(h('div', { class: 'kd-actions' }, open, hide));
-    if (wait > 0) box.appendChild(h('div', { class: 'kd-skin-note' }, 'Chờ ' + Math.ceil(wait / 1000) + ' giây nữa mới khai mở lại được.'));
+    const note = h('div', { class: 'kd-skin-note' });
+    note.hidden = true;
+    box.appendChild(note);
+    ui.skinOpen = open; ui.skinNote = note;
+    refreshSkinLock();
+    if (skinFocus) {
+      const hit = skinBtns.find(x => x.kind === skinFocus.kind && x.id === skinFocus.id);
+      skinFocus = null;
+      if (hit && typeof hit.el.focus === 'function') hit.el.focus();
+    }
+  }
+
+  /** Cập nhật nút "Khai mở" và chữ đếm ngược theo fieldSentAt, không dựng lại danh sách. */
+  function refreshSkinLock() {
+    if (!ui || !S || !ui.skinOpen || !ui.skinNote) return;
+    const mine = canSkin() ? S.skins[S.you] : null;
+    const wait = Math.max(0, 20000 - (now() - fieldSentAt));
+    ui.skinOpen.disabled = !mine || mine.field === pref.field || wait > 0;
+    const text = wait > 0 ? 'Chờ ' + Math.ceil(wait / 1000) + ' giây nữa mới khai mở lại được.' : '';
+    if (ui.skinNote.textContent !== text) ui.skinNote.textContent = text;
+    ui.skinNote.hidden = wait <= 0;
   }
 
   function renderControls() {
