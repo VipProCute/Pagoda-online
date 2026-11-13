@@ -110,8 +110,9 @@
   }
   function contrast(a, b) { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); }
   /** Màu chữ/nét dễ đọc trên nền base: ưu tiên accent, không đủ tương phản thì dùng tối/sáng. */
-  function readableOn(base, accent) {
-    if (accent && contrast(accent, base) >= 3) return accent;
+  function readableOn(base, accent, min) {
+    if (accent && contrast(accent, base) >= (min || 3)) return accent;
+    if (min) return contrast('#1c140d', base) >= contrast('#fff6dc', base) ? '#1c140d' : '#fff6dc';   // có ngưỡng riêng: chọn bên rõ hơn
     return lum(base) > 0.4 ? '#1c140d' : '#fff6dc';
   }
 
@@ -469,7 +470,7 @@
       const T = cell * 0.86 * ATLAS_CELL / 108, red = ch === ch.toUpperCase(), t = ch.toLowerCase();
       ctx.save();
       paintAtlasCell(ctx, atlas, ATLAS_COL.disc, red ? 0 : 1, cx - T / 2, cy - T / 2, T);
-      drawXiangqiLabel(ctx, cx, cy, cell, t, red, vi, t === 'x', skin.c, readableOn(skin.c.base, skin.c.accent));
+      drawXiangqiLabel(ctx, cx, cy, cell, t, red, vi, t === 'x', skin.c, readableOn(skin.c.base, skin.c.accent, 4.5));
       ctx.restore();
       return;
     }
@@ -502,7 +503,7 @@
     let ink = red ? '#9e2420' : '#211d18';
     const sc = skin && skin.c;
     const sb = sc ? sc.base : null;
-    if (sc) ink = readableOn(sb, sc.accent);
+    if (sc) ink = readableOn(sb, sc.accent, 4.5);
     ctx.save();
     if (sc && sc.glow) {
       const halo = ctx.createRadialGradient(cx, cy, rad * 0.6, cx, cy, rad * 1.38);
@@ -679,7 +680,8 @@
     ctx.fillText(river[0], g.ox + g.cell * 2, mid); ctx.fillText(river[1], g.ox + g.cell * 6, mid);
   }
 
-  function drawXiangqiBoard(ctx, g, flip, vi, sk, t) {
+  /** Phần nền tĩnh của bàn cờ tướng/úp: mọi thứ vẽ trước dòng sông (gỗ, vân, khung, ảnh sân, lớp phủ, lưới). */
+  function drawXiangqiStatic(ctx, g, flip, sk) {
     const m = g.cell * 0.6;
     const mg = g.margin > 0 ? g.margin : 0, mv = mg > 0 ? mg : 0.6;
     const destOf = h => (h.rotated ? { x: g.ox - mv * g.cell, y: g.oy - mv * g.cell, w: (8 + 2 * mv) * g.cell, h: (4 + mv) * g.cell }
@@ -752,7 +754,39 @@
         ctx.restore();
       }
     }
+  }
+  function drawXiangqiBoard(ctx, g, flip, vi, sk, t) {
+    drawXiangqiStatic(ctx, g, flip, sk);
     drawRiver(ctx, g, flip, vi, t);
+  }
+
+  /* Đệm nền tĩnh cờ tướng/úp khi sông đang chảy (chỉ trình duyệt thật): một canvas phụ duy nhất. */
+  let BOARD_CACHE = null;   // { key, canvas }
+  function boardCacheKey(o, sk) {
+    const side = s => {
+      const f = sk && sk[s].field;
+      return f ? [f.id, imageState(f.src2), imageState(f.src)].join('~') : '-';
+    };
+    return [o.game, o.w, o.h, o.dpr || 1, o.flip ? 1 : 0, o.vi ? 1 : 0, o.margin || 0, o.size || 0, side('a'), side('b')].join('|');
+  }
+  /** Vẽ nền tĩnh qua đệm; trả false nếu không dùng được đệm (khi đó bên gọi chạy đường cũ). */
+  function drawXiangqiCached(ctx, g, o, sk) {
+    if (typeof document === 'undefined' || typeof o.time !== 'number' || !(o.w > 0) || !(o.h > 0)) return false;
+    const dpr = o.dpr || 1;
+    let key = boardCacheKey(o, sk);
+    if (!BOARD_CACHE || BOARD_CACHE.key !== key) {
+      let cv = null;
+      try { cv = document.createElement('canvas'); } catch (_) { cv = null; }
+      const cx = cv && cv.getContext ? cv.getContext('2d') : null;
+      if (!cx) return false;
+      cv.width = Math.max(1, Math.round(o.w * dpr)); cv.height = Math.max(1, Math.round(o.h * dpr));
+      cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      drawXiangqiStatic(cx, g, !!o.flip, sk);
+      key = boardCacheKey(o, sk);   // trạng thái ảnh có thể đổi ngay khi vừa yêu cầu tải
+      BOARD_CACHE = { key, canvas: cv };
+    }
+    ctx.drawImage(BOARD_CACHE.canvas, 0, 0, o.w, o.h);
+    return true;
   }
 
   /**
@@ -815,7 +849,9 @@
     const sk = isGrid(o.game) ? null : resolveSkins(o);
     const skinMark = hasField(sk);
     if (isGrid(o.game)) drawGridBoard(ctx, g, flip);
-    else if (chess) drawChessBoard(ctx, g, flip, sk); else drawXiangqiBoard(ctx, g, flip, !!o.vi, sk, o.time);
+    else if (chess) drawChessBoard(ctx, g, flip, sk);
+    else if (drawXiangqiCached(ctx, g, o, sk)) drawRiver(ctx, g, flip, !!o.vi, o.time);
+    else drawXiangqiBoard(ctx, g, flip, !!o.vi, sk, o.time);
     const at = name => { const q = parseSq(o.game, name, o.size); return q ? cellXY(g, q.col, q.row, flip) : null; };
     const mark = (name, style) => {
       const p = at(name); if (!p) return;
@@ -888,5 +924,5 @@
     return g;
   }
 
-  return { aspect, layout, cellXY, squareAt, nameOf, parseSq, boardIndex, draw, starPoints, HAN, VIET, resolveSkins, loadImage, imageState, riverWave };
+  return { aspect, layout, cellXY, squareAt, nameOf, parseSq, boardIndex, draw, starPoints, HAN, VIET, resolveSkins, loadImage, imageState, riverWave, readableOn };
 });

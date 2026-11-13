@@ -301,3 +301,14 @@ test('settleClock: hết giờ thì bên thua về 0', () => {
   assert.strictEqual(e.b, 40000);
   assert.strictEqual(core.settleClock(null, 1, 'a', 'timeout'), null);
 });
+
+test('nextSkinIndex: mũi tên đi vòng tròn, Home/End về đầu/cuối, phím lạ trả -1', () => {
+  assert.strictEqual(core.nextSkinIndex(9, 0, 'ArrowRight'), 1);
+  assert.strictEqual(core.nextSkinIndex(9, 8, 'ArrowDown'), 0);
+  assert.strictEqual(core.nextSkinIndex(9, 0, 'ArrowLeft'), 8);
+  assert.strictEqual(core.nextSkinIndex(9, 3, 'ArrowUp'), 2);
+  assert.strictEqual(core.nextSkinIndex(9, 4, 'Home'), 0);
+  assert.strictEqual(core.nextSkinIndex(9, 4, 'End'), 8);
+  assert.strictEqual(core.nextSkinIndex(9, 4, 'a'), -1);
+  assert.strictEqual(core.nextSkinIndex(0, 0, 'ArrowRight'), -1);
+});

@@ -260,6 +260,8 @@
     const m = M;
     if (!m) return;
     m.raf = 0;
+    // Người chơi tắt hiệu ứng / bật giảm chuyển động giữa chừng: dừng hẳn phần canvas (chữ khẩu hiệu tự ẩn theo giờ).
+    if (shouldHaltFx(isReduced(), m.effects.length + m.parts.length)) { stopCanvasFx(); return; }
     const dt = clamp(now - (m.last || now), 0, 50);
     m.last = now;
     const ctx = m.ctx;
@@ -511,6 +513,20 @@
     return true;
   }
 
+  /** Có nên dừng hiệu ứng canvas đang chạy ngay không (thuần, test được). */
+  function shouldHaltFx(reduced, active) { return !!reduced && active > 0; }
+  /** Dừng mọi hiệu ứng canvas như stop() nhưng để nguyên khẩu hiệu chữ đang hiện. */
+  function stopCanvasFx() {
+    const m = M;
+    if (!m) return;
+    m.timers.forEach(clearTimeout); m.timers = [];
+    if (m.raf && root.cancelAnimationFrame) root.cancelAnimationFrame(m.raf);
+    m.raf = 0; m.last = 0;
+    m.effects = []; m.parts = [];
+    endPromote();
+    if (m.ctx) { m.ctx.setTransform(1, 0, 0, 1, 0, 0); m.ctx.clearRect(0, 0, m.canvas.width, m.canvas.height); }
+  }
+
   function stop() {
     const m = M;
     if (!m) return;
@@ -525,7 +541,7 @@
   }
 
   const api = {
-    mount, unmount, play, stop,
+    mount, unmount, play, stop, shouldHaltFx,
     // toán thuần (test được trong Node)
     joltAt, joltReach, shakeAt, domainSweep, classifyReason, winPlan, spawnParticle, burstParticle, stepParticle, particleAlpha, hexA,
     FX_KINDS, DOMAIN_MS, PROMOTE_MS, WIN_MS, WAVE_SPEED, JOLT_DUR, SHAKE_MS, PARTICLE_MAX

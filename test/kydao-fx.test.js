@@ -157,3 +157,9 @@ test('API: có đủ mount/play/stop, chưa mount thì play/stop không ném l�
 test('mọi sân có khẩu hiệu và dòng phụ để banner hiện', () => {
   for (const [id, f] of Object.entries(Skins.FIELDS)) assert.ok(f.cry && f.sub && f.palette.glow, id);
 });
+
+test('tắt hiệu ứng giữa chừng: chỉ dừng khi đang giảm chuyển động và còn hiệu ứng canvas', () => {
+  assert.equal(Fx.shouldHaltFx(true, 2), true);
+  assert.equal(Fx.shouldHaltFx(true, 0), false);
+  assert.equal(Fx.shouldHaltFx(false, 5), false);
+});
