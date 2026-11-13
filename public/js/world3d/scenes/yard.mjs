@@ -1,6 +1,6 @@
 'use strict';
 
-import { createAvatar } from '../avatar.mjs?v=2';
+import { makeAvatar } from '../avatar-glb.mjs?v=1';
 
 /* Cùng hợp đồng build/update/pick/bounds/dispose với hall.mjs.
  * state: { daylight: boolean | 0..1,
@@ -179,7 +179,7 @@ export function build({ THREE, kit, quality = 'medium', reduceMotion = false, si
     const x = 0.5 + (index ? 0.3 : -0.3) / (2 * (0.36 + 0.28 * 0.26));
     const [wx, wz] = world(x, 0.26), node = new THREE.Group(); node.name = 'reader-' + id;
     node.userData.pick = { kind: 'reader', id }; node.position.set(wx, 0, wz); group.add(node);
-    const avatar = createAvatar({ g: 'nam', c: index ? 4 : 9, h: 2 }, { role: 'reader', reducedMotion: reduceMotion });
+    const avatar = makeAvatar({ g: 'nam', c: index ? 4 : 9, h: 2 }, { role: 'reader', reducedMotion: reduceMotion });
     avatar.group.position.z = -0.34; node.add(avatar.group); readers.push(avatar);
     avatar.update({ sit: 'bench', reducedMotion: reduceMotion }, 0);
     box(node, dark, 0, 0.64, 0.28, 1.45, 0.12, 0.85);
@@ -223,7 +223,7 @@ export function build({ THREE, kit, quality = 'medium', reduceMotion = false, si
     const sign = label(node, 'Bàn ' + id, 0, 0.65, 0.65, 1.6, 0.28);
     const occupants = benches.map((bench, seat) => {
       bench.name = 'table-' + id + '-seat-' + seat; bench.userData.pick = { kind: 'table', id, seat }; group.add(bench);
-      const avatar = createAvatar({}, { reducedMotion: reduceMotion }); avatar.group.name = 'occupant'; bench.add(avatar.group); return avatar;
+      const avatar = makeAvatar({}, { reducedMotion: reduceMotion }); avatar.group.name = 'occupant'; bench.add(avatar.group); return avatar;
     });
     return { node, benches, occupants, sign };
   }

@@ -13,8 +13,8 @@ const QUALITY = { low: 1, medium: 1.5, high: 2 };
 const failure = reason => ({ ok: false, reason });
 const SCENES = {
   hall: () => import('./scenes/hall.mjs?v=1'),
-  arena: () => import('./scenes/arena.mjs?v=3'),
-  yard: () => import('./scenes/yard.mjs?v=3'),
+  arena: () => import('./scenes/arena.mjs?v=4'),
+  yard: () => import('./scenes/yard.mjs?v=4'),
   library: () => import('./scenes/library.mjs?v=1')
 };
 
@@ -218,7 +218,7 @@ export async function start({ canvas, scene = 'test', getState = () => ({}), on 
     if (!canvas || typeof canvas.getContext !== 'function') return failure('Chưa có khung vẽ 3D.');
     const context = canvas.getContext('webgl2', { antialias: true, alpha: false });
     if (!context) return failure('Máy chưa hỗ trợ WebGL2. Xin dùng giao diện 2D.');
-    const [THREE, kit, avatars] = await Promise.all([import('three'), import('./kit.mjs?v=2'), import('./avatar.mjs?v=3')]);
+    const [THREE, kit, avatars] = await Promise.all([import('three'), import('./kit.mjs?v=2'), import('./avatar-glb.mjs?v=1')]);
     if (ticket !== generation) return failure('Đã hủy mở cảnh 3D.');
     renderer = new THREE.WebGLRenderer({ canvas, context });
     renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -229,7 +229,7 @@ export async function start({ canvas, scene = 'test', getState = () => ({}), on 
     const root = new THREE.Scene();
     root.background = new THREE.Color(0x292620);
     const world = {
-      canvas, renderer, getState, kit, createAvatar: avatars.createAvatar, people: new Map(), revision: 0,
+      canvas, renderer, getState, kit, createAvatar: avatars.makeAvatar, people: new Map(), revision: 0,
       raycaster: new THREE.Raycaster(), cursor: new THREE.Vector2(),
       content: null, frame: 0, last: null,
       fire: (kind, ...args) => on.fire ? on.fire(kind, ...args) : on[kind]?.(...args),
