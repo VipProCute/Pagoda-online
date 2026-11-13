@@ -1516,7 +1516,7 @@ def build_lotus(ctx):
                                     (5.3, 3.9, 0.4), (-3.4, 5.1, 0.4), (-2.0, 5.25, 0.34), (-1.2, 5.0, 0.3), (1.5, 5.2, 0.36),
                                     (2.9, 5.0, 0.42), (3.7, 5.3, 0.3), (-4.4, 4.6, 0.28), (4.3, 4.6, 0.3), (-5.35, 1.4, 0.26))):
         x, y, _ = W(u, v)
-        lily_pad(pad if k % 2 else pad2, x, y, -0.19, r, 0)
+        lily_pad(pad if k % 2 else pad2, x, y, -0.145, r, 0)
     pad.finish(sc)
     pad2.finish(sc)
     # tòa sen lớn nở ở góc sau trái
@@ -1524,7 +1524,7 @@ def build_lotus(ctx):
     core = B('seedpod', glow_material('seedpod', '#ffd060', 2.5))
     big = B('bigpad', basalt_material('bigpad', '#2f7a3e', 0.45, bump=1.2))
     x, y, _ = W(-4.9, 4.9)
-    lily_pad(big, x, y, -0.19, 0.78, 0)
+    lily_pad(big, x, y, -0.145, 0.78, 0)
     lotus_flower(pet, core, x, y, -0.1, 2.6, rng, rings=((12, 0.45, 1.0, 0.17), (10, 0.85, 0.9, 0.15), (8, 1.2, 0.75, 0.13), (6, 1.5, 0.55, 0.1)))
     ctx.light(-4.9, 4.9, 0.8, '#ffb0c8', 16.0, 0.2)
     # hoa sen nhỏ rải trên hồ
