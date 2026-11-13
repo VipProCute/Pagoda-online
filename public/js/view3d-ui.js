@@ -9,9 +9,10 @@
       if (['low', 'medium', 'high'].includes(saved.quality)) prefs.quality = saved.quality;
     }
   } catch (error) { /* Trình duyệt có thể chặn lưu lựa chọn. */ }
-  let world = null, target = null, layer = null, canvas = null, toolbar = null, toggle = null, angle = null, stick = null;
+  let world = null, target = null, layer = null, canvas = null, toolbar = null, toggle = null, angle = null, stick = null, figure = null;
   let active = false, paused = false, pk = false, revision = 0, queued = false, notify = () => {}, previousVisibility = '';
   const save = () => { try { localStorage.setItem('ta-view', JSON.stringify(prefs)); } catch (error) { /* Vẫn dùng được trong phiên này. */ } };
+  const figureOn = () => { try { return localStorage.getItem('ta-avatar') === 'blender'; } catch (error) { return false; } };
   const editing = event => event.target?.closest?.('input,textarea,select,[contenteditable]:not([contenteditable="false"]),[role="textbox"],dialog[open]');
 
   function buttons() {
@@ -24,6 +25,16 @@
     angle.textContent = prefs.mode === 'first' ? 'Góc 1 · V' : 'Góc 3 · V';
     angle.title = 'Đổi góc nhìn thứ nhất / thứ ba (V)';
     stick.hidden = !active;
+    figure.hidden = !active || pk;
+    figure.textContent = 'Người mới';
+    figure.setAttribute('aria-pressed', String(figureOn()));
+    figure.title = 'Nhân vật mới (thử nghiệm): dáng người dựng bằng Blender, bấm để đổi và dựng lại cảnh';
+  }
+  function changeFigure() {
+    try {
+      if (figureOn()) localStorage.removeItem('ta-avatar'); else localStorage.setItem('ta-avatar', 'blender');
+    } catch (error) { notify('Trình duyệt không cho lưu lựa chọn nhân vật.'); return; }
+    sync();   // dựng lại cảnh ngay để nhân vật đổi theo
   }
   function restore() {
     if (active && target) target.style.visibility = previousVisibility;
@@ -45,7 +56,7 @@
     if (!prefs.on || paused || pk || !target) return;
     const scene = root.Hall.scene;
     try {
-      const module = await import('/js/world3d/index.mjs?v=6');
+      const module = await import('/js/world3d/index.mjs?v=7');
       if (ticket !== revision) return;
       world = module;
       if (!prefs.quality) {
@@ -99,9 +110,11 @@
     toolbar = document.createElement('div'); toolbar.className = 'v3-controls'; toolbar.setAttribute('aria-label', 'Góc nhìn');
     toggle = document.createElement('button'); toggle.type = 'button';
     angle = document.createElement('button'); angle.type = 'button';
+    figure = document.createElement('button'); figure.type = 'button';
     toggle.addEventListener('click', () => { prefs.on = !prefs.on; save(); sync(); });
     angle.addEventListener('click', changeView);
-    toolbar.append(toggle, angle);
+    figure.addEventListener('click', changeFigure);
+    toolbar.append(toggle, angle, figure);
     stick = document.createElement('div'); stick.className = 'v3-stick'; stick.hidden = true;
     stick.setAttribute('aria-label', 'Cần di chuyển'); stick.textContent = '✥';
     layer.append(canvas, toolbar, stick);

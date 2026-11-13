@@ -104,6 +104,7 @@
           <label class="av-check"><input type="checkbox" id="bm-halo"> Bật hào quang</label>
           <button type="button" id="bm-crowd">Nhân 60</button>
           <button type="button" id="bm-pair" style="margin-top:8px">Về hai nhân vật</button>
+          <button type="button" id="bm-use" style="margin-top:8px" aria-pressed="false">Dùng nhân vật Blender cho dàn nhân vật phía trên</button>
           <button type="button" id="bm-stopcode" style="margin-top:8px">Dừng cảnh dựng bằng mã (để đo)</button>
           <p class="av-status" id="bm-status" role="status">Đang nạp mô hình…</p>
           <p class="av-note">Số FPS là trung bình 3 giây gần nhất. Cảnh dựng bằng mã ở trên cũng đang chạy; bấm "Dừng cảnh dựng bằng mã" trước khi đo.</p>
@@ -116,7 +117,8 @@
   <script src="/js/merit.js?v=npc2"></script>
   <script type="module">
     import * as THREE from 'three';
-    import { createAvatar, AVATAR_COLORS } from '/js/world3d/avatar.mjs?v=3';
+    import { AVATAR_COLORS } from '/js/world3d/avatar.mjs?v=3';
+    import { makeAvatar as createAvatar } from '/js/world3d/avatar-glb.mjs?v=1';
 
     const byId = id => document.getElementById(id);
     const canvas = byId('world'), status = byId('status');
@@ -387,6 +389,13 @@
     $('bm-robe').addEventListener('input', e => { robeColor.set(e.target.value); for (const k of ['nam', 'nu']) if (SRC[k]) eachMaterial(SRC[k].scene, m => { if (m.name === 'robe') m.color.copy(robeColor); }); });
     $('bm-halo').addEventListener('change', e => { haloOn = e.target.checked; entries.forEach(haloFor); });
     $('bm-crowd').addEventListener('click', crowd60);
+    const useBlender = () => { try { return localStorage.getItem('ta-avatar') === 'blender'; } catch (error) { return false; } };
+    $('bm-use').setAttribute('aria-pressed', String(useBlender()));
+    $('bm-use').textContent = (useBlender() ? 'Đang dùng' : 'Dùng') + ' nhân vật Blender cho dàn nhân vật phía trên' + (useBlender() ? ' · bấm để tắt' : '');
+    $('bm-use').addEventListener('click', () => {
+      try { if (useBlender()) localStorage.removeItem('ta-avatar'); else localStorage.setItem('ta-avatar', 'blender'); } catch (error) { /* không lưu được */ }
+      location.reload();
+    });
     $('bm-pair').addEventListener('click', pair);
     $('bm-stopcode').addEventListener('click', () => { window.dispatchEvent(new Event('pagehide')); statusBox.textContent = 'Đã dừng cảnh dựng bằng mã ở trên. Tải lại trang để bật lại.'; });
 
