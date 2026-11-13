@@ -1,4 +1,4 @@
-| T-115c | | 🟣 Chờ soát |  | | gpt-6.1-terra || T-115b | | 🟣 Chờ soát |  | | Claude Sonnet 5.5 || T-115a | | 🟣 Chờ soát |  | | gpt-6.1-terra || T-113 | | 🟣 Chờ soát |  | | Claude Opus 5.5 |# task.md · Bảng việc cho agent
+# task.md · Bảng việc cho agent
 
 > Cách dùng: xem [docs/agents/ORCHESTRATION.md](docs/agents/ORCHESTRATION.md). Mỗi thẻ ghi rõ **gói ngữ cảnh** (xem [docs/agents/CONTEXT-PACKS.md](docs/agents/CONTEXT-PACKS.md)) và **khu vực chạm** để không ai đụng ai.
 > Chỉ sửa thẻ của mình. Kéo bản mới nhất trước khi sửa file này.
@@ -84,11 +84,11 @@
 | T-110 | Giao thức `kd:skin` trên máy chủ | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | Claude Opus 5.5 |
 | T-111 | Dây chuyền Blender và tài nguyên 8 sân, 8 bộ quân | 🟣 Chờ soát | P0 | CORE + KYDAI | Điều phối (Claude Fable 5.2) |
 | T-112 | Module hiệu ứng 2D `KydaoFx`: khai mở, chấn động phong cấp, chiến thắng | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | Claude Sonnet 5.5 |
-| T-113 | Bàn 3D: nạp `.glb`, skin nửa sân, skin quân, `playFx` | 🔵 Sẵn sàng | P0 | CORE + KYDAO + KYDAI | — |
+| T-113 | Bàn 3D: nạp `.glb`, skin nửa sân, skin quân, `playFx` | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | Claude Opus 5.5 |
 | T-114 | Bàn 2D: vẽ skin nửa sân, skin quân, `jolt` | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | Claude Sonnet 5.5 |
-| T-115a | Bảng cờ: nạp module, giữ trạng thái skin, truyền vào hàm vẽ | ⏳ T-113 | P0 | CORE + KYDAO + KYDAI | — |
-| T-115b | Bảng cờ: bộ chọn Lãnh địa, gửi skin, màn khai mở | ⏳ T-115a | P0 | CORE + KYDAO + KYDAI | — |
-| T-115c | Bảng cờ: chấn động phong cấp, hiệu ứng chiến thắng | ⏳ T-115b | P0 | CORE + KYDAO + KYDAI | — |
+| T-115a | Bảng cờ: nạp module, giữ trạng thái skin, truyền vào hàm vẽ | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | gpt-6.1-terra |
+| T-115b | Bảng cờ: bộ chọn Lãnh địa, gửi skin, màn khai mở | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | Claude Sonnet 5.5 |
+| T-115c | Bảng cờ: chấn động phong cấp, hiệu ứng chiến thắng | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | gpt-6.1-terra |
 | T-116 | ui-harness, ảnh chụp, Sổ tay, README cho Kỳ Đài | ⏳ T-115c | P1 | CORE + KYDAI + DOCS | — |
 | T-117 | Đồ họa 2D bằng Canva: khung khẩu hiệu, biểu tượng bộ chọn | ⏳ T-115c | P2 | CORE + KYDAI | — |
 | T-118 | Sân v2: dựng cảnh 3D thật trong Blender, bản mẫu Hỏa Diệm Sơn 👤 duyệt | 🔵 Sẵn sàng | P0 | CORE + KYDAI | — |
