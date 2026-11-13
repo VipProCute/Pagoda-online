@@ -139,6 +139,15 @@
     return null;
   }
 
+  /** Trạng thái tải của một đường dẫn ảnh: 'none' (chưa yêu cầu) | 'loading' | 'ok' | 'err'. */
+  function imageState(src) {
+    const e = src ? IMAGES.get(src) : null;
+    if (!e) return 'none';
+    return e.ready ? 'ok' : e.failed ? 'err' : 'loading';
+  }
+  /** Ảnh v2 đang tải thì chưa được tải ảnh v1 (tránh yêu cầu thừa); chỉ khi v2 lỗi hoặc không có mới dùng v1. */
+  const v2Pending = f => !!f.src2 && imageState(f.src2) === 'loading';
+
   const gameSkinnable = (cat, game) => cat && (typeof cat.supports === 'function' ? cat.supports(game) : (game === 'chess' || game === 'xiangqi' || game === 'jieqi'));
   /**
    * Giải o.skins thành { a:{field,pieces}, b:{…}, onAsset } hoặc null nếu không có gì để vẽ.
@@ -512,7 +521,7 @@
         : { x: g.ox - m * g.cell, y: g.oy + 4 * g.cell, w: (8 + 2 * m) * g.cell, h: (4 + m) * g.cell };
       const v2 = paintField2(ctx, dest, h.rotated, f, m, sk.onAsset);
       used[h.side] = v2;
-      const img = v2 || paintFieldImage(ctx, h.rect, h.rotated, f, sk.onAsset);
+      const img = v2 || (v2Pending(f) ? false : paintFieldImage(ctx, h.rect, h.rotated, f, sk.onAsset));
       for (let r = h.side === 'a' ? 0 : 4; r < (h.side === 'a' ? 4 : 8); r++) for (let c = 0; c < 8; c++) {
         const p = cellXY(g, c, r, flip), dark = (c + r) % 2 === 0;
         ctx.fillStyle = v2 ? (dark ? 'rgba(0,0,0,0.10)' : 'rgba(255,255,255,0.06)') : img ? rgba(dark ? f.pal.dark : f.pal.light, dark ? 0.7 : 0.55) : (dark ? f.pal.dark : f.pal.light);
@@ -699,7 +708,7 @@
         if (!f) continue;
         // Nền: ảnh v2 (đã vẽ ở trên) + lớp sáng rất nhẹ; không thì ảnh v1 + lớp sáng mờ; chưa có ảnh thì tô đặc theo palette.
         if (v2[h.side]) { ctx.fillStyle = 'rgba(255,255,255,0.10)'; ctx.fillRect(h.rect.x, h.rect.y, h.rect.w, h.rect.h); continue; }
-        if (paintFieldImage(ctx, h.rect, h.rotated, f, sk.onAsset)) ctx.fillStyle = rgba(mixc(f.pal.light, '#ffffff', 0.2), 0.38);
+        if (!v2Pending(f) && paintFieldImage(ctx, h.rect, h.rotated, f, sk.onAsset)) ctx.fillStyle = rgba(mixc(f.pal.light, '#ffffff', 0.2), 0.38);
         else ctx.fillStyle = mixc(f.pal.light, f.pal.dark, 0.3);
         ctx.fillRect(h.rect.x, h.rect.y, h.rect.w, h.rect.h);
       }
@@ -847,5 +856,5 @@
     return g;
   }
 
-  return { aspect, layout, cellXY, squareAt, nameOf, parseSq, boardIndex, draw, starPoints, HAN, VIET, resolveSkins, loadImage, riverWave };
+  return { aspect, layout, cellXY, squareAt, nameOf, parseSq, boardIndex, draw, starPoints, HAN, VIET, resolveSkins, loadImage, imageState, riverWave };
 });

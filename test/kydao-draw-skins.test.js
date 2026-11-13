@@ -223,20 +223,31 @@ test('Ảnh nửa sân: nạp lười, xoay 180° nửa trên, onAsset khi tải
     const o = opts('chess', { skins: { a: { field: 'river' }, b: { field: 'forest' } }, onAsset: () => again++ });
     const first = run(o);
     assert.equal(first.filter(x => x[0] === 'drawImage').length, 0, 'chưa tải thì chưa có drawImage');
-    assert.equal(made.length, 4, 'mỗi ảnh (v1 và v2) chỉ nạp một lần');
-    assert.deepEqual(made.map(i => i.src).sort(), ['/img/kydao/fields/forest.webp', '/img/kydao/fields/river.webp', '/img/kydao/fields2/forest-chess.webp', '/img/kydao/fields2/river-chess.webp']);
+    assert.equal(made.length, 2, 'v2 đang tải thì chưa tải ảnh v1: mỗi sân chỉ một yêu cầu');
+    assert.deepEqual(made.map(i => i.src).sort(), ['/img/kydao/fields2/forest-chess.webp', '/img/kydao/fields2/river-chess.webp']);
+    assert.equal(KydaoDraw.imageState('/img/kydao/fields2/river-chess.webp'), 'loading');
+    assert.equal(KydaoDraw.imageState('/img/kydao/fields/river.webp'), 'none');
     run(o);
-    assert.equal(made.length, 4);
-    made.find(i => /fields\/river/.test(i.src)).onload();
+    assert.equal(made.length, 2);
+    // v2 của river tải xong: vẽ ảnh v2, vẫn không tải v1.
+    made.find(i => /fields2\/river/.test(i.src)).onload();
     assert.equal(again, 1, 'onAsset gọi đúng một lần cho ảnh vừa xong');
-    made.find(i => /fields\/forest/.test(i.src)).onerror();
+    assert.equal(KydaoDraw.imageState('/img/kydao/fields2/river-chess.webp'), 'ok');
+    run(o);
+    assert.equal(made.length, 2, 'v2 đã xong thì không cần v1');
+    // v2 của forest lỗi (404): lúc này mới tải v1.
+    made.find(i => /fields2\/forest/.test(i.src)).onerror();
+    assert.equal(KydaoDraw.imageState('/img/kydao/fields2/forest-chess.webp'), 'err');
     assert.doesNotThrow(() => run(o));
+    assert.equal(made.length, 3, 'v2 lỗi thì dùng ảnh v1');
+    assert.ok(made.some(i => i.src === '/img/kydao/fields/forest.webp'));
+    made.find(i => /fields\/forest/.test(i.src)).onload();
     const log = run(o);
-    assert.equal(log.filter(x => x[0] === 'drawImage').length, 1, 'chỉ nửa sân có ảnh');
-    assert.equal(log.filter(x => x[0] === 'rotate').length, 0, 'nửa a ở dưới: không xoay');
+    assert.equal(log.filter(x => x[0] === 'drawImage').length, 2, 'hai nửa đều có ảnh (v2 và v1)');
+    assert.deepEqual(log.filter(x => x[0] === 'rotate').map(x => x[1]), [Math.PI], 'chỉ nửa b ở trên xoay 180°');
     const flipped = run({ ...o, flip: true });
     assert.deepEqual(flipped.filter(x => x[0] === 'rotate').map(x => x[1]), [Math.PI], 'lật bàn: nửa a lên trên, xoay 180°');
-    // Có ảnh: ô phủ mờ để lộ vân nền.
+    // Nửa dùng ảnh v1: ô phủ mờ để lộ vân nền.
     assert.ok(log.some(x => x[0] === '=fillStyle' && /^rgba\(/.test(x[1]) && /,0\.7\)$/.test(x[1])));
   } finally { delete global.Image; }
 });
