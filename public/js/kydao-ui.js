@@ -198,7 +198,9 @@
     return el;
   }
 
-  const reduced = () => !!(root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  /** Người chơi tắt hiệu ứng ở Chánh điện (localStorage 'ta-fx' = '0') thì bàn cờ cũng không chuyển động. */
+  const fxOff = () => { try { return !!root.localStorage && root.localStorage.getItem('ta-fx') === '0'; } catch (e) { return false; } };
+  const reduced = () => fxOff() || !!(root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const VI_KEY = 'kydao.vi';
   const HIDE_KEY = 'kydao.hideFoeSkin';
   let hideFoe = false;
@@ -229,6 +231,9 @@
   function say(text) { if (ui) ui.msg.textContent = text || ''; }
   function announce(text) { if (ui) ui.live.textContent = text; }
 
+  /** Toạ độ hiệu ứng được chụp lúc bắt đầu; bàn dịch chuyển (cuộn, đổi cỡ) thì dừng để không lệch khỏi quân. */
+  function stopFx() { if (root.KydaoFx) root.KydaoFx.stop(); }
+
   function build() {
     const btn = (cls, label, fn, extra) => h('button', Object.assign({ type: 'button', class: 'kd-btn ' + (cls || ''), onclick: fn }, extra || {}), label);
     const el = {};
@@ -250,6 +255,7 @@
     el.promo = h('div', { class: 'kd-promo', hidden: true });
     el.result = h('div', { class: 'kd-result', hidden: true, role: 'alertdialog', 'aria-label': 'Kết quả ván cờ' });
     el.viewport = h('div', { class: 'kd-viewport', tabindex: '0', 'aria-label': 'Bàn cờ; phóng to rồi vuốt hoặc kéo để xem các giao điểm' }, el.canvas);
+    el.viewport.addEventListener('scroll', stopFx, { passive: true });
     el.wrap = h('div', { class: 'kd-boardwrap' }, el.viewport, el.promo, el.result);
     el.scoreText = h('div', { class: 'kd-score', role: 'status' });
     el.passBtn = btn('', 'Bỏ lượt', () => { if (S && canPlay(S)) sendMove('pass'); });
@@ -343,7 +349,7 @@
     const panel = ui, session = S, token = {};
     panel.boardLoad = token; panel.boardBtn.disabled = true; panel.boardBtn.textContent = 'Đang mở…';
     try {
-      const { createBoard3D } = await import('/js/world3d/board3d.mjs?v=3');
+      const { createBoard3D } = await import('/js/world3d/board3d.mjs?v=4');
       if (ui !== panel || S !== session || panel.boardLoad !== token) return;
       panel.canvas3d = h('canvas', { class: 'kd-canvas', tabindex: '0', 'aria-label': 'Bàn cờ 3D. Kéo hoặc dùng phím mũi tên để xoay; cuộn để thu phóng.' });
       panel.canvas3d.style.width = panel.canvas._w + 'px'; panel.canvas3d.style.height = panel.canvas._h + 'px';
@@ -389,7 +395,10 @@
     if (!r.ok) { say(r.reason); return; }
     say('');
     sound(r.info.capture ? 'capture' : r.info.check ? 'check' : 'move');
-    if (S.game === 'chess' && move.length === 5) { redraw(); playPromote(move.slice(2, 4), move[4]); }
+    if (S.game === 'chess' && move.length === 5) {
+      redraw();
+      try { playPromote(move.slice(2, 4), move[4]); } catch (e) { /* hiệu ứng lỗi không được chặn nước đi */ }
+    }
     send('kd:move', { gameId: gid, ply: before, move }, ack => {
       if (!S || S.gameId !== gid || (ack && ack.ok)) return;
       if (ack && ack.code === 'stale') { resume(); return; }
@@ -490,6 +499,7 @@
   }
   function startRiver() { if (!riverRaf && root.requestAnimationFrame && S && (S.game === 'xiangqi' || S.game === 'jieqi') && !reduced()) riverRaf = root.requestAnimationFrame(riverLoop); }
 
+  const onAsset = () => { if (ui && S) redraw(); };
   function redraw() {
     if (!ui || !S || ui.panel.hidden || !ui.canvas._w) return;
     const options = {
@@ -500,11 +510,12 @@
     };
     options.time = riverTime;
     if (root.KydaoSkins && root.KydaoSkins.supports(S.game)) {
-      options.skins = S.skins;
       const foe = S.you === 'a' ? 'b' : S.you === 'b' ? 'a' : null;
-      options.hideSkins = { a: hideFoe && foe === 'a', b: hideFoe && foe === 'b' };
+      const blank = { field: null, pieces: null };
+      // Ẩn skin đối thủ: đưa thẳng skin mặc định cho bên đó, nên bàn 2D và bàn 3D đều theo.
+      options.skins = { a: hideFoe && foe === 'a' ? blank : S.skins.a, b: hideFoe && foe === 'b' ? blank : S.skins.b };
       options.jolt = S.jolt || null;
-      options.onAsset = () => { if (ui && S) redraw(); };
+      options.onAsset = onAsset;
     }
     if (ui.board3d) ui.board3d.setState(options);
     else geom = root.KydaoDraw.draw(ui.canvas.getContext('2d'), options);
@@ -704,6 +715,7 @@
     const kingSq = boardGame && loser ? kingSquare(S, loser) : null;
     if (ui.board3d && typeof ui.board3d.playFx === 'function') {
       ui.board3d.playFx('win', { game: S.game, reason: ev.reason, result: ev.result, mine, king: kingSq, line: S.win || [] });
+      if (root.KydaoFx) { root.KydaoFx.mount(ui.wrap, { reduced: false }); root.KydaoFx.play('win', { game: S.game, reason: ev.reason, result: ev.result, mine, bannerOnly: true }); }
       return 2400;
     }
     if (!root.KydaoFx) return 0;
@@ -720,7 +732,11 @@
     const K = root.KydaoSkins, f = K && K.field(ev.field);
     if (f) announce((S[ev.side] && S[ev.side].name ? S[ev.side].name + ': ' : '') + f.cry + ' ' + f.name + '.');
     sound('check');
-    if (ui.board3d && typeof ui.board3d.playFx === 'function') { ui.board3d.playFx('domain', { side: ev.side, fieldId: ev.field }); return; }
+    if (ui.board3d && typeof ui.board3d.playFx === 'function') {
+      ui.board3d.playFx('domain', { side: ev.side, field: ev.field });
+      if (root.KydaoFx) { root.KydaoFx.mount(ui.wrap, { reduced: reduced() }); root.KydaoFx.play('domain', { side: ev.side, fieldId: ev.field, bannerOnly: true }); }
+      return;
+    }
     if (!root.KydaoFx) return;
     root.KydaoFx.mount(ui.wrap, { reduced: reduced() });
     const hr = halfRect(ev.side);
@@ -768,7 +784,9 @@
       sound(ev.capture ? 'capture' : ev.check ? 'check' : 'move');
       if (S.offer && S.offer !== mover) S.offer = null; // đối thủ đi một nước = từ chối lời xin hòa của mình
       render();
-      if (S.game === 'chess' && typeof ev.move === 'string' && ev.move.length === 5) playPromote(ev.move.slice(2, 4), ev.move[4]);
+      if (S.game === 'chess' && typeof ev.move === 'string' && ev.move.length === 5) {
+        try { playPromote(ev.move.slice(2, 4), ev.move[4]); } catch (e) { /* hiệu ứng lỗi không được chặn nước đi */ }
+      }
     } else if (r === 'synced') { updateClocks(); renderMoves(); }
     if (was === S.ply && r !== 'synced') updateClocks();
   }
@@ -786,7 +804,7 @@
       rematchSent = false; confirmOpen = false; minimized = false;
       if (!ui) {
         ui = build();
-        resizeFn = () => { fit(); redraw(); };
+        resizeFn = () => { stopFx(); fit(); redraw(); };
         root.addEventListener('resize', resizeFn);
       }
       ui.panel.hidden = false; ui.chip.hidden = true; ui.result.hidden = true; ui.moves.hidden = true;
@@ -824,7 +842,10 @@
         else if (ev.state === 'expired') say('Lời xin hòa đã hết hạn.');
         renderControls();
       } else if (type === 'skin' && S) {
-        if (applySkin(S, ev)) { redraw(); onSkinEvent(ev); }
+        if (applySkin(S, ev)) {
+          redraw();
+          try { onSkinEvent(ev); } catch (e) { /* hiệu ứng lỗi không được chặn nước đi */ }
+        }
       } else if (type === 'end' && S && ev.gameId === S.gameId) {
         S.over = true; S.sel = null; S.targets = []; S.offer = null;
         S.reveal = null;
@@ -834,7 +855,8 @@
         hidePromo(); render(); tick();
         clearTimeout(resultTimer);
         S.jolt = null;
-        const wait = playWin(ev);
+        let wait = 0;
+        try { wait = playWin(ev) || 0; } catch (e) { wait = 0; }
         resultTimer = setTimeout(() => { if (S && S.over && ui) showResult(ev); }, reduced() ? 0 : Math.max(450, wait));
       }
     },

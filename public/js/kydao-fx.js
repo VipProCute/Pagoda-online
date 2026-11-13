@@ -11,6 +11,7 @@
  *   KydaoFx.play('win',     { game, reason, result, mine, king:{x,y}, line:[{x,y}...] })
  *   KydaoFx.stop()   dọn canvas, banner, timer, bàn đang rung
  *   KydaoFx.unmount()
+ *   bannerOnly: true = chỉ hiện chữ, không vẽ lên canvas (dùng khi bàn 3D tự diễn hiệu ứng).
  * Tắt hiệu ứng (prefers-reduced-motion, mount({reduced:true}) hoặc localStorage 'ta-fx' = '0'): chỉ còn chữ mờ dần,
  * không rung, không hạt, không gọi onJolt. */
 (function (root, factory) {
@@ -316,7 +317,7 @@
     const f = skins && skins.field ? skins.field(o.fieldId) : null;
     const glow = f ? f.palette.glow : '#ffd27a';
     showBanner(f ? f.cry : 'Khai mở lãnh địa!', f ? f.sub : '', { kind: 'domain', glow, ms: DOMAIN_MS });
-    if (isReduced()) return;
+    if (isReduced() || o.bannerOnly) return;
     const fit0 = () => { fit(); return { x: 0, y: m.h / 2, w: m.w, h: m.h / 2 }; };
     const rect = o.rect && isNum(o.rect.w) ? o.rect : fit0();
     const fromBottom = o.fromBottom !== false;
@@ -393,7 +394,7 @@
     const plan = winPlan(o);
     const glow = plan.tone === 'win' ? '#ffd27a' : plan.tone === 'lose' ? '#8fb4d9' : '#cfe8d8';
     showBanner(plan.title, plan.sub, { kind: 'win', tone: plan.tone, glow, ms: WIN_MS });
-    if (isReduced()) return;
+    if (isReduced() || o.bannerOnly) return;
     fit();
     const W = m.w, H = m.h;
     const king = o.king && isNum(o.king.x) ? o.king : { x: W / 2, y: H / 2 };

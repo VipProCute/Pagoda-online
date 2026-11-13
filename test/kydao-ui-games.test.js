@@ -49,7 +49,8 @@ function surface(reduced = false, extra = {}) {
       el.listeners.pointerup({ clientX: p.x + (drag ? 20 : 0), clientY: p.y, preventDefault() {} });
     },
     get canvas() { return elements.find(el => el.tag === 'canvas' && el._w); },
-    get message() { return elements.find(el => el.className === 'kd-msg').textContent; }
+    get message() { return elements.find(el => el.className === 'kd-msg').textContent; },
+    get result() { return elements.find(el => el.className === 'kd-result'); }
   };
 }
 
@@ -131,4 +132,17 @@ test('khai mở sân: gửi kd:skin và hai bên thấy skin', () => {
   const c = gameEnv('gomoku', undefined, false, extra);
   assert.equal(c.sent.filter(x => x.name === 'kd:skin').length, 0, 'caro không có skin');
   c.manager.shutdown();
+});
+
+test('hiệu ứng thắng ném lỗi thì bảng kết quả vẫn hiện', () => {
+  const e = gameEnv('chess', undefined, false, {
+    KydaoFx: { mount() {}, stop() {}, unmount() {}, play() { throw new Error('x'); } }
+  });
+  const [a] = e.views;
+  const gid = e.state().gameId;
+  assert.equal(a.result.hidden, true);
+  a.api.apply({ type: 'kd:end', gameId: gid, result: 'a', reason: 'checkmate' });
+  while (a.timers.length) a.timers.shift()();
+  assert.equal(a.result.hidden, false);
+  e.manager.shutdown();
 });
