@@ -82,10 +82,10 @@
 | T-101 | Nhạc riêng cho từng môn cờ | 🟣 Chờ soát | P2 | CORE + KYDAO | gpt-6-luna (Codex CLI qua proxy) |
 | **Đợt Kỳ Đài** ([docs/KE-HOACH-KY-DAI.md](docs/KE-HOACH-KY-DAI.md)) | | | | | |
 | T-110 | Giao thức `kd:skin` trên máy chủ | 🔵 Sẵn sàng | P0 | CORE + KYDAO + KYDAI | — |
-| T-111 | Dây chuyền Blender và tài nguyên 8 sân, 8 bộ quân | 🟡 Đang làm | P0 | CORE + KYDAI | Điều phối (Claude Fable 5.2) |
+| T-111 | Dây chuyền Blender và tài nguyên 8 sân, 8 bộ quân | 🟣 Chờ soát | P0 | CORE + KYDAI | Điều phối (Claude Fable 5.2) |
 | T-112 | Module hiệu ứng 2D `KydaoFx`: khai mở, chấn động phong cấp, chiến thắng | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | — |
 | T-113 | Bàn 3D: nạp `.glb`, skin nửa sân, skin quân, `playFx` | 🔵 Sẵn sàng | P0 | CORE + KYDAO + KYDAI | — |
-| T-114 | Bàn 2D: vẽ skin nửa sân, skin quân, `jolt` | ⏳ T-111 | P0 | CORE + KYDAO + KYDAI | — |
+| T-114 | Bàn 2D: vẽ skin nửa sân, skin quân, `jolt` | 🔵 Sẵn sàng | P0 | CORE + KYDAO + KYDAI | — |
 | T-115 | Nối skin và hiệu ứng vào bảng cờ | ⏳ T-110, T-112, T-113, T-114 | P0 | CORE + KYDAO + KYDAI | — |
 | T-116 | ui-harness, ảnh chụp, Sổ tay, README cho Kỳ Đài | ⏳ T-115 | P1 | CORE + KYDAI + DOCS | — |
 | T-117 | Đồ họa 2D bằng Canva: khung khẩu hiệu, biểu tượng bộ chọn | ⏳ T-115 | P2 | CORE + KYDAI | — |

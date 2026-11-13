@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trang thử · tài nguyên skin Kỳ Đài</title>
+<style>
+  body { margin: 0; padding: 12px; background: #1b1512; color: #f3e6cf; font: 14px/1.4 system-ui, sans-serif; }
+  h1 { font-size: 18px; margin: 4px 0 10px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px; }
+  figure { margin: 0; background: #2a211c; border-radius: 8px; overflow: hidden; }
+  figure img { display: block; width: 100%; height: auto; }
+  figcaption { padding: 6px 8px; }
+  .row { display: flex; gap: 6px; padding: 0 8px 8px; }
+  .row img { width: 50%; border-radius: 4px; }
+  small { opacity: .7; }
+</style>
+</head>
+<body>
+<h1>Sân (ảnh nửa sân 2D và ảnh xem trước)</h1>
+<div class="grid" id="fields"></div>
+<h1>Bộ quân (ảnh xem trước)</h1>
+<div class="grid" id="pieces"></div>
+<script src="/js/kydao-skins.js"></script>
+<script>
+'use strict';
+(function () {
+  const S = window.KydaoSkins;
+  const el = (tag, props, kids) => { const n = Object.assign(document.createElement(tag), props || {}); (kids || []).forEach(k => n.appendChild(k)); return n; };
+  const cap = (a, b) => { const c = el('figcaption'); c.appendChild(el('b', { textContent: a })); c.appendChild(el('small', { textContent: ' · ' + b })); return c; };
+  Object.keys(S.FIELDS).forEach(id => {
+    const f = S.FIELDS[id];
+    document.getElementById('fields').appendChild(el('figure', null, [
+      el('img', { src: S.fieldImage(id), alt: f.name }), cap(f.name, f.cry + ' ' + f.sub),
+      el('div', { className: 'row' }, [el('img', { src: S.thumb('field', id), alt: '' })])
+    ]));
+  });
+  Object.keys(S.PIECES).forEach(id => {
+    document.getElementById('pieces').appendChild(el('figure', null, [
+      el('img', { src: S.thumb('pieces', id), alt: S.PIECES[id].name }), cap(S.PIECES[id].name, id)
+    ]));
+  });
+})();
+</script>
+</body>
+</html>
