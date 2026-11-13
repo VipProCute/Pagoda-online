@@ -27,6 +27,7 @@
   const WIN_MS = 2400;
   const WAVE_SPEED = 0.45;           // px/ms: sóng chấn động lan ra từ ô phong cấp
   const JOLT_DUR = 420;              // mỗi quân nảy lên rồi rơi về trong chừng này ms
+  const SHAKE_MS = 640;              // bàn rung trong chừng này ms
   const PARTICLE_MAX = 160;
   const FX_KINDS = ['ember', 'ripple', 'leaf', 'snow', 'bubble', 'petal', 'spark', 'sand'];
   const KEY_FX = 'ta-fx';
@@ -48,7 +49,7 @@
     const delay = d / WAVE_SPEED;
     const u = (t - delay) / JOLT_DUR;
     if (!isNum(t) || u <= 0 || u >= 1) return { dx: 0, dy: 0 };
-    const amp = 0.42 * cell * Math.exp(-d / (3.2 * cell));
+    const amp = 0.62 * cell * Math.exp(-d / (4.2 * cell));
     // nảy lên (sin), tắt dần về 0 ở u=1 cả giá trị lẫn đạo hàm gần đúng
     const hop = amp * Math.sin(Math.PI * u) * (1 - 0.35 * u);
     const side = hop * 0.18;
@@ -58,13 +59,14 @@
   /** Khoảng cách xa nhất (px) còn kịp nảy trong thời lượng PROMOTE_MS. */
   function joltReach() { return Math.max(0, (PROMOTE_MS - JOLT_DUR) * WAVE_SPEED); }
 
-  /** Bàn rung: độ lệch (px) của cả lớp bàn tại t ms, tắt dần về 0 sau ~420 ms. */
+  /** Bàn rung: độ lệch (px) của cả lớp bàn tại t ms. Cú giật chính rồi một dư chấn nhỏ, tắt hẳn sau SHAKE_MS. */
   function shakeAt(t, amp) {
-    const a = isNum(amp) ? amp : 4;
-    const dur = 420;
-    if (!isNum(t) || t < 0 || t >= dur) return { dx: 0, dy: 0 };
-    const k = Math.pow(1 - t / dur, 2) * a;
-    return { dx: Math.sin(t * 0.11) * k, dy: Math.cos(t * 0.083) * k * 0.7 };
+    const a = isNum(amp) ? amp : 10;
+    if (!isNum(t) || t < 0 || t >= SHAKE_MS) return { dx: 0, dy: 0 };
+    const main = Math.pow(1 - t / SHAKE_MS, 2);
+    const after = t > 260 ? 0.35 * Math.pow(1 - (t - 260) / (SHAKE_MS - 260), 2) : 0;
+    const k = (main + after) * a;
+    return { dx: Math.sin(t * 0.085) * k, dy: Math.cos(t * 0.067) * k * 0.8 };
   }
 
   /** Vệt sáng quét nửa sân. Trả { front 0..1 (vị trí đầu vệt, tính từ mép người chơi), alpha 0..1 }. */
@@ -357,7 +359,7 @@
     m.jolt = cb;
     addEffect(PROMOTE_MS, (ctx, t) => {
       curT = t;
-      const sh = shakeAt(t, Math.min(6, cell * 0.09));
+      const sh = shakeAt(t, Math.max(6, Math.min(16, cell * 0.16)));
       setShake(sh.dx, sh.dy);
       // vòng sóng lan từ ô phong cấp, cùng tốc độ với sóng chấn động
       for (let i = 0; i < 2; i++) {
@@ -517,7 +519,7 @@
     mount, unmount, play, stop,
     // toán thuần (test được trong Node)
     joltAt, joltReach, shakeAt, domainSweep, classifyReason, winPlan, spawnParticle, burstParticle, stepParticle, particleAlpha, hexA,
-    FX_KINDS, DOMAIN_MS, PROMOTE_MS, WIN_MS, WAVE_SPEED, JOLT_DUR, PARTICLE_MAX
+    FX_KINDS, DOMAIN_MS, PROMOTE_MS, WIN_MS, WAVE_SPEED, JOLT_DUR, SHAKE_MS, PARTICLE_MAX
   };
   return api;
 });
