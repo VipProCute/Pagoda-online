@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trang thử · bảng cờ có lãnh địa và hiệu ứng</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="/css/style.css">
+<link rel="stylesheet" href="/css/kydao.css">
+<link rel="stylesheet" href="/css/kydao-fx.css">
+<script type="importmap">{"imports":{"three":"/vendor/three/three.module.js?v=0.187.0"}}</script>
+</head>
+<body>
+<!-- Trang thử của điều phối: bảng cờ thật (KydaoUI) với máy chủ giả, để xem khai mở sân, phong cấp và kết thúc ván. -->
+<div style="position:fixed;left:8px;top:8px;z-index:99;display:flex;gap:6px;flex-wrap:wrap;max-width:260px">
+  <button type="button" class="kd-btn" id="b-promo">Cờ vua (sắp phong cấp)</button>
+  <button type="button" class="kd-btn" id="b-xq">Cờ tướng</button>
+  <button type="button" class="kd-btn" id="b-foe">Đối thủ khai mở Băng Sơn</button>
+  <button type="button" class="kd-btn" id="b-mate">Kết thúc: chiếu hết</button>
+  <pre id="log" style="font-size:11px;max-height:150px;overflow:auto;margin:0;width:100%"></pre>
+</div>
+<script src="/js/kydao/chess.js"></script>
+<script src="/js/kydao/xiangqi.js"></script>
+<script src="/js/kydao/go.js"></script>
+<script src="/js/kydao/gomoku.js"></script>
+<script src="/js/kydao-skins.js"></script>
+<script src="/js/kydao-fx.js"></script>
+<script src="/js/kydao-draw.js"></script>
+<script src="/js/kydao-ui.js"></script>
+<script>
+'use strict';
+(function () {
+  const log = document.getElementById('log');
+  let cur = null;
+  const say = s => { log.textContent = s + '\n' + log.textContent.slice(0, 1200); };
+  const skins = () => ({ a: { field: null, pieces: null }, b: { field: null, pieces: null } });
+  function start(game, opts) {
+    const Mod = game === 'chess' ? window.KyChess : window.KyXiangqi;
+    const st = Mod.create(opts || {});
+    cur = { mod: Mod, game, state: st, ply: 0, gameId: 'g-' + game + Date.now(), skins: skins() };
+    window.KydaoUI.open({
+      gameId: cur.gameId, table: 2, game, rated: false, pace: 'fast', you: 'a',
+      a: { pid: 'x', name: 'Khách A', elo: 1498, prov: true }, b: { pid: 'y', name: 'Kỳ Vương', elo: 1532, prov: false },
+      state: st, ply: 0, moves: [], clock: { a: 300000, b: 300000, turn: 'a', turnStartedAt: Date.now(), incMs: 3000 }, skins: cur.skins
+    }, {
+      send(name, data, cb) {
+        say('gửi ' + name + ' ' + JSON.stringify(data));
+        if (name === 'kd:move') {
+          const r = cur.mod.play(cur.state, data.move);
+          if (r.ok) { cur.state = r.state; cur.ply++; }
+          cb({ ok: !!r.ok, reason: r.reason, ply: cur.ply });
+        } else if (name === 'kd:skin') {     // máy chủ giả: chuẩn hóa rồi phát lại như máy chủ thật
+          const mine = cur.skins.a, want = window.KydaoSkins.normalize({ field: 'field' in data ? data.field : mine.field, pieces: 'pieces' in data ? data.pieces : mine.pieces });
+          const opened = want.field !== mine.field && want.field !== null;
+          cur.skins.a = want;
+          cb({ ok: true, field: want.field, pieces: want.pieces });
+          window.KydaoUI.apply({ type: 'kd:skin', gameId: cur.gameId, side: 'a', field: want.field, pieces: want.pieces, opened });
+        } else cb({ ok: true });
+      },
+      sound(k) { say('âm: ' + k); }
+    });
+  }
+  document.getElementById('b-promo').onclick = () => start('chess', { fen: 'r3k2r/1P3ppp/8/8/8/8/5PPP/R3K2R w KQkq - 0 1' });
+  document.getElementById('b-xq').onclick = () => start('xiangqi');
+  document.getElementById('b-foe').onclick = () => { if (cur) window.KydaoUI.apply({ type: 'kd:skin', gameId: cur.gameId, side: 'b', field: 'glacier', pieces: 'ice', opened: true }); };
+  document.getElementById('b-mate').onclick = () => { if (cur) window.KydaoUI.apply({ type: 'kd:end', gameId: cur.gameId, result: 'a', reason: 'checkmate', text: 'Trắng chiếu hết.' }); };
+})();
+</script>
+</body>
+</html>
