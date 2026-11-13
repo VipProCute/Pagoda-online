@@ -216,6 +216,7 @@
   let S = null;         // phiên ván
   let hooks = {};
   let timer = 0, resizeFn = null, geom = null;
+  let riverTime = 0, riverRaf = 0, riverLast = 0;
   let vi = false;
   try { vi = root.localStorage && root.localStorage.getItem(VI_KEY) === '1'; } catch (e) { /* bỏ qua */ }
   const pending = {};   // gameId → { at, evs:[] } cho kd:moved tới trước kd:start (§6.1.2)
@@ -481,6 +482,14 @@
     }
   }
 
+  function riverLoop(ts) {
+    riverRaf = 0;
+    if (!ui || !S || (S.game !== 'xiangqi' && S.game !== 'jieqi') || reduced()) return;
+    if (!ui.panel.hidden && !ui.board3d && !minimized && ts - riverLast >= 80) { riverLast = ts; riverTime = ts; if (!S.jolt) redraw(); }
+    riverRaf = root.requestAnimationFrame(riverLoop);
+  }
+  function startRiver() { if (!riverRaf && root.requestAnimationFrame && S && (S.game === 'xiangqi' || S.game === 'jieqi') && !reduced()) riverRaf = root.requestAnimationFrame(riverLoop); }
+
   function redraw() {
     if (!ui || !S || ui.panel.hidden || !ui.canvas._w) return;
     const options = {
@@ -489,6 +498,7 @@
       flip: S.you === 'b', selected: S.sel, targets: S.targets, last: S.last,
       checkSq: S.inCheck && !S.over ? kingSquare(S, sessionTurn(S)) : null, vi
     };
+    options.time = riverTime;
     if (root.KydaoSkins && root.KydaoSkins.supports(S.game)) {
       options.skins = S.skins;
       const foe = S.you === 'a' ? 'b' : S.you === 'b' ? 'a' : null;
@@ -785,12 +795,14 @@
       hidePromo(); say('');
       ui.panel.classList.toggle('kd-reduced', reduced());
       fit(); render(); tick(); flushPending();
+      startRiver();
       pref = loadPref(); fieldSentAt = 0;
       if (ui.skins) { ui.skins.hidden = true; ui.skinBtn.setAttribute('aria-expanded', 'false'); }
       if (canSkin() && pref.pieces && S.skins[S.you].pieces !== pref.pieces) sendSkin(false);
       return true;
     },
     close() {
+      if (riverRaf && root.cancelAnimationFrame) root.cancelAnimationFrame(riverRaf); riverRaf = 0;
       clearInterval(timer); timer = 0; clearTimeout(resultTimer);
       if (root.KydaoFx) root.KydaoFx.unmount();
       stopBoard3D();

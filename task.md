@@ -1442,19 +1442,20 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
 - **Mục tiêu**: bàn 2D có dải cảnh vật quanh bàn (tự thu lại trên màn hẹp để ô cờ không nhỏ đi), dùng ảnh sân v2 theo môn; quân cờ vua 2D lấy ảnh render từ mô hình 3D của từng bộ skin.
 
 ### T-121 · Bàn 2D: dòng sông sinh động giữa bàn cờ tướng
-- **Trạng thái**: 🔵 Sẵn sàng
+- **Trạng thái**: 🟣 Chờ soát
 - **Ưu tiên**: P0 (chủ dự án 13/11: giữa bàn cờ tướng phải là dòng sông sinh động, hai bên skin gì cũng vậy)
 - **Gói ngữ cảnh**: CORE + KYDAO + KYDAI
 - **Đặc tả từng bước (BẮT BUỘC làm theo)**: [docs/ky-dai/T-121-DAC-TA-DONG-SONG.md](docs/ky-dai/T-121-DAC-TA-DONG-SONG.md), phần T-121
 - **Khu vực chạm**: public/js/kydao-draw.js, public/js/kydao-ui.js (chỉ vòng lặp chuyển động), public/index.html (`?v=`), test/kydao-draw-skins.test.js, test/kydao-draw-river.test.js (mới)
 - **Phụ thuộc**: không · **Thợ**: gpt-6.1-terra (Codex CLI qua proxy) · **Soát**: Điều phối chạy test và xem trình duyệt
-- **Người làm**: — · **Nhánh**: —
+- **Người làm**: gpt-6.1-terra · **Nhánh**: codex/T-121-dong-song-2d
 - **Mục tiêu**: bàn cờ tướng và cờ úp 2D có dòng sông nước chảy, gợn sóng, lá sen trôi ở giữa hai phe.
 - **Tiêu chí xong**:
-  - [ ] Đủ các bước của đặc tả; sông có ở cờ tướng và cờ úp kể cả khi không có skin, không có ở cờ vua
-  - [ ] Quân, dấu nước đi, ô chọn luôn nằm trên sông; chữ Sở Hà / Hán Giới đọc rõ
+  - [x] Đủ các bước của đặc tả; sông có ở cờ tướng và cờ úp kể cả khi không có skin, không có ở cờ vua
+  - [ ] Quân, dấu nước đi, ô chọn luôn nằm trên sông; chữ Sở Hà / Hán Giới đọc rõ (chưa xem trình duyệt)
   - [ ] Giảm chuyển động thì sông đứng yên; `npm run check` và test trong đặc tả đạt
 - **Ngoài phạm vi**: luật cờ, giao thức, skin.
+- **Ghi chú bàn giao**: Đã thêm sông 2D và test; 5 bộ test trực tiếp đều đạt, 4 file JS sửa qua `node --check`. Chưa xác nhận `npm run check`: sandbox chặn tiến trình con `EPERM`; chưa xem trình duyệt theo yêu cầu.
 
 ### T-122 · Bàn 3D: dòng sông sinh động giữa bàn cờ tướng
 - **Trạng thái**: 🟣 Chờ soát
