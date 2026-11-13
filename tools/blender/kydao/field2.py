@@ -1283,13 +1283,13 @@ def crystal(b, x, y, z, r, h, tx, ty, seg=6):
 def build_glacier(ctx):
     sc, rng = ctx.sc, ctx.rng
     # cụm tinh thể băng lớn ở góc sau trái
-    cr = B('crystals', gem_material('ice_crystal', '#8fd8ff', 0.7, 0.05, 0.9))
+    cr = B('crystals', gem_material('ice_crystal', '#6cc8ff', 1.3, 0.05, 0.95))
     cx, cy, _ = W(-5.0, 4.95)
     spec = [(0.0, 0.0, 0.2, 1.1, 0.0, 0.0), (0.3, 0.12, 0.15, 0.85, 0.35, 0.2), (-0.28, 0.1, 0.15, 0.8, -0.3, 0.25),
             (0.05, -0.3, 0.14, 0.7, 0.25, -0.35), (-0.15, 0.32, 0.13, 0.65, -0.3, -0.2), (0.4, -0.22, 0.1, 0.5, 0.5, 0.2),
             (-0.4, -0.2, 0.1, 0.5, 0.45, -0.3)]
     for dx, dy, r, h, tx, ty in spec:
-        crystal(cr, cx + dx, cy + dy, -0.1, r, h, tx, ty)
+        crystal(cr, cx + dx * 1.3, cy + dy * 1.3, -0.1, r * 1.45, h * 1.35, tx, ty)
     cr.finish(sc)
     base = B('crystal_base', basalt_material('ice_base', '#9db6cc', 0.4, bump=2.0))
     base.ico((cx, cy, -0.1), 0.62, 3, (1.1, 1.0, 0.3), 0.2, rng, seedv=5.0, smooth=True)
@@ -1346,7 +1346,7 @@ def build_glacier(ctx):
 
 
 FIELDS['glacier'] = dict(
-    world=('#b8d4f0', 0.9), sun=('#eaf3ff', 3.4, 60), glare=(1.0, 0.15, 0.4), exposure=0.1,
+    world=('#b8d4f0', 0.6), sun=('#eaf3ff', 2.8, 60), glare=(1.0, 0.15, 0.4), exposure=-0.35,
     ground=lambda: ground_material('terrain', 'snow', '#9fb8d0', '#f4f9ff', '#2a5a8a', wet='#0e2a4a', bump=1.0),
     liquid=lambda: water_material('icewater', '#2a6a9a', '#06182e', alpha=0.92, ripple=0.2, scale=2.0), liquid_z=-0.18,
     T=dict(off=0.24, amp=0.5, freq=0.55, lo=-0.3, hi=0.4, cap=0.28, depth=-0.6, rim=0.05,
@@ -1467,6 +1467,214 @@ FIELDS['ocean'] = dict(
     slab=('#cfdccb', '#2c4c6c', None), under=('#2a9ad0', 1.0), plinth='#7fa0a6', ledge='#8aa6aa',
     groove=('#38c0d8', 0.5), pillar='#7a9aa2', bowl='#24404c', fire=('#9ff0ff', 5.0), top='orb',
     xq='#7e9ca4', bank=('#8a9a7a', '#dce4bc', 'fine'), build=build_ocean)
+
+# ───────────────────────── chủ đề: Liên Trì (lotus) ─────────────────────────
+def lotus_flower(pet, core, x, y, z, s, rng, rings=((10, 0.5, 1.0, 0.17), (8, 0.95, 0.8, 0.13), (6, 1.3, 0.55, 0.1))):
+    """Hoa sen nở: nhiều vòng cánh (số cánh, độ ngả, tỉ lệ dài, bán kính) và đài sen ở giữa."""
+    for k, (n, tilt, ln, r) in enumerate(rings):
+        for i in range(n):
+            a = 2 * math.pi * i / n + k * 0.3 + rng.uniform(-0.08, 0.08)
+            d = 0.1 * s * (1.0 - 0.12 * k)
+            pet.ico((x + d * math.cos(a), y + d * math.sin(a), z + 0.06 * s * (1 + k)), r * s, 2, (1.7 * ln, 0.55, 0.3),
+                    rot=rot_xyz(0, -tilt, a), smooth=True)
+    core.ico((x, y, z + 0.1 * s), 0.07 * s, 2, (1, 1, 0.8))
+
+
+def lily_pad(b, x, y, z, r, a):
+    b.lathe([(0.0, z), (r * 0.9, z + 0.005), (r, z + 0.03), (r * 0.96, z + 0.045), (r * 0.5, z + 0.012), (0.0, z + 0.008)], 18, (x, y, 0), True,
+            cap=False, rot=None)
+
+
+def koi(b, x, y, z, a, s, rng):
+    d = Vector((math.cos(a), math.sin(a), 0))
+    b.ico((x, y, z), 0.14 * s, 2, (2.0, 0.7, 0.45), 0.0, rng, rot=rzm(a), smooth=True)
+    tail = Vector((x, y, z)) - d * 0.3 * s
+    limb(b, tail, tail - d * 0.22 * s + Vector((-d.y, d.x, 0)) * 0.1 * s, 0.03 * s, 0.002, 4)
+    limb(b, tail, tail - d * 0.22 * s - Vector((-d.y, d.x, 0)) * 0.1 * s, 0.03 * s, 0.002, 4)
+    for sg in (-1, 1):
+        p = Vector((x, y, z)) + d * 0.08 * s + Vector((-d.y, d.x, 0)) * 0.08 * s * sg
+        limb(b, p, p - d * 0.1 * s + Vector((-d.y, d.x, 0)) * 0.1 * s * sg, 0.02 * s, 0.002, 4)
+
+
+def build_lotus(ctx):
+    sc, rng = ctx.sc, ctx.rng
+    # cá chép dưới nước
+    kk = [B('koi%d' % i, basalt_material('koi%d' % i, hx, 0.4, bump=0.3)) for i, hx in enumerate(('#ff7a2a', '#f4f0e8', '#d83a2a'))]
+    for k, (u, v, a) in enumerate(((-5.1, 1.4, 1.2), (-4.95, 3.0, 4.4), (5.15, 2.0, 2.0), (5.0, 3.6, 5.0), (-2.6, 5.1, 0.3),
+                                    (2.2, 5.15, 3.4), (1.2, 5.2, 0.1))):
+        x, y, _ = W(u, v)
+        koi(kk[k % 3], x, y, -0.34, a, rng.uniform(1.0, 1.3), rng)
+    for b in kk:
+        b.finish(sc)
+    # lá sen
+    pad = B('pads', basalt_material('pad', '#3a8a46', 0.45, bump=1.2))
+    pad2 = B('pads2', basalt_material('pad2', '#2a6a3a', 0.45, bump=1.2))
+    for k, (u, v, r) in enumerate(((-5.2, 0.5, 0.34), (-5.0, 2.2, 0.42), (-5.3, 3.5, 0.36), (5.2, 0.7, 0.4), (5.0, 2.7, 0.34),
+                                    (5.3, 3.9, 0.4), (-3.4, 5.1, 0.4), (-2.0, 5.25, 0.34), (-1.2, 5.0, 0.3), (1.5, 5.2, 0.36),
+                                    (2.9, 5.0, 0.42), (3.7, 5.3, 0.3), (-4.4, 4.6, 0.28), (4.3, 4.6, 0.3), (-5.35, 1.4, 0.26))):
+        x, y, _ = W(u, v)
+        lily_pad(pad if k % 2 else pad2, x, y, -0.19, r, 0)
+    pad.finish(sc)
+    pad2.finish(sc)
+    # tòa sen lớn nở ở góc sau trái
+    pet = B('petals', gem_material('petal', '#ff9fc0', 0.45, 0.35, 1.0))
+    core = B('seedpod', glow_material('seedpod', '#ffd060', 2.5))
+    big = B('bigpad', basalt_material('bigpad', '#2f7a3e', 0.45, bump=1.2))
+    x, y, _ = W(-4.9, 4.9)
+    lily_pad(big, x, y, -0.19, 0.78, 0)
+    lotus_flower(pet, core, x, y, -0.1, 2.6, rng, rings=((12, 0.45, 1.0, 0.17), (10, 0.85, 0.9, 0.15), (8, 1.2, 0.75, 0.13), (6, 1.5, 0.55, 0.1)))
+    ctx.light(-4.9, 4.9, 0.8, '#ffb0c8', 16.0, 0.2)
+    # hoa sen nhỏ rải trên hồ
+    for (u, v) in ((-5.15, 1.5), (5.1, 1.5), (-3.2, 5.05), (2.6, 5.15), (5.25, 3.5), (-5.3, 3.9)):
+        x, y, _ = W(u, v)
+        lotus_flower(pet, core, x, y, -0.15, 1.1, rng)
+    # đèn hoa đăng thả nước ở góc sau phải
+    lant = B('lanterns', glow_material('lantern', '#ffb050', 5.0))
+    lp = B('lantern_petals', basalt_material('lantern_petal', '#f6e2c8', 0.5))
+    for (u, v) in ((4.7, 4.95), (5.2, 4.6), (4.45, 4.55), (5.3, 5.2), (4.0, 5.1)):
+        x, y, _ = W(u, v)
+        lotus_flower(lp, lant, x, y, -0.18, 1.05, rng, rings=((9, 0.7, 1.0, 0.16), (7, 1.1, 0.8, 0.13)))
+        ctx.light(u, v, 0.35, '#ffb050', 3.0, 0.1)
+    lp.finish(sc)
+    lant.finish(sc)
+    pet.finish(sc)
+    core.finish(sc)
+    big.finish(sc)
+    # đèn đá chùa ở giữa dải sau, trên bệ đá nhỏ
+    st = B('stone_lamp', basalt_material('stone_lamp', '#8a8680', 0.7, bump=1.5))
+    fl = B('lamp_fire', glow_material('lamp_fire', '#ffb860', 6.0))
+    x, y, _ = W(0.0, 5.0)
+    st.lathe([(0.5, -0.3), (0.5, 0.1), (0.46, 0.14)], 8, (x, y, 0), False, cap=True)
+    st.lathe([(0.3, 0.14), (0.3, 0.2), (0.16, 0.26), (0.12, 0.5), (0.16, 0.56)], 6, (x, y, 0), False, cap=False)
+    st.box((x - 0.2, y - 0.2, 0.56), (x + 0.2, y + 0.2, 0.62), bevel=0.01, seg=1, flat_big=False)
+    for dx, dy in ((-0.17, -0.17), (0.17, -0.17), (-0.17, 0.17), (0.17, 0.17)):
+        st.box((x + dx - 0.03, y + dy - 0.03, 0.62), (x + dx + 0.03, y + dy + 0.03, 0.88), flat_big=False)
+    fl.ico((x, y, 0.75), 0.11, 2, (1, 1, 1.3))
+    st.cone((x, y, 0.88), 0.38, 0.06, 0.2, 6)
+    st.ico((x, y, 1.1), 0.06, 2)
+    st.finish(sc)
+    fl.finish(sc)
+    ctx.light(0.0, 5.0, 0.9, '#ffb860', 14.0, 0.15)
+    # cánh sen rơi
+    pt = B('fallen', basalt_material('fallen_petal', '#ffc0d4', 0.4))
+    for k in range(34):
+        u, v = rng.uniform(-5.4, 5.4), rng.uniform(0.1, 5.4)
+        if not ctx.free(u, v, 0.05):
+            continue
+        x, y, _ = W(u, v)
+        pt.ico((x, y, -0.17), 0.06, 1, (1.6, 0.6, 0.12), rot=rzm(rng.uniform(0, 6)), smooth=True)
+    pt.finish(sc)
+
+
+FIELDS['lotus'] = dict(
+    world=('#c8d4e4', 0.7), sun=('#fff0dc', 3.0, 60), glare=(1.0, 0.15, 0.4), exposure=0.0,
+    ground=lambda: ground_material('terrain', 'mud', '#262a1a', '#4a5a34', '#6a7a48', wet='#08140e', bump=1.0),
+    liquid=lambda: water_material('pond', '#4a8a72', '#06161a', alpha=0.8, ripple=0.12, scale=2.0, rough=0.02), liquid_z=-0.18,
+    T=dict(off=0.18, amp=0.4, freq=0.55, lo=-0.3, hi=0.3, cap=0.24, depth=-0.65, rim=0.04,
+           carve=[('poly', [(-5.45, -0.8), (-5.2, 1.0), (-5.35, 2.5), (-5.2, 4.0), (-4.2, 5.1), (-2.0, 5.2), (0.0, 5.3), (2.0, 5.2),
+                            (4.2, 5.1), (5.2, 4.0), (5.35, 2.5), (5.2, 1.0), (5.45, -0.8)], 0.85)],
+           flat=[(0.0, 5.0, 0.7)], flat_h=0.1),
+    slab=('#f2cfd6', '#6a2a2a', None), under=('#e07a9a', 0.7), plinth='#9a8a86', ledge='#a89488',
+    groove=('#e07a9a', 0.4), pillar='#9a8680', bowl='#3a2220', fire=('#ffb050', 5.0), top='orb',
+    xq='#a8928c', bank=('#2a3a2a', '#6a8a5a', 'fine'), build=build_lotus)
+
+# ───────────────────────── chủ đề: Lôi Phong (thunder) ─────────────────────────
+def bolt(b, p0, p1, rng, n=5, r=0.018, jag=0.12):
+    """Tia sét gấp khúc từ p0 tới p1."""
+    p0, p1 = Vector(p0), Vector(p1)
+    prev = p0
+    for i in range(1, n + 1):
+        t = i / n
+        q = p0.lerp(p1, t)
+        if i < n:
+            q += Vector((rng.uniform(-jag, jag), rng.uniform(-jag, jag), rng.uniform(-jag, jag) * 0.5))
+        limb(b, prev, q, r, r, 4, False)
+        prev = q
+
+
+def build_thunder(ctx):
+    sc, rng = ctx.sc, ctx.rng
+    # gai đá nhọn
+    sp = B('spires', glass_material('spire', '#2a2238'))
+    for (u, v, h) in ((-4.7, 0.8, 0.8), (-5.2, 2.0, 1.0), (-4.7, 3.0, 0.7), (-5.1, 3.9, 0.9), (4.7, 0.7, 0.8), (5.2, 1.8, 1.0),
+                      (4.7, 2.8, 0.7), (5.15, 3.8, 0.9), (-3.2, 5.2, 0.8), (-2.0, 4.8, 0.55), (2.2, 5.2, 0.8), (3.3, 4.8, 0.6),
+                      (1.2, 5.3, 0.5), (-1.2, 5.3, 0.6)):
+        x, y, _ = W(u, v)
+        zt = max(ctx.tz(u, v), -0.1)
+        for k in range(3):
+            sp.cone((x + rng.uniform(-0.12, 0.12), y + rng.uniform(-0.12, 0.12), zt - 0.04), rng.uniform(0.09, 0.16), 0.004,
+                    h * rng.uniform(0.6, 1.1), 5, rot_xyz(rng.uniform(-0.3, 0.3), rng.uniform(-0.3, 0.3), rng.uniform(0, 6.28)))
+    sp.finish(sc)
+    # cột đá thu lôi ở góc sau trái, tia sét phát sáng
+    px, py, _ = W(-4.9, 4.85)
+    pil = B('rod_pillar', basalt_material('rod_pillar', '#5a5070', 0.4, bump=2.0))
+    pil.lathe([(0.55, -0.3), (0.5, 0.1), (0.34, 0.2), (0.3, 0.9), (0.2, 1.3)], 6, (px, py, 0), False, cap=False)
+    pil.lathe([(0.2, 1.3), (0.0, 1.5)], 6, (px, py, 0), False, cap=False)
+    pil.finish(sc)
+    gl = B('rod_bolts', glow_material('rod_bolt', '#c4a8ff', 9.0))
+    top = Vector((px, py, 1.5))
+    gl.ico(tuple(top), 0.08, 2)
+    for k in range(6):
+        a = k * math.pi / 3 + rng.uniform(-0.2, 0.2)
+        bolt(gl, (px + 0.3 * math.cos(a), py + 0.3 * math.sin(a), 0.85), (px + 0.9 * math.cos(a), py + 0.9 * math.sin(a), 0.0), rng, 5, 0.022, 0.1)
+    bolt(gl, tuple(top), (px, py, 0.9), rng, 4, 0.02, 0.06)
+    gl.finish(sc)
+    ctx.light(-4.9, 4.85, 1.2, '#b090ff', 45.0, 0.2)
+    # chuông đồng treo trên khung đá ở góc sau phải
+    bx, by, _ = W(4.9, 4.85)
+    fr = B('bell_frame', basalt_material('bell_frame', '#6a6080', 0.6, bump=1.6))
+    for sgn in (-1, 1):
+        fr.box((bx + sgn * 0.52 - 0.08, by - 0.08, -0.25), (bx + sgn * 0.52 + 0.08, by + 0.08, 0.95), bevel=0.02, seg=1, flat_big=False)
+    fr.box((bx - 0.62, by - 0.08, 0.88), (bx + 0.62, by + 0.08, 1.0), bevel=0.02, seg=1, flat_big=False)
+    fr.finish(sc)
+    bell = B('bell', basalt_material('bell', '#b07a3c', 0.35, bump=1.0))
+    bell.lathe([(0.34, 0.2), (0.3, 0.32), (0.22, 0.58), (0.14, 0.78), (0.0, 0.82)], 20, (bx, by, 0), True, cap=False)
+    bell.lathe([(0.04, 0.8), (0.04, 0.9)], 6, (bx, by, 0), False, cap=True)
+    bell.finish(sc)
+    sk = B('bell_sparks', glow_material('bell_spark', '#c8b0ff', 8.0))
+    for k in range(10):
+        a = rng.uniform(0, 6.28)
+        r = rng.uniform(0.3, 0.55)
+        sk.ico((bx + r * math.cos(a), by + r * math.sin(a), rng.uniform(0.1, 0.7)), rng.uniform(0.012, 0.025), 1)
+    sk.finish(sc)
+    ctx.light(4.9, 4.85, 0.9, '#a890ff', 18.0, 0.2)
+    # cột kinh lục lăng ở giữa dải sau
+    x, y, _ = W(0.0, 5.0)
+    kp = B('sutra', basalt_material('sutra', '#8a8098', 0.6, bump=1.4))
+    kp.lathe([(0.4, -0.3), (0.4, 0.06), (0.3, 0.12), (0.24, 0.16)], 6, (x, y, 0), False, cap=False)
+    kp.lathe([(0.24, 0.16), (0.24, 0.8)], 6, (x, y, 0), False, cap=False)
+    kp.lathe([(0.3, 0.8), (0.32, 0.88), (0.24, 0.96), (0.0, 1.14)], 6, (x, y, 0), False, cap=False)
+    kp.finish(sc)
+    bands = B('sutra_runes', glow_material('rune', '#9a8aff', 3.0))
+    for zz in (0.3, 0.46, 0.62):
+        bands.lathe([(0.248, zz), (0.248, zz + 0.04)], 6, (x, y, 0), False, cap=False)
+    bands.finish(sc)
+    ctx.light(0.0, 4.8, 0.7, '#9a8aff', 7.0, 0.15)
+    # cụm mây giông cuộn quanh (khối mây nổi trên biển mây)
+    cl = B('cloud_puffs', cloud_material('puff', '#ddd2f4', '#6a5a8a'))
+    for k in range(34):
+        u, v = rng.uniform(-5.45, 5.45), rng.uniform(0.0, 5.45)
+        if not ctx.free(u, v, 0.1) or ctx.tz(u, v) > -0.1:
+            continue
+        x, y, _ = W(u, v)
+        r = rng.uniform(0.18, 0.4)
+        cl.ico((x, y, -0.2 + r * 0.25), r, 3, (1.3, 1.0, 0.55), 0.35, rng, seedv=k * 2.3, smooth=True)
+    cl.finish(sc)
+    ctx.motes('#c8b0ff', 28.0, 44, 0.2, 0.9, 0.012, 0.026, 'sparks')
+
+
+FIELDS['thunder'] = dict(
+    world=('#2e2448', 0.55), sun=('#dcd4ff', 2.4, 60), glare=(0.9, 0.3, 0.45), exposure=0.5,
+    ground=lambda: ground_material('terrain', 'slate', '#3e3650', '#8a809c', '#a898c8', wet='#1c1630', bump=1.5),
+    liquid=lambda: cloud_material('clouds', '#d6caf0', '#5a4a7a'), liquid_z=-0.18,
+    T=dict(off=0.28, amp=0.9, freq=0.6, lo=-0.3, hi=0.5, cap=0.32, depth=-0.6, rim=0.1,
+           carve=[('poly', [(-5.4, -0.8), (-5.2, 1.0), (-5.35, 2.5), (-5.2, 4.0), (-4.3, 5.1), (-3.2, 5.3)], 0.75),
+                  ('poly', [(5.4, -0.8), (5.2, 1.0), (5.35, 2.5), (5.2, 4.0), (4.3, 5.1), (3.2, 5.3)], 0.75),
+                  ('ell', -1.0, 5.2, 0.8, 0.45), ('ell', 1.3, 5.25, 0.7, 0.4)],
+           flat=[(-4.9, 4.85, 0.9), (4.9, 4.85, 0.9), (0.0, 5.0, 0.6)], flat_h=0.06),
+    slab=('#c4bad8', '#2c2640', '#8a5aff'), under=('#8a5aff', 1.4), plinth='#5a526a', ledge='#6a607c',
+    groove=('#8a6aff', 0.8), pillar='#625a74', bowl='#1c1828', fire=('#c0a8ff', 7.0), top='orb',
+    xq='#6c6486', bank=('#7a6aa0', '#d8d0f0', 'fine'), build=build_thunder)
 
 # ==== HẾT CHỦ ĐỀ ====
 
