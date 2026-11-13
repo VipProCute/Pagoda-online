@@ -26,6 +26,7 @@ Hoàn thành tu luyện nhanh không giới hạn lượt mỗi ngày. Mọi tr�
 | Quản trị | `/admin.html`: xác nhận/hủy lượt cúng dường, xem ai đang có hào quang, ẩn tin nhắn và lời nguyện (thấy cả số công đức bị trừ), gửi thông báo vào chánh điện. |
 | Võ Học Các | Nơi **tu luyện nội công** và **học chiêu**, tách khỏi chánh điện. 6 công pháp (Tĩnh Tâm Quyết, Kim Cương / Phi Yến / Nhu Thủy Tâm Pháp, Cửu Âm Tâm Kinh, Vô Cực Chân Kinh): bắt đầu rồi đóng web cũng được, hết giờ máy chủ tự ghi nhận. 15 chiêu thuộc 3 nhánh Cương / Tốc / Nhu, không khóa phái: học đủ điều kiện (cấp nội công + tâm đắc) là học được cả ba nhánh. Có thể cúng dường để hoàn thành phiên ngay (Ban điều hành xác nhận thủ công). |
 | Sân đấu | Nơi **duy nhất** luận võ 1 đấu 1, người chơi tự ra sân. Sân là một võ đường đi lại được như sân chùa (cổng Luận Võ Đường, võ đài có thái cực, giá binh khí, trống trận, mộc nhân); trên đầu mỗi người có nhãn rảnh / đang đấu / tạm nghỉ và cấp nội công, **chạm vào một người để mời luận võ** (hoặc mở Danh sách). Mời, nhận lời, chọn 4 chiêu, rồi mỗi lượt hai bên **chọn kín cùng lúc**, máy chủ lật chiêu và giải kết quả (có xác suất né / đỡ). Mọi trận đều áp dụng pháp tướng, quỷ ám, hào quang và cảnh giới nội công. Chánh điện không có đánh nhau. |
+| Chế độ 3D & góc nhìn | 2D mặc định, chuyển đổi 3D/2D bằng nút ở góc trên phải khung cảnh (lưu trình duyệt). Hai góc nhìn: góc 1 (ngang tầm mắt) và góc 3 (sau lưng, phím tắt V). 4 cảnh hỗ trợ 3D (Chánh điện, Sân chùa, Tàng Kinh Các, Sân đấu). Tự dò cấu hình đồ họa (Thấp / Vừa / Cao), tự hạ mức khi tụt khung hình; trận PK luôn giữ 2D góc nhìn thứ ba. |
 | Khác | Lịch âm và đếm ngược đến Rằm / Mùng Một, cài lên màn hình điện thoại (PWA). |
 
 ## Các "nơi" của chùa
@@ -41,6 +42,43 @@ Mỗi nơi một màn hình riêng; dùng thanh đổi map ở góc trên cảnh
 Trong chùa còn có các **cảnh** dùng chung một khung vẽ: chánh điện, sân chùa, Tàng Kinh Các (`SCENES` trong `server.js`, vẽ ở `public/js/hall.js`). Bồ đoàn: `LIB_SEATS` (phải khớp giữa `server.js` và `hall.js`), sự kiện `sit` / `stand` / `psit`; bảng tọa thiền ở `public/js/meditate.js`.
 
 Người đang ở nơi khác không hiện trong chánh điện. Thêm nơi mới (ví dụ coi bói tử vi, tarot) thì đăng ký thêm một nơi trong `PLACES` của `server.js` và `Places.register` ở `public/js/app.js`, không đụng chánh điện. Chi tiết luật chơi và giao thức: [docs/VO-HOC.md](docs/VO-HOC.md), [docs/VO-HOC-GIAO-THUC.md](docs/VO-HOC-GIAO-THUC.md), số liệu cân bằng: [docs/VO-HOC-CAN-BANG.md](docs/VO-HOC-CAN-BANG.md).
+
+## Chế độ 3D và góc nhìn
+
+Bên cạnh giao diện 2D truyền thống, Chùa Tâm An hỗ trợ không gian 3D tương tác theo thời gian thực (xây dựng trên nền Three.js 0.187.0).
+
+- **Chuyển đổi 2D / 3D**: 2D vẫn là chế độ mặc định. Ở góc trên bên phải khung cảnh có nút **"3D"** để chuyển sang 3D (khi đang ở 3D, nút đổi thành **"2D"** để trở về). Trình duyệt tự lưu lựa chọn của bạn vào `localStorage` (khóa `ta-view`).
+- **Hai góc nhìn (phím `V`)**:
+  - **Góc nhìn thứ ba (Góc 3)**: Mặc định khi vào 3D. Máy quay đặt phía sau lưng nhân vật, nhìn thấy toàn thân cùng hào quang, pháp tướng hoặc quỷ theo sau (nếu có).
+  - **Góc nhìn thứ nhất (Góc 1)**: Máy quay đặt ngang tầm mắt nhân vật, không hiện thân mình, tầm nhìn bao quát toàn bộ điện thờ và khuôn viên.
+  - Bấm nút **"Góc 1 · V"** / **"Góc 3 · V"** trên thanh điều khiển hoặc bấm phím **`V`** trên bàn phím để chuyển đổi nhanh giữa hai góc nhìn.
+- **Cách điều khiển**:
+  - **Di chuyển**: Bấm các phím `W`, `A`, `S`, `D` hoặc phím mũi tên. Bạn cũng có thể bấm hoặc chạm trực tiếp xuống mặt sàn để nhân vật tự đi tới điểm chạm (raycast).
+  - **Xoay hướng nhìn**: Bấm giữ chuột trái và kéo (hoặc vuốt ngón tay trên màn hình cảm ứng).
+  - **Thu phóng**: Cuộn con lăn chuột hoặc chụm hai ngón tay trên màn hình để phóng to / thu nhỏ khoảng cách máy quay (ở góc nhìn thứ ba).
+  - **Cần điều khiển ảo trên di động**: Khi mở trên điện thoại hoặc máy tính bảng ở chế độ 3D, màn hình sẽ hiển thị cần ảo giúp bạn di chuyển mượt mà bằng một tay.
+- **Bốn cảnh hỗ trợ 3D**:
+  - **Chánh điện**: Ba tôn tượng, bàn thờ trang nghiêm, bát hương tỏa khói, nến lung linh và đèn lồng. Tôn tượng Phật ở giữa mang ảnh mặt meme quen thuộc (`/img/fx/phat-nhay-tuong-dau.webp`) như bản 2D.
+  - **Sân chùa**: Khuôn viên rợp bóng cây, lối đi lát gạch và các bàn đá Kỳ Đạo.
+  - **Tàng Kinh Các**: Không gian tĩnh lặng, các kệ kinh sách cổ, đèn dầu và 8 bồ đoàn để ngồi thiền tu luyện nội công.
+  - **Sân đấu**: Khu vực võ đường rộng rãi với võ đài thái cực, giá binh khí, trống trận và mộc nhân.
+  - *Lưu ý về Luận võ (PK)*: Trận so chiêu PK 1 đấu 1 luôn diễn ra trên sàn đấu 2D góc nhìn thứ ba quen thuộc nhằm đảm bảo nhịp chọn chiêu đồng thời công bằng và chuẩn xác; nút chuyển đổi góc nhìn sẽ tự động ẩn đi khi bạn bước vào trận đấu.
+- **Hiệu năng & đồ họa tự thích ứng**:
+  - Ba mức chất lượng: **Thấp** (Low, không đổ bóng, tắt hiệu ứng nặng), **Vừa** (Medium) và **Cao** (High, bóng đổ mềm, hiệu ứng hạt khói nhang).
+  - Trình duyệt tự nhận diện năng lực đồ họa GPU (`public/js/gfx-detect.js`). Thiết bị di động luôn được ưu tiên mức Thấp để máy mát và tiết kiệm pin.
+  - Hệ thống tự động theo dõi số khung hình trên giây (FPS); nếu bị tụt khung hình liên tục (dưới 30 FPS trong 3 giây), game sẽ tự động hạ cấu hình xuống mức thấp hơn (`quality.mjs`).
+  - Luôn tôn trọng tùy chọn hệ thống: nếu bạn bật chế độ "Giảm chuyển động" (`prefers-reduced-motion`) trên máy, hiệu ứng lắc lư bước đi và hạt sương khói sẽ tự động tắt.
+- **Bàn cờ 3D & quân cờ mới**: Module bàn cờ 3D (`board3d.mjs`) và bộ quân cờ vẽ lại (`kydao-draw.js`) đã hoàn thiện và có trang thử nghiệm riêng, chuẩn bị sẵn sàng cho đợt tích hợp Kỳ Đạo vào game (thẻ T-034).
+- **Các trang thử nghiệm 3D độc lập**:
+  - `/world3d-test.html`: Kiểm tra tổng thể thế giới 3D.
+  - `/world3d-kit.html`: Bộ khối mẫu vật liệu và cấu kiện kiến trúc chùa.
+  - `/world3d-avatar.html`: Thử nghiệm mô hình nhân vật, trang phục, tóc, bước đi và hào quang.
+  - `/world3d-board.html`: Thử nghiệm bàn cờ 3D tương tác.
+  - `/world3d-scene-hall.html`: Cảnh Chánh điện 3D.
+  - `/world3d-scene-yard.html`: Cảnh Sân chùa 3D.
+  - `/world3d-scene-library.html`: Cảnh Tàng Kinh Các 3D.
+  - `/world3d-scene-arena.html`: Cảnh Sân đấu 3D.
+  - `/kydao-pieces-test.html`: Thử nghiệm hiển thị bộ quân cờ Kỳ Đạo vẽ mới.
 
 ## Lưu trữ bền bằng PostgreSQL (Neon)
 
@@ -348,7 +386,23 @@ lib/pk/manager.js      sân đấu: người ở sân, lời mời, sảnh, vòn
 lib/pk/buffs.js        buff pháp tướng / quỷ / hào quang cho phòng có buff; rules.js, rng.js
 public/js/martial.js   3 nhánh, 15 chiêu, 6 công pháp, cấp nội công (dùng chung máy chủ và trình duyệt)
 public/js/places.js    chuyển giữa các nơi (chánh điện, Võ Học Các, Sân đấu); dojo.js, arena.js là giao diện hai nơi sau
-public/js/hall.js      vẽ chánh điện, sân chùa, Tàng Kinh Các, Sân đấu, nhân vật (đứng, ngồi thiền), hào quang, pháp tướng, quỷ (Canvas 2D)
+public/js/hall.js      vẽ chánh điện, sân chùa, Tàng Kinh Các, Sân đấu, nhân vật (Canvas 2D); Hall.view3d là cầu nối với thế giới 3D
+public/js/view3d-ui.js thanh điều khiển 3D (nút 3D/2D, đổi góc nhìn Góc 1/3)
+public/js/view-math.js chuyển đổi toạ độ sàn 2D ↔ thế giới 3D (SCENE_SIZE), toán máy quay và raycast (UMD)
+public/js/gfx-detect.js nhận diện phần cứng GPU và phân loại mức đồ họa ban đầu
+public/js/world3d/     thế giới 3D (Three.js 0.187.0 từ /vendor/three/, ES module .mjs, nạp lười bằng import())
+  index.mjs            World3D: khởi tạo cảnh, vòng lặp vẽ, nạp cảnh và đồng bộ thực thể
+  kit.mjs              bộ khối kiến trúc và vật thể 3D (cột, tường, ngói, đèn lồng, bồ đoàn, bàn đá...)
+  avatar.mjs           nhân vật 3D (nam/nữ, 12 màu áo, 4 kiểu tóc), NPC, hoạt ảnh bước đi, hào quang
+  quality.mjs          quản lý 3 mức đồ họa (Thấp/Vừa/Cao), theo dõi FPS và tự hạ mức khi giật lag
+  camera.mjs           máy quay góc nhìn 1 và 3, làm mượt chuyển động, thu phóng
+  input.mjs            xử lý phím WASD, chạm sàn raycast, kéo xoay, chụm zoom, cần ảo trên di động
+  board3d.mjs          bàn cờ 3D cho Kỳ Đạo
+  scenes/hall.mjs      cấu trúc 3D Chánh điện (tượng Phật mặt meme, bàn thờ, nến, bát hương)
+  scenes/yard.mjs      cấu trúc 3D Sân chùa (cây cối, bàn đá, lối đi)
+  scenes/library.mjs   cấu trúc 3D Tàng Kinh Các (kệ kinh, 8 bồ đoàn, đèn dầu)
+  scenes/arena.mjs     cấu trúc 3D Sân đấu (võ đài, giá binh khí, mộc nhân)
+public/js/kydao-draw.js vẽ quân cờ Kỳ Đạo chi tiết
 public/js/meditate.js  bảng tọa thiền trên bồ đoàn ở Tàng Kinh Các (chọn công pháp, đếm giờ phiên tu)
 public/js/voice.js     nói chuyện bằng giọng (WebRTC, nghe theo khoảng cách)
 public/js/library.js   Tàng Kinh Các: kệ kinh và trang đọc

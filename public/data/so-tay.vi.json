@@ -8,7 +8,13 @@
       "blocks": [
         { "type": "p", "text": "Chùa Tâm An là chánh điện online. Nhiều đạo hữu cùng vào chùa, cùng lễ Phật và trò chuyện." },
         { "type": "h", "text": "Đi lại" },
-        { "type": "p", "text": "Chạm xuống sàn để nhân vật đi tới đó. Trên máy tính, bạn cũng đi được bằng phím mũi tên hoặc W, A, S, D." },
+        { "type": "p", "text": "Chạm xuống sàn để nhân vật đi tới đó. Trên máy tính, bạn cũng đi được bằng phím mũi tên hoặc W, A, S, D. Trên điện thoại ở chế độ 3D, màn hình có thêm cần ảo để di chuyển." },
+        { "type": "h", "text": "Chế độ 3D và góc nhìn" },
+        { "type": "p", "text": "Bấm nút 3D ở góc trên phải khung cảnh để bật 3D. Bấm lại để về 2D. Lựa chọn này được lưu trên trình duyệt của bạn." },
+        { "type": "p", "text": "Ở chế độ 3D, bấm nút Góc 1 hoặc Góc 3 để đổi góc nhìn. Bạn cũng bấm được phím V." },
+        { "type": "p", "text": "Góc nhìn thứ nhất cho bạn nhìn ngang tầm mắt. Góc nhìn thứ ba cho bạn nhìn từ sau lưng. Kéo chuột hoặc ngón tay để xoay nhìn. Cuộn chuột hoặc chụm hai ngón để thu phóng." },
+        { "type": "p", "text": "Bốn cảnh có 3D gồm Chánh điện, Sân chùa, Tàng Kinh Các và Sân đấu." },
+        { "type": "p", "text": "Trò chơi có ba mức đồ họa là Thấp, Vừa và Cao. Máy tự chọn mức phù hợp và tự hạ mức nếu tụt khung hình. Điện thoại luôn dùng mức Thấp để giữ pin. Game luôn tôn trọng tùy chọn giảm chuyển động." },
         { "type": "h", "text": "Đổi map" },
         { "type": "p", "text": "Map là khu vực đi lại được. Chạm một nút trên thanh đổi map để sang map đó. Nút của map bạn đang đứng sáng lên." },
         { "type": "h", "text": "Thanh lễ Phật" },
@@ -181,6 +187,7 @@
         { "type": "p", "text": "Chạm một đạo hữu rồi gửi lời mời. Người kia có ít giây để nhận lời. Bạn cũng mời được từ chánh điện, nhưng trận chỉ diễn ra ở Sân đấu." },
         { "type": "p", "text": "Không muốn bị mời, bạn chặn người đó trong hộp người chơi." },
         { "type": "h", "text": "Một trận diễn ra thế nào" },
+        { "type": "p", "text": "Khi vào trận luận võ, sàn đấu luôn ở chế độ 2D góc nhìn thứ ba. Nút đổi góc nhìn tự ẩn trong trận." },
         { "type": "steps", "items": [
           "Trước trận, mỗi bên có {PK.LOADOUT_SECONDS} giây để chọn bộ chiêu.",
           "Mỗi lượt, hai bên chọn kín một chiêu trong {PK.TURN_SECONDS} giây. Không ai thấy chiêu của người kia.",

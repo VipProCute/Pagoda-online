@@ -77,7 +77,7 @@
 | T-090 | Vẽ lại quân cờ 2D đẹp hơn | 🟣 Chờ soát | P1 | CORE + KYDAO | gpt-6.1-sol |
 | T-091 | Bàn cờ 3D, quân tiện tròn | 🟣 Chờ soát | P1 | CORE + KYDAO | gpt-6.1-sol |
 | T-092 | ui-harness và ảnh chụp cho 3D | 🟣 Chờ soát | P2 | CORE + OPS | gpt-6-luna (Codex CLI qua proxy) |
-| T-093 | README, Sổ tay cho 3D và góc nhìn | ⏳ T-088 | P2 | CORE + DOCS | — |
+| T-093 | README, Sổ tay cho 3D và góc nhìn | 🟣 Chờ soát | P2 | CORE + DOCS | gemini-3.8-flash-high (Codex CLI qua proxy) |
 
 Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạm `package.json`). **T-005**, **T-007**, **T-002** làm song song được với nhóm trên.
 Đợt 2026-11: làm **T-003, T-004, T-006** trước (T-004 gỡ nút thắt `package.json` cho mọi thẻ thêm file JS; T-006 là cổng "CI xanh"). Sau đó theo lịch 6 đợt ở [docs/KE-HOACH-DOT-2026-11.md §10.3](docs/KE-HOACH-DOT-2026-11.md#103-lịch-theo-đợt-và-khóa-vùng-nóng).
@@ -1213,9 +1213,11 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
 - **Ghi chú bàn giao**: Thêm `run.js`, phục vụ trang thử cùng Three.js, chạy 24 tổ hợp bằng Chromium + SwiftShader, xuất PNG và `report.json` vào `tools/ui-harness/world3d/artifacts/`. `node --check` sạch; môi trường thợ không cho chạy npm/Playwright hoặc git commit; xem `BAN-GIAO-T-092.md` để điều phối chạy và commit.
 
 ### T-093 · README, Sổ tay cho 3D và góc nhìn
-- **Trạng thái**: ⏳ Chờ T-088 · **Ưu tiên**: P2 · **Gói ngữ cảnh**: CORE + DOCS · **Thợ**: Gemini 3.8 Flash · **Soát**: Gemini Argon
+- **Trạng thái**: 🟣 Chờ soát. Điều phối soát 13/11 (thợ gemini-3.8-flash-high): đối chiếu từng ý với mã, sửa ba chi tiết sai (lư trầm thành đèn dầu, võ đài bát quái thành thái cực, bỏ ý chọn mức đồ họa trong thanh điều khiển). check sạch, test guide và sync-constants đạt. · **Ưu tiên**: P2 · **Gói ngữ cảnh**: CORE + DOCS · **Thợ**: gemini-3.8-flash-high (Codex CLI qua proxy) · **Soát**: Gemini Argon
+- **Người làm**: gemini-3.8-flash-high (Codex CLI qua proxy)
+- **Nhánh**: codex/T-093-tai-lieu-3d
 - **Khu vực chạm**: README.md, public/data/so-tay.vi.json, docs/agents/ARCHITECTURE.md (§1, §5, §6)
-- **Mục tiêu**: Người chơi biết bật 3D, đổi góc nhìn, điều khiển; agent sau biết cấu trúc `world3d/`.
+- **Mục tiêu**: Người chơi biết bật 3D, đổi góc nhìn, điều khiển; agent sau biết cấu trúc world3d/.
 
 **Ý tưởng của đợt 3D (⚪, chờ chủ dự án chọn; mô tả ở KE-HOACH-3D §3):** T-094 ngày đêm và đèn lồng · T-095 tiếng nói theo khoảng cách · T-096 trang trí lễ theo âm lịch · T-097 sàn PK 3D máy quay thứ ba cố định · T-098 chụp ảnh lưu niệm · T-099 bản đồ nhỏ.
 
