@@ -7,12 +7,16 @@ Chạy trong Blender (5.x), mỗi lần dựng + xuất MỘT nhân vật:
 Biến điều khiển:
     REPO    đường dẫn repo (bắt buộc)
     GENDER  'nam' | 'nu'
-    OUT     tập con của {'glb', 'views', 'poses', 'halo', 'check'}
+    OUT     tập con của {'glb', 'views', 'poses', 'hair', 'halo', 'check'}
+    HAIR    kiểu tóc hiện trong ảnh views/poses (0 dài, 1 búi, 2 ngắn, 3 khăn quấn; mặc định 2)
     PREVIEW True: ảnh nháp nhỏ vào thư mục tạm (không đè ảnh trong docs/); False: ghi ảnh thật vào docs/ky-dai/anh
     TMP     thư mục ảnh nháp (mặc định thư mục tạm của hệ thống)
 Đầu ra (KHÔNG sửa tay, sửa script rồi chạy lại):
     public/models/avatar/nam.glb | nu.glb | hao-quang.glb
     docs/ky-dai/anh/nhan-vat-nam.jpg | nhan-vat-nu.jpg | nhan-vat-tu-the.jpg (bốn ô dọc 320x720 ghép thành 1280x720)
+    docs/ky-dai/anh/nhan-vat-toc.jpg (4 kiểu tóc x 2 giới, cần chạy 'hair' cho cả nam lẫn nu)
+Vật liệu xuất ra: body (màu theo đỉnh COLOR_0: da, mắt, má, dép, quần, viền), robe (áo, mã đổi màu), hair, hairwrap (khăn quấn đầu).
+Tóc: bốn mesh con hair0..hair3 cùng gắn xương đầu, mã bật một cái và ẩn ba cái.
 
 Quy ước toạ độ Blender (Z lên): gốc ở giữa hai bàn chân, cao ~1,6, mặt nhìn về -Y (= +Z của glTF).
 Nhân vật bên trái (của nhân vật) là +X. Làm trong cảnh riêng 'AvatarProto', không đụng cảnh khác, không lưu .blend.
@@ -25,6 +29,7 @@ REPO = globals().get('REPO')
 GENDER = globals().get('GENDER', 'nam')
 OUT = set(globals().get('OUT', ['check']))
 PREVIEW = globals().get('PREVIEW', True)
+HAIR = int(globals().get('HAIR', 2))
 TMP = globals().get('TMP', os.path.join(tempfile.gettempdir(), 'avatar_proto'))
 if not REPO:
     raise SystemExit('Thiếu REPO')
@@ -35,7 +40,10 @@ IMG_DIR = os.path.join(REPO, 'docs', 'ky-dai', 'anh')
 FEMALE = GENDER == 'nu'
 
 COLORS = {'robe': '#6f8fa8', 'pants': '#e9e2d2', 'skin': '#f1c9a5', 'hair': '#2b2321', 'accent': '#e2b65c',
-          'shoe': '#6b5946', 'eye': '#241a16', 'cheek': '#ef9a94', 'glow': '#ffd27a'}
+          'shoe': '#6b5946', 'eye': '#241a16', 'cheek': '#ef9a94', 'glow': '#ffd27a',
+          'brow': '#2b2321', 'hairwrap': '#2c2a30'}
+# khoá lưới -> vật liệu xuất ra; khoá không có ở đây gộp vào 'body' (màu theo đỉnh)
+OWN_MAT = {'robe': 'robe', 'hair': 'hair', 'hairwrap': 'hairwrap', 'glow': 'glow'}
 
 
 def rgb(hexs, a=1.0):
@@ -139,18 +147,10 @@ def build_body():
     M.sphere('eye', (0, -.238, 1.215), (.018, .01, .008), {'head': 1.0}, seg=6, rings=3)
     # cổ
     M.loft('skin', [((0, 0, 1.12), .055, .055, {'neck': 1.0}), ((0, 0, 1.06), .058, .058, {'neck': .5, 'chest': .5})], seg=8)
-    # tóc
-    hc = (0, .015, 1.335)
-    if FEMALE:
-        keep = lambda p: (p.z > 0.0 and not (p.y < -.25 and p.z < .40)) or (p.y > .0 and p.z > -.62) or (abs(p.x) > .6 and p.y > -.45 and p.z > -.3)
-        M.sphere('hair', hc, (.288, .275, .27), {'head': 1.0}, seg=12, rings=8, keep=keep)
-        M.sphere('hair', (0, .13, 1.60), (.10, .095, .09), {'head': 1.0}, seg=6, rings=4)
-        M.sphere('accent', (.075, .06, 1.585), (.03, .02, .03), {'head': 1.0}, seg=5, rings=3)
-    else:
+    # lông mày (tóc là các mesh riêng hair0..hair3, xem build_hair)
+    if not FEMALE:
         for sx in (1, -1):
-            M.sphere('hair', (sx * .095, -.228, 1.378), (.045, .016, .011), {'head': 1.0}, seg=5, rings=3)
-        keep = lambda p: (p.z > .08 and not (p.y < -.25 and p.z < .27)) or (p.y > .35 and p.z > -.40) or (abs(p.x) > .62 and p.y > -.45 and p.z > -.25)
-        M.sphere('hair', hc, (.285, .27, .265), {'head': 1.0}, seg=12, rings=8, keep=keep)
+            M.sphere('brow', (sx * .095, -.228, 1.378), (.045, .016, .011), {'head': 1.0}, seg=5, rings=3)
     # áo tràng: cổ tàu + thân
     if FEMALE:
         rx = [.15, .185, .175, .15, .19, .23]; ry = [.1, .12, .115, .105, .135, .165]
@@ -189,8 +189,59 @@ def build_body():
     return M
 
 
+HC = (0, .015, 1.335)
+
+
+def hair_cap(M, keep):
+    M.sphere('hair', HC, (.285, .27, .265), {'head': 1.0}, seg=12, rings=8, keep=keep)
+
+
+def build_hair(style):
+    """0 dài, 1 búi, 2 ngắn, 3 khăn quấn: khớp bốn kiểu `h` của avatar.mjs."""
+    M = Mesher()
+    HW = {'head': 1.0}
+    if FEMALE:
+        cap = lambda p: (p.z > 0.0 and not (p.y < -.25 and p.z < .40)) or (p.y > .0 and p.z > -.62) or (abs(p.x) > .6 and p.y > -.45 and p.z > -.3)
+    else:
+        cap = lambda p: (p.z > .08 and not (p.y < -.25 and p.z < .27)) or (p.y > .35 and p.z > -.40) or (abs(p.x) > .62 and p.y > -.45 and p.z > -.25)
+    if style == 3:
+        M.loft('hairwrap', [((0, 0, 1.41), .294, .279, HW), ((0, 0, 1.49), .298, .283, HW), ((0, 0, 1.57), .255, .24, HW), ((0, 0, 1.63), .14, .13, HW)],
+               seg=12, cap_top=True)
+        if FEMALE:
+            M.sphere('hairwrap', (.27, -.02, 1.52), (.07, .05, .07), HW, seg=6, rings=4)
+        return M
+    hair_cap(M, cap)
+    if style == 0:
+        low, wd = (.62, .25) if FEMALE else (.86, .2)
+        M.loft('hair', [((0, .17, 1.38), wd * .9, .09, HW), ((0, .2, 1.22), wd, .095, HW),
+                        ((0, .19, 1.06), wd * .95, .09, {'neck': .4, 'chest': .6}),
+                        ((0, .17, (1.06 + low) / 2), wd * .85, .085, {'chest': .6, 'spine': .4}),
+                        ((0, .15, low), wd * .6, .07, {'spine': 1.0})], seg=8, cap_bot=True)
+        for sx in (1, -1):
+            M.loft('hair', [((sx * .262, -.02, 1.36), .03, .04, HW), ((sx * .268, .0, 1.2), .032, .04, HW),
+                            ((sx * .26, .02, 1.06 if FEMALE else 1.12), .026, .034, {'head': .4, 'neck': .3, 'chest': .3})], seg=6, cap_bot=True)
+    elif style == 1:
+        if FEMALE:
+            M.sphere('hair', (0, .13, 1.60), (.115, .105, .1), HW, seg=8, rings=5)
+        else:
+            M.sphere('hair', (0, .05, 1.64), (.095, .09, .085), HW, seg=8, rings=5)
+    elif FEMALE:       # tóc ngang vai (bob): vỏ nửa sau đầu kéo xuống gáy
+        M.sphere('hair', (0, .035, 1.27), (.30, .285, .27), HW, seg=12, rings=6, keep=lambda p: p.y > .12 and p.z < .5)
+    return M
+
+
 def make_mesh_object(M, name):
     bm = M.bm
+    # robe/hair/hairwrap/glow giữ riêng, còn lại gộp 'body' + màu theo đỉnh
+    slots = [OWN_MAT.get(key, 'body') for key in M.mats]
+    uniq = list(dict.fromkeys(slots))
+    cl = bm.loops.layers.float_color.new('Col') if 'body' in uniq else None
+    for f in bm.faces:
+        key = M.mats[f.material_index]
+        if cl is not None:
+            for lp in f.loops:
+                lp[cl] = rgb(COLORS[key]) if key not in OWN_MAT else (1, 1, 1, 1)   # robe: trắng để mã nhân màu áo
+        f.material_index = uniq.index(OWN_MAT.get(key, 'body'))
     bmesh.ops.triangulate(bm, faces=bm.faces[:])
     mesh = bpy.data.meshes.new(name + 'Mesh')
     bm.to_mesh(mesh)
@@ -198,8 +249,11 @@ def make_mesh_object(M, name):
     bm.free()
     for p in mesh.polygons:
         p.use_smooth = True
-    for key in M.mats:
+    for key in uniq:
         mesh.materials.append(material(key))
+    if cl is not None:
+        mesh.color_attributes.active_color = mesh.color_attributes['Col']
+        mesh.color_attributes.render_color_index = mesh.color_attributes.find('Col')
     ob = bpy.data.objects.new(name, mesh)
     bpy.context.scene.collection.objects.link(ob)
     for n in BONE_NAMES:
@@ -210,8 +264,15 @@ def make_mesh_object(M, name):
 def material(key):
     mat = bpy.data.materials.get(key) or bpy.data.materials.new(key)
     mat.use_nodes = True
-    bsdf = mat.node_tree.nodes.get('Principled BSDF')
-    bsdf.inputs['Base Color'].default_value = rgb(COLORS[key])
+    nt = mat.node_tree
+    bsdf = nt.nodes.get('Principled BSDF')
+    if key == 'body':
+        bsdf.inputs['Base Color'].default_value = (1, 1, 1, 1)
+        vc = next((n for n in nt.nodes if n.bl_idname == 'ShaderNodeVertexColor'), None) or nt.nodes.new('ShaderNodeVertexColor')
+        vc.layer_name = 'Col'
+        nt.links.new(vc.outputs['Color'], bsdf.inputs['Base Color'])
+    else:
+        bsdf.inputs['Base Color'].default_value = rgb(COLORS[key])
     bsdf.inputs['Roughness'].default_value = 0.8
     if key == 'glow':
         bsdf.inputs['Emission Color'].default_value = rgb(COLORS[key])
@@ -273,6 +334,7 @@ def key_pose(rig, pose, frame):
             pb.keyframe_insert('location', frame=frame)
 
 
+SIT_DZ, SIT_DY = 0.44, 0.0
 JOIN = {'upper_arm_L': (-42, 46, 0), 'lower_arm_L': (-88, 0, -74), 'shoulder_L': (0, 0, 0)}
 
 
@@ -303,10 +365,11 @@ def pose_walk(t):
 
 
 def pose_sit(t):
+    """Quỳ ngồi gọn (seiza): đùi chúc xuống phía trước, ống chân gập ra sau dưới mông, tay chắp ngực."""
     s = math.sin(2 * math.pi * t)
-    p = joined(**{'thigh_L': (-80, 0, 52), 'shin_L': (158, 0, 0),
+    p = joined(**{'thigh_L': (-62, 0, 9), 'shin_L': (150, 0, 0),
                   'upper_arm_L': (-36, 46, 0), 'lower_arm_L': (-84, 0, -74)})
-    p.update({'dz': -0.545 - 0.002 * s, 'dy': -0.02, 'chest': (2 * s + 2, 0, 0), 'spine': (1.0 * s, 0, 0), 'head': (3 + 1.5 * s, 0, 0)})
+    p.update({'dz': -SIT_DZ - 0.002 * s, 'dy': SIT_DY, 'chest': (2 * s + 2, 0, 0), 'spine': (1.0 * s, 0, 0), 'head': (3 + 1.5 * s, 0, 0)})
     return p
 
 
@@ -397,7 +460,7 @@ def new_scene():
     bpy.context.window.scene = sc
     for ob in list(sc.collection.all_objects):
         bpy.data.objects.remove(ob, do_unlink=True)
-    mine = {'namMesh', 'nuMesh', 'HaoQuangMesh', 'FloorMesh', 'AvatarArm', 'LitKey', 'LitFill', 'LitRim', 'CamStage',
+    mine = {'namMesh', 'nuMesh', 'hair0Mesh', 'hair1Mesh', 'hair2Mesh', 'hair3Mesh', 'HaoQuangMesh', 'FloorMesh', 'AvatarArm', 'LitKey', 'LitFill', 'LitRim', 'CamStage',
             'idle', 'walk', 'sit', 'bow'}
     for coll in (bpy.data.meshes, bpy.data.armatures, bpy.data.actions, bpy.data.lights, bpy.data.cameras):
         for d in list(coll):
@@ -466,7 +529,7 @@ def shoot(sc, cam, lights, path, az, tz=.8, dist=3.35, w=320, h=720, samples=48)
     bpy.ops.render.render(write_still=True)
 
 
-def montage(paths, out, w=1280, h=720):
+def montage(paths, out, w=1280, h=720, cols=None):
     import numpy as np
     tiles = []
     for p in paths:
@@ -476,7 +539,11 @@ def montage(paths, out, w=1280, h=720):
         im.pixels.foreach_get(arr)
         tiles.append(arr.reshape(th, tw, 4))
         bpy.data.images.remove(im)
-    full = np.concatenate(tiles, axis=1)
+    if cols:
+        rows = [np.concatenate(tiles[i:i + cols], axis=1) for i in range(0, len(tiles), cols)]
+        full = np.concatenate(rows[::-1], axis=0)       # pixel Blender đếm từ dưới lên
+    else:
+        full = np.concatenate(tiles, axis=1)
     img = bpy.data.images.new('MontageTmp', w, h)
     img.pixels.foreach_set(full.reshape(-1))
     img.file_format = 'JPEG'
@@ -500,7 +567,8 @@ def export(path, objs, anim):
         o.select_set(True)
     bpy.context.view_layer.objects.active = objs[0]
     kw = dict(filepath=path, export_format='GLB', use_selection=True, export_yup=True, export_cameras=False,
-              export_lights=False, use_active_scene=True, export_texcoords=False, export_apply=False, export_materials='EXPORT')
+              export_lights=False, use_active_scene=True, export_texcoords=False, export_apply=False, export_materials='EXPORT',
+              export_vertex_color='ACTIVE')
     if anim:
         kw.update(export_animations=True, export_animation_mode='NLA_TRACKS', export_skins=True, export_optimize_animation_size=True,
                   export_frame_range=False)
@@ -509,29 +577,34 @@ def export(path, objs, anim):
     bpy.ops.export_scene.gltf(**kw)
 
 
+def show_hair(hairs, style):
+    for i, ob in enumerate(hairs):
+        ob.hide_render = i != style
+
+
 def main():
     sc = new_scene()
     res = {'gender': GENDER}
     body, tris = make_mesh_object(build_body(), GENDER)
     rig = make_rig()
     bind(body, rig)
+    hairs, htris = [], []
+    for i in range(4):
+        ho, ht = make_mesh_object(build_hair(i), f'hair{i}')
+        bind(ho, rig)
+        hairs.append(ho)
+        htris.append(ht)
     make_clips(rig)
-    res.update(tris=tris, bones=len(rig.data.bones), clips={k: round(v[1] / FPS, 2) for k, v in CLIPS.items()})
-    # kiểm tra hướng pháp tuyến: tổng tích vô hướng giữa pháp tuyến và hướng ra khỏi trục thân
-    bad = 0
-    for p in body.data.polygons:
-        c = p.center
-        if p.normal.dot(Vector((c.x, c.y, 0))) < -1e-4 and abs(c.x) + abs(c.y) > .02 and c.z < 1.1:
-            bad += 1
-    res['inward_normals'] = bad
+    res.update(body_tris=tris, hair_tris=htris, max_total_tris=tris + max(htris), bones=len(rig.data.bones),
+               clips={k: round(v[1] / FPS, 2) for k, v in CLIPS.items()})
     if 'glb' in OUT:
-        ad = rig.animation_data
-        export(os.path.join(GLB_DIR, GENDER + '.glb'), [rig, body], True)
+        export(os.path.join(GLB_DIR, GENDER + '.glb'), [rig, body] + hairs, True)
         res['glb_kb'] = round(os.path.getsize(os.path.join(GLB_DIR, GENDER + '.glb')) / 1024, 1)
-    if OUT & {'views', 'poses'}:
+    if OUT & {'views', 'poses', 'hair'}:
         cam, lights = stage(sc)
         os.makedirs(TMP, exist_ok=True)
         rig.animation_data.use_nla = False
+        show_hair(hairs, HAIR)
         if 'views' in OUT:
             show_pose(rig, 'idle', 0.25)
             paths = []
@@ -551,6 +624,8 @@ def main():
                     hp = rig.pose.bones['head'].matrix @ Vector((0, .19, 0))
                     halo, _ = build_halo()
                     halo.location = (0, .2, hp.z)
+                    res['sit_pelvis_z'] = round((rig.pose.bones['hips'].matrix @ Vector((0, 0, 0))).z, 3)
+                    res['sit_head_z'] = round(hp.z, 3)
                 p = os.path.join(TMP, f'p{i}.png')
                 shoot(sc, cam, lights, p, 48, tz=.8 if name != 'sit' else .62, dist=3.35 if name != 'sit' else 3.0)
                 if halo:
@@ -560,6 +635,16 @@ def main():
             out = os.path.join(TMP if PREVIEW else IMG_DIR, 'nhan-vat-tu-the.jpg')
             montage(paths, out)
             res['poses'] = out
+        if 'hair' in OUT:
+            show_pose(rig, 'idle', 0.25)
+            for i in range(4):
+                show_hair(hairs, i)
+                shoot(sc, cam, lights, os.path.join(TMP, f'hair_{GENDER}_{i}.png'), 115, tz=1.28, dist=1.55, w=320, h=360)
+            both = [os.path.join(TMP, f'hair_{g}_{i}.png') for g in ('nam', 'nu') for i in range(4)]
+            if all(os.path.exists(x) for x in both):
+                out = os.path.join(TMP if PREVIEW else IMG_DIR, 'nhan-vat-toc.jpg')
+                montage(both, out, cols=4)
+                res['hair'] = out
         rig.animation_data.use_nla = True
     if 'halo' in OUT:
         halo, ht = build_halo()
