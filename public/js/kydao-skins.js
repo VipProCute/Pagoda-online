@@ -68,6 +68,8 @@
 
   /** Đường dẫn tài nguyên sinh từ Blender (xem tools/blender/kydao). */
   function fieldImage(id) { return has(FIELDS, id) ? '/img/kydao/fields/' + id + '.webp' : null; }
+  /** Ảnh sân v2: cảnh 3D render từ trên xuống, có dải cảnh quanh bàn (1408x704, 128 px mỗi ô). Bản riêng cho cờ vua và cờ tướng/cờ úp. */
+  function fieldImage2(id, game) { return has(FIELDS, id) ? '/img/kydao/fields2/' + id + (game === 'chess' ? '-chess' : '-xiangqi') + '.webp' : null; }
   function fieldModel(id) { return has(FIELDS, id) ? '/models/kydao/fields/' + id + '.glb' : null; }
   function piecesModel(id) { return has(PIECES, id) ? '/models/kydao/pieces/' + id + '.glb' : null; }
   function thumb(kind, id) {
@@ -75,5 +77,5 @@
     return ok ? '/img/kydao/thumbs/' + kind + '-' + id + '.webp' : null;
   }
 
-  return { GAMES, FIELDS, PIECES, supports, normalize, field, pieces, fieldImage, fieldModel, piecesModel, thumb };
+  return { GAMES, FIELDS, PIECES, supports, normalize, field, pieces, fieldImage, fieldImage2, fieldModel, piecesModel, thumb };
 });
