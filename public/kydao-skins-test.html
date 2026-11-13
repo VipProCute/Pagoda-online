@@ -17,11 +17,42 @@
 </style>
 </head>
 <body>
+<h1>Bàn 2D có skin <select id="pa"></select> <select id="pb"></select></h1>
+<div style="display:flex;gap:10px;flex-wrap:wrap"><canvas id="bc" style="width:360px;height:360px"></canvas><canvas id="bx" style="width:330px;height:366px"></canvas></div>
 <h1>Sân (ảnh nửa sân 2D và ảnh xem trước)</h1>
 <div class="grid" id="fields"></div>
 <h1>Bộ quân (ảnh xem trước)</h1>
 <div class="grid" id="pieces"></div>
 <script src="/js/kydao-skins.js"></script>
+<script src="/js/kydao/chess.js"></script>
+<script src="/js/kydao/xiangqi.js"></script>
+<script src="/js/kydao-draw.js"></script>
+<script>
+'use strict';
+(function () {
+  // Hai bàn mẫu: bên a và bên b mỗi bên một cặp sân + quân, chọn bằng hai ô ở tiêu đề ("sân/quân").
+  const S = window.KydaoSkins, D = window.KydaoDraw;
+  const F = Object.keys(S.FIELDS), P = Object.keys(S.PIECES);
+  const fill = (sel, start) => {
+    F.forEach((f, i) => { const o = document.createElement('option'); o.value = f + '/' + P[i]; o.textContent = S.FIELDS[f].name + ' + ' + S.PIECES[P[i]].name; sel.appendChild(o); });
+    sel.selectedIndex = start; sel.onchange = paint;
+  };
+  const skin = sel => { const v = sel.value.split('/'); return { field: v[0], pieces: v[1] }; };
+  function board(id, game, state, w, h) {
+    const c = document.getElementById(id), dpr = Math.min(2, window.devicePixelRatio || 1);
+    c.width = w * dpr; c.height = h * dpr;
+    D.draw(c.getContext('2d'), { game, w, h, dpr, board: state.board, flip: false, last: [], targets: [], vi: true,
+      skins: { a: skin(document.getElementById('pa')), b: skin(document.getElementById('pb')) }, onAsset: paint });
+  }
+  function paint() {
+    board('bc', 'chess', window.KyChess.create(), 360, 360);
+    board('bx', 'xiangqi', window.KyXiangqi.create(), 330, 366);
+  }
+  fill(document.getElementById('pa'), 0); fill(document.getElementById('pb'), 3);
+  paint();
+  window.__paint = (a, b) => { document.getElementById('pa').selectedIndex = a; document.getElementById('pb').selectedIndex = b; paint(); };
+})();
+</script>
 <script>
 'use strict';
 (function () {
