@@ -78,7 +78,7 @@
 | T-091 | Bàn cờ 3D, quân tiện tròn | 🟣 Chờ soát | P1 | CORE + KYDAO | gpt-6.1-sol |
 | T-092 | ui-harness và ảnh chụp cho 3D | 🟣 Chờ soát | P2 | CORE + OPS | gpt-6-luna (Codex CLI qua proxy) |
 | T-093 | README, Sổ tay cho 3D và góc nhìn | 🟣 Chờ soát | P2 | CORE + DOCS | gemini-3.8-flash-high (Codex CLI qua proxy) |
-| T-100 | Nhân vật 3D bám sát 2D: hào quang, pháp tướng, quỷ, trang phục, Obito | 🔵 Sẵn sàng | P0 | CORE + HALL | — |
+| T-100 | Nhân vật 3D bám sát 2D: hào quang, pháp tướng, quỷ, trang phục, Obito | 🟣 Chờ soát | P0 | CORE + HALL | gpt-6.1-sol |
 | T-101 | Nhạc riêng cho từng môn cờ | ⏳ T-034, 👤 file nhạc | P2 | CORE + KYDAO | — |
 
 Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạm `package.json`). **T-005**, **T-007**, **T-002** làm song song được với nhóm trên.
@@ -1222,19 +1222,20 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
 - **Mục tiêu**: Người chơi biết bật 3D, đổi góc nhìn, điều khiển; agent sau biết cấu trúc world3d/.
 
 ### T-100 · Nhân vật 3D bám sát 2D: hào quang, pháp tướng, quỷ, trang phục, Obito
-- **Trạng thái**: 🔵 Sẵn sàng
+- **Trạng thái**: 🟣 Chờ soát. Điều phối soát 13/11 (thợ gpt-6.1-sol): check sạch, npm test 832 đạt 0 trượt 3 bỏ qua. Xem game thật ở Tàng Kinh Các 3D: quỷ hiện sau lưng Hắc Phong Ma Khách, Obito áo choàng đen mây đỏ, dáng người thon hơn. Chưa xem tận mắt 9 bậc hào quang, pháp tướng và trang phục cô nương trong game.
 - **Ưu tiên**: P0 (chủ dự án 13/11: hào quang, quỷ do cúng dường là dấu ấn của game, không được mất khi sang 3D)
 - **Gói ngữ cảnh**: CORE + HALL
 - **Khu vực chạm**: public/js/world3d/avatar.mjs, public/js/world3d/index.mjs (chỉ phần dựng/cập nhật nhân vật), public/js/hall.js (CHỈ hàm viewSnapshot: thêm trường còn thiếu), public/world3d-avatar.html, test/world3d-avatar.test.js, test/hall-view3d.test.js, public/js/view3d-ui.js và public/index.html (chỉ tăng ?v=)
-- **Người làm**: — · **Nhánh**: —
+- **Người làm**: gpt-6.1-sol (Codex CLI qua proxy) · **Nhánh**: codex/T-100-nhan-vat-3d-hao-quang
 - **Mục tiêu**: bật 3D vẫn thấy đủ dấu ấn của bản 2D trên từng nhân vật.
 - **Tiêu chí xong**:
-  - [ ] Hào quang theo bậc cúng dường: dùng lại đúng ảnh `/img/fx/aura/*.webp` và màu bậc như 2D (ảnh phẳng luôn quay về máy quay, đặt sau lưng nhân vật), mức Thấp vẫn hiện
-  - [ ] Pháp tướng và quỷ theo sau (`/img/fx/demon-*.webp` và các hiệu ứng tương ứng trong hall.js) hiện trong 3D đúng điều kiện như 2D
-  - [ ] Trang phục NPC nữ (`npcFashion`) và các kiểu tóc giống hình 2D; Obito áo choàng đen mây đỏ, mặt nạ cam xoáy
-  - [ ] Dáng nhân vật thon, mềm hơn (bớt khối hộp), giữ số tam giác thấp cho điện thoại
-  - [ ] Hết hạn hào quang thì tắt đúng giờ máy chủ; tôn trọng giảm chuyển động
+  - [x] Hào quang theo bậc cúng dường: dùng lại đúng ảnh `/img/fx/aura/*.webp` và màu bậc như 2D (ảnh phẳng luôn quay về máy quay, đặt sau lưng nhân vật), mức Thấp vẫn hiện
+  - [x] Pháp tướng và quỷ theo sau (`/img/fx/demon-*.webp` và các hiệu ứng tương ứng trong hall.js) hiện trong 3D đúng điều kiện như 2D
+  - [x] Trang phục NPC nữ (`npcFashion`) và các kiểu tóc giống hình 2D; Obito áo choàng đen mây đỏ, mặt nạ cam xoáy
+  - [x] Dáng nhân vật thon, mềm hơn (bớt khối hộp), giữ số tam giác thấp cho điện thoại
+  - [x] Hết hạn hào quang thì tắt đúng giờ máy chủ; tôn trọng giảm chuyển động
   - [ ] npm run check sạch; test avatar và hall-view3d đạt; trang thử /world3d-avatar.html có đủ các biến thể
+- **Ghi chú bàn giao**: Avatar 11/11, hall-view3d 10/10, hall-npcs 4/4, scene-arena 10/10 đạt khi chạy trực tiếp; cú pháp các file sửa và module trang thử đạt. `npm run check` / `node --test` bị sandbox chặn spawn EPERM; chờ điều phối chạy lại và xem trình duyệt. Hiệu ứng Canvas dùng hình tĩnh chung có nhịp thở; chi tiết chuyển động được giản lược. Một dòng ngoài khu vực: tăng import avatar ở scenes/arena.mjs để tránh cache cũ. Báo cáo: BAN-GIAO-T-100.md (không commit); để nguyên chưa commit theo chỉ dẫn điều phối.
 
 ### T-101 · Nhạc riêng cho từng môn cờ
 - **Trạng thái**: ⏳ Chờ T-034 và file nhạc do chủ dự án tạo (prompt ở báo cáo 13/11)
