@@ -75,7 +75,7 @@
 | T-088 | Nối 3D vào game: nút 2D/3D, góc nhìn 1/3, điều khiển | ⏳ T-081, T-083, T-084 | P0 | CORE + HALL + NAV | — |
 | T-089 | Cài đặt đồ họa, tự dò máy yếu | 🟣 Chờ soát | P1 | CORE + HALL | gpt-6-luna |
 | T-090 | Vẽ lại quân cờ 2D đẹp hơn | 🟣 Chờ soát | P1 | CORE + KYDAO | gpt-6.1-sol |
-| T-091 | Bàn cờ 3D, quân tiện tròn | ⏳ T-080, T-090 | P1 | CORE + KYDAO | — |
+| T-091 | Bàn cờ 3D, quân tiện tròn | 🟣 Chờ soát | P1 | CORE + KYDAO | gpt-6.1-sol |
 | T-092 | ui-harness và ảnh chụp cho 3D | ⏳ T-088 | P2 | CORE + OPS | — |
 | T-093 | README, Sổ tay cho 3D và góc nhìn | ⏳ T-088 | P2 | CORE + DOCS | — |
 
@@ -1178,14 +1178,16 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
 - **Ngoài phạm vi**: `kydao-ui.js`, luật cờ, cờ vây/caro (T-033).
 
 ### T-091 · Bàn cờ 3D, quân tiện tròn
-- **Trạng thái**: ⏳ Chờ T-080, T-090 · **Ưu tiên**: P1 · **Gói ngữ cảnh**: CORE + KYDAO
+- **Trạng thái**: 🟣 Chờ soát. Điều phối chạy lại: npm run check sạch, test 18/18, xem /world3d-board.html: cờ vua và cờ tướng hiện đúng, console không lỗi. Còn lại: quân trắng hơi cháy sáng, quân cờ tướng hơi nhỏ so với ô; nút Bàn 3D chưa thấy trong game vì index.html chưa nạp KydaoUI (T-034). · **Ưu tiên**: P1 · **Gói ngữ cảnh**: CORE + KYDAO
+- **Người làm**: gpt-6.1-sol (Codex CLI qua proxy) · **Nhánh**: codex/T-091-ban-co-3d
 - **Khu vực chạm**: public/js/world3d/board3d.mjs (mới), public/js/kydao-ui.js (chỉ thêm nút "Bàn 3D" và chỗ gắn), public/world3d-board.html (mới, trang thử)
 - **Phụ thuộc**: T-080, T-090 · **Thợ**: gpt-6.1-sol · **Soát**: Claude Sonnet 5.5 + Gemini Argon
 - **Mục tiêu**: Trong bảng bàn cờ có nút đổi sang bàn 3D: quân cờ vua tiện tròn (`LatheGeometry`, mã có đầu ngựa đúc), quân cờ tướng đĩa gỗ khắc chữ, đá cờ vây bóng; xoay bàn, quân trượt khi đi, quân bị ăn rơi ra mép.
 - **Tiêu chí xong**:
-  - [ ] Nhận cùng dữ liệu mà `KydaoDraw.draw` nhận; chạm ô trả cùng tên ô như `squareAt`
-  - [ ] Không có WebGL2 thì nút ẩn; 2D vẫn là mặc định
+  - [x] Nhận cùng dữ liệu mà `KydaoDraw.draw` nhận; chạm ô trả cùng tên ô như `squareAt`
+  - [x] Không có WebGL2 thì nút ẩn; 2D vẫn là mặc định (đã viết mã; chờ điều phối kiểm trình duyệt)
   - [ ] Ảnh 2 môn cờ trong bàn giao
+- **Ghi chú bàn giao**: Module độc lập + trang thử `/world3d-board.html`, hai bàn khai cuộc, xoay/chụm, nước thử có ăn quân, Hán/Việt; có thêm vây/caro vì dữ liệu luật đã có. `kydao-ui.js` thêm nút nạp lười, cùng luồng chọn ô, tự về 2D khi lỗi; `index.html` chưa nạp Kỳ Đạo trong nhánh này (T-034), không tự nối ngoài phạm vi. Test trực tiếp Node: 112 đạt, 0 trượt, 1 bỏ qua (perft sâu); cú pháp 3 JS/MJS và script trang thử sạch. Theo giao việc, điều phối chạy `npm run check` / `node --test`, chụp ảnh, soát WebGL và add/commit; thợ chưa add/commit. Chi tiết trong `BAN-GIAO-T-091.md` (không commit).
 - **Ngoài phạm vi**: luật cờ, giao thức `kd:*`.
 
 ### T-092 · ui-harness và ảnh chụp cho 3D

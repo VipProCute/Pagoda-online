@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bàn cờ mộc · Chùa Tâm An</title>
+  <style>
+    :root { color-scheme: light; font-family: system-ui, sans-serif; color: #403b2d; background: #f1eddf; }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    main { max-width: 1560px; margin: auto; padding: 40px 32px 24px; }
+    .kd-kicker { color: #8c7040; font-size: 11px; letter-spacing: .22em; font-weight: 700; }
+    h1 { font: 48px/1.1 Georgia, 'Times New Roman', serif; margin: 12px 0; color: #354638; }
+    .kd-intro { color: #7b7768; margin: 0 0 28px; max-width: 620px; line-height: 1.7; }
+    .kd-gallery { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+    article { min-width: 0; border: 1px solid #d5ccb6; border-radius: 16px; background: #faf7ee; overflow: hidden; }
+    .kd-heading { display: flex; justify-content: space-between; align-items: center; padding: 18px 22px; }
+    h2 { margin: 0; font: 26px Georgia, 'Times New Roman', serif; color: #384a3d; }
+    .kd-number { font: 12px Georgia, serif; color: #a38959; letter-spacing: .14em; }
+    .kd-stage { position: relative; background: #28362f; }
+    canvas { display: block; width: 100%; height: min(43vw, 620px); min-height: 320px; touch-action: none; cursor: grab; }
+    canvas:active { cursor: grabbing; }
+    canvas:focus-visible { outline: 3px solid #d1b16c; outline-offset: -4px; }
+    .kd-hint { position: absolute; bottom: 12px; left: 20px; color: #c1c6ac; font-size: 11px; letter-spacing: .05em; pointer-events: none; }
+    .kd-toolbar { padding: 16px 20px 8px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    button { min-height: 44px; padding: 10px 14px; border: 1px solid #d4c7aa; border-radius: 7px; background: #faf7ed; color: #59634e; cursor: pointer; font: 13px system-ui, sans-serif; }
+    button:first-child { background: #475d48; border-color: #475d48; color: #fff6de; }
+    button:hover { filter: brightness(.94); }
+    button:disabled { opacity: .55; cursor: default; }
+    .kd-status { margin: 4px 22px 18px; min-height: 22px; font-size: 12px; line-height: 1.6; color: #8c7755; }
+    .kd-foot { margin: 24px 0 0; border-top: 1px solid #d8d0bc; padding-top: 18px; color: #8b816b; font-size: 12px; line-height: 1.7; }
+    details { margin-top: 24px; } summary { min-height: 44px; padding: 12px 0; cursor: pointer; color: #6c7056; }
+    a { color: #586b4d; }
+    @media (max-width: 800px) {
+      main { padding: 24px 14px; } h1 { font-size: 36px; }
+      .kd-gallery { grid-template-columns: 1fr; gap: 18px; } canvas { height: 88vw; min-height: 300px; max-height: 620px; }
+      .kd-heading { padding: 16px 18px; } .kd-toolbar { padding: 14px 14px 6px; }
+    }
+  </style>
+  <script type="importmap">{ "imports": { "three": "/vendor/three/three.module.js?v=0.187.0" } }</script>
+</head>
+<body>
+  <main>
+    <div class="kd-kicker">CHÙA TÂM AN · KỲ ĐẠO</div>
+    <h1>Một nước cờ, một khoảng lặng.</h1>
+    <p class="kd-intro">Gỗ ngà, gỗ mun và những nét chữ trên mặt cờ. Kéo nhẹ để ngắm bàn, chạm một ô để đọc tọa độ.</p>
+    <div class="kd-gallery" id="boards"></div>
+    <details id="stones"><summary>Xem thêm bàn cờ vây và caro</summary><div class="kd-gallery" id="stone-boards"></div></details>
+    <p class="kd-foot">Kéo / phím mũi tên: xoay bàn · Cuộn / chụm hai ngón / phím + −: gần xa.<br>Chế độ giảm chuyển động theo thiết lập của máy. Đây là trang thử hình ảnh; nước thử dùng luật có sẵn. <a href="/">Về chùa</a></p>
+  </main>
+  <script src="/js/kydao/chess.js?v=1"></script>
+  <script src="/js/kydao/xiangqi.js?v=1"></script>
+  <script src="/js/kydao/go.js?v=1"></script>
+  <script src="/js/kydao/gomoku.js?v=1"></script>
+  <script type="module">
+    import { createBoard3D } from '/js/world3d/board3d.mjs?v=1';
+
+    const views = [];
+    function addBoard(game, title, number, mod, moves, parent) {
+      const article = document.createElement('article');
+      const heading = document.createElement('div'); heading.className = 'kd-heading';
+      const h2 = document.createElement('h2'); h2.textContent = title;
+      const label = document.createElement('span'); label.className = 'kd-number'; label.textContent = number;
+      heading.append(h2, label);
+      const stage = document.createElement('div'); stage.className = 'kd-stage';
+      const canvas = document.createElement('canvas'); canvas.tabIndex = 0; canvas.setAttribute('aria-label', title + ' 3D. Kéo để xoay; chạm để đọc tên ô.');
+      const hint = document.createElement('span'); hint.className = 'kd-hint'; hint.textContent = 'KÉO ĐỂ XOAY · CHẠM ĐỂ CHỌN Ô'; stage.append(canvas, hint);
+      const toolbar = document.createElement('div'); toolbar.className = 'kd-toolbar';
+      const status = document.createElement('p'); status.className = 'kd-status'; status.setAttribute('role', 'status'); status.textContent = 'Đang mở bàn cờ…';
+      article.append(heading, stage, toolbar, status); parent.append(article);
+      const button = (text, fn) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = text; b.addEventListener('click', fn); toolbar.append(b); return b; };
+      let view, state = mod.create(game === 'go' ? { size: 9 } : {}), step = 0, last = [], flip = false, vi = false, selected = null;
+      const draw = () => view.setState({ game, ...state, last, flip, vi, selected });
+      try {
+        view = createBoard3D({ canvas, game }); views.push(view);
+        view.onPick(name => { selected = name; status.textContent = 'Ô vừa chạm: ' + name; draw(); });
+        button('Đi thử một nước', () => {
+          if (step === moves.length) { status.textContent = 'Đã hết chuỗi nước thử. Xin bấm Khai cuộc.'; return; }
+          const m = moves[step], result = mod.play(state, m);
+          if (!result.ok) { status.textContent = 'Nước thử không hợp lệ.'; return; }
+          state = result.state; selected = null; step++;
+          last = game === 'chess' || game === 'xiangqi' ? [m.slice(0, 2), m.slice(2, 4)] : [m];
+          status.textContent = 'Nước ' + step + ': ' + m + (result.info && result.info.capture ? ' · ăn quân' : ''); draw();
+        });
+        button('Đổi bên nhìn', () => { flip = !flip; draw(); });
+        if (game === 'xiangqi') {
+          const b = button('Chữ Việt', () => { vi = !vi; b.textContent = vi ? 'Chữ Hán' : 'Chữ Việt'; draw(); });
+        }
+        button('Khai cuộc', () => { state = mod.create(game === 'go' ? { size: 9 } : {}); step = 0; last = []; selected = null; status.textContent = 'Thế khai cuộc · mời chạm một ô.'; draw(); });
+        draw(); status.textContent = 'Thế khai cuộc · mời chạm một ô.';
+        canvas.addEventListener('webglcontextlost', event => { event.preventDefault(); view.dispose(); status.textContent = 'Bàn 3D tạm nghỉ. Xin tải lại trang.'; toolbar.querySelectorAll('button').forEach(b => { b.disabled = true; }); });
+      } catch (error) {
+        if (view) view.dispose(); status.textContent = 'Chưa mở được bàn 3D. Trình duyệt cần hỗ trợ WebGL2.';
+      }
+    }
+    addBoard('chess', 'Cờ vua', '01 / GỖ NGÀ & GỖ MUN', window.KyChess, ['e2e4', 'd7d5', 'e4d5', 'd8d5', 'b1c3'], document.getElementById('boards'));
+    addBoard('xiangqi', 'Cờ tướng', '02 / GỖ MỘC KHẮC CHỮ', window.KyXiangqi, ['b2b9', 'h9g7', 'b9b8'], document.getElementById('boards'));
+    let stonesOpened = false;
+    document.getElementById('stones').addEventListener('toggle', event => {
+      if (!event.target.open || stonesOpened) return; stonesOpened = true;
+      const parent = document.getElementById('stone-boards');
+      addBoard('go', 'Cờ vây', '03 / ĐÁ ĐEN & TRẮNG', window.KyGo, ['C3', 'G7', 'C7', 'G3', 'E5'], parent);
+      addBoard('gomoku', 'Caro', '04 / QUÂN X & O', window.KyGomoku, ['h8', 'i8', 'h9', 'i9', 'h10'], parent);
+    });
+    window.addEventListener('pagehide', () => views.forEach(view => view.dispose()), { once: true });
+  </script>
+</body>
+</html>

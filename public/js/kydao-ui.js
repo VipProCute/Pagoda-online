@@ -224,7 +224,9 @@
     el.resignBtn = btn('kd-danger', 'Đầu hàng', () => { confirmOpen = true; renderControls(); });
     el.movesBtn = btn('', 'Nước đi ▾', () => { el.moves.hidden = !el.moves.hidden; el.movesBtn.setAttribute('aria-expanded', String(!el.moves.hidden)); }, { 'aria-expanded': 'false' });
     el.viBtn = btn('', 'Chữ Việt', () => setVi(!vi), { 'aria-pressed': 'false' });
-    el.actions = h('div', { class: 'kd-actions' }, el.drawBtn, el.resignBtn, el.movesBtn, el.viBtn);
+    el.boardBtn = btn('', 'Bàn 3D', toggleBoard3D, { 'aria-pressed': 'false' });
+    el.boardBtn.hidden = !hasBoardWebGL();
+    el.actions = h('div', { class: 'kd-actions' }, el.drawBtn, el.resignBtn, el.movesBtn, el.viBtn, el.boardBtn);
     el.confirm = h('div', { class: 'kd-confirm', hidden: true }, h('span', null, 'Đầu hàng ván này?'),
       btn('kd-danger', 'Đầu hàng', () => { confirmOpen = false; renderControls(); send('kd:resign', { gameId: S && S.gameId }, ack => { if (ack && !ack.ok) say(ack.reason || ''); }); }),
       btn('kd-ghost', 'Thôi', () => { confirmOpen = false; renderControls(); }));
@@ -248,11 +250,61 @@
     const kx = rc.width > 0 && ui.canvas._w ? ui.canvas._w / rc.width : 1;
     const ky = rc.height > 0 && ui.canvas._h ? ui.canvas._h / rc.height : 1;
     const sq = root.KydaoDraw.squareAt(geom, (e.clientX - rc.left) * kx, (e.clientY - rc.top) * ky, S.you === 'b');
+    onSquare(sq);
+  }
+
+  function onSquare(sq) {
+    if (!S) return;
     const r = tapSquare(S, sq);
     if (r.kind === 'move') sendMove(r.move);
     else if (r.kind === 'promo') showPromo(r);
     else hidePromo();
     redraw();
+  }
+
+  function hasBoardWebGL() {
+    try {
+      const canvas = document.createElement('canvas'), gl = canvas.getContext('webgl2');
+      if (!gl) return false;
+      const lose = gl.getExtension('WEBGL_lose_context'); if (lose) lose.loseContext();
+      return true;
+    } catch (e) { return false; }
+  }
+
+  function stopBoard3D() {
+    if (!ui) return;
+    ui.boardLoad = null;
+    if (ui.board3d) ui.board3d.dispose();
+    if (ui.canvas3d) ui.canvas3d.remove();
+    ui.board3d = null; ui.canvas3d = null;
+    ui.canvas.style.display = '';
+    ui.boardBtn.disabled = false; ui.boardBtn.textContent = 'Bàn 3D'; ui.boardBtn.setAttribute('aria-pressed', 'false');
+  }
+
+  async function toggleBoard3D() {
+    if (!ui || !S) return;
+    if (ui.board3d) { stopBoard3D(); fit(); redraw(); return; }
+    const panel = ui, session = S, token = {};
+    panel.boardLoad = token; panel.boardBtn.disabled = true; panel.boardBtn.textContent = 'Đang mở…';
+    try {
+      const { createBoard3D } = await import('/js/world3d/board3d.mjs?v=1');
+      if (ui !== panel || S !== session || panel.boardLoad !== token) return;
+      panel.canvas3d = h('canvas', { class: 'kd-canvas', tabindex: '0', 'aria-label': 'Bàn cờ 3D. Kéo hoặc dùng phím mũi tên để xoay; cuộn để thu phóng.' });
+      panel.canvas3d.style.width = panel.canvas._w + 'px'; panel.canvas3d.style.height = panel.canvas._h + 'px';
+      panel.canvas.style.display = 'none'; panel.wrap.prepend(panel.canvas3d);
+      panel.board3d = createBoard3D({ canvas: panel.canvas3d, game: S.game });
+      panel.board3d.onPick(onSquare);
+      panel.canvas3d.addEventListener('webglcontextlost', e => {
+        e.preventDefault();
+        if (ui === panel && panel.canvas3d === e.currentTarget && panel.board3d) { stopBoard3D(); fit(); redraw(); say('Bàn 3D tạm nghỉ. Xin tiếp tục trên bàn 2D.'); }
+      });
+      panel.boardBtn.textContent = 'Bàn 2D'; panel.boardBtn.setAttribute('aria-pressed', 'true');
+      fit(); redraw();
+    } catch (e) {
+      if (ui === panel && S === session) { stopBoard3D(); fit(); redraw(); say('Chưa mở được bàn 3D. Xin tiếp tục trên bàn 2D.'); }
+    } finally {
+      if (ui === panel && panel.boardLoad === token) { panel.boardLoad = null; panel.boardBtn.disabled = false; }
+    }
   }
 
   function showPromo(r) {
@@ -311,6 +363,7 @@
   function setMin(m) {
     minimized = !!m;
     if (!ui) return;
+    if (minimized) stopBoard3D();
     ui.panel.hidden = minimized;
     ui.chip.hidden = !minimized;
     if (typeof hooks.onMinimize === 'function') hooks.onMinimize(minimized);
@@ -335,16 +388,21 @@
     ui.canvas.style.width = w + 'px'; ui.canvas.style.height = hh + 'px';
     ui.canvas.width = Math.round(w * dpr); ui.canvas.height = Math.round(hh * dpr);
     ui.canvas._dpr = dpr; ui.canvas._w = w; ui.canvas._h = hh;
+    if (ui.canvas3d) {
+      ui.canvas3d.style.width = w + 'px'; ui.canvas3d.style.height = hh + 'px';
+      ui.board3d.resize();
+    }
   }
 
   function redraw() {
     if (!ui || !S || ui.panel.hidden || !ui.canvas._w) return;
-    const ctx = ui.canvas.getContext('2d');
-    geom = root.KydaoDraw.draw(ctx, {
+    const options = {
       game: S.game, w: ui.canvas._w, h: ui.canvas._h, dpr: ui.canvas._dpr, board: S.state.board,
       flip: S.you === 'b', selected: S.sel, targets: S.targets, last: S.last,
       checkSq: S.inCheck && !S.over ? kingSquare(S, sessionTurn(S)) : null, vi
-    });
+    };
+    if (ui.board3d) ui.board3d.setState(options);
+    else geom = root.KydaoDraw.draw(ui.canvas.getContext('2d'), options);
   }
 
   const sideLabel = side => (SIDE_NAME[S.game] || SIDE_NAME.xiangqi)[side];
@@ -481,6 +539,7 @@
       if (!start || typeof start !== 'object') return false;
       const mod = moduleFor(start.game);
       if (!mod || !root.KydaoDraw) return false; // môn chưa hỗ trợ (cờ vây/caro/cờ úp: T-033)
+      stopBoard3D();
       hooks = h2 || hooks || {};
       clearTimeout(resultTimer);
       S = makeSession(start, mod);
@@ -499,6 +558,7 @@
     },
     close() {
       clearInterval(timer); timer = 0; clearTimeout(resultTimer);
+      stopBoard3D();
       if (ui) { ui.panel.remove(); ui.chip.remove(); if (resizeFn) root.removeEventListener('resize', resizeFn); }
       ui = null; S = null; geom = null; minimized = false;
       if (typeof hooks.onClose === 'function') hooks.onClose();
