@@ -89,16 +89,21 @@
 | T-115a | Bảng cờ: nạp module, giữ trạng thái skin, truyền vào hàm vẽ | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | gpt-6.1-terra |
 | T-115b | Bảng cờ: bộ chọn Lãnh địa, gửi skin, màn khai mở | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | Claude Sonnet 5.5 |
 | T-115c | Bảng cờ: chấn động phong cấp, hiệu ứng chiến thắng | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | gpt-6.1-terra |
-| T-116 | ui-harness, ảnh chụp, Sổ tay, README cho Kỳ Đài | 🟡 Đang làm (tài liệu) | P1 | CORE + KYDAI + DOCS | gemini-3.8-flash-high |
+| T-116 | ui-harness, ảnh chụp, Sổ tay, README cho Kỳ Đài | 🟣 Chờ soát (tài liệu xong; harness tự động chưa làm) | P1 | CORE + KYDAI + DOCS | gemini-3.8-flash-high |
 | T-117 | Đồ họa 2D bằng Canva: khung khẩu hiệu, biểu tượng bộ chọn | 🟣 Chờ soát | P2 | CORE + KYDAI | Claude Sonnet 5.5 (Canva) |
 | T-118 | Sân v2: dựng cảnh 3D thật trong Blender, bản mẫu Hỏa Diệm Sơn 👤 duyệt | 🟣 Chờ soát | P0 | CORE + KYDAI | Claude Sonnet 5.5 (Blender) |
-| T-119 | Bàn 2D: dải cảnh quanh bàn, dùng ảnh sân v2, quân 2D từ ảnh render | 🟡 Đang làm | P0 | CORE + KYDAO + KYDAI | Claude Sonnet 5.5 |
+| T-119 | Bàn 2D: dải cảnh quanh bàn, dùng ảnh sân v2, quân 2D từ ảnh render | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | Claude Sonnet 5.5 |
 | T-120 | Bản mẫu nhân vật 3D dựng bằng Blender, đo hiệu năng 👤 duyệt | ⏳ T-111 | P1 | CORE + HALL + KYDAI | — |
 | T-121 | Bàn 2D: dòng sông sinh động giữa bàn cờ tướng và cờ úp | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | gpt-6.1-terra |
 | T-122 | Bàn 3D: dòng sông sinh động giữa bàn cờ tướng và cờ úp | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | Claude Sonnet 5.5 |
-| T-118b | Sân v2: chỉnh Hỏa Diệm Sơn và dựng 7 sân còn lại | 🟡 Đang làm | P0 | CORE + KYDAI | Claude Sonnet 5.5 (Blender) |
+| T-118b | Sân v2: chỉnh Hỏa Diệm Sơn và dựng 7 sân còn lại | 🟣 Chờ soát | P0 | CORE + KYDAI | Claude Sonnet 5.5 (Blender) |
 | T-123 | Tăng lực chấn động khi phong cấp | 🟣 Chờ soát | P1 | CORE + KYDAI | gpt-6-luna |
 | T-124 | Sửa lỗi từ đợt soát của GPT Sol | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | gemini-3.8-flash-high |
+| T-125 | Bàn 3D dùng ảnh sân v2 có dải cảnh | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | Claude Sonnet 5.5 |
+| T-126a | Ảnh quân cờ 2D render từ mô hình 3D (8 bộ) | 🟡 Đang làm | P1 | CORE + KYDAI | Claude Sonnet 5.5 (Blender) |
+| T-126b | Bàn 2D vẽ quân bằng ảnh render | ⏳ T-126a | P1 | CORE + KYDAO + KYDAI | — |
+| T-127 | Huy hiệu chủ đề trong khẩu hiệu và bộ chọn Lãnh địa | 🟣 Chờ soát | P2 | CORE + KYDAI | gemini-3.8-flash-high |
+| T-128 | Sửa lỗi từ đợt soát vòng 2 của Gemini 4 Argon | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | Claude Sonnet 5.5 |
 
 Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạm `package.json`). **T-005**, **T-007**, **T-002** làm song song được với nhóm trên.
 Đợt 2026-11: làm **T-003, T-004, T-006** trước (T-004 gỡ nút thắt `package.json` cho mọi thẻ thêm file JS; T-006 là cổng "CI xanh"). Sau đó theo lịch 6 đợt ở [docs/KE-HOACH-DOT-2026-11.md §10.3](docs/KE-HOACH-DOT-2026-11.md#103-lịch-theo-đợt-và-khóa-vùng-nóng).
@@ -1282,6 +1287,10 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
 - **T-121, T-122**: dòng sông giữa bàn cờ tướng và cờ úp, 2D và 3D; điều phối đã xem bằng mắt (ảnh ở docs/ky-dai/anh/).
 - **T-123**: bàn rung 6–16 px theo cỡ ô, có dư chấn (thợ gpt-6-luna; GLM flash qua Codex CLI trả 429 nên không dùng được cho vòng agent).
 - **Hạn mức**: GPT chạm giới hạn lúc 23:30 ngày 13/11 (hồi 00:51 ngày 14/11); Canva hết credit tạo ảnh và tạo thiết kế.
+- **T-118b**: đủ 8 sân v2 × 2 bản trong `public/img/kydao/fields2/`. **T-119** (bàn 2D) và **T-125** (bàn 3D) đã dùng ảnh v2 có dải cảnh quanh bàn; điều phối đã xem bằng mắt cả hai (ảnh ở docs/ky-dai/anh/).
+- **Soát vòng 2** (Gemini 4 Argon, sau T-124): các lỗi vòng 1 đã sửa đủ; tìm thêm 4 điểm (tải thừa ảnh v1, vòng lặp sông chạy ngầm, đổi cỡ bàn giữa hiệu ứng, bàn 3D tải cả .glb lẫn ảnh): **T-128** đã sửa hết.
+- **Lỗi điều phối tự bắt khi xem trình duyệt**: bộ chọn "Lãnh địa" bị bóp còn 28 px trong khung flex (test DOM giả không thấy); đã sửa bằng `flex: 0 0 auto` và cuộn vào tầm nhìn khi mở.
+- **T-116**: README, Sổ tay (`public/data/so-tay.vi.json`), ARCHITECTURE đã cập nhật. Phần ui-harness tự động chưa làm; hiện dùng 4 trang thử tay (`/kydao-kydai-test.html`, `/kydao-fx-test.html`, `/kydao-skins-test.html`, `/world3d-board.html`).
 - `npm test` trên nhánh tích hợp trước T-121: 906 đạt, 0 trượt, 3 bỏ qua (2 PostgreSQL, 1 perft sâu).
 
 ### T-110 · Thêm giao thức `kd:skin` trên máy chủ
