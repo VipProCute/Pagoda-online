@@ -38,7 +38,7 @@
 | T-031 | Vẽ bàn đá và ghế ở Sân chùa | ✅ Xong · PR #42 | P0 | CORE + HALL + KYDAO | Claude Sonnet 5.5 |
 | T-032 | Bảng bàn cờ: khung, cờ vua, cờ tướng | ✅ Xong · PR #41 | P0 | CORE + KYDAO | Claude Sonnet 5.5 |
 | T-033 | Bảng bàn cờ: cờ vây, caro, cờ úp | ⏳ T-032, T-024, T-025, T-026 | P1 | CORE + KYDAO | — |
-| T-034 | Nối bảng cờ vào chùa | 🔵 Sẵn sàng | P0 | CORE + KYDAO + NAV | — |
+| T-034 | Nối bảng cờ vào chùa | 🟣 Chờ soát | P0 | CORE + KYDAO + NAV | gpt-6-astra (Codex CLI qua proxy) |
 | T-035 | ui-harness cho bàn cờ | ⏳ T-032, T-033 | P1 | CORE + KYDAO + OPS | — |
 | T-040 | Thống kê mùa, tính người giữ danh hiệu | ✅ Xong · PR #46 | P0 | CORE + RANK + MARTIAL | Claude Sonnet 5.5 (thay Codex terra 6.1) |
 | T-041 | Phát danh hiệu từ máy chủ | ⏳ T-030, T-040 | P0 | CORE + RANK | — |
@@ -560,13 +560,13 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: bot.
 
 ### T-034 · Nối bảng cờ vào chùa
-- **Trạng thái**: ⏳ Chờ T-030, T-031, T-032
+- **Trạng thái**: 🟣 Chờ soát. Điều phối soát 13/11 (thợ gpt-6-astra): check sạch, npm test 841 đạt 0 trượt 3 bỏ qua. Thử trên trình duyệt 2D: chạm Bàn 3 ở Sân chùa thì ngồi được, hiện bảng chọn luật (cờ vua, cờ tướng; ba môn kia ghi sắp có). CHƯA thử ván hai người từ đầu tới cuối, chưa thử mời từ hộp người chơi, chưa thử chạm bàn trong 3D.
 - **Ưu tiên**: P0 · **Đợt**: 4
 - **Gói ngữ cảnh**: CORE + KYDAO + NAV
 - **Khu vực chạm**: public/js/app.js (handler chạm bàn, `socket.on('kd:*')` → `Hall.setTables` và `KydaoUI`, hộp người chơi "Mời đánh cờ", chip "Đang đánh cờ"), public/index.html (`<script>` của `kydao/*.js`, `kydao-ui.js`, `kydao-draw.js`; `<link>` của `kydao.css`; hộp mời đánh cờ trong `#dlg-person`; `?v=`)
 - **Phụ thuộc**: T-030, T-031, T-032
 - **Thợ**: Sonnet 5.5 (high) · **Soát**: Gemini Argon + Sol 6.1
-- **Người làm**: — · **Nhánh**: —
+- **Người làm**: gpt-6-astra (Codex CLI qua proxy) · **Nhánh**: codex/T-034-noi-bang-co
 - **Thiết kế**: KH §5.1
 - **Mục tiêu**: người chơi đánh cờ được từ đầu tới cuối trong chùa thật.
 - **Tiêu chí xong**:
@@ -576,6 +576,7 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
   - [ ] Khách khi bật Google: giao hữu được, xếp hạng thì mời đăng nhập (`code:'login'`)
   - [ ] Không lỗi console; ảnh 3 cỡ màn
 - **Ngoài phạm vi**: danh hiệu trên bảng (T-042).
+- **Ghi chú bàn giao**: Đã nối handler bàn dùng chung 2D/3D, chọn luật/sẵn sàng, lời mời, xem và phục hồi ván; nạp nét quân T-090 và nút Bàn 3D T-091, chỉ cho chọn cờ vua/cờ tướng. Test trực tiếp: 169 đạt, 0 trượt, 1 bỏ qua (perft sâu); trong đó test nối mới 16/16. `npm run check`, `node --test` và E2E bị sandbox chặn spawn EPERM; `node --check` hai file JS sạch. Điều phối kiểm hai trình duyệt/ảnh ba cỡ/WebGL, chạy lại bộ kiểm chuẩn và commit theo giao việc; thợ chưa add/commit. Báo cáo `BAN-GIAO-T-034.md` không commit; tiêu chí kiểm bằng trình duyệt còn để trống tới lúc điều phối xác minh.
 
 ### T-035 · Dựng ui-harness cho bàn cờ
 - **Trạng thái**: ⏳ Chờ T-032, T-033

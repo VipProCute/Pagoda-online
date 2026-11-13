@@ -19,6 +19,7 @@
 <link rel="stylesheet" href="/css/arena.css?v=vohoc7">
 <link rel="stylesheet" href="/css/guide.css?v=sotay3">
 <link rel="stylesheet" href="/css/view3d.css?v=1">
+<link rel="stylesheet" href="/css/kydao.css?v=1">
 <script type="importmap">{"imports":{"three":"/vendor/three/three.module.js?v=0.187.0"}}</script>
 </head>
 <body>
@@ -430,7 +431,30 @@
 <dialog class="dlg" id="dlg-person" aria-labelledby="person-title">
   <div class="dlg-body">
     <div class="dlg-head"><div><h2 id="person-title">Người chơi</h2><p id="person-hint"></p></div><button type="button" class="x" data-close aria-label="Đóng">×</button></div>
-    <div class="dlg-foot"><button type="button" class="btn" id="person-mute">Tắt tiếng người này</button><button type="button" class="btn gold" id="person-challenge">Thách đấu</button><button type="button" class="btn gold" id="person-talk" hidden>Trò chuyện</button></div>
+    <div class="dlg-foot"><button type="button" class="btn" id="person-mute">Tắt tiếng người này</button><button type="button" class="btn gold" id="person-challenge">Thách đấu</button><button type="button" class="btn gold" id="person-kydao" hidden>Mời đánh cờ</button><button type="button" class="btn gold" id="person-talk" hidden>Trò chuyện</button></div>
+  </div>
+</dialog>
+
+<!-- Kỳ Đạo: chọn luật chung cho bàn đá và lời mời trực tiếp. -->
+<dialog class="dlg" id="dlg-kd-lobby" aria-labelledby="kd-lobby-title">
+  <div class="dlg-body">
+    <div class="dlg-head"><div><h2 id="kd-lobby-title">Bàn cờ</h2><p id="kd-lobby-info" role="status"></p></div><button type="button" class="x" data-close aria-label="Đóng">×</button></div>
+    <fieldset id="kd-rules">
+      <legend>Luật ván cờ</legend>
+      <div class="choices"><label class="chipr"><input type="radio" name="kd-game" value="chess" checked><span>Cờ vua</span></label><label class="chipr"><input type="radio" name="kd-game" value="xiangqi"><span>Cờ tướng</span></label></div>
+      <p class="hint">Cờ vây, caro và cờ úp: sắp có.</p>
+      <div class="choices"><label class="chipr"><input type="radio" name="kd-mode" value="friendly" checked><span>Giao hữu</span></label><label class="chipr"><input type="radio" name="kd-mode" value="rated"><span>Xếp hạng</span></label></div>
+      <div class="choices"><label class="chipr"><input type="radio" name="kd-pace" value="normal" checked><span>Thường</span></label><label class="chipr"><input type="radio" name="kd-pace" value="fast"><span>Nhanh</span></label></div>
+    </fieldset>
+    <p id="kd-lobby-note" class="hint"></p>
+    <div class="dlg-foot"><button type="button" class="btn" id="kd-stand">Rời bàn</button><button type="button" class="btn" id="kd-setup">Chọn luật</button><button type="button" class="btn gold" id="kd-ready">Sẵn sàng</button><button type="button" class="btn gold" id="kd-invite-send" hidden>Gửi lời mời</button></div>
+  </div>
+</dialog>
+<dialog class="dlg" id="dlg-kd-invite" aria-labelledby="kd-invite-title">
+  <div class="dlg-body">
+    <div class="dlg-head"><h2 id="kd-invite-title">Lời mời đánh cờ</h2></div>
+    <p id="kd-invite-message" role="status"></p>
+    <div class="dlg-foot"><button type="button" class="btn" id="kd-invite-decline">Từ chối</button><button type="button" class="btn gold" id="kd-invite-accept">Nhận lời</button></div>
   </div>
 </dialog>
 
@@ -538,6 +562,10 @@
 <script src="/js/view-math.js?v=2"></script>
 <script src="/js/gfx-detect.js?v=1"></script>
 <script src="/js/view3d-ui.js?v=4"></script>
-<script src="/js/app.js?v=view3d1"></script>
+<script src="/js/kydao/chess.js?v=1"></script>
+<script src="/js/kydao/xiangqi.js?v=1"></script>
+<script src="/js/kydao-draw.js?v=pieces2"></script>
+<script src="/js/kydao-ui.js?v=board3d1"></script>
+<script src="/js/app.js?v=kydao1"></script>
 </body>
 </html>

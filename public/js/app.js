@@ -36,7 +36,7 @@
   function openDlg(id) { const d = $('#dlg-' + id); if (!d.open) { if (d.showModal) d.showModal(); else d.setAttribute('open', ''); } }
   function closeDlg(id) { const d = $('#dlg-' + id); if (d.open) d.close(); }
   $$('dialog').forEach(d => {
-    d.addEventListener('click', e => { if (e.target === d && d.id !== 'dlg-join' && d.id !== 'dlg-spar') d.close(); });
+    d.addEventListener('click', e => { if (e.target === d && !['dlg-join', 'dlg-spar', 'dlg-kd-invite'].includes(d.id)) d.close(); });
     $$('[data-close]', d).forEach(b => b.addEventListener('click', () => d.close()));
   });
   $('#dlg-join').addEventListener('cancel', e => { if (!joined) e.preventDefault(); });
@@ -67,6 +67,7 @@
     read() { act('read'); },                               // trong Tàng Kinh Các: chạm Kệ kinh để đọc kinh
     dojo() { act('dojo'); },                               // chạm kệ Võ học: sang Võ Học Các học chiêu
     seat(i) { sitAt(i); },                                 // chạm bồ đoàn: đi tới, ngồi thiền
+    table(id, seat) { openKydaoTable(id, seat); },           // dùng chung cho bàn/ghế 2D và 3D
     person(id) { openPerson(id); },
     npc(id) { openPerson(id); },                           // NPC dùng chung hộp tương tác với người chơi, chỉ khác lựa chọn
     fortune() { fortune.open('lot'); },
@@ -78,7 +79,7 @@
   const SCENE_LABEL = { hall: 'Chánh điện', yard: 'Sân chùa', library: 'Tàng Kinh Các' };
   const SCENE_HINT = {
     hall: 'Chạm sàn để đi lại · chạm bát hương để thắp nhang · chạm tượng Phật để vái lạy · chạm tủ Tàng Kinh Các để vào trong',
-    yard: 'Chạm sàn để đi lại · chạm bàn thầy tử vi hoặc thầy Tarot để xem',
+    yard: 'Chạm bàn đá để đánh cờ · chạm bàn thầy tử vi hoặc thầy Tarot để xem',
     library: 'Chạm bồ đoàn để ngồi thiền tu luyện · chạm Kệ kinh để đọc kinh · chạm kệ Võ học để học chiêu'
   };
   /** Thanh đổi map: nút của nơi đang đứng sáng (đang ở Võ Học Các / Sân đấu thì sáng nơi đó), nút Sân đấu ẩn khi PK tắt. */
@@ -103,6 +104,7 @@
     $('#stage').setAttribute('aria-label', SCENE_LABEL[scene] || 'Chánh điện');
     showHint(scene);
     if (scene !== 'library') Meditate.close();
+    kydaoSceneChanged();
   }
   function goScene(scene) {
     if (!joined) { openDlg('join'); return; }
@@ -299,7 +301,7 @@
   /* ---------- kết nối ---------- */
   const socket = io({ transports: ['websocket', 'polling'] });
   const fortune = Fortune.init({ socket, getMe: () => me, getJoined: () => joined, setScene: applyScene, getScene: () => curScene, toast, getNow: serverNow });
-  socket.on('pscene', d => { Hall.playerScene(d); Voice.refresh(); });
+  socket.on('pscene', d => { Hall.playerScene(d); if (d.id === me) applyScene(d.scene); Voice.refresh(); });
   async function syncTime() {
     let best = null;
     for (let i = 0; i < 4; i++) {
@@ -329,6 +331,203 @@
     if (reason === 'io server disconnect' && !authPending) location.reload();
   });
   socket.on('connect_error', err => { $('#conn').hidden = false; if (err && err.message && /kết nối/.test(err.message)) $('#conn').textContent = err.message; });
+
+  /* ---------- Kỳ Đạo: bàn đá, lời mời và bảng cờ ---------- */
+  const KD_NAMES = { chess: 'Cờ vua', xiangqi: 'Cờ tướng' };
+  let kdTables = [], kdLobby = null, kdTarget = null, kdStart = null, kdReconnectWatch = null;
+  let kdPlayerPid = null;                                  // ván phục hồi có thể vẫn giữ pid trước khi nối lại
+  let kdFetch = 0, kdOffers = [], kdOfferTimer = 0;
+  const kydaoEnabled = () => !!(cfg && cfg.kydao && cfg.kydao.enabled);
+  const kdSupported = game => Object.prototype.hasOwnProperty.call(KD_NAMES, game);
+  const kdIsMe = pid => pid === me || (kdPlayerPid != null && pid === kdPlayerPid);
+  function kdSend(event, data, cb) {
+    socket.emit(event, data, r => {
+      if (!r || !r.ok) {
+        if (r && r.code === 'login') needLogin(r.reason);
+        else toast((r && r.reason) || 'Chưa nối được bàn cờ, xin thử lại.');
+      }
+      if (cb) cb(r);
+    });
+  }
+  function fetchKydaoTables(done) {
+    if (!joined || !kydaoEnabled() || Places.current !== 'hall') return;
+    const ticket = ++kdFetch, scene = curScene;
+    kdSend('kd:tables', {}, r => {
+      if (!r || !r.ok || ticket !== kdFetch || scene !== curScene || Places.current !== 'hall') return;
+      kdTables = r.tables; Hall.setTables(kdTables); renderKydaoLobby();
+      if (done) done();
+    });
+  }
+  function kydaoSceneChanged() {
+    if (Places.current !== 'hall' || curScene !== 'yard') {
+      closeDlg('kd-lobby'); kdLobby = null;
+      if (kdStart && !kdStart.you) KydaoUI.close();
+    }
+    fetchKydaoTables();
+  }
+  function openKydaoStart(start) {
+    if (!start || !kdSupported(start.game)) { toast('Môn cờ này sắp có bảng chơi.'); return; }
+    closeDlg('kd-lobby'); closeDlg('person'); kdLobby = null; kdTarget = null;
+    kdStart = start;
+    if (start.you) kdPlayerPid = start[start.you].pid;
+    KydaoUI.open(start, {
+      send: kdSend, now: serverNow,
+      sound(kind) { if (kind === 'check') SFX.ting(); else if (kind === 'capture') SFX.pop(); else SFX.mo(); },
+      onClose() {
+        const old = kdStart; kdStart = null;
+        if (old && !old.you) kdSend('kd:unwatch', { table: old.table });
+      }
+    });
+  }
+  function resumeKydao() {
+    if (!kydaoEnabled()) { Hall.setTables([]); return; }
+    kdSend('kd:resume', {}, r => {
+      if (!r || !r.ok) return;
+      if (r.message) toast(r.message);
+      const watch = kdReconnectWatch; kdReconnectWatch = null;
+      if (r.start) {
+        // Ack resume không chuyển cảnh như sự kiện start: tự trở về sân sau khi tải lại.
+        if (r.start.table != null && Places.current === 'hall') goScene('yard');
+        openKydaoStart(r.start);
+      } else if (watch != null && Places.current === 'hall') {
+        socket.emit('scene', 'yard', a => {
+          if (!a || !a.ok) return;
+          applyScene('yard'); kdSend('kd:watch', { table: watch });
+        });
+      } else {
+        kdPlayerPid = null;
+        if (KydaoUI.isOpen()) KydaoUI.close();
+      }
+      fetchKydaoTables();
+    });
+  }
+  socket.on('disconnect', () => {
+    kdFetch++;
+    kdReconnectWatch = kdStart && !kdStart.you ? kdStart.table : null;
+    kdOffers = []; renderKydaoOffer();
+    closeDlg('kd-lobby');
+  });
+  function openKydaoTable(id, seat) {
+    if (!joined || !kydaoEnabled()) { toast('Bàn cờ đang nghỉ.'); return; }
+    stopTalk();
+    fetchKydaoTables(() => {
+      const t = kdTables.find(x => x.table === id); if (!t) return;
+      const mine = t.seats.findIndex(s => s && kdIsMe(s.pid));
+      if (t.status === 'playing') {
+        if (!kdSupported(t.game)) { toast('Môn cờ này sắp có bảng chơi.'); return; }
+        if (mine >= 0 || (kdStart && kdStart.you && kdStart.table === id)) resumeKydao();
+        else kdSend('kd:watch', { table: id });
+        return;
+      }
+      const show = () => {
+        kdLobby = id; kdTarget = null;
+        renderKydaoLobby(); openDlg('kd-lobby');
+      };
+      if (mine >= 0) { show(); return; }
+      const chosen = seat === 0 || seat === 1 ? seat : t.seats.findIndex(s => !s);
+      if (chosen < 0 || t.seats[chosen]) { toast('Ghế này đã có người, mời bạn chọn ghế trống.'); return; }
+      kdSend('kd:sit', { table: id, seat: chosen }, r => {
+        if (!r || !r.ok) return;
+        kdPlayerPid = me;
+        if (kdStart && !kdStart.you) { kdStart = null; KydaoUI.close(); }
+        show();
+      });
+    });
+  }
+  function kdRules() {
+    return { game: $('input[name="kd-game"]:checked').value, rated: $('input[name="kd-mode"]:checked').value === 'rated', pace: $('input[name="kd-pace"]:checked').value };
+  }
+  function setKydaoRules(r) {
+    $$('input[name="kd-game"]').forEach(e => { e.checked = e.value === (r.game || 'chess'); });
+    $$('input[name="kd-mode"]').forEach(e => { e.checked = e.value === (r.rated ? 'rated' : 'friendly'); });
+    $$('input[name="kd-pace"]').forEach(e => { e.checked = e.value === (r.pace || 'normal'); });
+  }
+  $('#kd-rules').addEventListener('change', () => {
+    if (kdTarget != null) return;
+    $('#kd-ready').disabled = true;
+    $('#kd-lobby-note').textContent = 'Bấm Chọn luật để áp dụng. Sau đó cả hai cùng sẵn sàng.';
+  });
+  function renderKydaoLobby() {
+    if (kdTarget != null) return;
+    const t = kdTables.find(x => x.table === kdLobby);
+    const mine = t && t.seats.find(s => s && kdIsMe(s.pid));
+    if (!mine || t.status !== 'waiting') { closeDlg('kd-lobby'); return; }
+    $('#kd-lobby-title').textContent = 'Bàn ' + t.table;
+    $('#kd-lobby-info').textContent = t.seats.map(s => s ? s.name + (s.ready ? ' · Sẵn sàng' : ' · Chưa sẵn sàng') : 'Ghế trống').join(' / ');
+    setKydaoRules(t);
+    $('#kd-rules').disabled = !kdIsMe(t.host);
+    $('#kd-setup').hidden = !kdIsMe(t.host);
+    $('#kd-ready').hidden = $('#kd-stand').hidden = false;
+    $('#kd-invite-send').hidden = true;
+    $('#kd-ready').disabled = !kdSupported(t.game);
+    $('#kd-ready').textContent = mine.ready ? 'Thôi sẵn sàng' : 'Sẵn sàng';
+    $('#kd-lobby-note').textContent = (t.note ? t.note + ' ' : '') + (t.game && !kdSupported(t.game) ? 'Môn này sắp có. Chủ bàn hãy chọn cờ vua hoặc cờ tướng.' : t.game ? 'Mời người ngồi cùng chạm ghế trống. Cả hai sẵn sàng thì bắt đầu.' : 'Chủ bàn chọn luật trước khi sẵn sàng.');
+  }
+  $('#kd-setup').addEventListener('click', () => {
+    if (kdLobby != null) kdSend('kd:setup', { table: kdLobby, ...kdRules() });
+  });
+  $('#kd-ready').addEventListener('click', () => {
+    const t = kdTables.find(x => x.table === kdLobby), mine = t && t.seats.find(s => s && kdIsMe(s.pid));
+    if (mine && kdSupported(t.game)) kdSend('kd:ready', { table: t.table, ready: !mine.ready });
+  });
+  $('#kd-stand').addEventListener('click', () => {
+    if (kdLobby != null) kdSend('kd:stand', { table: kdLobby }, r => { if (r && r.ok) { closeDlg('kd-lobby'); kdLobby = null; } });
+  });
+  $('#person-kydao').addEventListener('click', () => {
+    const p = Hall.player(personId); if (!p) return;
+    kdTarget = personId; kdLobby = null; closeDlg('person');
+    $('#kd-lobby-title').textContent = 'Mời đánh cờ';
+    $('#kd-lobby-info').textContent = 'Mời ' + p.name + ' cùng đánh cờ.';
+    setKydaoRules({}); $('#kd-rules').disabled = false;
+    $('#kd-stand').hidden = $('#kd-ready').hidden = $('#kd-setup').hidden = true;
+    $('#kd-invite-send').hidden = false;
+    $('#kd-lobby-note').textContent = 'Lời mời có hiệu lực 20 giây. Nhận lời sẽ vào bàn trống gần nhất; hết bàn thì dùng bàn trong.';
+    openDlg('kd-lobby');
+  });
+  $('#kd-invite-send').addEventListener('click', () => {
+    if (kdTarget == null) return;
+    kdSend('kd:invite', { toPid: kdTarget, ...kdRules() }, r => {
+      if (r && r.ok) { closeDlg('kd-lobby'); kdTarget = null; toast(r.downgraded || 'Đã gửi lời mời đánh cờ.'); }
+    });
+  });
+  function renderKydaoOffer() {
+    clearTimeout(kdOfferTimer);
+    kdOffers = kdOffers.filter(d => d.expiresAt > serverNow());
+    const d = kdOffers[0];
+    if (!d) { closeDlg('kd-invite'); return; }
+    $('#kd-invite-message').textContent = `${d.from.name} mời bạn chơi ${KD_NAMES[d.game]} · ${d.rated ? 'Xếp hạng' : 'Giao hữu'} · ${d.pace === 'fast' ? 'Nhanh' : 'Thường'}. Còn ${Math.ceil((d.expiresAt - serverNow()) / 1000)} giây.` + (d.downgraded ? ' ' + d.downgraded : '');
+    openDlg('kd-invite');
+    kdOfferTimer = setTimeout(renderKydaoOffer, 1000);
+  }
+  function respondKydao(accept) {
+    const d = kdOffers[0]; if (!d) return;
+    kdSend('kd:respond', { inviteId: d.inviteId, accept }, r => {
+      // Lỗi login giữ lời mời còn hạn để người chơi đăng nhập rồi nhận lại.
+      if (r && r.ok) { kdOffers = kdOffers.filter(x => x.inviteId !== d.inviteId); renderKydaoOffer(); }
+    });
+  }
+  $('#kd-invite-accept').addEventListener('click', () => respondKydao(true));
+  $('#kd-invite-decline').addEventListener('click', () => respondKydao(false));
+  $('#dlg-kd-invite').addEventListener('cancel', e => { e.preventDefault(); respondKydao(false); });
+  socket.on('kd:invited', d => {
+    if (!kdSupported(d.game)) { toast('Có lời mời môn cờ chưa có bảng chơi.'); return; }
+    kdOffers.push(d); renderKydaoOffer();
+  });
+  socket.on('kd:invite:closed', d => {
+    kdOffers = kdOffers.filter(x => x.inviteId !== d.inviteId); renderKydaoOffer();
+    if (d.reason === 'declined') toast('Người chơi đã từ chối lời mời đánh cờ.');
+    else if (d.reason === 'expired') toast('Lời mời đánh cờ đã hết hạn.');
+  });
+  socket.on('kd:table', t => {
+    const same = x => t.table == null ? x.table == null && x.gameId === t.gameId : x.table === t.table;
+    kdTables = kdTables.filter(x => !same(x));
+    if (t.table != null || t.status !== 'free') kdTables.push(t);
+    Hall.setTables(t); renderKydaoLobby();
+  });
+  socket.on('kd:start', openKydaoStart);
+  ['moved', 'offer', 'end'].forEach(type => socket.on('kd:' + type, d => {
+    KydaoUI.apply({ ...d, type: 'kd:' + type });
+  }));
 
   function welcome(r) {
     joined = true; editing = false; me = r.you; cfg = r.config;
@@ -363,7 +562,7 @@
     const mc = cfg.martial || {};
     $$('[data-place-card]').forEach(c => { c.hidden = !(c.dataset.placeCard === 'dojo' ? mc.enabled : c.dataset.placeCard === 'arena' ? mc.pk : true); });
     syncMapBar();
-    Places.resume();                                         // mất mạng rồi nối lại: báo lại cho máy chủ biết đang ở nơi nào
+    Places.resume().then(resumeKydao);                       // nối lại nơi ở trước, rồi phục hồi ván cờ
     if (r.hasMatch && Places.current === 'hall' && mc.pk) {   // tải lại trang giữa trận: vào lại Sân đấu để tiếp tục, kẻo bị xử thua vì quá giờ
       toast('Bạn đang có một trận dở, đang đưa bạn về Sân đấu…');
       setTimeout(() => { if (Places.current === 'hall') Places.go('arena'); }, 600);
@@ -797,11 +996,12 @@
     const menu = p.menu();
     $('#person-title').textContent = p.isNpc ? p.name.split(' · ')[0] : p.name;
     if (p.isNpc) $('#person-hint').textContent = 'Khách trong chùa. Lại gần trò chuyện đôi câu cho vui.';
-    else $('#person-hint').textContent = Places.current === 'arena' ? 'Chọn thao tác với người chơi này.' : 'Mời người này cùng ra Sân đấu để luận võ.';
+    else $('#person-hint').textContent = Places.current === 'arena' ? 'Chọn thao tác với người chơi này.' : 'Mời người này đánh cờ hoặc cùng ra Sân đấu luận võ.';
     $('#person-mute').textContent = Voice.isMuted(id) ? 'Bật tiếng người này' : 'Tắt tiếng người này';
     $('#person-mute').hidden = !menu.includes('mute');
     $('#person-challenge').hidden = !menu.includes('challenge') || !(cfg && cfg.martial && cfg.martial.pk);
     $('#person-talk').hidden = !menu.includes('talk');
+    $('#person-kydao').hidden = p.isNpc || id === me || !kydaoEnabled() || Places.current !== 'hall' || !['hall', 'yard'].includes(curScene) || (p.place || 'hall') !== 'hall';
     openDlg('person');
   }
   /* ---------- trò chuyện với NPC: đi tới gần (NPC vẫn đi lang thang), tới nơi thì NPC đáp một câu ---------- */
@@ -975,6 +1175,7 @@
       Hall.pause(name === 'dojo'); Hall.setPlace(me, name);       // Sân đấu có khung vẽ riêng (Arena gắn cảnh vào đó)
       if (name !== 'hall') Meditate.close();
       syncMapBar();
+      kydaoSceneChanged();
       // Voice tự chuyển phòng khi nơi của người chơi đổi; giữ trạng thái mic rõ ràng trên thanh điều khiển.
       voiceUI();
     }
