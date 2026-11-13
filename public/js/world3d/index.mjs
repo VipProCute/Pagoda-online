@@ -61,7 +61,8 @@ function choose(world, event) {
   let selected = null, distance = solid?.distance ?? Infinity;
   for (const entry of world.people.values()) {
     if (entry.person.id === state.me) continue;
-    const hit = world.raycaster.intersectObject(entry.avatar.group, true).find(visible);
+    // Bảng tên và bong bóng lời (Sprite) có vùng bắt tia rất rộng, nuốt mất cú chạm vào kệ, thầy bói: chỉ tính thân nhân vật.
+    const hit = world.raycaster.intersectObject(entry.avatar.group, true).find(h => !h.object.isSprite && visible(h));
     if (hit && hit.distance < distance) { selected = entry.person; distance = hit.distance; }
   }
   if (selected) {
@@ -79,7 +80,8 @@ function choose(world, event) {
   else if (kind === 'table') world.fire(kind, hit.id ?? hit.table, hit.seat ?? -1);
   else if (kind === 'seat') world.fire(kind, hit.i ?? hit.index ?? hit.seat ?? hit.id);
   else if (kind === 'person' || kind === 'npc') world.fire(kind, hit.id);
-  else if (kind === 'reader') world.fire(kind, hit.type);
+  else if (kind === 'reader') world.fire(kind, hit.type ?? hit.id);   // cảnh Sân chùa trả id: 'horoscope' | 'tarot'
+  else if (kind === 'shelf') world.fire(hit.shelf === 'dojo' ? 'dojo' : 'read');   // Tàng Kinh Các: kệ kinh / kệ Võ học
   else world.fire(kind);
 }
 

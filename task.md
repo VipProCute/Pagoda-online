@@ -38,7 +38,7 @@
 | T-031 | Vẽ bàn đá và ghế ở Sân chùa | ✅ Xong · PR #42 | P0 | CORE + HALL + KYDAO | Claude Sonnet 5.5 |
 | T-032 | Bảng bàn cờ: khung, cờ vua, cờ tướng | ✅ Xong · PR #41 | P0 | CORE + KYDAO | Claude Sonnet 5.5 |
 | T-033 | Bảng bàn cờ: cờ vây, caro, cờ úp | ⏳ T-032, T-024, T-025, T-026 | P1 | CORE + KYDAO | — |
-| T-034 | Nối bảng cờ vào chùa | ⏳ T-030, T-031, T-032 | P0 | CORE + KYDAO + NAV | — |
+| T-034 | Nối bảng cờ vào chùa | 🔵 Sẵn sàng | P0 | CORE + KYDAO + NAV | — |
 | T-035 | ui-harness cho bàn cờ | ⏳ T-032, T-033 | P1 | CORE + KYDAO + OPS | — |
 | T-040 | Thống kê mùa, tính người giữ danh hiệu | ✅ Xong · PR #46 | P0 | CORE + RANK + MARTIAL | Claude Sonnet 5.5 (thay Codex terra 6.1) |
 | T-041 | Phát danh hiệu từ máy chủ | ⏳ T-030, T-040 | P0 | CORE + RANK | — |
@@ -78,6 +78,8 @@
 | T-091 | Bàn cờ 3D, quân tiện tròn | 🟣 Chờ soát | P1 | CORE + KYDAO | gpt-6.1-sol |
 | T-092 | ui-harness và ảnh chụp cho 3D | 🟣 Chờ soát | P2 | CORE + OPS | gpt-6-luna (Codex CLI qua proxy) |
 | T-093 | README, Sổ tay cho 3D và góc nhìn | 🟣 Chờ soát | P2 | CORE + DOCS | gemini-3.8-flash-high (Codex CLI qua proxy) |
+| T-100 | Nhân vật 3D bám sát 2D: hào quang, pháp tướng, quỷ, trang phục, Obito | 🔵 Sẵn sàng | P0 | CORE + HALL | — |
+| T-101 | Nhạc riêng cho từng môn cờ | ⏳ T-034, 👤 file nhạc | P2 | CORE + KYDAO | — |
 
 Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạm `package.json`). **T-005**, **T-007**, **T-002** làm song song được với nhóm trên.
 Đợt 2026-11: làm **T-003, T-004, T-006** trước (T-004 gỡ nút thắt `package.json` cho mọi thẻ thêm file JS; T-006 là cổng "CI xanh"). Sau đó theo lịch 6 đợt ở [docs/KE-HOACH-DOT-2026-11.md §10.3](docs/KE-HOACH-DOT-2026-11.md#103-lịch-theo-đợt-và-khóa-vùng-nóng).
@@ -1218,6 +1220,28 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
 - **Nhánh**: codex/T-093-tai-lieu-3d
 - **Khu vực chạm**: README.md, public/data/so-tay.vi.json, docs/agents/ARCHITECTURE.md (§1, §5, §6)
 - **Mục tiêu**: Người chơi biết bật 3D, đổi góc nhìn, điều khiển; agent sau biết cấu trúc world3d/.
+
+### T-100 · Nhân vật 3D bám sát 2D: hào quang, pháp tướng, quỷ, trang phục, Obito
+- **Trạng thái**: 🔵 Sẵn sàng
+- **Ưu tiên**: P0 (chủ dự án 13/11: hào quang, quỷ do cúng dường là dấu ấn của game, không được mất khi sang 3D)
+- **Gói ngữ cảnh**: CORE + HALL
+- **Khu vực chạm**: public/js/world3d/avatar.mjs, public/js/world3d/index.mjs (chỉ phần dựng/cập nhật nhân vật), public/js/hall.js (CHỈ hàm viewSnapshot: thêm trường còn thiếu), public/world3d-avatar.html, test/world3d-avatar.test.js, test/hall-view3d.test.js, public/js/view3d-ui.js và public/index.html (chỉ tăng ?v=)
+- **Người làm**: — · **Nhánh**: —
+- **Mục tiêu**: bật 3D vẫn thấy đủ dấu ấn của bản 2D trên từng nhân vật.
+- **Tiêu chí xong**:
+  - [ ] Hào quang theo bậc cúng dường: dùng lại đúng ảnh `/img/fx/aura/*.webp` và màu bậc như 2D (ảnh phẳng luôn quay về máy quay, đặt sau lưng nhân vật), mức Thấp vẫn hiện
+  - [ ] Pháp tướng và quỷ theo sau (`/img/fx/demon-*.webp` và các hiệu ứng tương ứng trong hall.js) hiện trong 3D đúng điều kiện như 2D
+  - [ ] Trang phục NPC nữ (`npcFashion`) và các kiểu tóc giống hình 2D; Obito áo choàng đen mây đỏ, mặt nạ cam xoáy
+  - [ ] Dáng nhân vật thon, mềm hơn (bớt khối hộp), giữ số tam giác thấp cho điện thoại
+  - [ ] Hết hạn hào quang thì tắt đúng giờ máy chủ; tôn trọng giảm chuyển động
+  - [ ] npm run check sạch; test avatar và hall-view3d đạt; trang thử /world3d-avatar.html có đủ các biến thể
+
+### T-101 · Nhạc riêng cho từng môn cờ
+- **Trạng thái**: ⏳ Chờ T-034 và file nhạc do chủ dự án tạo (prompt ở báo cáo 13/11)
+- **Ưu tiên**: P2
+- **Gói ngữ cảnh**: CORE + KYDAO
+- **Khu vực chạm**: public/js/audio.js, public/js/kydao-ui.js, public/audio/kydao/*.mp3, public/audio/NOTICE.txt, public/index.html (?v=)
+- **Mục tiêu**: mở bàn cờ thì nhạc nền chùa nhỏ dần, phát nhạc riêng của môn (cờ vua, cờ tướng, cờ úp, cờ vây, caro); rời bàn thì trả lại nhạc cũ; theo nút tắt tiếng chung.
 
 **Ý tưởng của đợt 3D (⚪, chờ chủ dự án chọn; mô tả ở KE-HOACH-3D §3):** T-094 ngày đêm và đèn lồng · T-095 tiếng nói theo khoảng cách · T-096 trang trí lễ theo âm lịch · T-097 sàn PK 3D máy quay thứ ba cố định · T-098 chụp ảnh lưu niệm · T-099 bản đồ nhỏ.
 
