@@ -542,7 +542,62 @@
     }
   }
 
-  function drawXiangqiBoard(ctx, g, flip, vi, sk) {
+  function riverWave(u, k, t) {
+    const sp = [0.00022, 0.00031, 0.00017][k % 3], fr = [9, 14, 6][k % 3], am = [0.05, 0.03, 0.06][k % 3];
+    return Math.sin(u * fr * Math.PI * 2 - (t || 0) * sp * Math.PI * 2 + k * 1.7) * am;
+  }
+
+  function drawRiver(ctx, g, flip, vi, t) {
+    const y4 = cellXY(g, 0, 4, flip).y, y5 = cellXY(g, 0, 5, flip).y;
+    const y0 = Math.min(y4, y5), y1 = Math.max(y4, y5), hh = y1 - y0;
+    const x0 = g.ox - g.cell * 0.1, x1 = g.ox + g.cell * 8.1;
+    const frac = value => value - Math.floor(value);
+    ctx.save(); ctx.beginPath(); ctx.rect(x0, y0, x1 - x0, hh); ctx.clip();
+    const water = ctx.createLinearGradient(0, y0, 0, y1);
+    water.addColorStop(0, '#1f6f86'); water.addColorStop(0.5, '#3fa3b8'); water.addColorStop(1, '#1f6f86');
+    ctx.fillStyle = water; ctx.fillRect(x0, y0, x1 - x0, hh);
+    for (let k = 0; k < 3; k++) {
+      ctx.beginPath(); ctx.strokeStyle = 'rgba(191,238,242,' + [0.55, 0.4, 0.3][k] + ')';
+      ctx.lineWidth = Math.max(1, g.cell * [0.045, 0.03, 0.05][k]); ctx.lineCap = 'round';
+      for (let i = 0; i <= 32; i++) {
+        const u = i / 32, x = x0 + (x1 - x0) * u;
+        const y = y0 + hh * [0.3, 0.52, 0.74][k] + riverWave(u, k, t) * g.cell;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    for (let i = 0; i < 10; i++) {
+      const u = frac(i * 0.137 + (t || 0) * 0.00004 * (1 + (i % 3) * 0.4));
+      ctx.beginPath(); ctx.ellipse(x0 + (x1 - x0) * u, y0 + hh * (0.18 + 0.64 * frac(i * 0.618)), g.cell * 0.06, g.cell * 0.0125, 0, 0, Math.PI * 2); ctx.fill();
+    }
+    for (let i = 0; i < 3; i++) {
+      const x = x0 + (x1 - x0) * frac(i * 0.337 + (t || 0) * 0.00004 / 3);
+      const y = y0 + hh * (0.3 + 0.4 * frac(i * 0.618));
+      ctx.fillStyle = '#3f8f4f'; ctx.beginPath(); ctx.arc(x, y, g.cell * 0.13, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#1f6f86'; ctx.lineWidth = Math.max(1, g.cell * 0.025);
+      ctx.beginPath(); ctx.moveTo(x + g.cell * 0.13, y - g.cell * 0.045); ctx.lineTo(x, y); ctx.lineTo(x + g.cell * 0.13, y + g.cell * 0.045); ctx.stroke();
+      ctx.fillStyle = '#ff9fb8'; ctx.beginPath(); ctx.arc(x + g.cell * 0.15, y - g.cell * 0.08, g.cell * 0.045, 0, Math.PI * 2); ctx.fill();
+    }
+    for (const top of [true, false]) {
+      const edge = top ? y0 : y1, inner = edge + hh * 0.16 * (top ? 1 : -1);
+      const sand = ctx.createLinearGradient(0, edge, 0, inner);
+      sand.addColorStop(0, 'rgba(217,192,138,0.9)'); sand.addColorStop(1, 'rgba(217,192,138,0)');
+      ctx.fillStyle = sand; ctx.fillRect(x0, Math.min(edge, inner), x1 - x0, hh * 0.16);
+      ctx.strokeStyle = 'rgba(8,30,40,.35)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(x0, edge); ctx.lineTo(x1, edge); ctx.stroke();
+    }
+    ctx.restore();
+    const mid = (y0 + y1) / 2;
+    ctx.fillStyle = '#fff8e2'; ctx.textBaseline = 'middle'; ctx.textAlign = 'center';
+    ctx.font = '700 ' + Math.round(g.cell * (vi ? 0.34 : 0.42)) + 'px "Noto Serif CJK SC", "Noto Serif", "Microsoft YaHei", serif';
+    const river = [vi ? 'Sở Hà' : '楚河', vi ? 'Hán Giới' : '漢界'];
+    ctx.strokeStyle = 'rgba(8,30,40,.75)'; ctx.lineWidth = Math.max(2, g.cell * 0.09); ctx.lineJoin = 'round';
+    if (ctx.strokeText) { ctx.strokeText(river[0], g.ox + g.cell * 2, mid); ctx.strokeText(river[1], g.ox + g.cell * 6, mid); }
+    ctx.fillText(river[0], g.ox + g.cell * 2, mid); ctx.fillText(river[1], g.ox + g.cell * 6, mid);
+  }
+
+  function drawXiangqiBoard(ctx, g, flip, vi, sk, t) {
     const m = g.cell * 0.6;
     const wood = ctx.createLinearGradient(0, g.oy - m, g.w, g.oy + g.cell * 9 + m);
     wood.addColorStop(0, '#f5db9f'); wood.addColorStop(0.5, '#e9c88b'); wood.addColorStop(1, '#cca363');
@@ -598,18 +653,7 @@
         ctx.restore();
       }
     }
-    // chữ trên sông (đọc xuôi ở cả hai hướng nhìn)
-    const mid = (P(0, 4).y + P(0, 5).y) / 2;
-    ctx.fillStyle = '#5b3a1c'; ctx.textBaseline = 'middle'; ctx.textAlign = 'center';
-    ctx.font = '700 ' + Math.round(g.cell * (vi ? 0.34 : 0.42)) + 'px "Noto Serif CJK SC", "Noto Serif", "Microsoft YaHei", serif';
-    const river = [vi ? 'Sở Hà' : '楚河', vi ? 'Hán Giới' : '漢界'];
-    if (skinned) {
-      // Viền sáng quanh chữ để đọc được trên mọi sân.
-      ctx.strokeStyle = 'rgba(255,248,226,.8)'; ctx.lineWidth = Math.max(2, g.cell * 0.09); ctx.lineJoin = 'round';
-      ctx.strokeText(river[0], g.ox + g.cell * 2, mid); ctx.strokeText(river[1], g.ox + g.cell * 6, mid);
-    }
-    ctx.fillText(river[0], g.ox + g.cell * 2, mid);
-    ctx.fillText(river[1], g.ox + g.cell * 6, mid);
+    drawRiver(ctx, g, flip, vi, t);
   }
 
   /**
@@ -672,7 +716,7 @@
     const sk = isGrid(o.game) ? null : resolveSkins(o);
     const skinMark = hasField(sk);
     if (isGrid(o.game)) drawGridBoard(ctx, g, flip);
-    else if (chess) drawChessBoard(ctx, g, flip, sk); else drawXiangqiBoard(ctx, g, flip, !!o.vi, sk);
+    else if (chess) drawChessBoard(ctx, g, flip, sk); else drawXiangqiBoard(ctx, g, flip, !!o.vi, sk, o.time);
     const at = name => { const q = parseSq(o.game, name, o.size); return q ? cellXY(g, q.col, q.row, flip) : null; };
     const mark = (name, style) => {
       const p = at(name); if (!p) return;
@@ -744,5 +788,5 @@
     return g;
   }
 
-  return { aspect, layout, cellXY, squareAt, nameOf, parseSq, boardIndex, draw, starPoints, HAN, VIET, resolveSkins, loadImage };
+  return { aspect, layout, cellXY, squareAt, nameOf, parseSq, boardIndex, draw, starPoints, HAN, VIET, resolveSkins, loadImage, riverWave };
 });

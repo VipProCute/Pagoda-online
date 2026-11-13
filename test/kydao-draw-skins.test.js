@@ -56,6 +56,7 @@ test('Không có o.skins / o.jolt (hoặc skin vô nghĩa): chuỗi lệnh vẽ 
   for (const game of ['chess', 'xiangqi', 'jieqi']) for (const flip of [false, true]) {
     const common = { flip, selected: 'e2', targets: ['e3', 'e4'], last: ['a2', 'a3'] };
     const base = run(opts(game, common));
+    if (game !== 'chess') assert.ok(base.some(x => x[0] === 'stop' && x[2] === '#1f6f86'), game + ': không skin vẫn có sông');
     const same = [
       { skins: null }, { skins: {} }, { skins: { a: null, b: { field: 'khong-co', pieces: 'khong-co' } } },
       { skins: SKINS, hideSkins: { a: true, b: true } }, { jolt: null }, { jolt: {} }, { jolt: () => null },
