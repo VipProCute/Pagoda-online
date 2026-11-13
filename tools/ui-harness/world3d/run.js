@@ -57,6 +57,8 @@ async function runCase(browser, scene, viewport, view) {
   });
   const page = await context.newPage();
   page.on('console', message => {
+    // Cảnh báo của SwiftShader và lệnh loseContext chủ động không phải lỗi của game.
+    if (/GPU stall due to ReadPixels|CONTEXT_LOST_WEBGL: loseContext/.test(message.text())) return;
     if (message.type() === 'error' || message.type() === 'warning') errors.push(`${scene}/${view}/${viewport.name} console ${message.type()}: ${message.text()}`);
   });
   page.on('pageerror', error => errors.push(`${scene}/${view}/${viewport.name} pageerror: ${error.message}`));

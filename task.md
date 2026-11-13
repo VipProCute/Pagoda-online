@@ -1207,7 +1207,7 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
 - **Ngoài phạm vi**: luật cờ, giao thức `kd:*`.
 
 ### T-092 · ui-harness và ảnh chụp cho 3D
-- **Trạng thái**: 🟣 Chờ soát. Điều phối soát 13/11 (thợ gpt-6-luna): check sạch, đã đọc mã. HARNESS CHƯA CHẠY LẦN NÀO vì máy chưa cài Playwright (chưa có trình duyệt Chromium của Playwright); cần chủ dự án đồng ý cài rồi chạy node tools/ui-harness/world3d/run.js. Đã thêm .gitignore cho thư mục artifacts. · **Ưu tiên**: P2 · **Gói ngữ cảnh**: CORE + OPS · **Thợ**: gpt-6-luna (Codex CLI qua proxy) · **Soát**: Gemini Argon
+- **Trạng thái**: 🟣 Chờ soát. Điều phối soát 13/11 (thợ gpt-6-luna): check sạch, đã đọc mã. Đã cài Playwright (không ghi vào package.json) và chạy node tools/ui-harness/world3d/run.js: đạt 24/24 tổ hợp (4 cảnh × 2 góc nhìn × 3 cỡ màn hình), không lỗi console; số FPS đo bằng SwiftShader nên không đại diện máy thật. Đã lọc cảnh báo vô hại của SwiftShader. Đã thêm .gitignore cho thư mục artifacts. · **Ưu tiên**: P2 · **Gói ngữ cảnh**: CORE + OPS · **Thợ**: gpt-6-luna (Codex CLI qua proxy) · **Soát**: Gemini Argon
 - **Khu vực chạm**: tools/ui-harness/world3d/* (mới)
 - **Mục tiêu**: Kịch bản Playwright mở 4 cảnh × 2 góc nhìn × 3 cỡ màn, chụp ảnh, báo lỗi console và số khung hình/giây.
 - **Ghi chú bàn giao**: Thêm `run.js`, phục vụ trang thử cùng Three.js, chạy 24 tổ hợp bằng Chromium + SwiftShader, xuất PNG và `report.json` vào `tools/ui-harness/world3d/artifacts/`. `node --check` sạch; môi trường thợ không cho chạy npm/Playwright hoặc git commit; xem `BAN-GIAO-T-092.md` để điều phối chạy và commit.
