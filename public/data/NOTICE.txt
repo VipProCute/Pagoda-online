@@ -1,5 +1,11 @@
 public/data/ · Nguồn và giấy phép
 
+Three.js 0.187.0 (T-080)
+  Nguồn: https://threejs.org/ · https://github.com/mrdoob/three.js
+  Giấy phép: MIT, Copyright © 2010-2026 Three.js authors.
+  Cài từ npm (khóa phiên bản trong package-lock.json), phục vụ riêng thư mục build tại /vendor/three.
+  Toàn văn giấy phép đi kèm tại node_modules/three/LICENSE.
+
 tarot.vi.json
   Nội dung 78 lá tarot tiếng Việt (T-052).
   Nguồn ý nghĩa: A. E. Waite, "The Pictorial Key to the Tarot" (1910), thuộc phạm vi công cộng.

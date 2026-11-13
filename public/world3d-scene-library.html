@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tàng Kinh Các 3D · Chùa Tâm An</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;background:#211914;color:#f3dfba;font:14px/1.5 system-ui,sans-serif}
+    header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 22px;border-bottom:1px solid #80623f;flex-wrap:wrap}
+    h1{margin:0;font:500 26px Georgia,serif}p{margin:3px 0;color:#c9b796;font-size:12px}
+    .lib-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}button,select,a{font:inherit;color:#f3dfba;background:#39291f;border:1px solid #94764c;border-radius:6px;min-height:44px;padding:10px 12px}button{cursor:pointer}a{text-decoration:none}select{margin-left:5px}
+    #stage{height:calc(100dvh - 105px);min-height:420px;position:relative;overflow:hidden}canvas{width:100%;height:100%;display:block;touch-action:none}
+    .lib-caption{position:absolute;left:18px;top:18px;pointer-events:none;border-left:2px solid #d4ae6a;padding:6px 12px;background:#211914ba;max-width:275px;font-size:12px;color:#dfcda9}
+    .lib-caption strong{display:block;letter-spacing:.13em;font-size:10px;color:#e8bd70;margin-bottom:5px}
+    #pick{position:absolute;left:16px;bottom:14px;right:16px;background:#211914d9;border:1px solid #94764c77;padding:9px 12px;border-radius:5px;pointer-events:none;font-size:12px;white-space:pre-wrap;overflow-wrap:anywhere}
+    @media(max-width:650px){header{padding:10px 12px;gap:8px}h1{font-size:21px}.lib-controls{gap:5px}button,select,a{font-size:12px;padding:10px 8px}#stage{height:calc(100dvh - 165px)}.lib-caption{left:10px;top:10px;max-width:220px;font-size:11px}}
+    @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+  </style>
+  <script type="importmap">{"imports":{"three":"/vendor/three/three.module.js?v=0.187.0"}}</script>
+  <script src="/js/view-math.js?v=1"></script>
+</head>
+<body>
+  <header>
+    <div><h1>Tàng Kinh Các · Tâm An</h1><p>Nắng qua song cửa, lật một trang kinh</p></div>
+    <div class="lib-controls">
+      <button id="view" type="button">Góc nhìn thứ nhất · V</button>
+      <label>Đồ họa<select id="quality"><option value="low">Thấp</option><option value="medium" selected>Vừa</option><option value="high">Cao</option></select></label>
+      <button id="reset" type="button">Về lối giữa</button><a href="/">Về chùa</a>
+    </div>
+  </header>
+  <main id="stage" aria-label="Trang thử Tàng Kinh Các ba chiều">
+    <div class="lib-caption"><strong>TÀNG KINH CÁC / TRANG THỬ</strong>WASD hoặc chạm sàn để đi.<br>Kéo để nhìn quanh. Cuộn/chụm để thu phóng.<br>Chạm bồ đoàn trống để ngồi đọc. Kệ trái đọc kinh, kệ phải học võ.</div>
+    <output id="pick" role="status">Đang thắp đèn Tàng Kinh Các…</output>
+  </main>
+  <script type="module">
+    import * as THREE from 'three';
+    import * as Kit from '/js/world3d/kit.mjs?v=2';
+    import { createAvatar } from '/js/world3d/avatar.mjs?v=1';
+    import { build } from '/js/world3d/scenes/library.mjs?v=2';
+
+    const stage = document.getElementById('stage'), output = document.getElementById('pick');
+    const quality = document.getElementById('quality'), viewButton = document.getElementById('view');
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+    const options = new URLSearchParams(location.search);
+    if (['low', 'medium', 'high'].includes(options.get('quality'))) quality.value = options.get('quality');
+    try {
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.15; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      stage.prepend(renderer.domElement);
+      const scene = new THREE.Scene(); scene.background = new THREE.Color(0x33251b);
+      const camera = new THREE.PerspectiveCamera(62, 1, 0.06, 90);
+      const view = ViewMath.createView(); view.dist = 3.8; view.pitch = 0.34;
+      const raycaster = new THREE.Raycaster(), cursor = new THREE.Vector2();
+      const keys = new Set(), pointers = new Map();
+      const self = { x: 0.5, z: 0.84, yaw: Math.PI, sit: -1 };
+      const hero = createAvatar({ g: 'nam', c: 6, h: 1 }, { isSelf: true }); scene.add(hero.group);
+      const names = ['Thiện Tâm', 'An Nhiên', 'Minh Tuệ', 'Tịnh Âm', 'Diệu Liên', 'Tâm Hòa'];
+      const guests = names.map((name, i) => {
+        const avatar = createAvatar({ g: i % 2 ? 'nu' : 'nam', c: [2, 8, 4, 10, 1, 7][i], h: i % 4 });
+        scene.add(avatar.group); return { avatar, name, phase: i * Math.PI / 3 };
+      });
+      // Bầu phản xạ tự vẽ giúp gỗ và đồng bắt ánh ấm, không tải ảnh ngoài.
+      const sky = document.createElement('canvas'); sky.width = 256; sky.height = 128;
+      const c = sky.getContext('2d'), gradient = c.createLinearGradient(0, 0, 0, 128);
+      gradient.addColorStop(0, '#e1c7a2'); gradient.addColorStop(0.5, '#82705b'); gradient.addColorStop(1, '#35291f');
+      c.fillStyle = gradient; c.fillRect(0, 0, 256, 128); c.fillStyle = '#ffe6ac';
+      c.fillRect(35, 30, 30, 30); c.fillRect(170, 30, 24, 32);
+      const environment = new THREE.CanvasTexture(sky); environment.colorSpace = THREE.SRGBColorSpace;
+      environment.mapping = THREE.EquirectangularReflectionMapping; scene.environment = environment; scene.environmentIntensity = 0.65;
+      let library, destination = null, dragging = null, pinch = null, previous = 0, time = 0, stopped = false;
+      const seats = [[0.22, 0.44], [0.41, 0.44], [0.59, 0.44], [0.78, 0.44], [0.22, 0.72], [0.41, 0.72], [0.59, 0.72], [0.78, 0.72]];
+      let colliders = [];
+      function canStand(x, z) {
+        const p = ViewMath.toWorld('library', x, z);
+        return !colliders.some(b => p.x > b.min.x - 0.18 && p.x < b.max.x + 0.18 && p.z > b.min.z - 0.18 && p.z < b.max.z + 0.18);
+      }
+      // Tư thế đọc chỉ dùng ở trang thử; giữ nguyên module avatar dùng chung.
+      function readPose(avatar, sit) {
+        if (sit < 0) return;
+        avatar.group.getObjectByName('head').rotation.x = 0.28;
+        for (const [name, sign] of [['left-arm', -1], ['right-arm', 1]]) {
+          const arm = avatar.group.getObjectByName(name);
+          arm.rotation.set(-0.7, 0, sign * 0.1);
+          arm.getObjectByName('elbow').rotation.set(-0.95, 0, 0);
+        }
+      }
+
+      function rebuild() {
+        library?.dispose(); Kit.disposeKit();
+        library = build({ THREE, kit: Kit, size: ViewMath.SCENE_SIZE.library, quality: quality.value, reduceMotion: reduced.matches });
+        scene.add(library.group); library.update({ seats, daylight: true });
+        library.group.updateMatrixWorld(true);
+        colliders = library.group.children.filter(node => ['bookshelf', 'column', 'reading-desk', 'window-table'].includes(node.name)).map(node => new THREE.Box3().setFromObject(node));
+        renderer.shadowMap.enabled = quality.value === 'high';
+        renderer.setPixelRatio(quality.value === 'low' ? 1 : Math.min(devicePixelRatio, 2));
+        output.textContent = 'Đã dựng cảnh. Chạm một vật để xem kết quả pick.';
+      }
+      function resize() {
+        renderer.setSize(stage.clientWidth, stage.clientHeight, false);
+        camera.aspect = stage.clientWidth / stage.clientHeight; camera.updateProjectionMatrix();
+      }
+      function toggleView() {
+        view.setMode(view.mode === 'first' ? 'third' : 'first');
+        view.pitch = view.mode === 'first' ? 0.04 : 0.34;
+        viewButton.textContent = view.mode === 'first' ? 'Góc nhìn thứ ba · V' : 'Góc nhìn thứ nhất · V';
+      }
+      function choose(event) {
+        const rect = renderer.domElement.getBoundingClientRect();
+        cursor.set((event.clientX - rect.left) / rect.width * 2 - 1, 1 - (event.clientY - rect.top) / rect.height * 2);
+        raycaster.setFromCamera(cursor, camera);
+        const hit = library.pick(raycaster);
+        output.textContent = hit ? JSON.stringify(hit) : 'Không chạm vật tương tác.';
+        if (hit?.kind === 'floor' && canStand(hit.x, hit.z)) { self.sit = -1; destination = { x: hit.x, z: hit.z }; }
+        if (hit?.kind === 'seat' && ![0, 2, 5, 7].includes(hit.index)) {
+          const seat = seats[hit.index]; Object.assign(self, { x: seat[0], z: seat[1], yaw: Math.PI, sit: hit.index }); destination = null;
+        }
+      }
+      const canvas = renderer.domElement;
+      canvas.addEventListener('pointerdown', event => {
+        if (event.pointerType === 'mouse' && event.button !== 0) return;
+        canvas.setPointerCapture(event.pointerId);
+        pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+        if (pointers.size === 1) dragging = { id: event.pointerId, x: event.clientX, y: event.clientY, travel: 0 };
+        else { if (dragging) dragging.travel = Infinity; const [a, b] = [...pointers.values()]; pinch = Math.hypot(a.x - b.x, a.y - b.y); }
+      });
+      canvas.addEventListener('pointermove', event => {
+        if (!pointers.has(event.pointerId)) return;
+        pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+        if (pointers.size === 2) {
+          const [a, b] = [...pointers.values()], distance = Math.hypot(a.x - b.x, a.y - b.y);
+          if (pinch && distance) view.zoom(pinch / distance); pinch = distance; return;
+        }
+        if (!dragging || dragging.id !== event.pointerId) return;
+        const dx = event.clientX - dragging.x, dy = event.clientY - dragging.y;
+        dragging.travel += Math.hypot(dx, dy); dragging.x = event.clientX; dragging.y = event.clientY;
+        view.rotate(-dx * 0.005, dy * 0.004);
+      });
+      function endPointer(event) {
+        if (event.type === 'pointerup' && dragging?.id === event.pointerId && dragging.travel < 7) choose(event);
+        pointers.delete(event.pointerId); pinch = null;
+        if (!pointers.size) dragging = null;
+      }
+      canvas.addEventListener('pointerup', endPointer); canvas.addEventListener('pointercancel', endPointer);
+      canvas.addEventListener('wheel', event => { event.preventDefault(); view.zoom(Math.exp(event.deltaY * 0.001)); }, { passive: false });
+      function keyDown(event) {
+        if (event.target.closest('select,button,a,input')) return;
+        const key = event.key.toLowerCase();
+        if (['w', 'a', 's', 'd', 'v', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(key)) event.preventDefault();
+        keys.add(key); if (key === 'v' && !event.repeat) toggleView();
+      }
+      function keyUp(event) { keys.delete(event.key.toLowerCase()); }
+      function clearKeys() { keys.clear(); }
+      addEventListener('keydown', keyDown); addEventListener('keyup', keyUp); addEventListener('blur', clearKeys);
+      document.getElementById('reset').addEventListener('click', () => {
+        self.x = 0.5; self.z = 0.84; self.sit = -1; destination = null; view.yaw = 0; view.dist = 3.8;
+        view.pitch = view.mode === 'first' ? 0.04 : 0.34;
+      });
+      viewButton.addEventListener('click', toggleView); quality.addEventListener('change', rebuild);
+      reduced.addEventListener('change', rebuild);
+      const observer = new ResizeObserver(resize); observer.observe(stage);
+      function animate(timestamp) {
+        if (stopped) return;
+        const dt = Math.min(0.05, (timestamp - (previous || timestamp)) / 1000); previous = timestamp;
+        if (!reduced.matches) time += dt;
+        const fwd = Number(keys.has('w') || keys.has('arrowup')) - Number(keys.has('s') || keys.has('arrowdown'));
+        const strafe = Number(keys.has('d') || keys.has('arrowright')) - Number(keys.has('a') || keys.has('arrowleft'));
+        let next = null;
+        if (fwd || strafe) { self.sit = -1; destination = null; next = ViewMath.moveTarget('library', self.x, self.z, view.yaw, fwd, strafe, dt * 0.23); }
+        else if (destination) {
+          const from = ViewMath.toWorld('library', self.x, self.z), to = ViewMath.toWorld('library', destination.x, destination.z);
+          const dx = to.x - from.x, dz = to.z - from.z, distance = Math.hypot(dx, dz);
+          if (distance < 0.035) { self.x = destination.x; self.z = destination.z; destination = null; }
+          else next = ViewMath.moveTarget('library', self.x, self.z, Math.atan2(dx, -dz), 1, 0, Math.min(dt * 0.23, distance / ViewMath.SCENE_SIZE.library.depth));
+        }
+        if (next && !canStand(next.x, next.z)) {
+          if (canStand(next.x, self.z)) next.z = self.z;
+          else if (canStand(self.x, next.z)) next.x = self.x;
+          else { next = null; destination = null; }
+        }
+        if (next) { self.yaw = Math.atan2((next.x - self.x) * 16, (next.z - self.z) * 10); Object.assign(self, next); }
+        const position = ViewMath.toWorld('library', self.x, self.z); hero.group.position.set(position.x, 0.04, position.z);
+        hero.update({ isSelf: true, name: 'Mình', yaw: self.yaw, view: view.mode, walking: !!next, sit: self.sit, reducedMotion: reduced.matches }, dt);
+        readPose(hero, self.sit);
+        guests.forEach(({ avatar, name, phase }, i) => {
+          const sit = [0, 2, 5, 7][i] ?? -1;
+          const x = sit >= 0 ? seats[sit][0] : i === 4 ? 0.13 : 0.87;
+          const z = sit >= 0 ? seats[sit][1] : 0.55 + Math.sin(time * 0.13 + phase) * 0.22;
+          const p = ViewMath.toWorld('library', x, z); avatar.group.position.set(p.x, 0.04, p.z);
+          avatar.update({ name, sit, walking: sit < 0 && !reduced.matches, yaw: sit >= 0 ? Math.PI : Math.cos(time * 0.13 + phase) > 0 ? 0 : Math.PI, reducedMotion: reduced.matches }, dt);
+          readPose(avatar, sit);
+        });
+        library.update({ seats, daylight: true }, dt);
+        const pose = ViewMath.cameraPose(view, hero.group.position, library.bounds);
+        camera.position.set(pose.pos.x, Math.min(5.0, pose.pos.y), pose.pos.z);
+        camera.lookAt(pose.look.x, pose.look.y, pose.look.z); camera.updateMatrixWorld(); renderer.render(scene, camera);
+        requestAnimationFrame(animate);
+      }
+      function cleanup() {
+        stopped = true; observer.disconnect(); library.dispose(); hero.dispose(); guests.forEach(guest => guest.avatar.dispose());
+        Kit.disposeKit(); environment.dispose(); renderer.dispose();
+        removeEventListener('keydown', keyDown); removeEventListener('keyup', keyUp); removeEventListener('blur', clearKeys);
+        reduced.removeEventListener('change', rebuild);
+      }
+      addEventListener('pagehide', cleanup, { once: true });
+      rebuild(); resize(); if (options.get('view') === 'first') toggleView(); requestAnimationFrame(animate);
+    } catch (error) {
+      output.textContent = 'Chưa dựng được cảnh: ' + error.message;
+    }
+  </script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 'use strict';
-// Kiểm cú pháp mọi file JS của dự án bằng `node --check`.
-// Tự quét, không liệt kê tay: thêm file JS mới là được kiểm ngay.
+// Kiểm cú pháp mọi file JS/MJS của dự án bằng `node --check`.
+// Tự quét, không liệt kê tay: thêm file JS/MJS mới là được kiểm ngay.
 // Chạy: npm run check   (thoát mã 1 và in tên file nếu có lỗi cú pháp)
 
 const fs = require('fs');
@@ -25,7 +25,7 @@ function walk(dir, out) {
   for (const ent of entries) {
     if (ent.isDirectory()) {
       if (!SKIP_DIRS.has(ent.name)) walk(path.join(dir, ent.name), out);
-    } else if (ent.isFile() && ent.name.endsWith('.js')) {
+    } else if (ent.isFile() && /\.(?:js|mjs)$/.test(ent.name)) {
       out.push(path.join(dir, ent.name));
     }
   }
@@ -59,7 +59,7 @@ function main() {
     for (const f of failed) console.error('  - ' + f);
     process.exit(1);
   }
-  console.log('Kiểm cú pháp: ' + files.length + ' file JS sạch.');
+  console.log('Kiểm cú pháp: ' + files.length + ' file JS/MJS sạch.');
 }
 
 main();

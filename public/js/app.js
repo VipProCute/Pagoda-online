@@ -72,6 +72,7 @@
     fortune() { fortune.open('lot'); },
     reader(type) { fortune.open(type); }
   });
+  View3D.init({ canvas: $('#hall'), notify: toast });
   /* ---------- các cảnh trong chùa: chánh điện, sân chùa, Tàng Kinh Các (cùng một khung vẽ) ---------- */
   let curScene = 'hall';
   const SCENE_LABEL = { hall: 'Chánh điện', yard: 'Sân chùa', library: 'Tàng Kinh Các' };
@@ -152,6 +153,7 @@
   }
   const keys = new Set();
   addEventListener('keydown', e => {
+    if (View3D.active) return;
     if (e.target.closest('input, textarea, select, dialog[open]')) return;
     const k = e.key.toLowerCase();
     if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', 'w', 'a', 's', 'd'].includes(k)) { keys.add(k); e.preventDefault(); }
@@ -159,6 +161,7 @@
   addEventListener('keyup', e => keys.delete(e.key.toLowerCase()));
   addEventListener('blur', () => keys.clear());
   setInterval(() => {
+    if (View3D.active) { keys.clear(); return; }
     if (!joined || !keys.size) return;
     if (Places.current === 'dojo' || (Places.current === 'arena' && !(window.Arena && Arena.inYard && Arena.inYard()))) return;
     const p = Hall.player(me); if (!p) return;

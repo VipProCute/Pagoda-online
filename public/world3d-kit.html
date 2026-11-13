@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bộ khối chùa · Chùa Tâm An</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;background:#1b2427;color:#f4e4c7;font:15px/1.5 system-ui,sans-serif}
+    header{min-height:108px;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 24px;border-bottom:1px solid #66736a;flex-wrap:wrap}
+    h1{margin:0;font-size:22px;font-weight:550;letter-spacing:.02em}p{margin:3px 0 0;color:#b9c5ba;font-size:13px}
+    .kit-controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}select,button,a{min-height:44px;padding:10px 12px;border:1px solid #748374;border-radius:6px;background:#293633;color:#f4e4c7;font:inherit}
+    button{cursor:pointer}a{text-decoration:none}label{font-size:12px;color:#c4cdbf}select{margin-left:5px;max-width:240px}
+    #stage{position:relative;height:calc(100dvh - 108px);min-height:460px;overflow:hidden}canvas{display:block;width:100%;height:100%;touch-action:none}
+    .kit-label{position:absolute;pointer-events:none;transform:translate(-50%,-50%);padding:3px 7px;border:1px solid #8f977d55;border-radius:4px;white-space:nowrap;background:#192323df;color:#ede3ca;font-size:11px}
+    #status{position:absolute;bottom:14px;left:20px;right:20px;pointer-events:none;color:#d6dccb;font-size:12px;text-align:center;text-shadow:0 1px 3px #000;background:#1b2427dd;border-radius:5px;padding:8px}
+    @media(max-width:760px){header{padding:12px;gap:8px}h1{font-size:19px}#stage{height:calc(100dvh - 182px)}.kit-controls{gap:5px}select,button,a{font-size:13px;padding:10px 8px}select{max-width:180px}.kit-label{font-size:9px;padding:2px 4px}}
+  </style>
+  <script type="importmap">{ "imports": { "three": "/vendor/three/three.module.js?v=0.187.0" } }</script>
+</head>
+<body>
+  <header>
+    <div><h1>Bộ khối kiến trúc chùa</h1><p>Gỗ son · Ngói đất · Đồng vàng · Đá ấm<br>Kéo để xoay · Cuộn hoặc chụm để thu phóng · Chọn khối để xem gần</p></div>
+    <div class="kit-controls">
+      <label>Xem <select id="focus"><option value="all">Toàn bộ 26 khối</option></select></label>
+      <label>Đồ họa <select id="quality"><option value="low">Thấp</option><option value="medium" selected>Vừa</option><option value="high">Cao</option></select></label>
+      <button id="reset" type="button">Về toàn cảnh</button><a href="/">Về chùa</a>
+    </div>
+  </header>
+  <div id="stage" aria-label="Phòng trưng bày các khối 3D"><div id="status" role="status">Đang dựng các khối…</div></div>
+  <script type="module">
+    import * as THREE from 'three';
+    import * as Kit from '/js/world3d/kit.mjs?v=2';
+
+    const stage = document.getElementById('stage');
+    const status = document.getElementById('status');
+    const quality = document.getElementById('quality');
+    const focus = document.getElementById('focus');
+    // Hai khối lớn ở hàng sau; đồ vật xếp theo lưới 6 cột phía trước.
+    const items = [
+      ['Mái chồng diêm · phủ gian 16×10 m', q => Kit.createRoof({ width:18.4, depth:12.4, tiers:2, quality:q }), -11, -10],
+      ['Chánh điện · thân nhà 16×10 m', q => Kit.templeHall({ width:16, depth:10, quality:q }), 11, -10],
+      ['Cột gỗ sơn son', Kit.createColumn], ['Tường vôi', Kit.createWall],
+      ['Cửa bức bàn', Kit.createDoor], ['Nền gạch', Kit.createFloor],
+      ['Bậc đá', Kit.createSteps], ['Đèn lồng treo', Kit.createLantern],
+      ['Phật ngồi tòa sen', Kit.createBuddhaStatue], ['Bàn thờ nhiều cấp', Kit.createAltar],
+      ['Mâm lễ hoa quả', Kit.createOfferings], ['Bát hương', Kit.createIncenseBowl],
+      ['Ống xăm', Kit.createFortuneTube], ['Đèn dầu', Kit.createOilLamp],
+      ['Chuông đồng có giá', Kit.createBellStand], ['Chuông đồng', Kit.createBell],
+      ['Mõ, gối và dùi', Kit.createWoodenFish], ['Lư hương ba chân', Kit.createIncenseBurner],
+      ['Trống trên giá', Kit.createDrum], ['Cờ phướn', Kit.createBanner],
+      ['Cây bồ đề', Kit.createBodhiTree], ['Kệ kinh nhiều màu', Kit.createBookshelf],
+      ['Bồ đoàn', Kit.createCushion], ['Bàn đá và ghế', Kit.createStoneTable],
+      ['Giá binh khí', Kit.createWeaponRack], ['Cổng tam quan', Kit.createGate]
+    ];
+
+    try {
+      const renderer = new THREE.WebGLRenderer({ antialias:true });
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.18;
+      renderer.setClearColor(0x202b2d);
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      stage.prepend(renderer.domElement);
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 400);
+      scene.add(new THREE.HemisphereLight(0xffedcf, 0x57635d, 2.0));
+      const sun = new THREE.DirectionalLight(0xffdfb0, 3.0);
+      sun.position.set(-16, 28, 14); scene.add(sun);
+      sun.shadow.mapSize.set(2048, 2048);
+      Object.assign(sun.shadow.camera, { left:-30, right:30, top:30, bottom:-30, near:1, far:90 });
+      sun.shadow.normalBias = 0.04;
+      const fill = new THREE.DirectionalLight(0xd4e5e5, 1.2);
+      fill.position.set(12, 14, -10); scene.add(fill);
+
+      // Bầu ánh sáng tự vẽ tạo phản xạ nhẹ trên đồng, không tải ảnh ngoài.
+      const sky = document.createElement('canvas'); sky.width = 256; sky.height = 128;
+      const context = sky.getContext('2d');
+      const gradient = context.createLinearGradient(0, 0, 0, 128);
+      gradient.addColorStop(0, '#d6d9ce'); gradient.addColorStop(0.48, '#8c958c');
+      gradient.addColorStop(1, '#343d39'); context.fillStyle = gradient; context.fillRect(0, 0, 256, 128);
+      context.fillStyle = '#fff1d3'; context.fillRect(32, 20, 36, 38); context.fillRect(174, 26, 18, 25);
+      const environment = new THREE.CanvasTexture(sky);
+      environment.mapping = THREE.EquirectangularReflectionMapping;
+      environment.colorSpace = THREE.SRGBColorSpace; scene.environment = environment; scene.environmentIntensity = 0.65;
+      const ground = new THREE.Mesh(new THREE.PlaneGeometry(54, 52), new THREE.MeshStandardMaterial({ color:0x394540, roughness:1 }));
+      ground.rotation.x = -Math.PI / 2; ground.position.set(0, -0.06, 2); ground.receiveShadow = true; scene.add(ground);
+      const grid = new THREE.GridHelper(50, 25, 0x7c8170, 0x515e54); grid.position.set(0, -0.045, 2); scene.add(grid);
+      const display = new THREE.Group(); scene.add(display);
+      const entries = [], pointers = new Map(), target = new THREE.Vector3();
+      let yaw = 0.13, pitch = 0.78, distance = 85, triangles = 0;
+
+      items.forEach(([name], index) => {
+        const option = document.createElement('option'); option.value = String(index); option.textContent = name; focus.append(option);
+      });
+
+      function visibleBounds() {
+        const bounds = new THREE.Box3();
+        for (const entry of entries) if (entry.object.visible) bounds.union(entry.bounds);
+        return bounds;
+      }
+
+      // Căn máy quay theo tám góc bao, kể cả khi màn hình dọc.
+      function frame() {
+        const bounds = visibleBounds(); bounds.getCenter(target);
+        const direction = new THREE.Vector3(Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch));
+        const right = new THREE.Vector3().crossVectors(new THREE.Vector3(0, 1, 0), direction).normalize();
+        const up = new THREE.Vector3().crossVectors(direction, right);
+        const tanV = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+        const tanH = tanV * stage.clientWidth / stage.clientHeight;
+        distance = 2;
+        for (const x of [bounds.min.x, bounds.max.x]) for (const y of [bounds.min.y, bounds.max.y]) for (const z of [bounds.min.z, bounds.max.z]) {
+          const v = new THREE.Vector3(x, y, z).sub(target);
+          distance = Math.max(distance, v.dot(direction) + Math.max(Math.abs(v.dot(right)) / tanH, Math.abs(v.dot(up)) / tanV) * 1.18);
+        }
+      }
+
+      function select() {
+        entries.forEach((entry, index) => { entry.object.visible = focus.value === 'all' || focus.value === String(index); });
+        yaw = 0.13; pitch = focus.value === 'all' ? 0.78 : 0.44; frame(); render();
+      }
+
+      function rebuild() {
+        display.clear(); entries.forEach(entry => entry.element.remove()); entries.length = 0; Kit.disposeKit(); triangles = 0;
+        renderer.setPixelRatio(quality.value === 'low' ? 1 : Math.min(devicePixelRatio, 2));
+        renderer.shadowMap.enabled = quality.value === 'high'; sun.castShadow = quality.value === 'high';
+        items.forEach(([name, create, largeX, largeZ], index) => {
+          const gridIndex = index - 2;
+          const x = largeX ?? (gridIndex % 6 - 2.5) * 6.2;
+          const z = largeZ ?? 2.5 + Math.floor(gridIndex / 6) * 5.6;
+          const object = create(quality.value); object.position.set(x, 0, z); display.add(object);
+          object.traverse(child => { if (child.isMesh) triangles += (child.geometry.index?.count ?? child.geometry.attributes.position.count) / 3; });
+          const bounds = new THREE.Box3().setFromObject(object);
+          const element = document.createElement('span'); element.className = 'kit-label'; element.textContent = name; stage.append(element);
+          entries.push({ object, element, bounds, position:new THREE.Vector3(x, bounds.max.y + 0.35, z) });
+        });
+        select();
+      }
+
+      function render() {
+        const width = stage.clientWidth, height = stage.clientHeight;
+        renderer.setSize(width, height, false); camera.aspect = width / height; camera.updateProjectionMatrix();
+        camera.position.set(target.x + distance * Math.sin(yaw) * Math.cos(pitch), target.y + distance * Math.sin(pitch), target.z + distance * Math.cos(yaw) * Math.cos(pitch));
+        camera.lookAt(target); camera.updateMatrixWorld(); renderer.render(scene, camera);
+        for (const entry of entries) {
+          const point = entry.position.clone().project(camera);
+          entry.element.style.left = ((point.x + 1) * width / 2) + 'px';
+          entry.element.style.top = ((1 - point.y) * height / 2) + 'px';
+          entry.element.hidden = !entry.object.visible || point.z < -1 || point.z > 1;
+        }
+        status.textContent = triangles.toLocaleString('vi-VN') + ' tam giác khối dựng · ' + quality.options[quality.selectedIndex].text
+          + (quality.value === 'medium' ? ' · Giới hạn 60.000' : '') + ' · ' + (focus.value === 'all' ? '26 khối' : items[Number(focus.value)][0]);
+      }
+
+      const canvas = renderer.domElement;
+      canvas.addEventListener('pointerdown', event => { pointers.set(event.pointerId, [event.clientX, event.clientY]); canvas.setPointerCapture(event.pointerId); });
+      canvas.addEventListener('pointermove', event => {
+        if (!pointers.has(event.pointerId)) return;
+        const previous = pointers.get(event.pointerId), current = [event.clientX, event.clientY];
+        if (pointers.size === 1) {
+          yaw -= (current[0] - previous[0]) * 0.007;
+          pitch = Math.max(0.10, Math.min(1.45, pitch + (current[1] - previous[1]) * 0.007));
+        } else {
+          const other = [...pointers.entries()].find(([id]) => id !== event.pointerId)[1];
+          const before = Math.hypot(previous[0] - other[0], previous[1] - other[1]);
+          const after = Math.hypot(current[0] - other[0], current[1] - other[1]);
+          if (after > 1) distance = Math.max(1, Math.min(280, distance * before / after));
+        }
+        pointers.set(event.pointerId, current); render();
+      });
+      for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) canvas.addEventListener(type, event => pointers.delete(event.pointerId));
+      canvas.addEventListener('wheel', event => { event.preventDefault(); distance = Math.max(1, Math.min(280, distance * Math.exp(event.deltaY * 0.001))); render(); }, { passive:false });
+      quality.addEventListener('change', rebuild); focus.addEventListener('change', select);
+      document.getElementById('reset').addEventListener('click', () => { focus.value = 'all'; select(); });
+      const resize = new ResizeObserver(() => { frame(); render(); }); resize.observe(stage);
+      addEventListener('pagehide', () => {
+        resize.disconnect(); Kit.disposeKit(); ground.geometry.dispose(); ground.material.dispose();
+        grid.geometry.dispose(); grid.material.dispose(); environment.dispose(); renderer.dispose();
+      }, { once:true });
+      rebuild();
+    } catch (error) {
+      status.textContent = 'Không mở được trang thử 3D trên trình duyệt này.';
+    }
+  </script>
+</body>
+</html>

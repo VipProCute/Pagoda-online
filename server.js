@@ -313,6 +313,9 @@ app.use((req, res, next) => {
   next();
 });
 app.use(express.json({ limit: '64kb' }));
+app.use('/vendor/three', express.static(path.join(__dirname, 'node_modules', 'three', 'build'), {
+  maxAge: '10m', dotfiles: 'deny', index: false, redirect: false, fallthrough: false
+}));
 app.use(express.static(path.join(__dirname, 'public'), {
   maxAge: '10m',
   setHeaders: (res, file) => { if (file.endsWith('.html')) res.set('Cache-Control', 'no-cache'); }

@@ -63,6 +63,21 @@
 | T-067 | Cập nhật README và tài liệu người chơi | ⏳ T-010 → T-065 | P2 | CORE + DOCS | — |
 | T-068 | Cho máy chủ thử tắt êm trên Windows (3 test e2e) | ✅ Xong · PR #43 | P0 | CORE + STORE + OPS | Claude Sonnet 5.5 |
 | T-069 | Mọi NPC đi lang thang, chạm NPC để trò chuyện, lớp nhân vật chung | ✅ Xong · PR #57 | P1 | CORE + HALL + MARTIAL | Claude Opus 5.5 |
+| **Đợt 3D** ([docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md)) | | | | | |
+| T-080 | Dựng nền 3D (Three.js, khung World3D, trang thử) | 🟣 Chờ soát | P0 | CORE + HALL + OPS | gpt-6.1-sol (Codex CLI qua proxy) |
+| T-081 | Toán máy quay góc nhìn thứ nhất / thứ ba (thuần, có test) | 🟣 Chờ soát | P0 | CORE + HALL | gpt-6.1-terra (Codex CLI qua proxy) |
+| T-082 | Bộ khối dựng kiến trúc chùa (kit.mjs) | 🟣 Chờ soát | P0 | CORE + HALL | gpt-6.1-sol (Codex CLI qua proxy) |
+| T-083 | Nhân vật 3D low-poly và NPC | 🟣 Chờ soát | P0 | CORE + HALL | gpt-6.1-sol (Codex CLI qua proxy) |
+| T-084 | Cảnh Chánh điện 3D | 🟣 Chờ soát | P0 | CORE + HALL | gpt-6.1-sol |
+| T-085 | Cảnh Sân chùa 3D | 🟣 Chờ soát | P1 | CORE + HALL + KYDAO | gpt-6.1-sol (Codex CLI qua proxy) |
+| T-086 | Cảnh Tàng Kinh Các 3D | 🟣 Chờ soát | P1 | CORE + HALL | gpt-6.1-sol (Codex CLI qua proxy) |
+| T-087 | Cảnh Sân đấu (khu đi lại) 3D | 🟣 Chờ soát | P1 | CORE + HALL + PK | gpt-6-astra (Codex CLI qua proxy) |
+| T-088 | Nối 3D vào game: nút 2D/3D, góc nhìn 1/3, điều khiển | 🟣 Chờ soát | P0 | CORE + HALL + NAV | gpt-6.1-sol (Codex CLI qua proxy) |
+| T-089 | Cài đặt đồ họa, tự dò máy yếu | 🟣 Chờ soát | P1 | CORE + HALL | gpt-6-luna |
+| T-090 | Vẽ lại quân cờ 2D đẹp hơn | 🟣 Chờ soát | P1 | CORE + KYDAO | gpt-6.1-sol |
+| T-091 | Bàn cờ 3D, quân tiện tròn | 🟣 Chờ soát | P1 | CORE + KYDAO | gpt-6.1-sol |
+| T-092 | ui-harness và ảnh chụp cho 3D | 🟣 Chờ soát | P2 | CORE + OPS | gpt-6-luna (Codex CLI qua proxy) |
+| T-093 | README, Sổ tay cho 3D và góc nhìn | 🟣 Chờ soát | P2 | CORE + DOCS | gemini-3.8-flash-high (Codex CLI qua proxy) |
 
 Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạm `package.json`). **T-005**, **T-007**, **T-002** làm song song được với nhóm trên.
 Đợt 2026-11: làm **T-003, T-004, T-006** trước (T-004 gỡ nút thắt `package.json` cho mọi thẻ thêm file JS; T-006 là cổng "CI xanh"). Sau đó theo lịch 6 đợt ở [docs/KE-HOACH-DOT-2026-11.md §10.3](docs/KE-HOACH-DOT-2026-11.md#103-lịch-theo-đợt-và-khóa-vùng-nóng).
@@ -984,6 +999,227 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
   - [x] Máy chủ báo `far` kèm chỗ NPC đang đứng; đuổi kịp thì thôi báo `far` (e2e)
   - [ ] Chủ dự án thử trên trình duyệt: chạm NPC ở 4 cảnh, trò chuyện với NPC thường và NPC cơ duyên, màn điện thoại
 - **Ngoài phạm vi**: đổi danh sách NPC, câu thoại, điều kiện nhận bí kíp; đồng bộ NPC thường giữa các máy (vẫn ngẫu nhiên riêng từng máy như trước).
+
+---
+
+## Đợt 3D · Đồ họa 3D, góc nhìn thứ nhất / thứ ba, quân cờ
+
+Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (đọc §1, §2 trước khi làm bất kỳ thẻ nào dưới đây). Thợ mặc định là các mô hình GPT qua CLIProxyAPI (§4 của tài liệu đó).
+
+### T-080 · Dựng nền 3D (Three.js, khung World3D, trang thử)
+- **Trạng thái**: 🟣 Chờ soát. Thợ không chạy được test trong hộp cát (spawn EPERM); Điều phối đã chạy lại: `npm run check` 132 file sạch, `node --test test/world3d-static.test.js test/hall-npcs.test.js` 6/6, trang thử hiện cảnh 3D, console không lỗi.
+- **Ưu tiên**: P0
+- **Gói ngữ cảnh**: CORE + HALL + OPS
+- **Khu vực chạm**: package.json, package-lock.json, server.js (chỉ thêm 1 route tĩnh `/vendor/three`), tools/check.js (quét thêm `.mjs`), public/js/world3d/index.mjs (mới), public/world3d-test.html (mới, trang thử), public/data/NOTICE.txt, test/world3d-static.test.js (mới)
+- **Phụ thuộc**: không
+- **Thợ**: gpt-6.1-sol · **Soát**: Claude Sonnet 5.5
+- **Người làm**: gpt-6.1-sol (Codex CLI qua proxy)
+- **Nhánh**: codex/T-080-nen-3d
+- **Mục tiêu**: Có Three.js chạy được không cần bundler và một khung `World3D` nạp lười, hiện một sàn + ánh sáng + khối thử trên trang thử. Game 2D không đổi gì.
+- **Tiêu chí xong**:
+  - [ ] `three` nằm trong `dependencies` (khóa đúng một phiên bản); máy chủ phục vụ `GET /vendor/three/three.module.min.js` (hoặc tên tệp build tương đương) từ `node_modules/three/build`, có cache; không lộ thư mục khác của `node_modules`
+  - [ ] `public/js/world3d/index.mjs` xuất `start({ canvas, scene, getState, on, quality })`, `setScene`, `setView`, `setQuality`, `stop`; kiểm WebGL2, không có thì `start` trả `{ ok:false, reason }` chứ không ném lỗi; dừng vòng vẽ khi `document.hidden`; `stop()` giải phóng geometry, material, renderer
+  - [ ] `tools/check.js` kiểm cả `.mjs`; `npm run check` sạch
+  - [ ] Trang thử `public/world3d-test.html` (có `importmap` cho `three`) hiện cảnh thử khi mở `http://localhost:3000/world3d-test.html`
+  - [ ] Test e2e: route trả 200 + `content-type` JavaScript, đường dẫn `..` bị từ chối; `npm test` không thêm ca trượt so với baseline
+  - [ ] Ghi Three.js (MIT, phiên bản) vào `public/data/NOTICE.txt`
+- **Ngoài phạm vi**: không sửa `index.html`, `hall.js`, `app.js`; chưa dựng cảnh chùa; chưa làm máy quay.
+- **Ghi chú**: Đã có mã nền 3D và test trong worktree, chưa commit. `npm run check` bị `spawnSync EPERM`; `npm test`: 0 đạt, 53 file trượt ngay khi tạo tiến trình, không chạy được các ca bên trong nên chưa so baseline. Chạy `node --check` trực tiếp từ PowerShell: 132/132 file sạch. Cần môi trường cho phép Node tạo tiến trình con để tiếp tục kiểm tra và bàn giao Chờ soát. Báo cáo cục bộ: `BAN-GIAO-T-080.md` (không commit).
+
+### T-081 · Toán máy quay góc nhìn thứ nhất / thứ ba (thuần, có test)
+- **Trạng thái**: 🟣 Chờ soát. Thợ không chạy được test trong hộp cát (spawn EPERM); Điều phối đã chạy lại: `npm run check` sạch, `node --test test/view-math.test.js` 30/30, thử làm hỏng 2 chỗ (kẹp biên sàn, kẹp góc 70°) thì 2 ca đỏ. Lưu ý cho T-088: `pitch` dương ở góc thứ nhất là nhìn lên, ở góc thứ ba là máy quay lên cao; đổi góc nhìn nên đặt lại `pitch`.
+- **Ưu tiên**: P0
+- **Gói ngữ cảnh**: CORE + HALL
+- **Khu vực chạm**: public/js/view-math.js (mới, UMD như `actors.js`), test/view-math.test.js (mới)
+- **Phụ thuộc**: không
+- **Thợ**: gpt-6.1-terra · **Soát**: gpt-6-sol
+- **Người làm**: gpt-6.1-terra (Codex CLI qua proxy)
+- **Nhánh**: codex/T-081-toan-may-quay
+- **Ghi chú**: Đã viết module và 30 test; chạy trực tiếp đạt 30/30. Cần chạy lại `npm run check` và `node --test test/view-math.test.js` ngoài môi trường bị chặn trước khi chuyển chờ soát.
+- **Mục tiêu**: Một module thuần, không phụ thuộc, chạy được trong Node, chứa mọi phép tính mà lớp 3D cần, để máy quay và điều khiển kiểm được bằng test.
+- **Tiêu chí xong**:
+  - [ ] `SCENE_SIZE` cho `hall`, `yard`, `library`, `arena` (mét); `toWorld(scene, x, z)` và `toFloor(scene, X, Z)` nghịch đảo nhau
+  - [ ] `createView({ mode })`: trạng thái `mode ('first'|'third')`, `yaw`, `pitch`, `dist`; `rotate(dx, dy)`, `zoom(k)`, `setMode`; kẹp `pitch` (thứ nhất −60°..60°, thứ ba 5°..70°), `dist` 2..9 m
+  - [ ] `cameraPose(view, target, bounds)` → `{ pos, look }`; ở góc thứ ba máy quay không ra ngoài tường (kẹp theo `bounds`) và không thấp hơn 0,3 m; góc thứ nhất đặt ở tầm mắt 1,55 m
+  - [ ] `moveTarget(scene, x, z, yaw, fwd, strafe, step)` → điểm sàn `(x, z)` tiếp theo, đã kẹp theo biên mà `hall.js` `walkTo` đang dùng (0,03..0,97 và 0,12..0,97)
+  - [ ] `smooth(cur, goal, dt, reduceMotion)`: nội suy mượt, `reduceMotion` thì nhảy thẳng
+  - [ ] ≥ 15 ca test tên tiếng Việt, gồm ca biên; `node --test test/view-math.test.js` đạt; `npm run check` sạch
+- **Ngoài phạm vi**: không import Three.js, không đụng DOM, không sửa file có sẵn.
+
+### T-082 · Bộ khối dựng kiến trúc chùa (kit.mjs)
+- **Trạng thái**: 🟣 Chờ soát. Vòng 1 (gpt-6.1-terra) còn thô, vòng 2 (gpt-6.1-sol) đạt. Điều phối chạy lại: npm run check sạch, test world3d 20/20, xem /world3d-kit.html: 26 khối, mái cong đầu đao, console không lỗi.
+- **Ưu tiên**: P0
+- **Gói ngữ cảnh**: CORE + HALL
+- **Khu vực chạm**: public/js/world3d/kit.mjs (mới), public/world3d-kit.html (mới, trang thử)
+- **Phụ thuộc**: T-080
+- **Thợ**: gpt-6.1-terra · **Soát**: gpt-6-sol + Gemini Argon (ảnh)
+- **Người làm**: gpt-6.1-sol (Codex CLI qua proxy)
+- **Nhánh**: codex/T-082-khoi-dung
+- **Mục tiêu**: Thư viện hàm dựng hình bằng mã, dùng chung cho 4 cảnh: mái ngói cong đầu đao, cột gỗ, tường, cửa bức bàn, nền gạch, bậc đá, đèn lồng, bồ đoàn, kệ kinh, bàn đá + ghế, cây bồ đề, lư hương, chuông, mõ; bảng vật liệu dùng chung (gỗ, ngói, đá, đồng, vải).
+- **Tiêu chí xong**:
+  - [x] Mỗi hàm trả `THREE.Group` gốc ở mặt sàn, đơn vị mét; nhận `quality` để giảm số mặt; gộp geometry tĩnh; vật liệu lấy từ một bảng dùng chung (không tạo mới mỗi lần gọi)
+  - [x] `disposeKit()` giải phóng hết
+  - [ ] Trang thử bày toàn bộ khối trên lưới, có nhãn tên; chụp ảnh gửi kèm bàn giao
+  - [x] Toàn bộ khối trên trang thử < 60 nghìn tam giác ở mức Vừa
+- **Ngoài phạm vi**: không dựng cảnh hoàn chỉnh, không tải mô hình/ảnh ngoài.
+
+- **Ghi chú**: Vòng 2 giữ 14 API cũ, thêm 11 khối và `roof({width, depth, tiers, quality})`, `templeHall({width, depth, quality})`. Mái bốn phía có đầu đao cong, ngói ống từng viên, kìm nóc và chồng diêm; chánh điện thân nhà 16×10 m. Trang thử bày 26 khối có nhãn, nền tối, tự căn toàn cảnh và chọn xem gần; 55.874 tam giác khối dựng (55.876 kể cả nền) ở mức Vừa. `node test/world3d-kit.test.js`: 8/8 đạt; kiểm cú pháp trực tiếp đạt. Theo chỉ dẫn vòng 2: không tạo tiến trình con, không stage/commit; điều phối chạy kiểm tổng, mở trình duyệt và chụp ảnh. Bàn giao cục bộ: `BAN-GIAO-T-082.md` (không commit).
+
+### T-083 · Nhân vật 3D low-poly và NPC
+- **Trạng thái**: 🟣 Chờ soát
+- **Người làm**: gpt-6.1-sol (Codex CLI qua proxy)
+- **Nhánh**: codex/T-083-nhan-vat-3d
+- **Ưu tiên**: P0
+- **Gói ngữ cảnh**: CORE + HALL
+- **Khu vực chạm**: public/js/world3d/avatar.mjs (mới), public/world3d-avatar.html (mới, trang thử)
+- **Phụ thuộc**: T-080
+- **Thợ**: gpt-6.1-sol · **Soát**: Claude Sonnet 5.5 + Gemini Argon (ảnh)
+- **Mục tiêu**: Nhân vật 3D khớp với nhân vật 2D hiện có (`look = { g:'nam'|'nu', c:0..11, h:0..3 }`, xem `drawAvatar` trong `hall.js`), và các NPC (`drawNpcAccessory`).
+- **Tiêu chí xong**:
+  - [x] `createAvatar(look, opts)` → `{ group, update(state, dt), setLook, dispose }`; `state` có `walking`, `yaw`, `bow` (0..1), `sit`, `talk`, `aura`, `name`, `tag`, `bubble`
+  - [x] Hoạt cảnh đi, đứng thở, vái lạy, ngồi bồ đoàn, ngồi ghế đá; giảm chuyển động thì chỉ đổi tư thế
+  - [x] Nhãn tên + bong bóng chat là sprite `CanvasTexture` (chữ vẽ bằng `fillText`), luôn quay về máy quay, ẩn với chính mình ở góc nhìn thứ nhất
+  - [x] NPC: Lão Ăn Mày, Vạn Lý Độc Hành, Obito, Tảo Địa Tăng, thầy bói (phụ kiện theo vai)
+  - [ ] ≤ 600 tam giác mỗi nhân vật; 60 nhân vật vẫn ≥ 30 khung hình/giây trên máy bàn (ghi số đo)
+- **Ngoài phạm vi**: không sửa `hall.js`; không đổi dữ liệu `look`.
+- **Ghi chú bàn giao**: Đã có `/world3d-avatar.html`, kéo xoay/cuộn thu phóng, đổi ngoại hình/tư thế và đo 60 nhân vật (khởi động 2 giây + lấy mẫu 10 giây, kết quả tại `window.avatarBenchmark`). Tối đa 492 tam giác/người kể cả hào quang, bóng tiếp xúc và hai nhãn; 576 cấu hình đã kiểm bằng test. Kiểm cú pháp trực tiếp 134 file sạch; test mới 4/4 và `hall-npcs` 4/4 đạt. `npm run check`, `node --test` và e2e cảnh gặp EPERM khi tạo tiến trình con; điều phối chạy lại và kiểm ảnh/FPS. Thêm `test/world3d-avatar.test.js` ngoài khu vực để kiểm hợp đồng mới. Chi tiết trong `BAN-GIAO-T-083.md` (không commit).
+
+### T-084 · Cảnh Chánh điện 3D
+- **Trạng thái**: 🟣 Chờ soát. Điều phối chạy lại: npm run check sạch, test cảnh 8/8, xem /world3d-scene-hall.html ở cả hai góc nhìn: tam thế Phật, bàn thờ, bát hương, hoành phi, console không lỗi.
+- **Người làm**: gpt-6.1-sol (Codex CLI qua proxy)
+- **Nhánh**: codex/T-084-canh-chanh-dien
+- **Ưu tiên**: P0
+- **Gói ngữ cảnh**: CORE + HALL
+- **Khu vực chạm**: public/js/world3d/scenes/hall.mjs (mới)
+- **Phụ thuộc**: T-080, T-082
+- **Thợ**: gpt-6.1-sol · **Soát**: Claude Sonnet 5.5 + Gemini Argon
+- **Mục tiêu**: Chánh điện 3D có đủ vật mà bản 2D có và chạm được: tượng Phật, bàn thờ + lễ vật theo `altar`, bát hương + nén nhang theo `incense` (khói ở mức Cao), chuông, mõ, ống xăm, cửa sang Tàng Kinh Các.
+- **Tiêu chí xong**:
+  - [x] `build(ctx)` → `{ group, update(state, dt), pick(raycaster), bounds, dispose }`; `pick` trả `{ kind:'floor'|'bowl'|'statue'|'lib'|'jar', x, z }`; ghi ánh xạ handler ở đầu module
+  - [x] Vị trí vật theo toạ độ sàn của `geo()`/`drawBg()` trong `hall.js`; tủ trái nằm ngoài hàng cột như 2D
+  - [x] Ánh nến ấm, tượng có ánh vàng; mức Thấp không bóng đổ (đã kiểm bằng Three thật; chờ soát ảnh)
+  - [ ] Ảnh chụp 2 góc nhìn × 3 cỡ màn trong bàn giao
+- **Ngoài phạm vi**: không nối vào game (T-088).
+- **Ghi chú**: Có trang thử `public/world3d-scene-hall.html` với 6 khách và nhân vật mình, WASD/chạm sàn, kéo/cuộn/chụm, góc nhìn 1/3 và ba mức đồ họa. Test cảnh trực tiếp đạt 8/8, Hall NPC đạt 4/4; `node --check` sạch. Theo chỉ dẫn điều phối, chưa chạy lệnh tạo tiến trình con, chưa chụp ảnh và chưa add/commit; chi tiết ở `BAN-GIAO-T-084.md` (không commit file bàn giao).
+
+### T-085 · Cảnh Sân chùa 3D
+- **Trạng thái**: 🟣 Chờ soát. Điều phối soát 13/11: vòng 2 (gpt-6.1-sol, bị cắt vì hết hạn mức nhưng mã đã đủ) đạt về hình; check sạch, test 9/9; đã sửa tiêu đề trang thử. Chưa soát kỹ góc nhìn thứ nhất và pick trên trình duyệt. · **Ưu tiên**: P1 · **Gói ngữ cảnh**: CORE + HALL + KYDAO
+- **Người làm**: gpt-6.1-sol (Codex CLI qua proxy) · **Nhánh**: codex/T-085-canh-san-chua
+- **Khu vực chạm**: public/js/world3d/scenes/yard.mjs (mới)
+- **Phụ thuộc**: T-080, T-082 · **Thợ**: gpt-6.1-terra · **Soát**: gpt-6-sol + Gemini Argon
+- **Mục tiêu**: Sân chùa 3D: mặt tiền chánh điện, 4 bàn đá đúng `YARD_TABLES` (biển tên bàn, người ngồi), hai thầy bói, cây, trời ngày/đêm theo `state.daylight`.
+- **Tiêu chí xong**:
+  - [ ] Cùng giao diện `build/update/pick/dispose`; `pick` trả `table` (id 1–4), `reader`, `floor`
+  - [ ] Toạ độ bàn/ghế lấy từ `state.tables`, không chép số
+  - [ ] Ảnh ngày và đêm trong bàn giao
+- **Ngoài phạm vi**: không sửa `hall.js`, `server.js`.
+
+### T-086 · Cảnh Tàng Kinh Các 3D
+- **Trạng thái**: 🟣 Chờ soát. Điều phối soát 13/11: vòng 2 (gpt-6.1-sol, dừng vì hết hạn mức nhưng mã đã đủ) đạt về hình; check sạch, test 11/11. Chưa soát kỹ góc nhìn thứ nhất và pick chỗ ngồi trên trình duyệt. · **Ưu tiên**: P1 · **Gói ngữ cảnh**: CORE + HALL
+- **Người làm**: gpt-6.1-sol (Codex CLI qua proxy)
+- **Nhánh**: `codex/T-086-canh-tang-kinh-cac`
+- **Khu vực chạm**: public/js/world3d/scenes/library.mjs (mới)
+- **Phụ thuộc**: T-080, T-082 · **Thợ**: gpt-6.1-terra · **Soát**: gpt-6-sol + Gemini Argon
+- **Mục tiêu**: Tàng Kinh Các 3D: kệ kinh quanh tường, 8 bồ đoàn đúng `state.seats`, đèn dầu, cửa sổ có nắng.
+- **Tiêu chí xong**:
+  - [ ] `pick` trả `seat` (chỉ số 0–7), `shelf`, `floor`; bồ đoàn có người ngồi thì nhân vật ở tư thế ngồi
+  - [ ] Ảnh 2 góc nhìn trong bàn giao
+- **Ghi chú**: Đã dựng cảnh và trang thử; kiểm thử trực tiếp 2/2 đạt. Điều phối cần kiểm giao diện, chụp ảnh hai góc và chạy các lệnh còn lại.
+- **Ngoài phạm vi**: không sửa `LIB_SEATS`.
+
+### T-087 · Cảnh Sân đấu (khu đi lại) 3D
+- **Trạng thái**: 🟣 Chờ soát. Điều phối chạy lại: npm run check sạch, test cảnh 10/10, xem /world3d-scene-arena.html: võ đài thái cực, giá binh khí, cờ phướn, console không lỗi. Không đụng arena.js. · **Ưu tiên**: P1 · **Gói ngữ cảnh**: CORE + HALL + PK
+- **Người làm**: gpt-6-astra (Codex CLI qua proxy)
+- **Nhánh**: `codex/T-087-canh-san-dau`
+- **Khu vực chạm**: public/js/world3d/scenes/arena.mjs (mới); bổ sung theo giao việc: public/world3d-scene-arena.html, test/world3d-scene-arena.test.js (mới)
+- **Phụ thuộc**: T-080, T-082 · **Thợ**: gpt-6-astra · **Soát**: gpt-6-sol + Gemini Argon
+- **Mục tiêu**: Khu đi lại của Sân đấu ở dạng 3D (đối chiếu `drawArenaYard`, `drawArenaLive` trong `hall.js`): võ đài đá, giá binh khí, trống, cờ.
+- **Tiêu chí xong**:
+  - [x] Cùng giao diện cảnh; `pick` trả `person`, `floor`
+  - [x] **Không** đụng sàn PK trong `arena.js` (PK giữ nguyên góc nhìn thứ ba hiện tại)
+- **Ghi chú bàn giao**: Cảnh dùng kit, khớp PLAT và vị trí đồ vật 2D; trang thử có 6 khách + mình, WASD/chạm sàn, góc nhìn 1/3, đồ họa và giảm chuyển động. `node --check` hai file mới sạch; chạy trực tiếp test cảnh 10/10 và hall-npcs 4/4. Theo giao việc, để điều phối chạy npm check / node --test, chụp ảnh và commit; chưa add/commit. Browser host không khả dụng nên chưa kiểm ảnh WebGL. Hợp đồng state/pick và hướng dẫn soát ở `BAN-GIAO-T-087.md` (không commit). Không đổi index.html vì chưa nạp cảnh này vào game (T-088).
+- **Ngoài phạm vi**: mọi thứ trong `arena.js`.
+
+### T-088 · Nối 3D vào game: nút 2D/3D, góc nhìn 1/3, điều khiển
+- **Trạng thái**: 🟣 Chờ soát. Điều phối soát 13/11: hai vòng gpt-6.1-sol. npm run check sạch 155 file, npm test 825 đạt 0 trượt 3 bỏ qua. Chơi thử game thật trên trình duyệt: bật 3D, WASD, phím V, đủ 4 cảnh, console không lỗi; vòng 2 đã sửa máy quay chúi sàn, bảng tên quá to, Sân chùa tối. Việc ẩn nút góc nhìn khi PK mới kiểm bằng test, chưa thử trận thật; chưa thử trên điện thoại.
+- **Người làm**: gpt-6.1-sol (Codex CLI qua proxy) · **Nhánh**: `codex/T-088-noi-3d-vao-game`
+- **Ưu tiên**: P0
+- **Gói ngữ cảnh**: CORE + HALL + NAV
+- **Khu vực chạm**: public/js/hall.js (chỉ **thêm** `Hall.view3d`: `snapshot()`, `hold(on)`, `emit(kind, data)`; không sửa hàm vẽ), public/js/world3d/camera.mjs, input.mjs (mới), public/js/view3d-ui.js (mới: nút, lưu `ta-view`), public/js/app.js (vùng khởi tạo Hall + phím tắt), public/index.html (`importmap`, nút, `<script>`, `?v=`), public/css/view3d.css (mới, tiền tố `v3-`), public/js/arena.js (chỉ chỗ gọi `Hall.attach`), test/hall-view3d.test.js (mới)
+- **Phụ thuộc**: T-080, T-081, T-083, T-084
+- **Thợ**: gpt-6.1-sol · **Soát**: Claude Sonnet 5.5 + Gemini Argon · dự phòng thợ: Claude Sonnet 5.5
+- **Mục tiêu**: Người chơi bấm "3D" là cảnh đang đứng chuyển sang 3D, đổi được góc nhìn thứ nhất / thứ ba, đi lại và chạm vật như bản 2D. Bấm "2D" quay lại như cũ.
+- **Tiêu chí xong**:
+  - [ ] `Hall.view3d.snapshot()` trả bản chụp chỉ đọc: `scene`, `me`, người chơi (id nội bộ, tên, look, x, z, đang đi, ngồi, vái, hào quang, bong bóng), NPC, `incense`, `altar`, `tables`, `seats`, `daylight`; **không** có uid của ai
+  - [ ] `Hall.view3d.hold(true)` làm `frame()` bỏ phần vẽ 2D nhưng vẫn nội suy vị trí và cho NPC đi; các API cũ của `Hall` không đổi tên, test `hall-npcs` vẫn đạt
+  - [ ] Nút "2D / 3D" và nút góc nhìn (phím `V`), ≥ 44px, lưu `ta-view` `{ on, mode, quality }`; cảnh chưa có bản 3D thì tự ở 2D
+  - [ ] Góc thứ ba: kéo để xoay, cuộn/chụm để thu phóng; góc thứ nhất: kéo để nhìn; chạm sàn để đi ở cả hai; WASD + cần ảo gửi `move` ≤ 8 lần/giây qua `moveTarget` của T-081
+  - [ ] Chạm người / NPC / bát hương / tượng / bồ đoàn / bàn đá gọi đúng handler mà 2D đang gọi
+  - [ ] Vào PK (sàn đấu) thì nút góc nhìn ẩn; rời PK hiện lại
+  - [ ] Không có WebGL2 hoặc `start` lỗi: báo một câu ngắn, ở lại 2D
+  - [ ] `npm run check`, `npm test` không thêm ca trượt; ảnh 3 cỡ màn, 2 góc nhìn
+- **Ngoài phạm vi**: không đổi giao thức socket, không sửa `server.js`, không sửa các hàm `draw*` của `hall.js`.
+- **Ghi chú bàn giao vòng 2**: Kiểm cú pháp trực tiếp 155 file JS/MJS sạch; 8 file test trực tiếp đạt 89/89. `npm run check` / `node --test` gặp spawn EPERM; chạy trực tiếp `e2e-scene` vẫn có 2 ca lỗi spawn EPERM ở helper mở server. Chưa chạy lại toàn bộ npm test hoặc kiểm ảnh/WebGL; nhờ điều phối chơi thử bốn mục và chạy e2e ngoài sandbox. Đã tăng cache của script và chuỗi import 3D. Chi tiết bốn mục, file ngoài vùng chạm bắt buộc và giới hạn kiểm chứng trong `BAN-GIAO-T-088.md` (không commit).
+
+### T-089 · Cài đặt đồ họa, tự dò máy yếu
+- **Trạng thái**: 🟣 Chờ soát. Điều phối chạy lại: npm run check sạch, node --test test/gfx-detect.test.js 5/5. Lưu ý: điện thoại hiện luôn vào mức Thấp; nới sau khi đo máy thật. · **Ưu tiên**: P1 · **Gói ngữ cảnh**: CORE + HALL
+- **Khu vực chạm**: public/js/world3d/quality.mjs (mới), public/js/gfx-detect.js (mới, UMD thuần), test/gfx-detect.test.js (mới)
+- **Phụ thuộc**: T-080 (đã có trên nhánh) · **Thợ**: gpt-6-luna · **Soát**: gpt-6-sol
+- **Người làm**: gpt-6-luna (Codex CLI qua proxy) · **Nhánh**: `codex/T-089-cai-dat-do-hoa`
+- **Mục tiêu**: Chọn mức Thấp / Vừa / Cao tự động và tự hạ mức khi giật.
+- **Tiêu chí xong**:
+  - [x] `gfx-detect.js`: `pickQuality({ webgl2, cores, memory, dpr, mobile, reduceMotion })` thuần + bộ đếm `createFpsGovernor({ low:30, windowMs:3000 })` (tiêm `now`); có test
+  - [x] `quality.mjs` áp mức vào renderer (tỉ lệ điểm ảnh, bóng đổ, hạt, khoảng nhìn)
+- **Ghi chú bàn giao**: 5 test qua; do môi trường chặn tiến trình con, đã kiểm cú pháp từng file bằng `node --check` và chạy trực tiếp `node test/gfx-detect.test.js`. Chi tiết ở `BAN-GIAO-T-089.md`.
+- **Ngoài phạm vi**: giao diện cài đặt (T-088 gọi).
+
+### T-090 · Vẽ lại quân cờ 2D đẹp hơn
+- **Trạng thái**: 🟣 Chờ soát. Vòng 1 (gpt-6.1-terra) chưa đạt, vòng 2 (gpt-6.1-sol) đạt. Điều phối chạy lại: npm run check sạch, node --test test/kydao-ui-core.test.js 12/12, xem trang /kydao-pieces-test.html: vẽ một bàn 32 quân 0,1–0,2 ms, console không lỗi. Chưa tăng ?v= vì index.html chưa nạp kydao-draw.js (T-034 nối).
+- **Ưu tiên**: P1
+- **Gói ngữ cảnh**: CORE + KYDAO
+- **Khu vực chạm**: public/js/kydao-draw.js (chỉ `CHESS_SHAPES`, `drawChessPiece`, `drawXiangqiPiece`, `drawChessBoard`, `drawXiangqiBoard`), public/index.html (chỉ dòng `?v=` của `kydao-draw.js`), test có sẵn của kydao-draw
+- **Phụ thuộc**: không (T-033 gộp `main` sau thẻ này)
+- **Thợ**: gpt-6.1-sol · **Soát**: gpt-6-sol + Gemini Argon (ảnh)
+- **Người làm**: gpt-6.1-sol (Codex CLI qua proxy)
+- **Nhánh**: `codex/T-090-quan-co-2d`
+- **Mục tiêu**: Quân cờ vua và cờ tướng trên bảng 2D trông như đồ thật: quân vua kiểu Staunton có khối (chuyển sắc, viền sáng, bóng đổ), quân cờ tướng là đĩa gỗ dày có vành, chữ khắc chìm; bàn có vân gỗ và viền.
+- **Tiêu chí xong**:
+  - [x] Vẫn vẽ hoàn toàn bằng mã (không tệp ảnh, không ký tự ♔), không đổi API xuất (`layout`, `squareAt`, `cellXY`, `parseSq`, `nameOf`, `draw`…) và không đổi hình học; test hiện có vẫn đạt
+  - [ ] Phân biệt rõ 6 loại quân cờ vua ở cỡ ô 36px (điện thoại 375px); quân Đen/Trắng, Đỏ/Đen tương phản tốt trên nền
+  - [ ] Một lần vẽ cả bàn 32 quân < 4 ms trên máy bàn (lưu sẵn quân vào canvas đệm theo cỡ ô; ghi số đo)
+  - [ ] Ảnh trước/sau cho cờ vua và cờ tướng (cả chế độ chữ Việt) ở 375px và 1280px
+  - [ ] `npm run check` sạch; tăng `?v=`
+  - [x] Trang thử `public/kydao-pieces-test.html` nạp `/js/kydao-draw.js`, có mọi quân hai bên ở ô 36/72px, chữ Hán/Việt/quân úp, hai thế khai cuộc và đo trung bình 120 lần vẽ sau 20 lần làm nóng
+- **Ghi chú vòng 2**: Chạy trực tiếp `node test/kydao-ui-core.test.js` đạt 12/12 (thêm 2 ca kiểm đường vẽ và bộ đệm); `node --check` hai file JS và kiểm cú pháp script trang thử đạt. `npm run check` / `node --test` gặp EPERM khi tạo tiến trình, điều phối sẽ chạy lại; không coi là bị chặn theo giao việc. Chưa có ảnh hoặc số đo thực tế. Trang thử bổ sung theo yêu cầu vòng 2; không tăng `?v=` vì index.html chưa nạp module. Chưa add/commit theo chỉ dẫn vòng 2; bàn giao trong `BAN-GIAO-T-090.md` (không commit).
+- **Ngoài phạm vi**: `kydao-ui.js`, luật cờ, cờ vây/caro (T-033).
+
+### T-091 · Bàn cờ 3D, quân tiện tròn
+- **Trạng thái**: 🟣 Chờ soát. Điều phối chạy lại: npm run check sạch, test 18/18, xem /world3d-board.html: cờ vua và cờ tướng hiện đúng, console không lỗi. Còn lại: quân trắng hơi cháy sáng, quân cờ tướng hơi nhỏ so với ô; nút Bàn 3D chưa thấy trong game vì index.html chưa nạp KydaoUI (T-034). · **Ưu tiên**: P1 · **Gói ngữ cảnh**: CORE + KYDAO
+- **Người làm**: gpt-6.1-sol (Codex CLI qua proxy) · **Nhánh**: codex/T-091-ban-co-3d
+- **Khu vực chạm**: public/js/world3d/board3d.mjs (mới), public/js/kydao-ui.js (chỉ thêm nút "Bàn 3D" và chỗ gắn), public/world3d-board.html (mới, trang thử)
+- **Phụ thuộc**: T-080, T-090 · **Thợ**: gpt-6.1-sol · **Soát**: Claude Sonnet 5.5 + Gemini Argon
+- **Mục tiêu**: Trong bảng bàn cờ có nút đổi sang bàn 3D: quân cờ vua tiện tròn (`LatheGeometry`, mã có đầu ngựa đúc), quân cờ tướng đĩa gỗ khắc chữ, đá cờ vây bóng; xoay bàn, quân trượt khi đi, quân bị ăn rơi ra mép.
+- **Tiêu chí xong**:
+  - [x] Nhận cùng dữ liệu mà `KydaoDraw.draw` nhận; chạm ô trả cùng tên ô như `squareAt`
+  - [x] Không có WebGL2 thì nút ẩn; 2D vẫn là mặc định (đã viết mã; chờ điều phối kiểm trình duyệt)
+  - [ ] Ảnh 2 môn cờ trong bàn giao
+- **Ghi chú bàn giao**: Module độc lập + trang thử `/world3d-board.html`, hai bàn khai cuộc, xoay/chụm, nước thử có ăn quân, Hán/Việt; có thêm vây/caro vì dữ liệu luật đã có. `kydao-ui.js` thêm nút nạp lười, cùng luồng chọn ô, tự về 2D khi lỗi; `index.html` chưa nạp Kỳ Đạo trong nhánh này (T-034), không tự nối ngoài phạm vi. Test trực tiếp Node: 112 đạt, 0 trượt, 1 bỏ qua (perft sâu); cú pháp 3 JS/MJS và script trang thử sạch. Theo giao việc, điều phối chạy `npm run check` / `node --test`, chụp ảnh, soát WebGL và add/commit; thợ chưa add/commit. Chi tiết trong `BAN-GIAO-T-091.md` (không commit).
+- **Ngoài phạm vi**: luật cờ, giao thức `kd:*`.
+
+### T-092 · ui-harness và ảnh chụp cho 3D
+- **Trạng thái**: 🟣 Chờ soát. Điều phối soát 13/11 (thợ gpt-6-luna): check sạch, đã đọc mã. Đã cài Playwright (không ghi vào package.json) và chạy node tools/ui-harness/world3d/run.js: đạt 24/24 tổ hợp (4 cảnh × 2 góc nhìn × 3 cỡ màn hình), không lỗi console; số FPS đo bằng SwiftShader nên không đại diện máy thật. Đã lọc cảnh báo vô hại của SwiftShader. Đã thêm .gitignore cho thư mục artifacts. · **Ưu tiên**: P2 · **Gói ngữ cảnh**: CORE + OPS · **Thợ**: gpt-6-luna (Codex CLI qua proxy) · **Soát**: Gemini Argon
+- **Khu vực chạm**: tools/ui-harness/world3d/* (mới)
+- **Mục tiêu**: Kịch bản Playwright mở 4 cảnh × 2 góc nhìn × 3 cỡ màn, chụp ảnh, báo lỗi console và số khung hình/giây.
+- **Ghi chú bàn giao**: Thêm `run.js`, phục vụ trang thử cùng Three.js, chạy 24 tổ hợp bằng Chromium + SwiftShader, xuất PNG và `report.json` vào `tools/ui-harness/world3d/artifacts/`. `node --check` sạch; môi trường thợ không cho chạy npm/Playwright hoặc git commit; xem `BAN-GIAO-T-092.md` để điều phối chạy và commit.
+
+### T-093 · README, Sổ tay cho 3D và góc nhìn
+- **Trạng thái**: 🟣 Chờ soát. Điều phối soát 13/11 (thợ gemini-3.8-flash-high): đối chiếu từng ý với mã, sửa ba chi tiết sai (lư trầm thành đèn dầu, võ đài bát quái thành thái cực, bỏ ý chọn mức đồ họa trong thanh điều khiển). check sạch, test guide và sync-constants đạt. · **Ưu tiên**: P2 · **Gói ngữ cảnh**: CORE + DOCS · **Thợ**: gemini-3.8-flash-high (Codex CLI qua proxy) · **Soát**: Gemini Argon
+- **Người làm**: gemini-3.8-flash-high (Codex CLI qua proxy)
+- **Nhánh**: codex/T-093-tai-lieu-3d
+- **Khu vực chạm**: README.md, public/data/so-tay.vi.json, docs/agents/ARCHITECTURE.md (§1, §5, §6)
+- **Mục tiêu**: Người chơi biết bật 3D, đổi góc nhìn, điều khiển; agent sau biết cấu trúc world3d/.
+
+**Ý tưởng của đợt 3D (⚪, chờ chủ dự án chọn; mô tả ở KE-HOACH-3D §3):** T-094 ngày đêm và đèn lồng · T-095 tiếng nói theo khoảng cách · T-096 trang trí lễ theo âm lịch · T-097 sàn PK 3D máy quay thứ ba cố định · T-098 chụp ảnh lưu niệm · T-099 bản đồ nhỏ.
 
 ---
 

@@ -76,53 +76,174 @@
   function ball(ctx, x, y, r) { ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); }
 
   const CHESS_SHAPES = {
+    // Thân tiện lõm và vòng cổ dùng chung; đầu mỗi quân có đường nét riêng.
+    stem(ctx, paint, top, width) {
+      ctx.beginPath(); ctx.moveTo(-0.22, 0.27);
+      ctx.bezierCurveTo(-0.2, 0.2, -0.085, 0.16, -0.085, 0.04);
+      ctx.bezierCurveTo(-0.085, top + 0.08, -width, top + 0.04, -width, top);
+      ctx.lineTo(width, top);
+      ctx.bezierCurveTo(width, top + 0.04, 0.085, top + 0.08, 0.085, 0.04);
+      ctx.bezierCurveTo(0.085, 0.16, 0.2, 0.2, 0.22, 0.27);
+      ctx.closePath(); paint();
+    },
+    ring(ctx, paint, y, width) {
+      ctx.beginPath(); ctx.moveTo(-width, y);
+      ctx.bezierCurveTo(-width - 0.025, y - 0.05, width + 0.025, y - 0.05, width, y);
+      ctx.lineTo(width - 0.015, y + 0.035);
+      ctx.bezierCurveTo(width * 0.5, y + 0.052, -width * 0.5, y + 0.052, -width + 0.015, y + 0.035);
+      ctx.closePath(); paint();
+    },
     p(ctx, paint) {
-      ball(ctx, 0, -0.2, 0.13); paint();
-      poly(ctx, [[-0.21, 0.3], [-0.1, -0.06], [0.1, -0.06], [0.21, 0.3]]); paint();
+      CHESS_SHAPES.stem(ctx, paint, -0.055, 0.095);
+      CHESS_SHAPES.ring(ctx, paint, -0.055, 0.14);
+      ball(ctx, 0, -0.205, 0.13); paint();
     },
     r(ctx, paint) {
-      poly(ctx, [[-0.2, 0.3], [-0.16, -0.15], [0.16, -0.15], [0.2, 0.3]]); paint();
-      poly(ctx, [[-0.24, -0.15], [-0.24, -0.36], [-0.14, -0.36], [-0.14, -0.28], [-0.05, -0.28], [-0.05, -0.36],
-        [0.05, -0.36], [0.05, -0.28], [0.14, -0.28], [0.14, -0.36], [0.24, -0.36], [0.24, -0.15]]); paint();
+      ctx.beginPath(); ctx.moveTo(-0.22, 0.27);
+      ctx.bezierCurveTo(-0.16, 0.18, -0.135, 0.04, -0.145, -0.13);
+      ctx.lineTo(0.145, -0.13);
+      ctx.bezierCurveTo(0.135, 0.04, 0.16, 0.18, 0.22, 0.27);
+      ctx.closePath(); paint();
+      CHESS_SHAPES.ring(ctx, paint, -0.13, 0.19);
+      poly(ctx, [[-0.205, -0.15], [-0.235, -0.34], [-0.235, -0.395], [-0.14, -0.395],
+        [-0.14, -0.31], [-0.05, -0.31], [-0.05, -0.395], [0.05, -0.395], [0.05, -0.31],
+        [0.14, -0.31], [0.14, -0.395], [0.235, -0.395], [0.235, -0.34], [0.205, -0.15]]); paint();
     },
-    n(ctx, paint) {
-      poly(ctx, [[-0.22, 0.3], [-0.16, 0.0], [-0.05, -0.1], [-0.24, -0.1], [-0.2, -0.2], [-0.02, -0.38],
-        [0.12, -0.33], [0.2, -0.1], [0.23, 0.3]]); paint();
+    n(ctx, paint, detail) {
+      ctx.beginPath(); ctx.moveTo(-0.2, 0.25);
+      ctx.bezierCurveTo(-0.21, 0.12, -0.045, 0.025, -0.075, -0.125);
+      ctx.bezierCurveTo(-0.125, -0.105, -0.17, -0.07, -0.235, -0.105);
+      ctx.quadraticCurveTo(-0.28, -0.13, -0.255, -0.195);
+      ctx.lineTo(-0.11, -0.325); ctx.lineTo(-0.075, -0.425);
+      ctx.quadraticCurveTo(-0.025, -0.415, -0.005, -0.365);
+      ctx.lineTo(0.065, -0.405);
+      ctx.bezierCurveTo(0.24, -0.275, 0.19, -0.06, 0.22, 0.1);
+      ctx.quadraticCurveTo(0.23, 0.19, 0.205, 0.25);
+      ctx.closePath(); paint();
+      // Nhấn bờm, hàm và mắt bằng nét riêng.
+      ctx.beginPath(); ctx.moveTo(0.06, -0.325);
+      ctx.bezierCurveTo(0.16, -0.19, 0.1, -0.04, 0.15, 0.12);
+      ctx.moveTo(-0.22, -0.137); ctx.quadraticCurveTo(-0.16, -0.14, -0.12, -0.18);
+      detail();
+      for (let i = 0; i < 4; i++) {
+        const y = -0.23 + i * 0.07;
+        ctx.beginPath(); ctx.moveTo(0.115, y); ctx.lineTo(0.175, y - 0.025); detail();
+      }
+      ball(ctx, -0.072, -0.275, 0.021); detail(true);
+      CHESS_SHAPES.ring(ctx, paint, 0.22, 0.225);
     },
     b(ctx, paint) {
-      poly(ctx, [[-0.21, 0.3], [-0.07, 0.04], [0.07, 0.04], [0.21, 0.3]]); paint();
-      ctx.beginPath(); ctx.ellipse(0, -0.14, 0.13, 0.21, 0, 0, Math.PI * 2); paint();
-      ball(ctx, 0, -0.4, 0.05); paint();
+      CHESS_SHAPES.stem(ctx, paint, -0.065, 0.095);
+      CHESS_SHAPES.ring(ctx, paint, -0.065, 0.165);
+      ctx.beginPath(); ctx.moveTo(-0.105, -0.105);
+      ctx.bezierCurveTo(-0.21, -0.19, -0.09, -0.335, 0, -0.405);
+      ctx.quadraticCurveTo(0.055, -0.355, 0.085, -0.305);
+      ctx.lineTo(-0.025, -0.205); ctx.quadraticCurveTo(-0.035, -0.18, -0.005, -0.18);
+      ctx.lineTo(0.112, -0.27);
+      ctx.bezierCurveTo(0.175, -0.175, 0.155, -0.125, 0.105, -0.105);
+      ctx.quadraticCurveTo(0, -0.06, -0.105, -0.105);
+      ctx.closePath(); paint();
+      ball(ctx, 0, -0.418, 0.029); paint();
     },
     q(ctx, paint) {
-      poly(ctx, [[-0.23, 0.3], [-0.12, -0.1], [0.12, -0.1], [0.23, 0.3]]); paint();
-      poly(ctx, [[-0.13, -0.1], [-0.26, -0.32], [-0.1, -0.2], [0, -0.4], [0.1, -0.2], [0.26, -0.32], [0.13, -0.1]]); paint();
-      [[-0.26, -0.34], [0, -0.42], [0.26, -0.34]].forEach(p => { ball(ctx, p[0], p[1], 0.04); paint(); });
+      CHESS_SHAPES.stem(ctx, paint, -0.105, 0.1);
+      ctx.beginPath(); ctx.moveTo(-0.145, -0.12);
+      ctx.quadraticCurveTo(-0.2, -0.22, -0.245, -0.355);
+      ctx.lineTo(-0.135, -0.265); ctx.lineTo(-0.12, -0.405);
+      ctx.lineTo(-0.045, -0.285); ctx.lineTo(0, -0.44);
+      ctx.lineTo(0.045, -0.285); ctx.lineTo(0.12, -0.405);
+      ctx.lineTo(0.135, -0.265); ctx.lineTo(0.245, -0.355);
+      ctx.quadraticCurveTo(0.2, -0.22, 0.145, -0.12);
+      ctx.closePath(); paint();
+      [[-0.245, -0.365], [-0.12, -0.415], [0, -0.45], [0.12, -0.415], [0.245, -0.365]].forEach(p => {
+        ball(ctx, p[0], p[1], 0.028); paint();
+      });
+      CHESS_SHAPES.ring(ctx, paint, -0.115, 0.165);
     },
     k(ctx, paint) {
-      poly(ctx, [[-0.23, 0.3], [-0.14, -0.08], [0.14, -0.08], [0.23, 0.3]]); paint();
-      ctx.beginPath(); ctx.ellipse(0, -0.14, 0.17, 0.11, 0, 0, Math.PI * 2); paint();
-      poly(ctx, [[-0.03, -0.46], [0.03, -0.46], [0.03, -0.38], [0.1, -0.38], [0.1, -0.32], [0.03, -0.32], [0.03, -0.22], [-0.03, -0.22], [-0.03, -0.32], [-0.1, -0.32], [-0.1, -0.38], [-0.03, -0.38]]); paint();
+      CHESS_SHAPES.stem(ctx, paint, -0.105, 0.105);
+      ctx.beginPath(); ctx.moveTo(-0.12, -0.1);
+      ctx.bezierCurveTo(-0.13, -0.15, -0.215, -0.21, -0.165, -0.26);
+      ctx.bezierCurveTo(-0.11, -0.31, -0.06, -0.255, 0, -0.275);
+      ctx.bezierCurveTo(0.06, -0.255, 0.11, -0.31, 0.165, -0.26);
+      ctx.bezierCurveTo(0.215, -0.21, 0.13, -0.15, 0.12, -0.1);
+      ctx.closePath(); paint();
+      CHESS_SHAPES.ring(ctx, paint, -0.105, 0.165);
+      poly(ctx, [[-0.035, -0.485], [0.035, -0.485], [0.035, -0.415], [0.105, -0.415],
+        [0.105, -0.355], [0.035, -0.355], [0.035, -0.265], [-0.035, -0.265],
+        [-0.035, -0.355], [-0.105, -0.355], [-0.105, -0.415], [-0.035, -0.415]]); paint();
     }
   };
 
-  function drawChessPiece(ctx, cx, cy, size, ch) {
+  function drawChessPiece(ctx, cx, cy, size, ch, rendering) {
+    if (!rendering && ctx.canvas && ctx.canvas.ownerDocument && ctx.getTransform) {
+      const scale = Math.max(1, Math.abs(ctx.getTransform().a));
+      const pixels = Math.ceil(size * 1.4 * scale);
+      const key = ch + ':' + pixels + ':' + size;
+      const cache = drawChessPiece.cache || (drawChessPiece.cache = new Map());
+      if (!cache.has(key)) {
+        if (cache.size >= 96) cache.clear();
+        const canvas = ctx.canvas.ownerDocument.createElement('canvas');
+        canvas.width = pixels; canvas.height = pixels;
+        const buffer = canvas.getContext('2d');
+        if (buffer) {
+          buffer.scale(pixels / (size * 1.4), pixels / (size * 1.4));
+          drawChessPiece(buffer, size * 0.7, size * 0.7, size, ch, true);
+          cache.set(key, canvas);
+        }
+      }
+      if (cache.has(key)) {
+        ctx.drawImage(cache.get(key), cx - size * 0.7, cy - size * 0.7, size * 1.4, size * 1.4);
+        return;
+      }
+    }
     const white = ch === ch.toUpperCase();
     const shape = CHESS_SHAPES[ch.toLowerCase()];
     if (!shape) return;
     ctx.save();
     ctx.translate(cx, cy);
     ctx.scale(size, size);
-    ctx.lineWidth = 0.04;
+    ctx.lineWidth = 0.024;
     ctx.lineJoin = 'round';
-    ctx.fillStyle = white ? '#fbf7ee' : '#3b3029';
-    ctx.strokeStyle = white ? '#3a2e22' : '#0f0a07';
-    const paint = () => { ctx.fill(); ctx.stroke(); };
-    shape(ctx, paint);
-    // đế
-    ctx.beginPath();
-    ctx.rect(-0.28, 0.3, 0.56, 0.09);
-    paint();
+    ctx.lineCap = 'round';
+    // Ánh sáng bên trái; chuyển sắc ngang làm thân trông như gỗ tiện tròn.
+    const material = ctx.createLinearGradient(-0.32, 0, 0.32, 0);
+    const tones = white ? ['#a78b60', '#f3e7ce', '#fffbed', '#dfcba5', '#9a774d'] :
+      ['#0c1010', '#45463f', '#646355', '#242826', '#080b0b'];
+    [0, 0.24, 0.38, 0.64, 1].forEach((stop, i) => material.addColorStop(stop, tones[i]));
+    const gleam = ctx.createLinearGradient(-0.23, 0, -0.06, 0);
+    gleam.addColorStop(0, 'rgba(255,250,225,0)');
+    gleam.addColorStop(0.4, white ? 'rgba(255,255,247,.6)' : 'rgba(235,229,203,.22)');
+    gleam.addColorStop(1, 'rgba(255,250,225,0)');
+    const paint = () => {
+      ctx.fillStyle = material; ctx.fill();
+      ctx.strokeStyle = white ? '#644b30' : '#080b0b'; ctx.lineWidth = 0.028; ctx.stroke();
+      ctx.save(); ctx.clip();
+      ctx.fillStyle = gleam; ctx.fillRect(-0.32, -0.52, 0.64, 1);
+      // Viền sáng mảnh giúp quân mun tách khỏi ô bàn sẫm.
+      ctx.strokeStyle = white ? 'rgba(255,253,237,.7)' : 'rgba(221,207,170,.55)';
+      ctx.lineWidth = 0.014; ctx.stroke(); ctx.restore();
+    };
+    const detail = fill => {
+      ctx.strokeStyle = white ? '#745a3b' : '#c5b998';
+      ctx.fillStyle = white ? '#3c3024' : '#f2e7cc';
+      ctx.lineWidth = 0.018;
+      if (fill) ctx.fill(); else ctx.stroke();
+    };
+    ctx.beginPath(); ctx.ellipse(0.025, 0.423, 0.34, 0.057, 0, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(24,15,8,.3)'; ctx.fill();
+    shape(ctx, paint, detail);
+    // Đế hai tầng, mép trên bo cong, bậc dưới rộng và nặng hơn.
+    CHESS_SHAPES.ring(ctx, paint, 0.245, 0.24);
+    ctx.beginPath(); ctx.moveTo(-0.24, 0.29);
+    ctx.bezierCurveTo(-0.25, 0.325, -0.3, 0.315, -0.3, 0.37);
+    ctx.lineTo(-0.3, 0.395);
+    ctx.bezierCurveTo(-0.19, 0.435, 0.19, 0.435, 0.3, 0.395);
+    ctx.lineTo(0.3, 0.37);
+    ctx.bezierCurveTo(0.3, 0.315, 0.25, 0.325, 0.24, 0.29);
+    ctx.closePath(); paint();
+    ctx.beginPath(); ctx.moveTo(-0.285, 0.365);
+    ctx.bezierCurveTo(-0.12, 0.391, 0.12, 0.391, 0.285, 0.365); detail();
     ctx.restore();
   }
 
@@ -130,31 +251,74 @@
   const HAN = { r: ['俥', '車'], n: ['傌', '馬'], b: ['相', '象'], a: ['仕', '士'], k: ['帥', '將'], c: ['炮', '砲'], p: ['兵', '卒'] };
   const VIET = { r: 'Xe', n: 'Mã', b: 'Tượng', a: 'Sĩ', k: 'Tướng', c: 'Pháo', p: 'Tốt' };
 
-  function drawXiangqiPiece(ctx, cx, cy, cell, ch, vi) {
+  function drawXiangqiPiece(ctx, cx, cy, cell, ch, vi, rendering) {
+    if (!rendering && ctx.canvas && ctx.canvas.ownerDocument && ctx.getTransform) {
+      const scale = Math.max(1, Math.abs(ctx.getTransform().a));
+      const pixels = Math.ceil(cell * 1.2 * scale);
+      const key = ch + ':' + vi + ':' + pixels + ':' + cell;
+      const cache = drawXiangqiPiece.cache || (drawXiangqiPiece.cache = new Map());
+      if (!cache.has(key)) {
+        if (cache.size >= 96) cache.clear();
+        const canvas = ctx.canvas.ownerDocument.createElement('canvas');
+        canvas.width = pixels; canvas.height = pixels;
+        const buffer = canvas.getContext('2d');
+        if (buffer) {
+          buffer.scale(pixels / (cell * 1.2), pixels / (cell * 1.2));
+          drawXiangqiPiece(buffer, cell * 0.6, cell * 0.6, cell, ch, vi, true);
+          cache.set(key, canvas);
+        }
+      }
+      if (cache.has(key)) {
+        ctx.drawImage(cache.get(key), cx - cell * 0.6, cy - cell * 0.6, cell * 1.2, cell * 1.2);
+        return;
+      }
+    }
     const red = ch === ch.toUpperCase();
     const t = ch.toLowerCase();
     const hidden = t === 'x';
     const rad = cell * 0.43;
-    const ink = red ? '#b5302a' : '#1d1a17';
+    const depth = cell * 0.065;
+    const ink = red ? '#9e2420' : '#211d18';
     ctx.save();
-    ctx.beginPath(); ctx.arc(cx + cell * 0.02, cy + cell * 0.03, rad, 0, Math.PI * 2); ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.fill();
-    ctx.beginPath(); ctx.arc(cx, cy, rad, 0, Math.PI * 2);
-    ctx.fillStyle = hidden ? '#c9a76a' : '#f4e4bf'; ctx.fill();
-    ctx.lineWidth = Math.max(1.5, cell * 0.05); ctx.strokeStyle = ink; ctx.stroke();
-    ctx.beginPath(); ctx.arc(cx, cy, rad * 0.82, 0, Math.PI * 2); ctx.lineWidth = Math.max(1, cell * 0.025); ctx.stroke();
-    ctx.fillStyle = ink; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.beginPath(); ctx.ellipse(cx + cell * 0.025, cy + rad * 0.87, rad * 1.04, rad * 0.3, 0, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(35,20,7,.26)'; ctx.fill();
+    // Elip dưới lệch xuống tạo thành cạnh gỗ dày, không chỉ là bóng đổ.
+    const edge = ctx.createLinearGradient(cx, cy, cx, cy + rad + depth);
+    edge.addColorStop(0, '#c99b5c'); edge.addColorStop(0.78, '#a6743c'); edge.addColorStop(1, '#61401f');
+    ctx.beginPath(); ctx.ellipse(cx, cy + depth, rad, rad * 0.94, 0, 0, Math.PI * 2);
+    ctx.fillStyle = edge; ctx.fill(); ctx.strokeStyle = '#674321'; ctx.lineWidth = Math.max(0.7, cell * 0.02); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(cx, cy + depth * 0.75, rad * 0.98, rad * 0.94, 0, 0.15, Math.PI - 0.15);
+    ctx.strokeStyle = 'rgba(255,221,157,.5)'; ctx.lineWidth = Math.max(0.5, cell * 0.012); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(cx, cy, rad, rad * 0.94, 0, 0, Math.PI * 2);
+    const wood = ctx.createLinearGradient(cx - rad, cy - rad, cx + rad, cy + rad);
+    wood.addColorStop(0, hidden ? '#efd09b' : '#fff2d1');
+    wood.addColorStop(0.38, hidden ? '#dfbc80' : '#f2d8a6');
+    wood.addColorStop(1, hidden ? '#ae7c40' : '#c39455');
+    ctx.fillStyle = wood; ctx.fill();
+    ctx.strokeStyle = '#9b6a35'; ctx.lineWidth = Math.max(0.7, cell * 0.018); ctx.stroke();
+    // Vành khắc đôi: mép sáng dưới nét khắc tối cho cảm giác lõm.
+    for (const ring of [0.86, 0.76]) {
+      ctx.beginPath(); ctx.ellipse(cx, cy + cell * 0.015, rad * ring, rad * ring * 0.94, 0, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(255,246,215,.85)'; ctx.lineWidth = Math.max(0.7, cell * 0.018); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(cx, cy, rad * ring, rad * ring * 0.94, 0, 0, Math.PI * 2);
+      ctx.strokeStyle = ink; ctx.lineWidth = Math.max(0.7, cell * 0.018); ctx.stroke();
+    }
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    let label, textY;
     if (hidden) {
       ctx.font = '700 ' + Math.round(cell * 0.4) + 'px "Noto Serif", serif';
-      ctx.fillText('?', cx, cy + cell * 0.02);
+      label = '?'; textY = cy + cell * 0.02;
     } else if (vi) {
       const word = VIET[t] || '?';
       ctx.font = '700 ' + Math.round(cell * (word.length > 4 ? 0.22 : 0.27)) + 'px "Noto Serif", "Times New Roman", serif';
-      ctx.fillText(word, cx, cy + cell * 0.02);
+      label = word; textY = cy + cell * 0.02;
     } else {
       const han = HAN[t];
       ctx.font = '700 ' + Math.round(cell * 0.46) + 'px "Noto Serif CJK SC", "Noto Serif SC", "SimSun", "Microsoft YaHei", serif';
-      ctx.fillText(han ? han[red ? 0 : 1] : '?', cx, cy + cell * 0.03);
+      label = han ? han[red ? 0 : 1] : '?'; textY = cy + cell * 0.03;
     }
+    ctx.fillStyle = '#fff0c8'; ctx.fillText(label, cx + cell * 0.009, textY + cell * 0.025);
+    ctx.fillStyle = ink; ctx.fillText(label, cx, textY);
     ctx.restore();
   }
 
@@ -165,6 +329,25 @@
       ctx.fillStyle = (c + r) % 2 === 0 ? '#b58863' : '#f0d9b5'; // ô a1 là ô sẫm
       ctx.fillRect(p.x - g.cell / 2, p.y - g.cell / 2, g.cell, g.cell);
     }
+    ctx.save();
+    // Vân mảnh liên tục trên các ô, không che nhãn hay nước đi.
+    ctx.strokeStyle = 'rgba(93,53,25,.09)'; ctx.lineWidth = Math.max(0.45, g.cell * 0.009);
+    for (let i = 0; i < 32; i++) {
+      const y = g.oy + g.cell * (i + 0.45) / 4;
+      const bend = Math.sin(i * 2.3) * g.cell * 0.09;
+      ctx.beginPath(); ctx.moveTo(g.ox, y);
+      ctx.bezierCurveTo(g.ox + g.cell * 2.5, y + bend, g.ox + g.cell * 5, y - bend, g.ox + g.cell * 8, y);
+      ctx.stroke();
+    }
+    // Khung nằm trong mép ngoài; giữ nguyên ô và vùng chạm đã chốt.
+    const edge = Math.max(1.5, g.cell * 0.065);
+    const frame = ctx.createLinearGradient(g.ox, g.oy, g.ox + g.cell * 8, g.oy + g.cell * 8);
+    frame.addColorStop(0, '#d1a46a'); frame.addColorStop(0.45, '#84522d'); frame.addColorStop(1, '#492b19');
+    ctx.strokeStyle = frame; ctx.lineWidth = edge;
+    ctx.strokeRect(g.ox + edge / 2, g.oy + edge / 2, g.cell * 8 - edge, g.cell * 8 - edge);
+    ctx.strokeStyle = 'rgba(255,227,174,.65)'; ctx.lineWidth = Math.max(0.5, g.cell * 0.012);
+    ctx.strokeRect(g.ox + edge, g.oy + edge, g.cell * 8 - edge * 2, g.cell * 8 - edge * 2);
+    ctx.restore();
     ctx.font = '600 ' + Math.max(9, Math.round(g.cell * 0.2)) + 'px system-ui, sans-serif';
     ctx.textBaseline = 'alphabetic';
     for (let i = 0; i < 8; i++) {
@@ -180,8 +363,26 @@
 
   function drawXiangqiBoard(ctx, g, flip, vi) {
     const m = g.cell * 0.6;
-    ctx.fillStyle = '#e8c98a';
+    const wood = ctx.createLinearGradient(0, g.oy - m, g.w, g.oy + g.cell * 9 + m);
+    wood.addColorStop(0, '#f5db9f'); wood.addColorStop(0.5, '#e9c88b'); wood.addColorStop(1, '#cca363');
+    ctx.fillStyle = wood;
     ctx.fillRect(g.ox - m, g.oy - m, g.cell * 8 + m * 2, g.cell * 9 + m * 2);
+    ctx.save();
+    ctx.beginPath(); ctx.rect(g.ox - m, g.oy - m, g.cell * 8 + m * 2, g.cell * 9 + m * 2); ctx.clip();
+    ctx.lineWidth = Math.max(0.45, g.cell * 0.009); ctx.strokeStyle = 'rgba(111,67,24,.1)';
+    for (let i = 0; i < 40; i++) {
+      const y = g.oy - m + g.cell * (i + 0.5) * 0.255;
+      const bend = Math.sin(i * 1.7) * g.cell * 0.13;
+      ctx.beginPath(); ctx.moveTo(g.ox - m, y);
+      ctx.bezierCurveTo(g.w * 0.3, y + bend, g.w * 0.7, y - bend, g.ox + g.cell * 8 + m, y);
+      ctx.stroke();
+    }
+    const edge = Math.max(2, g.cell * 0.09);
+    ctx.lineWidth = edge; ctx.strokeStyle = '#80512d';
+    ctx.strokeRect(g.ox - m + edge / 2, g.oy - m + edge / 2, g.cell * 8 + m * 2 - edge, g.cell * 9 + m * 2 - edge);
+    ctx.lineWidth = Math.max(0.6, g.cell * 0.02); ctx.strokeStyle = '#f9e1ac';
+    ctx.strokeRect(g.ox - m + edge, g.oy - m + edge, g.cell * 8 + m * 2 - edge * 2, g.cell * 9 + m * 2 - edge * 2);
+    ctx.restore();
     ctx.strokeStyle = '#5b3a1c'; ctx.lineWidth = Math.max(1, g.cell * 0.035); ctx.lineCap = 'round';
     const P = (c, r) => cellXY(g, c, r, flip);
     const line = (a, b) => { ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); };
