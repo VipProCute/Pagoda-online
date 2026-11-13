@@ -290,9 +290,12 @@ def caustic_add(M, shader):
     w = M.coord('Object', 1.0)
     a = M.voronoi(M.warp(w, 0.5, 1.3), 1.5, 'DISTANCE_TO_EDGE', 'Distance')
     b = M.voronoi(M.warp(M.coord('Object', 1.0, (3.1, 1.7, 0.0)), 0.5, 1.9), 2.6, 'DISTANCE_TO_EDGE', 'Distance')
-    pa = M.math('SUBTRACT', 1.0, M.ramp_f(a, 0.0, 0.1))
-    pb = M.math('SUBTRACT', 1.0, M.ramp_f(b, 0.0, 0.09))
-    c = M.math('MULTIPLY', M.math('ADD', pa, pb), 1.1)
+    pa = M.math('SUBTRACT', 1.0, M.ramp_f(a, 0.0, 0.06))
+    pb = M.math('SUBTRACT', 1.0, M.ramp_f(b, 0.0, 0.05))
+    xyz = M.sepz(w)
+    inside = M.math('MULTIPLY', M.math('SUBTRACT', 1.0, M.ramp_f(M.math('ABSOLUTE', xyz[0]), 4.0, 4.5)),
+                    M.math('SUBTRACT', 1.0, M.ramp_f(xyz[1], 4.0, 4.5)))
+    c = M.math('MULTIPLY', M.math('ADD', pa, pb), M.math('SUBTRACT', 0.3, M.math('MULTIPLY', inside, 0.22)))
     e = M.n('ShaderNodeEmission')
     e.inputs['Color'].default_value = (0.45, 0.85, 1.0, 1.0)
     M.link(c, e.inputs['Strength'])
@@ -1459,7 +1462,7 @@ def build_ocean(ctx):
 
 
 FIELDS['ocean'] = dict(
-    world=('#3a9ac0', 1.0), sun=('#c4ecff', 3.0, 62), glare=(1.0, 0.12, 0.4), exposure=0.1, caustic=True,
+    world=('#3a9ac0', 0.8), sun=('#c4ecff', 3.0, 62), glare=(1.0, 0.12, 0.4), exposure=-0.3, caustic=True,
     ground=lambda: ground_material('terrain', 'sand', '#5a8a90', '#cfe0c4', '#f0f4dc', bump=1.0),
     liquid=None,
     T=dict(off=0.18, amp=0.45, freq=0.6, lo=-0.2, hi=0.4, cap=0.28, wave=0.04, rim=0.0,
