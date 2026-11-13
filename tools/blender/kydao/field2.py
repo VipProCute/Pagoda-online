@@ -444,7 +444,7 @@ def slab_material(name, tone_hex, glow_hex=None, glossy=0.5, big=False, bank=Non
     col = M.mixc(col, scaled(t, 1.55), M.math('MULTIPLY', vein, 0.5))
     col = M.mixc(col, scaled(t, 1.5), M.math('MULTIPLY', M.ramp_f(n3, 0.6, 0.8), 0.55))
     ve = M.voronoi(M.warp(w, 0.6), 1.05 if not big else 0.8, 'DISTANCE_TO_EDGE', 'Distance')
-    vem = M.math('SUBTRACT', ve, M.math('MULTIPLY', n2, 0.03))
+    vem = M.math('SUBTRACT', ve, M.math('MULTIPLY', n2, 0.008 if big else 0.03))
     cm = M.math('SUBTRACT', 1.0, M.ramp_f(vem, 0.0, 0.013 if big else 0.035))
     col = M.mixc(col, scaled(t, 0.1), M.math('MULTIPLY', cm, 0.55 if big else 0.9))
     col = M.ao(col, 0.12)
@@ -1176,7 +1176,7 @@ def build_forest(ctx):
     sc, rng = ctx.sc, ctx.rng
     # gốc cổ thụ rỗng ở góc sau trái: hốc sáng đom đóm
     bark = B('stump', basalt_material('bark', '#4e3a26', 0.9, bump=2.2))
-    glow = B('stump_glow', glow_material('hollow', '#c8ff60', 2.6))
+    glow = B('stump_glow', glow_material('hollow', '#a8d83a', 1.1))
     sx, sy, _ = W(-4.95, 4.95)
     bark.lathe([(0.8, -0.3), (0.66, 0.02), (0.54, 0.22), (0.5, 0.52), (0.47, 0.66), (0.39, 0.64), (0.33, 0.46), (0.0, 0.42)],
                22, (sx, sy, 0), True, cap=False, jitter=0.12, seedv=2.1)
@@ -1271,6 +1271,202 @@ FIELDS['forest'] = dict(
     slab=('#a9b890', '#4a3322', None), under=('#3f7a3c', 0.5), plinth='#76805e', ledge='#7a6a50',
     groove=('#9acd50', 0.35), pillar='#7a6448', bowl='#2a2018', fire=('#d8ff70', 5.0), top='orb',
     xq='#80805e', bank=('#26361a', '#5a8a38', 'fine'), build=build_forest)
+
+# ───────────────────────── chủ đề: Băng Hà (glacier) ─────────────────────────
+def crystal(b, x, y, z, r, h, tx, ty, seg=6):
+    rot = rot_xyz(tx, ty, 0.0)
+    b.cone((x, y, z), r, r * 0.95, h * 0.72, seg, rot)
+    tip = Vector((x, y, z)) + rot @ Vector((0, 0, h * 0.72))
+    b.cone(tuple(tip), r * 0.95, 0.002, h * 0.28, seg, rot)
+
+
+def build_glacier(ctx):
+    sc, rng = ctx.sc, ctx.rng
+    # cụm tinh thể băng lớn ở góc sau trái
+    cr = B('crystals', gem_material('ice_crystal', '#8fd8ff', 0.7, 0.05, 0.9))
+    cx, cy, _ = W(-5.0, 4.95)
+    spec = [(0.0, 0.0, 0.2, 1.1, 0.0, 0.0), (0.3, 0.12, 0.15, 0.85, 0.35, 0.2), (-0.28, 0.1, 0.15, 0.8, -0.3, 0.25),
+            (0.05, -0.3, 0.14, 0.7, 0.25, -0.35), (-0.15, 0.32, 0.13, 0.65, -0.3, -0.2), (0.4, -0.22, 0.1, 0.5, 0.5, 0.2),
+            (-0.4, -0.2, 0.1, 0.5, 0.45, -0.3)]
+    for dx, dy, r, h, tx, ty in spec:
+        crystal(cr, cx + dx, cy + dy, -0.1, r, h, tx, ty)
+    cr.finish(sc)
+    base = B('crystal_base', basalt_material('ice_base', '#9db6cc', 0.4, bump=2.0))
+    base.ico((cx, cy, -0.1), 0.62, 3, (1.1, 1.0, 0.3), 0.2, rng, seedv=5.0, smooth=True)
+    base.finish(sc)
+    ctx.light(-5.0, 4.95, 0.9, '#7fd0ff', 26.0, 0.2)
+    # hang băng nhỏ ở góc sau phải: vòm băng có cửa sáng
+    dome = B('cave', basalt_material('ice_dome', '#d4e8f6', 0.3, bump=1.8))
+    ex, ey, _ = W(5.0, 4.9)
+    dome.lathe([(0.85, -0.25), (0.82, 0.18), (0.66, 0.46), (0.4, 0.64), (0.0, 0.7)], 22, (ex, ey, 0), True, cap=False, jitter=0.1, seedv=1.3)
+    dome.finish(sc)
+    mouth = B('cave_mouth', glow_material('cave_glow', '#5ec0ff', 2.2))
+    mouth.box((ex - 0.2, ey - 0.84, 0.0), (ex + 0.2, ey - 0.6, 0.3))
+    mouth.finish(sc)
+    dark = B('cave_frame', basalt_material('cave_frame', '#2a3c52', 0.5))
+    dark.box((ex - 0.26, ey - 0.78, -0.05), (ex - 0.2, ey - 0.56, 0.33), flat_big=False)
+    dark.box((ex + 0.2, ey - 0.78, -0.05), (ex + 0.26, ey - 0.56, 0.33), flat_big=False)
+    dark.box((ex - 0.26, ey - 0.78, 0.3), (ex + 0.26, ey - 0.56, 0.36), flat_big=False)
+    dark.finish(sc)
+    ctx.light(5.0, 4.3, 0.5, '#5ec0ff', 14.0, 0.2)
+    # tháp đá nhỏ phủ tuyết ở giữa dải sau
+    stone = B('tower', basalt_material('tower_stone', '#76838f', 0.7, bump=1.5))
+    snow = B('tower_snow', basalt_material('tower_snow', '#f4faff', 0.6, bump=0.8))
+    x, y, _ = W(0.0, 5.0)
+    stone.box((x - 0.5, y - 0.5, -0.2), (x + 0.5, y + 0.5, 0.08), bevel=0.03, seg=1, flat_big=False)
+    z = 0.08
+    for k, (r, hh) in enumerate(((0.36, 0.2), (0.29, 0.18), (0.22, 0.16))):
+        stone.lathe([(r, z), (r, z + hh)], 6, (x, y, 0), False, cap=True)
+        stone.cone((x, y, z + hh), r * 1.4, r * 0.3, 0.1, 6)
+        snow.ico((x, y, z + hh + 0.07), r * 1.2, 2, (1, 1, 0.22), 0.1, rng, smooth=True)
+        z += hh + 0.1
+    stone.cone((x, y, z), 0.06, 0.0, 0.26, 6)
+    stone.finish(sc)
+    snow.finish(sc)
+    ctx.light(0.0, 4.85, 0.8, '#bfe4ff', 8.0, 0.2)
+    # bờ tuyết đùn
+    sn = B('drifts', basalt_material('drift', '#f2f8ff', 0.6, bump=0.6))
+    for (u, v, r) in ((-4.7, 0.8, 0.34), (-4.6, 2.2, 0.3), (-5.35, 3.4, 0.4), (4.75, 0.9, 0.34), (4.7, 2.3, 0.3), (5.4, 3.5, 0.4),
+                      (-3.2, 5.1, 0.34), (-2.0, 5.3, 0.3), (2.9, 5.25, 0.36), (-4.4, 4.7, 0.22), (1.0, 5.35, 0.3), (-0.9, 5.3, 0.26)):
+        x, y, _ = W(u, v)
+        if not ctx.free(u, v):
+            continue
+        sn.ico((x, y, max(ctx.tz(u, v), -0.05) - 0.02), r, 3, (1.4, 1.0, 0.4), 0.25, rng, rot=rzm(rng.uniform(0, 6)), seedv=u * 1.9, smooth=True)
+    sn.finish(sc)
+    # mảnh băng nhọn
+    sh = B('shards', gem_material('ice_shard', '#b8ecff', 0.5, 0.05, 0.85))
+    for (u, v) in ((-4.55, 1.5), (-5.2, 2.8), (4.6, 1.2), (5.2, 2.6), (4.9, 3.9), (-3.5, 5.2), (3.4, 5.0), (-1.2, 4.7)):
+        x, y, _ = W(u, v)
+        zt = max(ctx.tz(u, v), -0.05)
+        for k in range(3):
+            crystal(sh, x + rng.uniform(-0.1, 0.1), y + rng.uniform(-0.1, 0.1), zt - 0.03, rng.uniform(0.04, 0.07),
+                    rng.uniform(0.28, 0.5), rng.uniform(-0.4, 0.4), rng.uniform(-0.4, 0.4), 5)
+    sh.finish(sc)
+    ctx.motes('#e8f8ff', 22.0, 55, 0.15, 0.8, 0.012, 0.026, 'snowflakes')
+
+
+FIELDS['glacier'] = dict(
+    world=('#b8d4f0', 0.9), sun=('#eaf3ff', 3.4, 60), glare=(1.0, 0.15, 0.4), exposure=0.1,
+    ground=lambda: ground_material('terrain', 'snow', '#9fb8d0', '#f4f9ff', '#2a5a8a', wet='#0e2a4a', bump=1.0),
+    liquid=lambda: water_material('icewater', '#2a6a9a', '#06182e', alpha=0.92, ripple=0.2, scale=2.0), liquid_z=-0.18,
+    T=dict(off=0.24, amp=0.5, freq=0.55, lo=-0.3, hi=0.4, cap=0.28, depth=-0.6, rim=0.05,
+           carve=[('poly', [(-5.4, -0.5), (-5.1, 1.2), (-5.4, 2.5), (-5.0, 3.6), (-4.2, 4.5), (-3.6, 5.3)], 0.3),
+                  ('poly', [(5.4, 0.3), (5.0, 1.6), (5.3, 3.0), (4.7, 3.8)], 0.28),
+                  ('ell', -1.6, 5.1, 0.9, 0.45), ('ell', 2.0, 5.15, 0.8, 0.4)],
+           flat=[(-5.0, 4.95, 0.9), (5.0, 4.9, 0.95)], flat_h=0.08),
+    slab=('#dcebf7', '#4a7aa0', None), under=('#3a8ad0', 1.0), plinth='#aab8c6', ledge='#b4c4d4',
+    groove=('#4aa8e0', 0.5), pillar='#9aa8b8', bowl='#3a4658', fire=('#9fe0ff', 5.0), top='orb',
+    xq='#b8cce0', bank=('#6a8aa8', '#e0edf8', 'fine'), build=build_glacier)
+
+# ───────────────────────── chủ đề: Hải Để (ocean) ─────────────────────────
+def coral(b, p, d, r, ln, depth, rng):
+    p1 = p + d * ln
+    limb(b, p, p1, r, r * 0.72, 5)
+    if depth <= 0:
+        return
+    for k in range(rng.choice((2, 3))):
+        nd = (d + Vector((rng.uniform(-0.8, 0.8), rng.uniform(-0.8, 0.8), rng.uniform(0.0, 0.5)))).normalized()
+        coral(b, p1, nd, r * 0.72, ln * 0.78, depth - 1, rng)
+
+
+def kelp(b, x, y, rng, n=3, h=0.8):
+    for k in range(n):
+        a = rng.uniform(0, 6.28)
+        p = Vector((x + 0.06 * math.cos(a), y + 0.06 * math.sin(a), -0.2))
+        for s in range(5):
+            q = p + Vector((rng.uniform(-0.09, 0.09), rng.uniform(-0.09, 0.09), h / 5))
+            limb(b, p, q, 0.035 * (1 - s * 0.14), 0.035 * (1 - (s + 1) * 0.14), 4)
+            p = q
+
+
+def build_ocean(ctx):
+    sc, rng = ctx.sc, ctx.rng
+    # rạn san hô lớn ở góc sau trái
+    mats = [B('coral%d' % i, basalt_material('coral%d' % i, hx, 0.55, bump=1.2)) for i, hx in enumerate(('#ff6f8a', '#ff9a3a', '#b86ad8'))]
+    cx, cy, _ = W(-5.0, 4.95)
+    for k, (dx, dy) in enumerate(((0.0, 0.0), (0.4, 0.2), (-0.35, 0.2), (0.15, -0.4), (-0.2, -0.35), (0.45, -0.3))):
+        d = Vector((rng.uniform(-0.2, 0.2), rng.uniform(-0.2, 0.2), 1.0)).normalized()
+        coral(mats[k % 3], Vector((cx + dx, cy + dy, -0.12)), d, 0.07, 0.3, 3, rng)
+    brain = B('brain', basalt_material('brain', '#e6b84a', 0.5, bump=2.6))
+    brain.ico((cx - 0.42, cy - 0.3, -0.05), 0.3, 3, (1, 1, 0.7), 0.1, rng, seedv=3.0, smooth=True)
+    base = B('reef_base', basalt_material('reef_base', '#6e8a8a', 0.8, bump=1.6))
+    base.ico((cx, cy, -0.18), 0.75, 3, (1.1, 1.0, 0.35), 0.25, rng, seedv=8.0, smooth=True)
+    for b in mats + [brain, base]:
+        b.finish(sc)
+    ctx.light(-5.0, 4.95, 1.0, '#ffb0a0', 14.0, 0.2)
+    # vỏ sò khổng lồ có ngọc phát sáng ở góc sau phải
+    sx, sy, _ = W(5.0, 4.95)
+    shell = B('clam', basalt_material('clam_out', '#d8c8b0', 0.5, bump=1.5))
+    inner = B('clam_in', basalt_material('clam_in', '#f4c4d4', 0.35, bump=0.5))
+    inner.lathe([(0.0, 0.0), (0.4, 0.05), (0.62, 0.17), (0.66, 0.24), (0.62, 0.22), (0.4, 0.1), (0.0, 0.04)], 24, (sx, sy, -0.12), True, cap=False)
+    for k in range(13):                   # gân vỏ toả từ bản lề (phía sau, v lớn)
+        a = math.pi * (k + 0.5) / 13
+        tip = Vector((sx + 0.7 * math.cos(a), sy - 0.7 * math.sin(a) * 0.9, 0.1))
+        limb(shell, Vector((sx, sy + 0.55, 0.08)), tip, 0.045, 0.06, 4)
+        shell.ico((sx + 0.66 * math.cos(a), sy - 0.62 * math.sin(a), 0.14), 0.07, 1, (1, 1, 0.8), smooth=True)
+    # nắp vỏ dựng lên phía sau
+    shell.lathe([(0.0, 0.0), (0.4, 0.05), (0.62, 0.17), (0.66, 0.24)], 20, (sx, sy + 0.62, 0.15), True, cap=False,
+                rot=rot_xyz(-1.15, 0, 0))
+    pearl = B('pearl', glow_material('pearl', '#fff0f6', 4.0))
+    pearl.ico((sx, sy, 0.17), 0.2, 3)
+    for b in (shell, inner, pearl):
+        b.finish(sc)
+    ctx.light(5.0, 4.95, 0.7, '#ffe8f4', 12.0, 0.15)
+    # chuông đồng chìm phủ hà ở giữa dải sau
+    x, y, _ = W(0.0, 5.0)
+    bell = B('bell', basalt_material('bell', '#3d7a62', 0.45, bump=2.0))
+    bell.lathe([(0.46, -0.12), (0.44, 0.0), (0.34, 0.26), (0.28, 0.46), (0.18, 0.56), (0.0, 0.58)], 22, (x, y, 0), True, cap=False,
+               jitter=0.04, seedv=6.0)
+    bell.lathe([(0.1, 0.55), (0.1, 0.68), (0.16, 0.74)], 10, (x, y, 0), True, cap=False)
+    bell.finish(sc)
+    barn = B('barnacles', basalt_material('barnacle', '#e8efe0', 0.8, bump=1.0))
+    for k in range(30):
+        a = rng.uniform(0, 6.28)
+        z = rng.uniform(0.02, 0.4)
+        r = 0.46 - z * 0.45
+        barn.cone((x + r * math.cos(a), y + r * math.sin(a), z), 0.035, 0.015, 0.05, 6)
+    barn.finish(sc)
+    ctx.light(0.0, 4.8, 0.9, '#9fe0ff', 8.0, 0.2)
+    # rong biển, san hô nhỏ, sao biển
+    kp = B('kelp', basalt_material('kelp', '#2f8a4a', 0.6, bump=0.6))
+    for (u, v) in ((-4.6, 0.8), (-4.55, 2.3), (-5.3, 3.4), (4.65, 1.0), (4.6, 2.5), (5.3, 3.3), (-3.2, 5.1), (-1.8, 5.25), (2.0, 5.25),
+                   (3.2, 5.0), (-5.3, 0.4), (5.35, 0.4)):
+        x, y, _ = W(u, v)
+        kelp(kp, x, y, rng, 3, rng.uniform(0.6, 1.0))
+    kp.finish(sc)
+    fan = B('fans', basalt_material('fan', '#e8508a', 0.5, bump=1.0))
+    for (u, v) in ((-4.7, 1.6), (4.7, 1.8), (-4.55, 3.7), (4.6, 3.9), (-2.4, 5.2), (1.2, 5.25)):
+        x, y, _ = W(u, v)
+        a = rng.uniform(0, 6)
+        for k in range(5):
+            limb(fan, (x, y, -0.1), (x + 0.3 * math.cos(a + k * 0.28), y + 0.3 * math.sin(a + k * 0.28), 0.32), 0.025, 0.012, 4)
+    fan.finish(sc)
+    sf = B('starfish', basalt_material('starfish', '#ff7a3a', 0.6, bump=1.5))
+    for (u, v) in ((-4.8, 2.9), (4.8, 2.2), (-3.0, 5.0), (2.8, 5.2), (-4.7, 0.5)):
+        x, y, _ = W(u, v)
+        z = max(ctx.tz(u, v), -0.05)
+        a = rng.uniform(0, 6)
+        for k in range(5):
+            aa = a + k * 2 * math.pi / 5
+            limb(sf, (x, y, z + 0.03), (x + 0.2 * math.cos(aa), y + 0.2 * math.sin(aa), z + 0.02), 0.045, 0.01, 5)
+    sf.finish(sc)
+    rk = B('rocks', basalt_material('rock_o', '#5a7a82', 0.85, bump=1.6))
+    for (u, v, r) in ((-4.6, 1.9, 0.28), (-5.35, 2.4, 0.3), (4.7, 0.6, 0.3), (5.35, 2.9, 0.28), (-3.8, 5.15, 0.2), (3.8, 5.2, 0.24)):
+        x, y, _ = W(u, v)
+        rk.ico((x, y, max(ctx.tz(u, v), -0.1) + r * 0.2), r, 3, (1.2, 1.0, 0.65), 0.3, rng, rot=rzm(rng.uniform(0, 6)), seedv=u * 2.1, smooth=True)
+    rk.finish(sc)
+    ctx.motes('#cfefff', 14.0, 48, 0.12, 1.0, 0.018, 0.05, 'bubbles', 2)
+
+
+FIELDS['ocean'] = dict(
+    world=('#3a9ac0', 1.0), sun=('#c4ecff', 3.0, 62), glare=(1.0, 0.12, 0.4), exposure=0.1, caustic=True,
+    ground=lambda: ground_material('terrain', 'sand', '#5a8a90', '#cfe0c4', '#f0f4dc', bump=1.0),
+    liquid=None,
+    T=dict(off=0.18, amp=0.45, freq=0.6, lo=-0.2, hi=0.4, cap=0.28, wave=0.04, rim=0.0,
+           flat=[(-5.0, 4.95, 0.9), (5.0, 4.95, 0.9)], flat_h=0.05),
+    slab=('#cfdccb', '#2c4c6c', None), under=('#2a9ad0', 1.0), plinth='#7fa0a6', ledge='#8aa6aa',
+    groove=('#38c0d8', 0.5), pillar='#7a9aa2', bowl='#24404c', fire=('#9ff0ff', 5.0), top='orb',
+    xq='#7e9ca4', bank=('#8a9a7a', '#dce4bc', 'fine'), build=build_ocean)
 
 # ==== HẾT CHỦ ĐỀ ====
 
