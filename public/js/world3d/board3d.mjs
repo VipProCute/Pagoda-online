@@ -272,6 +272,9 @@ export function createBoard3D({ canvas, game, skins: catalogInput, quality: qual
   const halves = { a: null, b: null }, pieceSkins = new Map(), effects = new Set();
   let retired = [], aftermath = null, shake = { x: 0, y: 0 }, shaken = false, assetsPromise = null;
   const media = window.matchMedia('(prefers-reduced-motion: reduce)');
+  // Người chơi tắt hiệu ứng (localStorage 'ta-fx' = '0') thì coi như giảm chuyển động.
+  const fxOff = () => { try { return window.localStorage.getItem('ta-fx') === '0'; } catch (e) { return false; } };
+  const calm = () => media.matches || fxOff();
   const oldTouchAction = canvas.style.touchAction;
   canvas.style.touchAction = 'none';
   const keep = resource => { resources.add(resource); return resource; };
@@ -437,7 +440,7 @@ export function createBoard3D({ canvas, game, skins: catalogInput, quality: qual
     const width = boardSize(layout).w - 0.4;
     water = mesh(new THREE.PlaneGeometry(width, 1), material('#2f8aa3', 0.15, { metalness: 0.1, transparent: true, opacity: 0.92, map: waterTexture() }), board, 0, 0.004);
     water.rotation.x = -Math.PI / 2; water.castShadow = false; water.name = 'kd-river-water';
-    water.material.map.offset.x = media.matches ? 0 : riverOffset(performance.now());
+    water.material.map.offset.x = calm() ? 0 : riverOffset(performance.now());
     river.push(water);
     const sand = material('#d9c08a', 0.8);
     for (const sign of [-1, 1]) {
@@ -716,7 +719,7 @@ export function createBoard3D({ canvas, game, skins: catalogInput, quality: qual
   }
   function travel(record, target, animate) {
     record.from.copy(record.group.position); record.target.copy(target);
-    record.started = animate && !media.matches ? performance.now() : 0;
+    record.started = animate && !calm() ? performance.now() : 0;
     if (!record.started) record.group.position.copy(target);
   }
   const markGeometry = keep(new THREE.PlaneGeometry(0.92, 0.92));
@@ -999,7 +1002,7 @@ export function createBoard3D({ canvas, game, skins: catalogInput, quality: qual
     }
     for (const fx of [...effects]) if (fx.kind === 'domain' && fx.side === side) endFx(fx);
     const half = halves[side], k = retired.findIndex(h => h.side === side), old = k >= 0 ? retired.splice(k, 1)[0] : null;
-    if (!half || media.matches) {
+    if (!half || calm()) {
       if (half) setProgress(half, 1);
       if (old) disposeHalf(old);
       requestRender();
@@ -1017,7 +1020,7 @@ export function createBoard3D({ canvas, game, skins: catalogInput, quality: qual
     return addFx({
       kind: 'domain', side,
       update(el) {
-        if (media.matches || halves[side] !== half) return false;
+        if (calm() || halves[side] !== half) return false;
         const r = revealProgress(el);
         setProgress(half, r.front);
         half.overlay.emissiveIntensity = 0.85 * r.glow; half.rimMat.emissiveIntensity = 0.5 * r.glow;
@@ -1038,7 +1041,7 @@ export function createBoard3D({ canvas, game, skins: catalogInput, quality: qual
     const at = squareIndex(layout, opts.at);
     if (at < 0 || layout.stones) return Promise.resolve(false);
     stopFx('promote');
-    if (media.matches) return Promise.resolve(true); // giảm chuyển động: không rung, không nảy
+    if (calm()) return Promise.resolve(true); // giảm chuyển động: không rung, không nảy
     const cols = layout.cols, ac = at % cols, ar = Math.floor(at / cols);
     const maxD = Math.max(...[[0, 0], [cols - 1, 0], [0, layout.rows - 1], [cols - 1, layout.rows - 1]].map(([c, r]) => Math.hypot(c - ac, r - ar)));
     const ch = previous[at], side = opts.side === 'a' || opts.side === 'b' ? opts.side : ch ? sideOf(ch) : null;
@@ -1056,7 +1059,7 @@ export function createBoard3D({ canvas, game, skins: catalogInput, quality: qual
     return addFx({
       kind: 'promote',
       update(el, now, fx) {
-        if (media.matches) return false;
+        if (calm()) return false;
         if (!landed) {
           const rec = pieces.get(at);
           if (rec && rec.started) { fx.start = now; return true; } // chờ quân phong cấp trượt tới ô rồi mới dội sóng
@@ -1118,7 +1121,7 @@ export function createBoard3D({ canvas, game, skins: catalogInput, quality: qual
     const color = winner && halves[winner] ? halves[winner].tones.glow : winner ? '#ffe7a8' : '#dfe8f2';
     const kind = layout.chess ? 'tall' : 'disk';
     if (king >= 0) aftermath = { index: king, kind, sign: loser === 'a' ? 1 : -1, pose: fallPose(kind, 0), disc: null };
-    if (media.matches) { // giảm chuyển động: Vua nằm sẵn, có quầng sáng tĩnh, không cột sáng
+    if (calm()) { // giảm chuyển động: Vua nằm sẵn, có quầng sáng tĩnh, không cột sáng
       if (aftermath) { aftermath.pose = fallPose(kind, Infinity); addDisc(color); applyAftermath(); }
       requestRender();
       return Promise.resolve(true);
@@ -1138,7 +1141,7 @@ export function createBoard3D({ canvas, game, skins: catalogInput, quality: qual
     return addFx({
       kind: 'win',
       update(el) {
-        if (media.matches) return false;
+        if (calm()) return false;
         const pp = pillarPose(el);
         for (const { outer, core } of pillars) {
           for (const m of [outer, core]) { m.scale.y = Math.max(1e-3, H * pp.reach); m.position.y = H * (1 - pp.reach); }
@@ -1184,7 +1187,7 @@ export function createBoard3D({ canvas, game, skins: catalogInput, quality: qual
   }
   /** Sông chỉ chảy khi có sông, canvas còn trong trang, tab đang hiện và không giảm chuyển động. */
   function riverLive() {
-    return !!water && !stopped && !media.matches && !!canvas.isConnected && document.visibilityState !== 'hidden';
+    return !!water && !stopped && !calm() && !!canvas.isConnected && document.visibilityState !== 'hidden';
   }
   function render(now) {
     frame = 0; if (stopped) return;
@@ -1195,7 +1198,7 @@ export function createBoard3D({ canvas, game, skins: catalogInput, quality: qual
     if (retired.length) flushRetired();
     let moving = false;
     for (const p of [...pieces.values(), ...captured]) if (p.started) {
-      const t = media.matches ? 1 : Math.min(1, (now - p.started) / 360), eased = t * t * (3 - 2 * t);
+      const t = calm() ? 1 : Math.min(1, (now - p.started) / 360), eased = t * t * (3 - 2 * t);
       p.group.position.lerpVectors(p.from, p.target, eased);
       if (t === 1) p.started = 0; else moving = true;
     }

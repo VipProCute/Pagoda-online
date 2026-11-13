@@ -670,3 +670,20 @@ test('giảm chuyển động thì sông không đổi offset', async () => {
   assert.equal(env.queue.size, 0, 'không giữ vòng lặp khi giảm chuyển động');
   view.dispose();
 });
+
+test('ta-fx tắt thì bàn 3D không rung khi phong cấp', async () => {
+  const { env, view } = await openBoard('chess');
+  global.window.localStorage = { getItem: k => (k === 'ta-fx' ? '0' : null) };
+  try {
+    const base = { e1: 'K', e8: 'k', b8: 'n', h1: 'R', c6: 'p' };
+    view.setState({ board: chessBoard({ ...base, a8: 'Q' }), last: ['a7', 'a8'] });
+    assert.equal(await view.playFx('promote', { at: 'a8' }), true);
+    env.flush();
+    assert.equal(env.queue.size, 0);
+    const knight = pieceAt(-2.5, -3.5);
+    if (knight) assert.equal(knight.position.y, 0.015);
+  } finally {
+    delete global.window.localStorage;
+    view.dispose();
+  }
+});
