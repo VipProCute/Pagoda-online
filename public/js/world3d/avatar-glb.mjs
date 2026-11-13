@@ -52,11 +52,9 @@ const defaultAssets = {
   }
 };
 
-const plainRole = (look, opts) => !opts.role && !look?.npcFashion;
-
 export function createGlbAvatar(initialLook = {}, opts = {}) {
   const base = createAvatar(initialLook, opts);
-  if (!plainRole(initialLook, opts)) return base;
+  if (opts.role) return base;                      // vai đặc biệt: luôn là bản mã (role không đổi theo thời gian)
   const { group } = base;
   const rig = group.getObjectByName('body');
   const standIn = rig?.children.find(node => node.name === 'hips');
@@ -145,6 +143,12 @@ export function createGlbAvatar(initialLook = {}, opts = {}) {
   }
   function syncLook() {
     if (disposed) return;
+    if (look.npcFashion) {                         // trang phục NPC chỉ có ở bản mã: hủy lượt tải đang chờ, gỡ .glb, hiện thế thân
+      pending++; gender = null;
+      dropModel();
+      standIn.visible = true;
+      return;
+    }
     if (model && gender !== look.g) { dropModel(); gender = null; }
     if (!model) { if (gender !== look.g) { gender = look.g; request(look.g); } } else paint();
   }
@@ -174,6 +178,10 @@ export function createGlbAvatar(initialLook = {}, opts = {}) {
     if (reduced && want === 'walk') want = 'idle';
     if (want !== currentName || force) {
       if (!(want === 'bow' && currentName === 'bow')) play(want, reduced);
+    } else if (current) {
+      // Clip không đổi nhưng cờ giảm chuyển động có thể đã đổi: đồng bộ trạng thái dừng theo giá trị hiện tại.
+      if (reduced && !current.paused) { current.time = want === 'bow' ? current.getClip().duration * 0.5 : 0; current.paused = true; }
+      else if (!reduced && current.paused) current.paused = false;
     }
     if (reduced) mixer.update(0);
     else mixer.update(clamp(finite(dt), 0, 0.1));

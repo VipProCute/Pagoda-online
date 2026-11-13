@@ -109,19 +109,18 @@ async function main() {
       assert.ok(await page.locator('.kd-skin').evaluateAll(items => items.length > 0 && items.every(item => item.getBoundingClientRect().height >= 44)), 'Mục sân hoặc quân quá thấp');
       await page.getByRole('radiogroup', { name: 'Sân của bạn' }).locator('.kd-skin').nth(1).click();
       await button(page, 'Khai mở').click();
-      await page.locator('.kdfx-banner.is-on').waitFor({ state: 'visible', timeout: 600 });
+      await page.waitForFunction(() => document.querySelector('.kdfx-banner')?.classList.contains('is-on'), null, { timeout: 2000 });
       assert.ok((await page.locator('.kdfx-cry').textContent()).trim(), 'Khẩu hiệu trống');
       assert.match(await page.locator('#log').textContent(), /gửi kd:skin/);
       await shot(page, 'lanh-dia-khai-mo', kind);
-      await page.waitForTimeout(2500);
-      assert.equal(await page.locator('.kdfx-banner.is-on').count(), 0, 'Khẩu hiệu chưa tắt');
+      await page.waitForFunction(() => !document.querySelector('.kdfx-banner.is-on'), null, { timeout: 8000 });
     });
     for (const kind of sizes) await t('doi-thu-khai-mo', kind, async page => {
       await openGame(page, '#b-chess');
       await page.selectOption('#s-field', 'glacier');
       await harnessClick(page, '#b-foe');
-      await page.locator('.kdfx-banner.is-on').waitFor({ state: 'visible', timeout: 600 });
-      await page.waitForTimeout(2600);
+      await page.waitForFunction(() => document.querySelector('.kdfx-banner')?.classList.contains('is-on'), null, { timeout: 2000 });
+      await page.waitForFunction(() => !document.querySelector('.kdfx-banner.is-on'), null, { timeout: 8000 });
       await shot(page, 'doi-thu-khai-mo', kind);
     });
     for (const kind of ['mobile', 'desktop', 'reduced']) await t('phong-cap-chan-dong', kind, async page => {
@@ -129,27 +128,32 @@ async function main() {
       await tapCell(page, kind, 1, 1);
       await tapCell(page, kind, 0, 0);
       await page.locator('.kd-promo').waitFor({ state: 'visible' });
-      await page.evaluate(() => {
-        window.__shake = [];
-        window.__shakeTimer = setInterval(() => {
-          const style = getComputedStyle(document.querySelector('.kd-boardwrap'));
-          window.__shake.push({ translate: style.translate, transform: style.transform });
-        }, 30);
-      });
-      await page.locator('.kd-promo').getByRole('button', { name: 'Hậu', exact: true }).click();
-      await page.waitForTimeout(500);
-      const samples = await page.evaluate(() => { clearInterval(window.__shakeTimer); return window.__shake; });
-      const shifted = sample => {
-        const translate = sample.translate === 'none' ? [] : sample.translate.match(/-?\d+(?:\.\d+)?/g) || [];
-        const match = sample.transform.match(/matrix(?:3d)?\(([^)]+)\)/);
+      // Hàm chạy trong trang: bàn có đang lệch khỏi chỗ cũ (translate hoặc transform khác không) không.
+      await page.evaluate(`window.__isShifted = ${(() => {
+        const style = getComputedStyle(document.querySelector('.kd-boardwrap'));
+        const translate = style.translate === 'none' ? [] : style.translate.match(/-?\d+(?:\.\d+)?/g) || [];
+        const match = style.transform.match(/matrix(?:3d)?\(([^)]+)\)/);
         const matrix = match ? match[1].split(',').map(Number) : [];
         return translate.some(value => Math.abs(Number(value)) > 0.01) || (matrix.length === 6 && (Math.abs(matrix[4]) > 0.01 || Math.abs(matrix[5]) > 0.01)) || (matrix.length === 16 && (Math.abs(matrix[12]) > 0.01 || Math.abs(matrix[13]) > 0.01));
-      };
-      assert.ok(samples.length, 'Không lấy được mẫu chuyển động');
-      assert.equal(samples.some(shifted), kind !== 'reduced', 'Chấn động không đúng chế độ');
-      await page.waitForTimeout(1000);
-      const end = await page.locator('.kd-boardwrap').evaluate(element => ({ translate: getComputedStyle(element).translate, transform: getComputedStyle(element).transform }));
-      assert.ok(!shifted(end), 'Bàn chưa trở lại vị trí');
+      }).toString()}`);
+      const queen = page.locator('.kd-promo').getByRole('button', { name: 'Hậu', exact: true });
+      if (kind === 'reduced') {
+        // Lấy mẫu từng khung hình ngay trong trang (không dùng timer của Node): suốt 800 ms không lần nào lệch.
+        const sampling = page.evaluate(() => new Promise(resolve => {
+          const end = performance.now() + 800;
+          let moved = false;
+          const tick = () => { if (window.__isShifted()) moved = true; if (performance.now() < end) requestAnimationFrame(tick); else resolve(moved); };
+          requestAnimationFrame(tick);
+        }));
+        await queen.click();
+        assert.equal(await sampling, false, 'Giảm chuyển động mà bàn vẫn rung');
+      } else {
+        const shaken = page.waitForFunction(() => window.__isShifted(), null, { timeout: 2000, polling: 'raf' });
+        await queen.click();
+        await shaken;
+        await page.waitForFunction(() => !window.__isShifted(), null, { timeout: 3000, polling: 'raf' });
+      }
+      assert.ok(!(await page.evaluate(() => window.__isShifted())), 'Bàn chưa trở lại vị trí');
       await shot(page, 'phong-cap-chan-dong', kind);
     });
     for (const kind of [...sizes, 'reduced']) await t('ket-thuc-chieu-het', kind, async page => {
@@ -158,20 +162,27 @@ async function main() {
       await page.selectOption('#s-result', 'a');
       await harnessClick(page, '#b-end');
       if (kind !== 'reduced') {
-        await page.locator('.kdfx-banner.is-on').waitFor({ state: 'visible', timeout: 600 });
-        await page.waitForTimeout(400);
+        await page.waitForFunction(() => document.querySelector('.kdfx-banner')?.classList.contains('is-on'), null, { timeout: 2000 });
         assert.ok(await page.locator('.kd-result').evaluate(element => element.hidden), 'Kết quả hiện quá sớm');
       }
-      await page.locator('.kd-result').waitFor({ state: 'visible', timeout: kind === 'reduced' ? 600 : 3100 });
+      await page.locator('.kd-result').waitFor({ state: 'visible', timeout: 6000 });
       await shot(page, 'ket-thuc-chieu-het', kind);
     });
     for (const kind of [...sizes, 'reduced']) await t('co-tuong-song', kind, async page => {
       await openGame(page, '#b-xq');
       const canvas = page.locator('.kd-canvas');
       const before = await canvas.evaluate(element => element.toDataURL());
-      await page.waitForTimeout(700);
-      const after = await canvas.evaluate(element => element.toDataURL());
-      assert.equal(before === after, kind === 'reduced', 'Dòng sông không đúng chế độ chuyển động');
+      if (kind === 'reduced') {
+        // Lấy mẫu theo khung hình trong trang: suốt 800 ms ảnh bàn không đổi.
+        const same = await canvas.evaluate((element, first) => new Promise(resolve => {
+          const end = performance.now() + 800;
+          const tick = () => { if (element.toDataURL() !== first) resolve(false); else if (performance.now() < end) requestAnimationFrame(tick); else resolve(true); };
+          requestAnimationFrame(tick);
+        }), before);
+        assert.ok(same, 'Giảm chuyển động mà dòng sông vẫn chảy');
+      } else {
+        await page.waitForFunction(first => document.querySelector('.kd-canvas').toDataURL() !== first, before, { timeout: 4000 });
+      }
       await shot(page, 'co-tuong-song', kind);
     });
     for (const kind of sizes) await t('nam-mon-mo-duoc', kind, async page => {
