@@ -540,7 +540,7 @@
     Hall.setTables(t); renderKydaoLobby();
   });
   socket.on('kd:start', openKydaoStart);
-  ['moved', 'marks', 'offer', 'end'].forEach(type => socket.on('kd:' + type, d => {
+  ['moved', 'marks', 'offer', 'end', 'skin'].forEach(type => socket.on('kd:' + type, d => {
     KydaoUI.apply({ ...d, type: 'kd:' + type });
   }));
 

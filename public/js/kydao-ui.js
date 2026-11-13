@@ -75,6 +75,19 @@
     return null;
   }
 
+  const NO_SKIN = () => ({ field: null, pieces: null });
+  /** Chuẩn hóa skin của hai bên từ dữ liệu máy chủ; không có danh mục thì coi như mặc định. */
+  function readSkins(raw) {
+    const K = root.KydaoSkins, o = raw && typeof raw === 'object' ? raw : {};
+    return { a: K ? K.normalize(o.a) : NO_SKIN(), b: K ? K.normalize(o.b) : NO_SKIN() };
+  }
+  /** Áp một gói kd:skin lên phiên. Trả true nếu gói hợp lệ và thuộc ván này. */
+  function applySkin(S, ev) {
+    if (!S || !ev || ev.gameId !== S.gameId || (ev.side !== 'a' && ev.side !== 'b')) return false;
+    const K = root.KydaoSkins;
+    S.skins[ev.side] = K ? K.normalize(ev) : NO_SKIN();
+    return true;
+  }
   /** Dựng phiên ván từ StartPayload. */
   function makeSession(start, mod) {
     const S = {
@@ -84,7 +97,7 @@
       moves: Array.isArray(start.moves) ? start.moves.map(x => ({ m: x.m, t: x.t, r: x.r })) : [],
       clock: start.clock || null, over: false, sel: null, targets: [], last: [], inCheck: false,
       offer: start.offer || null, downgraded: start.downgraded || null,
-      marks: start.marks || null, win: [], zoom: 1
+      marks: start.marks || null, win: [], zoom: 1, skins: readSkins(start.skins), jolt: null
     };
     if (S.moves.length) S.last = lastSquares(S.game, S.moves[S.moves.length - 1].m);
     if (S.game === 'chess' && mod.inCheck) S.inCheck = !!mod.inCheck(S.state);
@@ -163,7 +176,7 @@
     return r.ok ? 'applied' : 'gap';
   }
 
-  const core = { clockRemaining, settleClock,fmtClock, makeSession, tapSquare, pushMove, handleMoved, canPlay, kingSquare, sideOfPiece };
+  const core = { clockRemaining, settleClock,fmtClock, makeSession, tapSquare, pushMove, handleMoved, canPlay, kingSquare, sideOfPiece, readSkins, applySkin };
 
   /* ================= Giao diện ================= */
   if (typeof document === 'undefined') return { core };
@@ -187,6 +200,9 @@
 
   const reduced = () => !!(root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const VI_KEY = 'kydao.vi';
+  const HIDE_KEY = 'kydao.hideFoeSkin';
+  let hideFoe = false;
+  try { hideFoe = root.localStorage && root.localStorage.getItem(HIDE_KEY) === '1'; } catch (e) { /* bỏ qua */ }
 
   let ui = null;        // các phần tử DOM
   let S = null;         // phiên ván
@@ -452,6 +468,13 @@
       flip: S.you === 'b', selected: S.sel, targets: S.targets, last: S.last,
       checkSq: S.inCheck && !S.over ? kingSquare(S, sessionTurn(S)) : null, vi
     };
+    if (root.KydaoSkins && root.KydaoSkins.supports(S.game)) {
+      options.skins = S.skins;
+      const foe = S.you === 'a' ? 'b' : S.you === 'b' ? 'a' : null;
+      options.hideSkins = { a: hideFoe && foe === 'a', b: hideFoe && foe === 'b' };
+      options.jolt = S.jolt || null;
+      options.onAsset = () => { if (ui && S) redraw(); };
+    }
     if (ui.board3d) ui.board3d.setState(options);
     else geom = root.KydaoDraw.draw(ui.canvas.getContext('2d'), options);
   }
@@ -575,6 +598,9 @@
     announce(head + (ev.text ? '. ' + ev.text : ''));
   }
 
+  /** Gọi sau khi một bên đổi skin. T-115b nối màn khai mở vào đây. */
+  function onSkinEvent(ev) { /* T-115b */ }
+
   /* ---------- API ---------- */
   function flushPending() {
     const b = pending[S.gameId];
@@ -663,6 +689,8 @@
         if (ev.state === 'declined') say('Lời xin hòa bị từ chối.');
         else if (ev.state === 'expired') say('Lời xin hòa đã hết hạn.');
         renderControls();
+      } else if (type === 'skin' && S) {
+        if (applySkin(S, ev)) { redraw(); onSkinEvent(ev); }
       } else if (type === 'end' && S && ev.gameId === S.gameId) {
         S.over = true; S.sel = null; S.targets = []; S.offer = null;
         S.reveal = null;
