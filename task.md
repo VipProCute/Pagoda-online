@@ -72,7 +72,7 @@
 | T-085 | Cảnh Sân chùa 3D | 🟣 Chờ soát | P1 | CORE + HALL + KYDAO | gpt-6.1-sol (Codex CLI qua proxy) |
 | T-086 | Cảnh Tàng Kinh Các 3D | 🟣 Chờ soát | P1 | CORE + HALL | gpt-6.1-sol (Codex CLI qua proxy) |
 | T-087 | Cảnh Sân đấu (khu đi lại) 3D | 🟣 Chờ soát | P1 | CORE + HALL + PK | gpt-6-astra (Codex CLI qua proxy) |
-| T-088 | Nối 3D vào game: nút 2D/3D, góc nhìn 1/3, điều khiển | ⏳ T-081, T-083, T-084 | P0 | CORE + HALL + NAV | — |
+| T-088 | Nối 3D vào game: nút 2D/3D, góc nhìn 1/3, điều khiển | 🟡 Đang làm (dở, chưa gộp) | P0 | CORE + HALL + NAV | gpt-6.1-sol (Codex CLI qua proxy) |
 | T-089 | Cài đặt đồ họa, tự dò máy yếu | 🟣 Chờ soát | P1 | CORE + HALL | gpt-6-luna |
 | T-090 | Vẽ lại quân cờ 2D đẹp hơn | 🟣 Chờ soát | P1 | CORE + KYDAO | gpt-6.1-sol |
 | T-091 | Bàn cờ 3D, quân tiện tròn | 🟣 Chờ soát | P1 | CORE + KYDAO | gpt-6.1-sol |
@@ -1141,7 +1141,7 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
 - **Ngoài phạm vi**: mọi thứ trong `arena.js`.
 
 ### T-088 · Nối 3D vào game: nút 2D/3D, góc nhìn 1/3, điều khiển
-- **Trạng thái**: ⏳ Chờ T-081, T-083, T-084 (các cảnh khác xong sau thì bật dần)
+- **Trạng thái**: 🟡 Đang làm, DỞ DANG (2026-11-13). Thợ gpt-6.1-sol bị cắt giữa chừng vì hết hạn mức GPT. Mã dở lưu ở nhánh `codex/T-088-noi-3d-vao-game` (commit "Tạm lưu T-088 dở dang"), CHƯA gộp. Đã có: `Hall.view3d` trong `hall.js`, `view3d-ui.js`, `view3d.css`, `camera.mjs`, `input.mjs`, bảng cảnh trong `index.mjs`, sửa `index.html`/`app.js`/`arena.js`. Check sạch, 3 file test liên quan 37/37. Chưa làm: `npm test` đầy đủ, chơi thử trên trình duyệt, kiểm ẩn nút góc nhìn khi PK, gộp nhánh tích hợp mới (đã có cảnh Sân chùa, Tàng Kinh Các) vào nhánh thẻ.
 - **Ưu tiên**: P0
 - **Gói ngữ cảnh**: CORE + HALL + NAV
 - **Khu vực chạm**: public/js/hall.js (chỉ **thêm** `Hall.view3d`: `snapshot()`, `hold(on)`, `emit(kind, data)`; không sửa hàm vẽ), public/js/world3d/camera.mjs, input.mjs (mới), public/js/view3d-ui.js (mới: nút, lưu `ta-view`), public/js/app.js (vùng khởi tạo Hall + phím tắt), public/index.html (`importmap`, nút, `<script>`, `?v=`), public/css/view3d.css (mới, tiền tố `v3-`), public/js/arena.js (chỉ chỗ gọi `Hall.attach`), test/hall-view3d.test.js (mới)

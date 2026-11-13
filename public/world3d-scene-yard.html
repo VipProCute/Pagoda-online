@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Chánh điện 3D · Chùa Tâm An</title>
+  <title>Sân chùa 3D · Chùa Tâm An</title>
   <style>
     *{box-sizing:border-box}body{margin:0;background:#211914;color:#f3dfba;font:14px/1.5 system-ui,sans-serif}
     header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 22px;border-bottom:1px solid #80623f;flex-wrap:wrap}
@@ -21,16 +21,16 @@
 </head>
 <body>
   <header>
-    <div><h1>Chánh điện · Tâm An</h1><p>Gỗ son, ánh nến và một khoảng lặng</p></div>
+    <div><h1>Sân chùa · Tâm An</h1><p>Gỗ son, ánh nến và một khoảng lặng</p></div>
     <div class="yard-controls">
       <button id="view" type="button">Góc nhìn thứ nhất · V</button>
       <label>Đồ họa<select id="quality"><option value="low">Thấp</option><option value="medium" selected>Vừa</option><option value="high">Cao</option></select></label>
       <button id="day" type="button">Chuy?n sang ??m</button><button id="reset" type="button">Về lối giữa</button><a href="/">Về chùa</a>
     </div>
   </header>
-  <main id="stage" aria-label="Trang thử Chánh điện ba chiều">
+  <main id="stage" aria-label="Trang thử Sân chùa ba chiều">
     <div class="yard-caption"><strong>CHÁNH ĐIỆN / TRANG THỬ</strong>WASD hoặc chạm sàn để đi.<br>Kéo để nhìn quanh. Cuộn/chụm để thu phóng.<br>Chạm tượng, bát hương, ống xăm, tủ kinh để thử chọn vật.</div>
-    <output id="pick" role="status">Đang thắp đèn Chánh điện…</output>
+    <output id="pick" role="status">Đang dựng Sân chùa…</output>
   </main>
   <script type="module">
     import * as THREE from 'three';
