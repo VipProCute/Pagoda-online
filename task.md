@@ -85,7 +85,7 @@
 | T-111 | Dây chuyền Blender và tài nguyên 8 sân, 8 bộ quân | 🟣 Chờ soát | P0 | CORE + KYDAI | Điều phối (Claude Fable 5.2) |
 | T-112 | Module hiệu ứng 2D `KydaoFx`: khai mở, chấn động phong cấp, chiến thắng | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | — |
 | T-113 | Bàn 3D: nạp `.glb`, skin nửa sân, skin quân, `playFx` | 🔵 Sẵn sàng | P0 | CORE + KYDAO + KYDAI | — |
-| T-114 | Bàn 2D: vẽ skin nửa sân, skin quân, `jolt` | 🔵 Sẵn sàng | P0 | CORE + KYDAO + KYDAI | — |
+| T-114 | Bàn 2D: vẽ skin nửa sân, skin quân, `jolt` | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | Claude Sonnet 5.5 |
 | T-115 | Nối skin và hiệu ứng vào bảng cờ | ⏳ T-110, T-112, T-113, T-114 | P0 | CORE + KYDAO + KYDAI | — |
 | T-116 | ui-harness, ảnh chụp, Sổ tay, README cho Kỳ Đài | ⏳ T-115 | P1 | CORE + KYDAI + DOCS | — |
 | T-117 | Đồ họa 2D bằng Canva: khung khẩu hiệu, biểu tượng bộ chọn | ⏳ T-115 | P2 | CORE + KYDAI | — |
@@ -1331,19 +1331,19 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
 - **Ngoài phạm vi**: `kydao-ui.js`, giao thức, cờ vây/caro (chỉ cần `playFx('win')`).
 
 ### T-114 · Bàn 2D: vẽ skin nửa sân, skin quân, `jolt`
-- **Trạng thái**: ⏳ Chờ T-111 (ảnh nửa sân)
+- **Trạng thái**: 🟣 Chờ soát
 - **Ưu tiên**: P0
 - **Gói ngữ cảnh**: CORE + KYDAO + KYDAI
 - **Khu vực chạm**: public/js/kydao-draw.js, public/kydao-pieces-test.html, test/kydao-draw-skins.test.js (mới)
 - **Phụ thuộc**: T-111 · **Thợ**: Claude Sonnet 5.5 · **Soát**: Điều phối
-- **Người làm**: — · **Nhánh**: —
+- **Người làm**: Claude Sonnet 5.5 · **Nhánh**: claude/T-114-ban-2d-skin
 - **Mục tiêu**: `KydaoDraw.draw` vẽ đúng skin từng nửa sân và skin quân từng bên theo `o.skins`, và độ lệch `o.jolt`.
 - **Tiêu chí xong**:
-  - [ ] Nửa sân: phủ ảnh `fieldImage(id)` (nạp lười, chưa có ảnh thì tô theo `palette`), nét kẻ theo `palette.line`; lật bàn (`flip`) vẫn đúng nửa
-  - [ ] Dấu nước vừa đi, ô chọn, ô bị chiếu, điểm gợi ý luôn nằm trên skin và đủ tương phản trên cả 8 sân
-  - [ ] Quân: màu thân, viền, ánh sáng theo `PIECES[id].a|b`; khóa bộ nhớ đệm bitmap có mã skin; cờ úp: mọi quân úp cùng một bên vẽ **giống hệt nhau**
-  - [ ] `o.jolt[ô] = {dx,dy}` dịch quân khi vẽ; không có `o.skins`/`o.jolt` thì hình ra y như cũ (test so điểm ảnh hoặc lệnh vẽ)
-  - [ ] Trang thử hiện 8 sân × 8 bộ quân cho cờ vua và cờ tướng
+  - [x] Nửa sân: phủ ảnh `fieldImage(id)` (nạp lười, chưa có ảnh thì tô theo `palette`), nét kẻ theo `palette.line`; lật bàn (`flip`) vẫn đúng nửa
+  - [x] Dấu nước vừa đi, ô chọn, ô bị chiếu, điểm gợi ý luôn nằm trên skin và đủ tương phản trên cả 8 sân
+  - [x] Quân: màu thân, viền, ánh sáng theo `PIECES[id].a|b`; khóa bộ nhớ đệm bitmap có mã skin; cờ úp: mọi quân úp cùng một bên vẽ **giống hệt nhau**
+  - [x] `o.jolt[ô] = {dx,dy}` dịch quân khi vẽ; không có `o.skins`/`o.jolt` thì hình ra y như cũ (test so điểm ảnh hoặc lệnh vẽ)
+  - [x] Trang thử hiện 8 sân × 8 bộ quân cho cờ vua và cờ tướng
 - **Ngoài phạm vi**: `kydao-ui.js`, hiệu ứng.
 
 ### T-115 · Nối skin và hiệu ứng vào bảng cờ
