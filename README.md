@@ -68,17 +68,29 @@ Bên cạnh giao diện 2D truyền thống, Chùa Tâm An hỗ trợ không gia
   - Trình duyệt tự nhận diện năng lực đồ họa GPU (`public/js/gfx-detect.js`). Thiết bị di động luôn được ưu tiên mức Thấp để máy mát và tiết kiệm pin.
   - Hệ thống tự động theo dõi số khung hình trên giây (FPS); nếu bị tụt khung hình liên tục (dưới 30 FPS trong 3 giây), game sẽ tự động hạ cấu hình xuống mức thấp hơn (`quality.mjs`).
   - Luôn tôn trọng tùy chọn hệ thống: nếu bạn bật chế độ "Giảm chuyển động" (`prefers-reduced-motion`) trên máy, hiệu ứng lắc lư bước đi và hạt sương khói sẽ tự động tắt.
-- **Bàn cờ 3D & quân cờ mới**: Module bàn cờ 3D (`board3d.mjs`) và bộ quân cờ vẽ lại (`kydao-draw.js`) đã hoàn thiện và có trang thử nghiệm riêng, chuẩn bị sẵn sàng cho đợt tích hợp Kỳ Đạo vào game (thẻ T-034).
-- **Các trang thử nghiệm 3D độc lập**:
+- **Bàn cờ 3D & quân cờ mới**: Module bàn cờ 3D (`board3d.mjs`) và bộ quân cờ vẽ lại (`kydao-draw.js`) đã tích hợp chính thức vào game (có nút "Bàn 3D" trong bảng cờ), hỗ trợ đầy đủ skin nửa sân và mô hình quân cờ 3D tiện tròn.
+- **Lãnh địa và skin quân (Kỳ Đài)**:
+  - Áp dụng cho cờ vua, cờ tướng và cờ úp.
+  - Trong bảng cờ có nút "Lãnh địa": chọn "Sân của bạn" và "Quân của bạn", bấm "Khai mở" để đổi nửa sân của mình; cả bàn (đối thủ và người xem) thấy khẩu hiệu và nửa sân đổi.
+  - 8 sân (Hỏa Diệm Sơn, Trường Giang, Đại Ngàn, Băng Sơn, Long Cung, Liên Hoa Đài, Lôi Vân Đỉnh, Sa Mạc Lưu Sa) và 8 bộ quân (Dung Nham, Ngọc Bích, Mộc Linh, Băng Tinh, San Hô, Đồng Cổ, Lôi Thạch, Sa Thạch).
+  - Skin quân tự áp khi vào ván. Có nút "Ẩn skin đối thủ" để xem theo bàn cờ mặc định.
+  - Mỗi người khai mở sân tối đa 1 lần mỗi 20 giây (cooldown). Mọi skin hiện miễn phí, lựa chọn được lưu trên trình duyệt.
+  - Cờ vua: Tốt phong cấp thì bàn chấn động, các quân khác nảy lên. Hết ván (cả 5 môn) có hiệu ứng chiến thắng rồi mới hiện bảng kết quả.
+  - Giữa bàn cờ tướng và cờ úp là một dòng sông nước chảy (cả bàn 2D và 3D), không phụ thuộc skin.
+  - Tắt hiệu ứng: bật "giảm chuyển động" của máy hoặc tắt hiệu ứng ở Chánh điện (công tắc lưu `ta-fx`) thì bàn cờ không rung, sông đứng yên.
+- **Các trang thử nghiệm độc lập**:
   - `/world3d-test.html`: Kiểm tra tổng thể thế giới 3D.
   - `/world3d-kit.html`: Bộ khối mẫu vật liệu và cấu kiện kiến trúc chùa.
   - `/world3d-avatar.html`: Thử nghiệm mô hình nhân vật, trang phục, tóc, bước đi và hào quang.
-  - `/world3d-board.html`: Thử nghiệm bàn cờ 3D tương tác.
+  - `/world3d-board.html`: Thử nghiệm bàn cờ 3D tương tác có skin.
   - `/world3d-scene-hall.html`: Cảnh Chánh điện 3D.
   - `/world3d-scene-yard.html`: Cảnh Sân chùa 3D.
   - `/world3d-scene-library.html`: Cảnh Tàng Kinh Các 3D.
   - `/world3d-scene-arena.html`: Cảnh Sân đấu 3D.
   - `/kydao-pieces-test.html`: Thử nghiệm hiển thị bộ quân cờ Kỳ Đạo vẽ mới.
+  - `/kydao-kydai-test.html`: Bảng cờ Kỳ Đài thật với máy chủ giả (skin nửa sân, phong cấp, chiến thắng).
+  - `/kydao-fx-test.html`: Hiệu ứng 2D Kỳ Đạo (khai mở lãnh địa, phong cấp rung bàn, chiến thắng).
+  - `/kydao-skins-test.html`: Danh mục và tài nguyên 8 skin sân, 8 skin quân.
 
 ## Lưu trữ bền bằng PostgreSQL (Neon)
 
@@ -398,11 +410,14 @@ public/js/world3d/     thế giới 3D (Three.js 0.187.0 từ /vendor/three/, ES
   camera.mjs           máy quay góc nhìn 1 và 3, làm mượt chuyển động, thu phóng
   input.mjs            xử lý phím WASD, chạm sàn raycast, kéo xoay, chụm zoom, cần ảo trên di động
   board3d.mjs          bàn cờ 3D cho Kỳ Đạo
+  board-assets.mjs     nạp tài nguyên mô hình quân cờ 3D (.glb) và vật liệu skin
   scenes/hall.mjs      cấu trúc 3D Chánh điện (tượng Phật mặt meme, bàn thờ, nến, bát hương)
   scenes/yard.mjs      cấu trúc 3D Sân chùa (cây cối, bàn đá, lối đi)
   scenes/library.mjs   cấu trúc 3D Tàng Kinh Các (kệ kinh, 8 bồ đoàn, đèn dầu)
   scenes/arena.mjs     cấu trúc 3D Sân đấu (võ đài, giá binh khí, mộc nhân)
-public/js/kydao-draw.js vẽ quân cờ Kỳ Đạo chi tiết
+public/js/kydao-skins.js danh mục 8 sân, 8 bộ quân, khẩu hiệu (dùng chung Node, Canvas, Three.js)
+public/js/kydao-fx.js  hiệu ứng 2D Kỳ Đạo (khai mở lãnh địa, chấn động phong cấp, chiến thắng)
+public/js/kydao-draw.js vẽ quân cờ Kỳ Đạo chi tiết, mặt sân và dòng sông
 public/js/meditate.js  bảng tọa thiền trên bồ đoàn ở Tàng Kinh Các (chọn công pháp, đếm giờ phiên tu)
 public/js/voice.js     nói chuyện bằng giọng (WebRTC, nghe theo khoảng cách)
 public/js/library.js   Tàng Kinh Các: kệ kinh và trang đọc
@@ -422,6 +437,7 @@ public/img/fx/halo.webp hào quang công đức (Canva)
 public/img/fx/demon-*.webp 4 con quỷ theo sau người công đức âm (Canva)
 tools/fx/prepare_demon_sprites.py tách nền xám của 4 con quỷ thành ảnh trong suốt
 tools/fx/prepare_canva_assets.py chuyển PNG xuất từ Canva thành ảnh web
+tools/blender/kydao/   script Blender dựng mô hình quân cờ (.glb) và render mặt sân (.webp)
 tools/build_chants.py  dựng bài tụng bằng VieNeu-TTS
 tools/build_blessing_voice.py dựng giọng chúc (giọng nữ) bằng VieNeu-TTS
 public/js/lunar.js     lịch âm

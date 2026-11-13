@@ -75,6 +75,10 @@ KydaoFx.stop()
 
 Bàn 3D có `board.playFx(kind, opts)` cùng tên hiệu ứng, toạ độ theo tên ô.
 
+**API thực tế sau khi làm:**
+- `KydaoFx.play('promote')` gọi `onJolt(getOffset)` với `getOffset(x,y) → {dx,dy}` và gọi `onJolt(null)` khi xong; tùy chọn `bannerOnly`.
+- `board3d`: `setState(o)` đọc `o.skins`, `playFx('domain', {side, field})`, `playFx('promote', {at})`, `playFx('win', {result, king, line})`, `setQuality`, `stats`.
+
 ### 4.5 Tài nguyên và ngân sách
 
 | Loại | Đường dẫn | Giới hạn |
@@ -124,3 +128,9 @@ Mọi tài nguyên nạp lười khi người chơi thật sự bật skin. Ghi 
 1. Skin có cần **mở khóa** không (theo công đức, danh hiệu, Elo, hay cúng dường)? Đợt đầu để miễn phí (K4).
 2. Có cho người chơi **chọn khẩu hiệu** trong vài câu có sẵn của mỗi sân không? Đợt đầu mỗi sân một câu.
 3. Cờ vây và caro có cần skin sân/quân không? Đợt đầu chỉ có hiệu ứng chiến thắng.
+
+## 8. Tình trạng
+
+- **Đã xong**: T-110, T-111, T-112, T-113, T-114, T-115a/b/c, T-117, T-118, T-121, T-122, T-123, T-124.
+- **Đang làm**: T-118b, T-119.
+- **Chưa làm**: T-120.
