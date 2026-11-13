@@ -42,7 +42,7 @@
   <main>
     <div class="av-kicker">CHÙA TÂM AN · XƯỞNG NHÂN VẬT</div>
     <h1>Một dáng hình, một duyên gặp.</h1>
-    <p class="av-intro">Áo dài mộc, sắc áo quen và những vị khách nơi sân chùa.</p>
+    <p class="av-intro">Sắc áo quen, hào quang, pháp tướng và những vị khách nơi sân chùa.</p>
     <div class="av-layout">
       <div class="av-stage">
         <canvas id="world" aria-label="Bộ sưu tập nhân vật 3D; kéo để xoay, cuộn để thu phóng" tabindex="0"></canvas>
@@ -50,7 +50,7 @@
       </div>
       <aside>
         <label class="av-wide">Bộ sưu tập
-          <select id="collection"><option value="gallery">Khách và năm vị NPC</option><option value="looks">Mười hai sắc áo</option><option value="crowd">Sáu mươi nhân vật</option></select>
+          <select id="collection"><option value="gallery">Khách, Obito và các cô nương</option><option value="effects">Chín hào quang · sáu pháp tướng · bốn quỷ</option><option value="looks">Mười hai sắc áo</option><option value="crowd">Sáu mươi nhân vật</option></select>
         </label>
         <label class="av-wide">Tư thế
           <select id="pose"><option value="idle">Chắp tay, đứng thở</option><option value="walk">Bước đi</option><option value="bow">Vái lạy</option><option value="cushion">Ngồi bồ đoàn</option><option value="bench">Ngồi ghế đá</option></select>
@@ -62,18 +62,24 @@
           <select id="hair"><option value="0">Tóc dài</option><option value="1" selected>Búi tóc</option><option value="2">Tóc ngắn</option><option value="3">Khăn vấn</option></select>
         </label>
         <label class="av-wide">Sắc áo nhân vật mẫu <select id="color"></select></label>
+        <label class="av-wide">Hào quang nhân vật mẫu <select id="aura"><option value="0">Không có</option></select></label>
+        <label class="av-wide">Pháp tướng nhân vật mẫu <select id="merit"><option value="0">Không có</option></select></label>
+        <label class="av-wide">Quỷ nhân vật mẫu <select id="demon"><option value="0">Không có</option><option value="666">666 công đức · Ma Vương</option></select></label>
+        <label class="av-check av-wide"><input type="checkbox" id="fashion"> Trang phục cô nương (NPC nữ)</label>
         <label class="av-check av-wide"><input type="checkbox" id="reduced"> Giảm chuyển động</label>
         <label class="av-check av-wide"><input type="checkbox" id="first"> Ẩn nhân vật mẫu ở góc nhìn thứ nhất</label>
         <button class="av-wide" type="button" id="measure">Đo FPS · 60 nhân vật</button>
         <p class="av-status av-wide" id="status" role="status">Đang mở cảnh nhân vật…</p>
-        <p class="av-note av-wide">Nhãn tên, danh hiệu và lời nói luôn hướng về máy quay. Bộ đo khởi động 2 giây, lấy mẫu 10 giây ở mức Vừa.</p>
+        <p class="av-note av-wide">Bộ hiệu ứng có cả mẫu 666 và mẫu hào quang kết hợp pháp tướng. Các lựa chọn riêng áp dụng nhân vật đầu trong bộ Khách. Bộ đo khởi động 2 giây, lấy mẫu 10 giây ở mức Vừa.</p>
       </aside>
     </div>
     <p class="av-note">Trang thử độc lập · <a href="/world3d-test.html">Thử nền 3D</a> · <a href="/">Về chùa</a></p>
   </main>
+  <script src="/js/aura.js"></script>
+  <script src="/js/merit.js?v=npc2"></script>
   <script type="module">
     import * as THREE from 'three';
-    import { createAvatar, AVATAR_COLORS } from '/js/world3d/avatar.mjs?v=1';
+    import { createAvatar, AVATAR_COLORS } from '/js/world3d/avatar.mjs?v=3';
 
     const byId = id => document.getElementById(id);
     const canvas = byId('world'), status = byId('status');
@@ -82,13 +88,29 @@
       const option = document.createElement('option'); option.value = i; option.textContent = name; byId('color').append(option);
     });
     byId('color').value = '2';
+    for (const [id, entries] of [['aura', AURA.TIERS], ['merit', MERIT.RANKS], ['demon', MERIT.DEMONS]]) {
+      for (const entry of entries) {
+        const option = document.createElement('option'); option.value = entry.n; option.textContent = entry.name; byId(id).append(option);
+      }
+    }
+    byId('aura').value = '6';
     byId('reduced').checked = matchMedia('(prefers-reduced-motion: reduce)').matches;
     const npcDefs = [
       { name: 'Lão Ăn Mày', role: 'beggar', c: 9, h: 3 },
       { name: 'Vạn Lý Độc Hành', role: 'wanderer', c: 11, h: 3 },
       { name: 'Obito', role: 'obito', c: 11, h: 2 },
       { name: 'Tảo Địa Tăng', role: 'sweeper', c: 8, h: 2 },
-      { name: 'Thầy bói', role: 'fortune', c: 4, h: 2 }
+      { name: 'Thầy bói', role: 'fortune', c: 4, h: 2 },
+      { name: 'Cô Nương Hồng', role: 'lady', g: 'nu', npcFashion: true, c: 2, h: 0 },
+      { name: 'Cô Nương Đỏ', role: 'lady', g: 'nu', npcFashion: true, c: 0, h: 0 },
+      { name: 'Cô Nương Du Xuân', role: 'lady', g: 'nu', npcFashion: true, c: 7, h: 0 }
+    ];
+    const effectDefs = [
+      ...AURA.TIERS.map(tier => ({ name: tier.name, aura: { t: tier.n, color: tier.color } })),
+      ...MERIT.RANKS.map(rank => ({ name: rank.name, meritRank: rank.n })),
+      ...MERIT.DEMONS.map(demon => ({ name: demon.name, demon: { n: demon.n, alpha: 1 } })),
+      { name: '666 công đức', demon: MERIT.visualDemonOf(666), meritRank: 0 },
+      { name: 'Độ Kiếp · Thánh Luân', aura: { t: 9, color: '#ffffff' }, meritRank: 6 }
     ];
     let renderer, frame = 0, last = 0, time = 0, measurement = null, stopped = false;
     let avatars = [], seats = [];
@@ -121,11 +143,11 @@
     }
     function buildCollection() {
       clearCollection();
-      const mode = byId('collection').value, count = mode === 'crowd' ? 60 : mode === 'looks' ? 12 : 8;
-      const columns = mode === 'crowd' ? 10 : 4, rows = Math.ceil(count / columns);
+      const mode = byId('collection').value, count = mode === 'crowd' ? 60 : mode === 'effects' ? effectDefs.length : mode === 'looks' ? 12 : 3 + npcDefs.length;
+      const columns = mode === 'crowd' ? 10 : mode === 'effects' ? 7 : 4, rows = Math.ceil(count / columns);
       for (let i = 0; i < count; i++) {
         const npc = mode === 'gallery' && i >= 3 ? npcDefs[i - 3] : mode === 'crowd' && i % 10 < 5 ? npcDefs[i % 10] : null;
-        const look = { g: i % 2 ? 'nam' : 'nu', c: npc?.c ?? i % 12, h: npc?.h ?? i % 4 };
+        const look = { g: npc ? npc.g || 'nam' : i % 2 ? 'nam' : 'nu', c: npc?.c ?? i % 12, h: npc?.h ?? i % 4, npcFashion: !!npc?.npcFashion };
         const avatar = createAvatar(look, { role: npc?.role, isSelf: i === 0 });
         const x = (i % columns - (columns - 1) / 2) * 2.05;
         const z = ((rows - 1) / 2 - Math.floor(i / columns)) * 2.6;
@@ -136,13 +158,14 @@
         const slab = new THREE.Mesh(benchGeometry, stoneMaterial); slab.position.set(0, 0.275, -0.05); bench.add(slab);
         for (const sign of [-1, 1]) { const leg = new THREE.Mesh(legGeometry, stoneMaterial); leg.position.set(sign * 0.29, 0.105, -0.05); bench.add(leg); }
         seat.add(bench); scene.add(seat); seats.push(seat);
-        avatars.push({ avatar, name: npc?.name ?? (mode === 'looks' ? names[i] : i === 0 ? 'An Nhiên' : i === 1 ? 'Minh Tâm' : 'Thiện Duyên'), cushion, bench });
+        const fx = mode === 'effects' ? effectDefs[i] : null;
+        avatars.push({ avatar, fx, name: fx?.name ?? npc?.name ?? (mode === 'looks' ? names[i] : i === 0 ? 'An Nhiên' : i === 1 ? 'Minh Tâm' : 'Thiện Duyên'), cushion, bench });
       }
-      distance = mode === 'crowd' ? 27 : mode === 'looks' ? 17 : 14;
+      distance = mode === 'crowd' ? 27 : mode === 'effects' ? 24 : 17;
       orbit(); setLook();
     }
     function setLook() {
-      avatars[0]?.avatar.setLook({ g: byId('gender').value, c: Number(byId('color').value), h: Number(byId('hair').value) });
+      avatars[0]?.avatar.setLook({ g: byId('gender').value, c: Number(byId('color').value), h: Number(byId('hair').value), npcFashion: byId('fashion').checked });
     }
     function triangleCount(avatar) {
       let count = 0;
@@ -158,13 +181,16 @@
       if (stopped) return;
       const dt = last ? Math.min(0.1, (now - last) / 1000) : 0; last = now; time += dt;
       const pose = byId('pose').value, reducedMotion = byId('reduced').checked;
+      const tier = AURA.TIERS[Number(byId('aura').value) - 1], demon = Number(byId('demon').value);
       for (let i = 0; i < avatars.length; i++) {
         const item = avatars[i];
         item.cushion.visible = pose === 'cushion'; item.bench.visible = pose === 'bench';
         item.avatar.update({ name: item.name, tag: i === 0 ? 'Tâm an · Duyên lành' : '',
           walking: pose === 'walk', yaw: 0, bow: pose === 'bow' ? reducedMotion ? 0.8 : (1 - Math.cos(time * 1.7)) * 0.45 : 0,
           sit: pose === 'cushion' || pose === 'bench' ? pose : false, talk: i === 0,
-          aura: i === 0, bubble: i === 0 ? 'Một lời lành, một ngày an.' : '',
+          ...(item.fx || (i === 0 ? { aura: tier ? { t: tier.n, color: tier.color } : null,
+            meritRank: demon === 666 ? 0 : Number(byId('merit').value), demon: demon === 666 ? MERIT.visualDemonOf(666) : demon ? { n: demon, alpha: 1 } : null } : {})),
+          now: Date.now(), bubble: i === 0 && !item.fx ? 'Một lời lành, một ngày an.' : '',
           view: byId('first').checked ? 'first' : 'third', reducedMotion
         }, dt);
       }
@@ -188,8 +214,8 @@
       frame = requestAnimationFrame(draw);
     }
     function cancelMeasurement() { measurement = null; byId('measure').disabled = false; status.textContent = 'Cảnh đã sẵn sàng. Kéo để xem từ mọi phía.'; }
-    for (const id of ['collection', 'pose', 'reduced', 'first']) byId(id).addEventListener('change', () => { cancelMeasurement(); if (id === 'collection') buildCollection(); });
-    for (const id of ['gender', 'hair', 'color']) byId(id).addEventListener('change', () => { cancelMeasurement(); setLook(); });
+    for (const id of ['collection', 'pose', 'reduced', 'first', 'aura', 'merit', 'demon']) byId(id).addEventListener('change', () => { cancelMeasurement(); if (id === 'collection') buildCollection(); });
+    for (const id of ['gender', 'hair', 'color', 'fashion']) byId(id).addEventListener('change', () => { cancelMeasurement(); setLook(); });
     byId('measure').addEventListener('click', () => {
       byId('collection').value = 'crowd'; byId('pose').value = 'walk'; byId('first').checked = false;
       buildCollection(); measurement = { start: performance.now() + 2000, frames: 0 }; byId('measure').disabled = true;

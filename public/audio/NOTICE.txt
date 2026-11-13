@@ -38,3 +38,10 @@ Nhạc sân đấu: China Chinese Asian Music — Tunetank, Pixabay Content Lice
 https://pixabay.com/music/build-up-scenes-china-chinese-asian-music-350075/
 Nhạc PK: Martial Arts - Action Percussive Music — Luis_Humanoide, Pixabay Content License.
 https://pixabay.com/music/upbeat-martial-arts-action-percussive-music-294556/
+
+Nhạc Kỳ Đạo (không lời), do chủ dự án tạo bằng công cụ tạo nhạc AI của Google Gemini ngày 2026-11-13:
+  public/audio/kydao/chess.mp3 — tên gốc: Portrait_in_a_Candlelit_Study (cờ vua)
+  public/audio/kydao/xiangqi.mp3 — tên gốc: The_Courtyard_Gambit (cờ tướng)
+  public/audio/kydao/jieqi.mp3 — tên gốc: Jade_Pieces_at_Dusk (cờ tướng úp)
+  public/audio/kydao/go.mp3 — tên gốc: Between_Stone_and_Water (cờ vây)
+  public/audio/kydao/gomoku.mp3 — tên gốc: Bamboo_Grove_Morning (caro)

@@ -38,18 +38,41 @@
   let musicBlocked = false, musicTimer = 0, musicTime = -1, musicProgress = 0, musicRepair = 0;
   let duckUntil = 0, duckTimer = null;
   const MUSIC = Object.freeze({ temple: '/audio/ambience-thien-am.mp3', arena: '/audio/arena-idle.mp3', battle: '/audio/pk-battle.mp3' });
+  const KYDAO_MUSIC = Object.freeze({
+    chess: '/audio/kydao/chess.mp3', xiangqi: '/audio/kydao/xiangqi.mp3',
+    jieqi: '/audio/kydao/jieqi.mp3', go: '/audio/kydao/go.mp3', gomoku: '/audio/kydao/gomoku.mp3'
+  });
   let musicScene = 'temple';
+  let musicGame = null, musicSwap = 0, musicSwapTimer = 0;
+  function currentMusic() { return musicGame ? KYDAO_MUSIC[musicGame] : MUSIC[musicScene]; }
+  function swapMusic() {
+    if (!ambience || ambience.src.endsWith(currentMusic())) { updateAmbience(); playAmbience(); return; }
+    const ticket = ++musicSwap;
+    clearTimeout(musicSwapTimer);
+    if (ios) ambience.volume = 0;
+    else if (ambienceGain) ambienceGain.gain.setTargetAtTime(0, AC.currentTime, 0.16);
+    musicSwapTimer = setTimeout(() => {
+      if (ticket !== musicSwap || !ambience) return;
+      ambience.pause(); ambience.src = currentMusic(); ambience.load();
+      ambience.muted = muted;
+      ambienceLevel = null;
+      updateAmbience();
+      playAmbience();
+    }, 500);
+  }
   function setMusicScene(scene) {
     if (!Object.prototype.hasOwnProperty.call(MUSIC, scene) || scene === musicScene) return;
     musicScene = scene;
     musicBlocked = false; musicTime = -1; musicProgress = Date.now();
-    if (ambience) {
-      ambience.pause();
-      ambience.src = MUSIC[scene];
-      ambience.load();
-      updateAmbience();
-      playAmbience();
-    } else if (AC) startAmbience();
+    if (!musicGame) swapMusic();
+    else if (AC && !ambience) startAmbience();
+  }
+  function setMusicGame(game) {
+    if (game != null && !Object.prototype.hasOwnProperty.call(KYDAO_MUSIC, game)) return;
+    if (musicGame === game) return;
+    musicGame = game;
+    musicBlocked = false; musicTime = -1; musicProgress = Date.now();
+    if (ambience) swapMusic(); else if (AC) startAmbience();
   }
 
   function updateAmbience() {
@@ -104,7 +127,7 @@
   function startAmbience() {
     if (muted || (root.document && document.hidden)) return;
     if (!ambience) {
-      ambience = new Audio(MUSIC[musicScene]);
+      ambience = new Audio(currentMusic());
       ambience.loop = true; ambience.preload = 'auto';
       ambience.setAttribute('playsinline', '');
       // iOS phát nhạc nền bằng media player trực tiếp, tránh đường resampling Web Audio gây rè/lặp mẫu.
@@ -326,7 +349,7 @@
       if (!muted && AC) startAmbience();
     },
     setVolume(v) { volume = v; if (OUT && !muted) OUT.gain.setTargetAtTime(volume, AC.currentTime, 0.05); if (chEl) chEl.volume = v; updateAmbience(); },
-    mo: () => mo(), bell, ting, pop, setAmbienceDuck, setMusicScene, recover: recoverAudio,
+    mo: () => mo(), bell, ting, pop, setAmbienceDuck, setMusicScene, setMusicGame, recover: recoverAudio,
     chime: () => chime(), scare: () => scare(), playClip, preloadClip, stopClip,
     startChant, stopChant, syncChant
   };

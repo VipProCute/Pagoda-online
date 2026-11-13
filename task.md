@@ -38,7 +38,7 @@
 | T-031 | Vẽ bàn đá và ghế ở Sân chùa | ✅ Xong · PR #42 | P0 | CORE + HALL + KYDAO | Claude Sonnet 5.5 |
 | T-032 | Bảng bàn cờ: khung, cờ vua, cờ tướng | ✅ Xong · PR #41 | P0 | CORE + KYDAO | Claude Sonnet 5.5 |
 | T-033 | Bảng bàn cờ: cờ vây, caro, cờ úp | ⏳ T-032, T-024, T-025, T-026 | P1 | CORE + KYDAO | — |
-| T-034 | Nối bảng cờ vào chùa | ⏳ T-030, T-031, T-032 | P0 | CORE + KYDAO + NAV | — |
+| T-034 | Nối bảng cờ vào chùa | 🟣 Chờ soát | P0 | CORE + KYDAO + NAV | gpt-6-astra (Codex CLI qua proxy) |
 | T-035 | ui-harness cho bàn cờ | ⏳ T-032, T-033 | P1 | CORE + KYDAO + OPS | — |
 | T-040 | Thống kê mùa, tính người giữ danh hiệu | ✅ Xong · PR #46 | P0 | CORE + RANK + MARTIAL | Claude Sonnet 5.5 (thay Codex terra 6.1) |
 | T-041 | Phát danh hiệu từ máy chủ | ⏳ T-030, T-040 | P0 | CORE + RANK | — |
@@ -78,6 +78,8 @@
 | T-091 | Bàn cờ 3D, quân tiện tròn | 🟣 Chờ soát | P1 | CORE + KYDAO | gpt-6.1-sol |
 | T-092 | ui-harness và ảnh chụp cho 3D | 🟣 Chờ soát | P2 | CORE + OPS | gpt-6-luna (Codex CLI qua proxy) |
 | T-093 | README, Sổ tay cho 3D và góc nhìn | 🟣 Chờ soát | P2 | CORE + DOCS | gemini-3.8-flash-high (Codex CLI qua proxy) |
+| T-100 | Nhân vật 3D bám sát 2D: hào quang, pháp tướng, quỷ, trang phục, Obito | 🟣 Chờ soát | P0 | CORE + HALL | gpt-6.1-sol |
+| T-101 | Nhạc riêng cho từng môn cờ | 🟣 Chờ soát | P2 | CORE + KYDAO | gpt-6-luna (Codex CLI qua proxy) |
 
 Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạm `package.json`). **T-005**, **T-007**, **T-002** làm song song được với nhóm trên.
 Đợt 2026-11: làm **T-003, T-004, T-006** trước (T-004 gỡ nút thắt `package.json` cho mọi thẻ thêm file JS; T-006 là cổng "CI xanh"). Sau đó theo lịch 6 đợt ở [docs/KE-HOACH-DOT-2026-11.md §10.3](docs/KE-HOACH-DOT-2026-11.md#103-lịch-theo-đợt-và-khóa-vùng-nóng).
@@ -558,13 +560,13 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: bot.
 
 ### T-034 · Nối bảng cờ vào chùa
-- **Trạng thái**: ⏳ Chờ T-030, T-031, T-032
+- **Trạng thái**: 🟣 Chờ soát. Điều phối soát 13/11 (thợ gpt-6-astra): check sạch, npm test 841 đạt 0 trượt 3 bỏ qua. Thử trên trình duyệt 2D: chạm Bàn 3 ở Sân chùa thì ngồi được, hiện bảng chọn luật (cờ vua, cờ tướng; ba môn kia ghi sắp có). CHƯA thử ván hai người từ đầu tới cuối, chưa thử mời từ hộp người chơi, chưa thử chạm bàn trong 3D.
 - **Ưu tiên**: P0 · **Đợt**: 4
 - **Gói ngữ cảnh**: CORE + KYDAO + NAV
 - **Khu vực chạm**: public/js/app.js (handler chạm bàn, `socket.on('kd:*')` → `Hall.setTables` và `KydaoUI`, hộp người chơi "Mời đánh cờ", chip "Đang đánh cờ"), public/index.html (`<script>` của `kydao/*.js`, `kydao-ui.js`, `kydao-draw.js`; `<link>` của `kydao.css`; hộp mời đánh cờ trong `#dlg-person`; `?v=`)
 - **Phụ thuộc**: T-030, T-031, T-032
 - **Thợ**: Sonnet 5.5 (high) · **Soát**: Gemini Argon + Sol 6.1
-- **Người làm**: — · **Nhánh**: —
+- **Người làm**: gpt-6-astra (Codex CLI qua proxy) · **Nhánh**: codex/T-034-noi-bang-co
 - **Thiết kế**: KH §5.1
 - **Mục tiêu**: người chơi đánh cờ được từ đầu tới cuối trong chùa thật.
 - **Tiêu chí xong**:
@@ -574,6 +576,7 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
   - [ ] Khách khi bật Google: giao hữu được, xếp hạng thì mời đăng nhập (`code:'login'`)
   - [ ] Không lỗi console; ảnh 3 cỡ màn
 - **Ngoài phạm vi**: danh hiệu trên bảng (T-042).
+- **Ghi chú bàn giao**: Đã nối handler bàn dùng chung 2D/3D, chọn luật/sẵn sàng, lời mời, xem và phục hồi ván; nạp nét quân T-090 và nút Bàn 3D T-091, chỉ cho chọn cờ vua/cờ tướng. Test trực tiếp: 169 đạt, 0 trượt, 1 bỏ qua (perft sâu); trong đó test nối mới 16/16. `npm run check`, `node --test` và E2E bị sandbox chặn spawn EPERM; `node --check` hai file JS sạch. Điều phối kiểm hai trình duyệt/ảnh ba cỡ/WebGL, chạy lại bộ kiểm chuẩn và commit theo giao việc; thợ chưa add/commit. Báo cáo `BAN-GIAO-T-034.md` không commit; tiêu chí kiểm bằng trình duyệt còn để trống tới lúc điều phối xác minh.
 
 ### T-035 · Dựng ui-harness cho bàn cờ
 - **Trạng thái**: ⏳ Chờ T-032, T-033
@@ -1218,6 +1221,32 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
 - **Nhánh**: codex/T-093-tai-lieu-3d
 - **Khu vực chạm**: README.md, public/data/so-tay.vi.json, docs/agents/ARCHITECTURE.md (§1, §5, §6)
 - **Mục tiêu**: Người chơi biết bật 3D, đổi góc nhìn, điều khiển; agent sau biết cấu trúc world3d/.
+
+### T-100 · Nhân vật 3D bám sát 2D: hào quang, pháp tướng, quỷ, trang phục, Obito
+- **Trạng thái**: 🟣 Chờ soát. Điều phối soát 13/11 (thợ gpt-6.1-sol): check sạch, npm test 832 đạt 0 trượt 3 bỏ qua. Xem game thật ở Tàng Kinh Các 3D: quỷ hiện sau lưng Hắc Phong Ma Khách, Obito áo choàng đen mây đỏ, dáng người thon hơn. Chưa xem tận mắt 9 bậc hào quang, pháp tướng và trang phục cô nương trong game.
+- **Ưu tiên**: P0 (chủ dự án 13/11: hào quang, quỷ do cúng dường là dấu ấn của game, không được mất khi sang 3D)
+- **Gói ngữ cảnh**: CORE + HALL
+- **Khu vực chạm**: public/js/world3d/avatar.mjs, public/js/world3d/index.mjs (chỉ phần dựng/cập nhật nhân vật), public/js/hall.js (CHỈ hàm viewSnapshot: thêm trường còn thiếu), public/world3d-avatar.html, test/world3d-avatar.test.js, test/hall-view3d.test.js, public/js/view3d-ui.js và public/index.html (chỉ tăng ?v=)
+- **Người làm**: gpt-6.1-sol (Codex CLI qua proxy) · **Nhánh**: codex/T-100-nhan-vat-3d-hao-quang
+- **Mục tiêu**: bật 3D vẫn thấy đủ dấu ấn của bản 2D trên từng nhân vật.
+- **Tiêu chí xong**:
+  - [x] Hào quang theo bậc cúng dường: dùng lại đúng ảnh `/img/fx/aura/*.webp` và màu bậc như 2D (ảnh phẳng luôn quay về máy quay, đặt sau lưng nhân vật), mức Thấp vẫn hiện
+  - [x] Pháp tướng và quỷ theo sau (`/img/fx/demon-*.webp` và các hiệu ứng tương ứng trong hall.js) hiện trong 3D đúng điều kiện như 2D
+  - [x] Trang phục NPC nữ (`npcFashion`) và các kiểu tóc giống hình 2D; Obito áo choàng đen mây đỏ, mặt nạ cam xoáy
+  - [x] Dáng nhân vật thon, mềm hơn (bớt khối hộp), giữ số tam giác thấp cho điện thoại
+  - [x] Hết hạn hào quang thì tắt đúng giờ máy chủ; tôn trọng giảm chuyển động
+  - [ ] npm run check sạch; test avatar và hall-view3d đạt; trang thử /world3d-avatar.html có đủ các biến thể
+- **Ghi chú bàn giao**: Avatar 11/11, hall-view3d 10/10, hall-npcs 4/4, scene-arena 10/10 đạt khi chạy trực tiếp; cú pháp các file sửa và module trang thử đạt. `npm run check` / `node --test` bị sandbox chặn spawn EPERM; chờ điều phối chạy lại và xem trình duyệt. Hiệu ứng Canvas dùng hình tĩnh chung có nhịp thở; chi tiết chuyển động được giản lược. Một dòng ngoài khu vực: tăng import avatar ở scenes/arena.mjs để tránh cache cũ. Báo cáo: BAN-GIAO-T-100.md (không commit); để nguyên chưa commit theo chỉ dẫn điều phối.
+
+### T-101 · Nhạc riêng cho từng môn cờ
+- **Trạng thái**: 🟣 Chờ soát. Điều phối soát 13/11 (thợ gpt-6-luna): check sạch, npm test 849 đạt 0 trượt 3 bỏ qua; đã đổi nhạc cờ tướng và cờ úp cho nhau theo ý chủ dự án và sửa NOTICE cho khớp. CHƯA nghe thử trong game (điều phối không nghe được âm thanh): cần chủ dự án mở một ván để nghe chuyển nhạc và trả nhạc.
+- **Ưu tiên**: P2
+- **Gói ngữ cảnh**: CORE + KYDAO
+- **Khu vực chạm**: public/js/audio.js, public/js/kydao-ui.js, public/audio/kydao/*.mp3, public/audio/NOTICE.txt, public/index.html (?v=)
+- **Người làm**: gpt-6-luna (Codex CLI qua proxy)
+- **Nhánh**: codex/T-101-nhac-co
+- **Mục tiêu**: mở bàn cờ thì nhạc nền chùa nhỏ dần, phát nhạc riêng của môn (cờ vua, cờ tướng, cờ úp, cờ vây, caro); rời bàn thì trả lại nhạc cũ; theo nút tắt tiếng chung.
+- **Ghi chú bàn giao**: Ánh xạ mã môn → MP3, chuyển nhạc nền và khôi phục theo cảnh; test audio 3/3, kydao-app 16/16 đạt. `npm run check` bị sandbox chặn spawn `node.exe` (EPERM); `git add`/commit bị từ chối tạo `.git/worktrees/T-101/index.lock` (Permission denied). Cú pháp file sửa đã kiểm bằng `node --check`. Xem `BAN-GIAO-T-101.md`.
 
 **Ý tưởng của đợt 3D (⚪, chờ chủ dự án chọn; mô tả ở KE-HOACH-3D §3):** T-094 ngày đêm và đèn lồng · T-095 tiếng nói theo khoảng cách · T-096 trang trí lễ theo âm lịch · T-097 sàn PK 3D máy quay thứ ba cố định · T-098 chụp ảnh lưu niệm · T-099 bản đồ nhỏ.
 

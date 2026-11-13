@@ -7,6 +7,8 @@ const fs = require('node:fs');
 const { pathToFileURL } = require('node:url');
 const Actors = require('../public/js/actors');
 const ViewMath = require('../public/js/view-math');
+const MERIT = require('../public/js/merit');
+const AURA = require('../public/js/aura');
 
 function hallFixture(handlers = {}) {
   let nextFrame, time = 1000, clock = 1800000000000, draws = 0;
@@ -20,7 +22,7 @@ function hallFixture(handlers = {}) {
   }, set(target, key, value) { target[key] = value; return true; } });
   const canvas = { width: 960, height: 600, style: {}, getContext: () => context,
     getBoundingClientRect: () => ({ width: 960, height: 600 }), addEventListener() {} };
-  const sandbox = { Actors, Math, Date: ClockDate, Image: class {}, performance: { now: () => time },
+  const sandbox = { Actors, MERIT, AURA, Math, Date: ClockDate, Image: class {}, performance: { now: () => time },
     matchMedia: () => ({ matches: false }), addEventListener() {},
     document: { hidden: false, createElement: () => ({ getContext: () => context }) },
     requestAnimationFrame: callback => { nextFrame = callback; } };
@@ -63,6 +65,34 @@ test('snapshot 3D có đủ trạng thái, đóng băng sâu và không sao ché
   const text = H.npcTalk(npc.id);
   assert.equal(H.view3d.snapshot().npcs.find(p => p.id === npc.id).bubble.text, text);
   assert.equal(state.scene, 'hall', 'bản chụp cũ giữ nguyên sau khi đổi cảnh');
+});
+
+test('snapshot giữ đúng sáu pháp tướng, bốn quỷ, 666, Obito và giờ hết hào quang của 2D', () => {
+  const f = hallFixture(), H = f.H, now = 1800000000000;
+  f.step(); f.setClock(now);
+  H.setPlayers([{ id: 1, name: 'Người thử', look: { g: 'nam', c: 0, h: 2 } }]);
+  H.view3d.hold(true);
+  for (const mt of [0, 99, 100, 500, 666, 667, 1000, 5000, 10000, 50000, -1, -100, -200, -500, -1000]) {
+    H.setMerit(1, mt);
+    const p = H.view3d.snapshot().players[0];
+    assert.equal(p.meritRank, mt === 666 ? 0 : MERIT.rankOf(mt), `${mt} công đức`);
+    assert.equal(JSON.stringify(p.demon), JSON.stringify(MERIT.visualDemonOf(mt)));
+    assert.equal(p.now, now);
+    assert.equal(p.obito, false);
+  }
+  for (const tier of AURA.TIERS) {
+    H.setAura(1, { t: tier.n, until: now + 20000, uid: 'khong-duoc-lo' });
+    const p = H.view3d.snapshot().players[0];
+    assert.equal(p.aura.t, tier.n); assert.equal(p.aura.color, tier.color);
+  }
+  H.setOffset(20000);
+  assert.equal(H.view3d.snapshot().players[0].aura, null, 'tắt đúng giờ máy chủ, dù giờ máy khách chưa đổi');
+  H.setScene('library');
+  assert.ok(H.view3d.snapshot().npcs.some(p => p.role === 'obito' && p.obito));
+  // Ngoại hình NPC cục bộ: kiểm trường được sao chép, không phụ thuộc lượt chọn ngẫu nhiên.
+  H.setScene('hall'); H.npc(-100).look = { g: 'nu', c: 2, h: 0, npcFashion: true };
+  assert.ok(H.view3d.snapshot().npcs.some(p => p.look.g === 'nu' && p.look.npcFashion));
+  assert.doesNotMatch(JSON.stringify(H.view3d.snapshot()), /uid|khong-duoc-lo/);
 });
 
 test('hold 3D ngừng toàn bộ lệnh vẽ, vẫn nội suy người và bước NPC; trả lại 2D và pause đúng', () => {

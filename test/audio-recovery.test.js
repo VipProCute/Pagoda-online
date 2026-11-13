@@ -5,7 +5,7 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 function setup(ios) {
   let time = 100000, mediaSources = 0, resumes = 0;
-  const elements = [], intervals = [], listeners = {};
+  const elements = [], intervals = [], timers = [], listeners = {};
   const param = () => ({ value: 0, setTargetAtTime() {} });
   const node = () => ({ gain: param(), threshold: param(), ratio: param(), connect() {}, disconnect() {} });
   class Context {
@@ -25,9 +25,9 @@ function setup(ios) {
   const sandbox = { Audio, AudioContext: Context, Math, Float32Array, Date: { now: () => time }, document,
     navigator: { userAgent: ios ? 'iPhone' : 'Chrome', platform: ios ? 'iPhone' : 'Linux' },
     performance: { now: () => time }, setInterval(fn) { intervals.push(fn); return intervals.length; },
-    setTimeout() { return 1; }, clearTimeout() {}, addEventListener(name, fn) { listeners[name] = fn; } };
+    setTimeout(fn) { timers.push(fn); return timers.length; }, clearTimeout() {}, addEventListener(name, fn) { listeners[name] = fn; } };
   vm.runInNewContext(fs.readFileSync(require.resolve('../public/js/audio.js'), 'utf8'), sandbox);
-  return { sfx: sandbox.SFX, elements, document, listeners, intervals, advance(ms) { time += ms; intervals.forEach(fn => fn()); }, get sources() { return mediaSources; }, get resumes() { return resumes; } };
+  return { sfx: sandbox.SFX, elements, document, listeners, intervals, timers, flushTimer() { const fn = timers.pop(); if (fn) fn(); }, advance(ms) { time += ms; intervals.forEach(fn => fn()); }, get sources() { return mediaSources; }, get resumes() { return resumes; } };
 }
 test('iPhone phát nhạc nền ngoài Web Audio, dừng khi ẩn và phục hồi khi trở lại', () => {
   const e = setup(true); e.sfx.unlock(); e.sfx.unlock();
@@ -44,4 +44,20 @@ test('nhạc bị kẹt vị trí được tạo lại một lần; desktop gi�
   assert.equal(e.elements.length, 2); assert.equal(e.elements[0].src, ''); assert.equal(e.elements[0].paused, true);
   e.elements[1].currentTime = 2; e.advance(2000); assert.equal(e.elements.length, 2);
   const d = setup(false); d.sfx.unlock(); d.sfx.unlock(); d.sfx.recover(); assert.equal(d.sources, 1);
+});
+
+test('nhạc Kỳ Đạo chỉ tải môn đang chơi, đổi môn và trả lại nhạc cảnh hiện tại', () => {
+  const e = setup(true); e.sfx.unlock();
+  const mapping = { chess: 'chess', xiangqi: 'xiangqi', jieqi: 'jieqi', go: 'go', gomoku: 'gomoku' };
+  for (const [game, file] of Object.entries(mapping)) {
+    e.sfx.setMusicGame(game);
+    assert.equal(e.elements.length, 1, 'không tạo sẵn media cho các môn khác');
+    e.flushTimer();
+    assert.ok(e.elements[0].src.endsWith(`/audio/kydao/${file}.mp3`));
+  }
+  e.sfx.setMusicScene('arena');
+  e.sfx.setMusicGame(null); e.flushTimer();
+  assert.ok(e.elements[0].src.endsWith('/audio/arena-idle.mp3'));
+  e.sfx.setMuted(true);
+  assert.equal(e.elements[0].paused, true);
 });
