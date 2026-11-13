@@ -85,8 +85,8 @@
 | T-111 | Dây chuyền Blender và tài nguyên 8 sân, 8 bộ quân | 🟣 Chờ soát | P0 | CORE + KYDAI | Điều phối (Claude Fable 5.2) |
 | T-112 | Module hiệu ứng 2D `KydaoFx`: khai mở, chấn động phong cấp, chiến thắng | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | Claude Sonnet 5.5 |
 | T-113 | Bàn 3D: nạp `.glb`, skin nửa sân, skin quân, `playFx` | 🔵 Sẵn sàng | P0 | CORE + KYDAO + KYDAI | — |
-| T-114 | Bàn 2D: vẽ skin nửa sân, skin quân, `jolt` | 🔵 Sẵn sàng | P0 | CORE + KYDAO + KYDAI | — |
-| T-115a | Bảng cờ: nạp module, giữ trạng thái skin, truyền vào hàm vẽ | ⏳ T-113, T-114 | P0 | CORE + KYDAO + KYDAI | — |
+| T-114 | Bàn 2D: vẽ skin nửa sân, skin quân, `jolt` | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | Claude Sonnet 5.5 |
+| T-115a | Bảng cờ: nạp module, giữ trạng thái skin, truyền vào hàm vẽ | ⏳ T-113 | P0 | CORE + KYDAO + KYDAI | — |
 | T-115b | Bảng cờ: bộ chọn Lãnh địa, gửi skin, màn khai mở | ⏳ T-115a | P0 | CORE + KYDAO + KYDAI | — |
 | T-115c | Bảng cờ: chấn động phong cấp, hiệu ứng chiến thắng | ⏳ T-115b | P0 | CORE + KYDAO + KYDAI | — |
 | T-116 | ui-harness, ảnh chụp, Sổ tay, README cho Kỳ Đài | ⏳ T-115c | P1 | CORE + KYDAI + DOCS | — |
@@ -1334,12 +1334,12 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
 - **Ngoài phạm vi**: `kydao-ui.js`, giao thức, cờ vây/caro (chỉ cần `playFx('win')`).
 
 ### T-114 · Bàn 2D: vẽ skin nửa sân, skin quân, `jolt`
-- **Trạng thái**: ⏳ Chờ T-111 (ảnh nửa sân)
+- **Trạng thái**: 🟣 Chờ soát. Nhánh claude/T-114-ban-2d-skin (commit df1eaa3) đã gộp vào nhánh tích hợp; test 45/45 theo thợ, điều phối chạy lại và xem trình duyệt.
 - **Ưu tiên**: P0
 - **Gói ngữ cảnh**: CORE + KYDAO + KYDAI
 - **Khu vực chạm**: public/js/kydao-draw.js, public/kydao-pieces-test.html, test/kydao-draw-skins.test.js (mới)
 - **Phụ thuộc**: T-111 · **Thợ**: Claude Sonnet 5.5 · **Soát**: Điều phối
-- **Người làm**: — · **Nhánh**: —
+- **Người làm**: Claude Sonnet 5.5 · **Nhánh**: claude/T-114-ban-2d-skin
 - **Mục tiêu**: `KydaoDraw.draw` vẽ đúng skin từng nửa sân và skin quân từng bên theo `o.skins`, và độ lệch `o.jolt`.
 - **Tiêu chí xong**:
   - [ ] Nửa sân: phủ ảnh `fieldImage(id)` (nạp lười, chưa có ảnh thì tô theo `palette`), nét kẻ theo `palette.line`; lật bàn (`flip`) vẫn đúng nửa
