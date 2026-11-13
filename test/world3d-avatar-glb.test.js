@@ -141,6 +141,50 @@ test('vai NPC đặc biệt và look npcFashion luôn dùng bản mã', async t 
   fashion.dispose();
 });
 
+test('setLook sang npcFashion khi .glb còn đang tải: bỏ kết quả tải, giữ thế thân; trở lại thì nạp mô hình', async t => {
+  withSwitch(t, 'blender');
+  const { makeAvatar } = await load();
+  const real = await fakeAssets();
+  const waiting = [];
+  const assets = { load(url) { return new Promise(resolve => waiting.push(() => resolve(real.load(url)))); } };
+  const avatar = makeAvatar({ g: 'nu', c: 0, h: 0 }, { assets, createCanvas: canvasFactory() });
+  avatar.setLook({ g: 'nu', c: 0, h: 0, npcFashion: true });
+  waiting.forEach(done => done());
+  await settle();
+  assert.equal(glb(avatar), undefined, 'kết quả tải cũ bị bỏ');
+  assert.equal(stand(avatar).visible, true);
+  avatar.setLook({ g: 'nu', c: 0, h: 0 });
+  waiting.forEach(done => done());
+  await settle();
+  assert.ok(glb(avatar), 'bỏ trang phục NPC thì nạp mô hình');
+  assert.equal(stand(avatar).visible, false);
+  avatar.setLook({ g: 'nu', c: 0, h: 0, npcFashion: true });
+  assert.equal(glb(avatar), undefined, 'đã nạp xong rồi chuyển sang npcFashion thì gỡ mô hình');
+  assert.equal(stand(avatar).visible, true);
+  avatar.dispose();
+});
+
+test('reducedMotion đổi giữa chừng khi clip không đổi: dừng rồi chạy tiếp mixer', async t => {
+  withSwitch(t, 'blender');
+  const { makeAvatar } = await load();
+  const avatar = makeAvatar({ g: 'nam', c: 0, h: 0 }, { assets: await fakeAssets(), createCanvas: canvasFactory() });
+  await settle();
+  const model = glb(avatar);
+  const pose = () => { avatar.group.updateMatrixWorld(true); return ['hips', 'thigh_L', 'upper_arm_R', 'head'].map(n => model.getObjectByName(n).quaternion.toArray().concat(model.getObjectByName(n).position.toArray())).flat(); };
+  avatar.update({}, 0.1);
+  avatar.update({}, 0.4);
+  const moving = pose();
+  avatar.update({ reducedMotion: true }, 0.3);
+  const still = pose();
+  avatar.update({ reducedMotion: true }, 0.3);
+  assert.deepEqual(pose(), still, 'bật giảm chuyển động: clip idle đứng yên');
+  avatar.update({}, 0.3);
+  avatar.update({}, 0.3);
+  assert.notDeepEqual(pose(), still, 'tắt lại: mixer chạy tiếp dù clip vẫn là idle');
+  assert.ok(moving.length === still.length);
+  avatar.dispose();
+});
+
 test('update đổi clip theo trạng thái; giảm chuyển động không chạy mixer', async t => {
   withSwitch(t, 'blender');
   const { makeAvatar } = await load();
