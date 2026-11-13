@@ -163,7 +163,7 @@
       if (!s || (o.hideSkins && o.hideSkins[side])) continue;
       const f = cat.field(s.field), p = cat.pieces(s.pieces);
       if (f && f.palette) { out[side].field = { id: s.field, pal: f.palette, src: cat.fieldImage ? cat.fieldImage(s.field) : null, src2: cat.fieldImage2 ? cat.fieldImage2(s.field, o.game) : null }; any = true; }
-      if (p && p[side]) { out[side].pieces = { id: s.pieces, c: p[side] }; any = true; }
+      if (p && p[side]) { out[side].pieces = { id: s.pieces, c: p[side], atlas: cat.piecesAtlas ? cat.piecesAtlas(s.pieces) : null }; any = true; }
     }
     return any ? out : null;
   }
@@ -331,7 +331,23 @@
     }
   };
 
-  function drawChessPiece(ctx, cx, cy, size, ch, rendering, skin) {
+  /** Atlas quân 2D (render 3D): ô 128×128, hàng 0 = bên a, hàng 1 = bên b; cột K Q R B N P disc. */
+  const ATLAS_CELL = 128, ATLAS_COL = { k: 0, q: 1, r: 2, b: 3, n: 4, p: 5, disc: 6 };
+  const ATLAS_T = 1.0, ATLAS_BASE = 118 / 128;
+  /** Ảnh atlas của skin quân nếu đã tải xong, ngược lại null (vẽ vector). */
+  function atlasImage(skin, onAsset) { return skin && skin.atlas ? loadImage(skin.atlas, onAsset) : null; }
+  function paintAtlasCell(ctx, img, col, row, dx, dy, T) {
+    ctx.drawImage(img, col * ATLAS_CELL, row * ATLAS_CELL, ATLAS_CELL, ATLAS_CELL, dx, dy, T, T);
+  }
+
+  function drawChessPiece(ctx, cx, cy, size, ch, rendering, skin, atlas) {
+    const col = ATLAS_COL[ch.toLowerCase()];
+    if (atlas && col !== undefined && col !== 6) {
+      // Đáy quân (y=118/128 của ô atlas) đặt ở cy + 0,40·ô.
+      const cell = size / 0.92, T = cell * ATLAS_T;
+      paintAtlasCell(ctx, atlas, col, ch === ch.toUpperCase() ? 0 : 1, cx - T / 2, cy + cell * 0.40 - T * ATLAS_BASE, T);
+      return;
+    }
     if (!rendering && ctx.canvas && ctx.canvas.ownerDocument && ctx.getTransform) {
       const scale = Math.max(1, Math.abs(ctx.getTransform().a));
       const pixels = Math.ceil(size * 1.4 * scale);
@@ -426,7 +442,36 @@
   const HAN = { r: ['俥', '車'], n: ['傌', '馬'], b: ['相', '象'], a: ['仕', '士'], k: ['帥', '將'], c: ['炮', '砲'], p: ['兵', '卒'] };
   const VIET = { r: 'Xe', n: 'Mã', b: 'Tượng', a: 'Sĩ', k: 'Tướng', c: 'Pháo', p: 'Tốt' };
 
-  function drawXiangqiPiece(ctx, cx, cy, cell, ch, vi, rendering, skin) {
+  /** Chữ (hoặc dấu ?) của quân cờ tướng, dùng chung cho đường vector và đường atlas. */
+  function drawXiangqiLabel(ctx, cx, cy, cell, t, red, vi, hidden, sc, ink) {
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    let label, textY;
+    if (hidden) {
+      ctx.font = '700 ' + Math.round(cell * 0.4) + 'px "Noto Serif", serif';
+      label = '?'; textY = cy + cell * 0.02;
+    } else if (vi) {
+      const word = VIET[t] || '?';
+      ctx.font = '700 ' + Math.round(cell * (word.length > 4 ? 0.22 : 0.27)) + 'px "Noto Serif", "Times New Roman", serif';
+      label = word; textY = cy + cell * 0.02;
+    } else {
+      const han = HAN[t];
+      ctx.font = '700 ' + Math.round(cell * 0.46) + 'px "Noto Serif CJK SC", "Noto Serif SC", "SimSun", "Microsoft YaHei", serif';
+      label = han ? han[red ? 0 : 1] : '?'; textY = cy + cell * 0.03;
+    }
+    ctx.fillStyle = sc ? (lum(ink) < 0.4 ? 'rgba(255,255,255,.55)' : 'rgba(0,0,0,.4)') : '#fff0c8'; ctx.fillText(label, cx + cell * 0.009, textY + cell * 0.025);
+    ctx.fillStyle = ink; ctx.fillText(label, cx, textY);
+  }
+
+  function drawXiangqiPiece(ctx, cx, cy, cell, ch, vi, rendering, skin, atlas) {
+    if (atlas && skin && skin.c) {
+      // Thân tròn 108px của ô disc khớp đường kính quân vector (0,86·ô); chữ vẽ lên trên.
+      const T = cell * 0.86 * ATLAS_CELL / 108, red = ch === ch.toUpperCase(), t = ch.toLowerCase();
+      ctx.save();
+      paintAtlasCell(ctx, atlas, ATLAS_COL.disc, red ? 0 : 1, cx - T / 2, cy - T / 2, T);
+      drawXiangqiLabel(ctx, cx, cy, cell, t, red, vi, t === 'x', skin.c, readableOn(skin.c.base, skin.c.accent));
+      ctx.restore();
+      return;
+    }
     if (!rendering && ctx.canvas && ctx.canvas.ownerDocument && ctx.getTransform) {
       const scale = Math.max(1, Math.abs(ctx.getTransform().a));
       const pixels = Math.ceil(cell * 1.2 * scale);
@@ -491,22 +536,7 @@
       ctx.beginPath(); ctx.ellipse(cx, cy, rad * ring, rad * ring * 0.94, 0, 0, Math.PI * 2);
       ctx.strokeStyle = ink; ctx.lineWidth = Math.max(0.7, cell * 0.018); ctx.stroke();
     }
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    let label, textY;
-    if (hidden) {
-      ctx.font = '700 ' + Math.round(cell * 0.4) + 'px "Noto Serif", serif';
-      label = '?'; textY = cy + cell * 0.02;
-    } else if (vi) {
-      const word = VIET[t] || '?';
-      ctx.font = '700 ' + Math.round(cell * (word.length > 4 ? 0.22 : 0.27)) + 'px "Noto Serif", "Times New Roman", serif';
-      label = word; textY = cy + cell * 0.02;
-    } else {
-      const han = HAN[t];
-      ctx.font = '700 ' + Math.round(cell * 0.46) + 'px "Noto Serif CJK SC", "Noto Serif SC", "SimSun", "Microsoft YaHei", serif';
-      label = han ? han[red ? 0 : 1] : '?'; textY = cy + cell * 0.03;
-    }
-    ctx.fillStyle = sc ? (lum(ink) < 0.4 ? 'rgba(255,255,255,.55)' : 'rgba(0,0,0,.4)') : '#fff0c8'; ctx.fillText(label, cx + cell * 0.009, textY + cell * 0.025);
-    ctx.fillStyle = ink; ctx.fillText(label, cx, textY);
+    drawXiangqiLabel(ctx, cx, cy, cell, t, red, vi, hidden, sc, ink);
     ctx.restore();
   }
 
@@ -825,12 +855,13 @@
       const j = o.jolt ? joltAt(nameOf(o.game, c, r), p) : null;
       if (j) p = { x: p.x + j.dx, y: p.y + j.dy };
       const pieceSkin = sk && !isGrid(o.game) ? sk[sideOfChar(ch)].pieces : null;
+      const atlasImg = atlasImage(pieceSkin, sk && sk.onAsset);
       if (isGrid(o.game)) drawStone(ctx, p, g.cell, ch, o.game);
-      else if (chess) drawChessPiece(ctx, p.x, p.y, g.cell * 0.92, ch, false, pieceSkin);
+      else if (chess) drawChessPiece(ctx, p.x, p.y, g.cell * 0.92, ch, false, pieceSkin, atlasImg);
       else {
         const reveal = o.reveal && o.reveal.square === nameOf(o.game, c, r) ? o.reveal.progress : 1;
         ctx.save(); ctx.translate(p.x, p.y); ctx.scale(Math.max(0.08, Math.abs(2 * reveal - 1)), 1);
-        drawXiangqiPiece(ctx, 0, 0, g.cell, reveal < 0.5 ? (ch === ch.toUpperCase() ? 'X' : 'x') : ch, !!o.vi, false, pieceSkin); ctx.restore();
+        drawXiangqiPiece(ctx, 0, 0, g.cell, reveal < 0.5 ? (ch === ch.toUpperCase() ? 'X' : 'x') : ch, !!o.vi, false, pieceSkin, atlasImg); ctx.restore();
       }
     }
     (o.dead || []).forEach(n => { const p = at(n); if (!p) return; ctx.strokeStyle = '#e43c27'; ctx.lineWidth = Math.max(2, g.cell * 0.08); ctx.beginPath(); ctx.moveTo(p.x - g.cell * 0.22, p.y - g.cell * 0.22); ctx.lineTo(p.x + g.cell * 0.22, p.y + g.cell * 0.22); ctx.moveTo(p.x + g.cell * 0.22, p.y - g.cell * 0.22); ctx.lineTo(p.x - g.cell * 0.22, p.y + g.cell * 0.22); ctx.stroke(); });
