@@ -65,7 +65,7 @@
 | T-069 | Mọi NPC đi lang thang, chạm NPC để trò chuyện, lớp nhân vật chung | ✅ Xong · PR #57 | P1 | CORE + HALL + MARTIAL | Claude Opus 5.5 |
 | **Đợt 3D** ([docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md)) | | | | | |
 | T-080 | Dựng nền 3D (Three.js, khung World3D, trang thử) | 🟣 Chờ soát | P0 | CORE + HALL + OPS | gpt-6.1-sol (Codex CLI qua proxy) |
-| T-081 | Toán máy quay góc nhìn thứ nhất / thứ ba (thuần, có test) | 🔵 Sẵn sàng | P0 | CORE + HALL | — |
+| T-081 | Toán máy quay góc nhìn thứ nhất / thứ ba (thuần, có test) | 🟣 Chờ soát | P0 | CORE + HALL | gpt-6.1-terra (Codex CLI qua proxy) |
 | T-082 | Bộ khối dựng kiến trúc chùa (kit.mjs) | ⏳ T-080 | P0 | CORE + HALL | — |
 | T-083 | Nhân vật 3D low-poly và NPC | ⏳ T-080 | P0 | CORE + HALL | — |
 | T-084 | Cảnh Chánh điện 3D | ⏳ T-082 | P0 | CORE + HALL | — |
@@ -1027,14 +1027,15 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
 - **Ghi chú**: Đã có mã nền 3D và test trong worktree, chưa commit. `npm run check` bị `spawnSync EPERM`; `npm test`: 0 đạt, 53 file trượt ngay khi tạo tiến trình, không chạy được các ca bên trong nên chưa so baseline. Chạy `node --check` trực tiếp từ PowerShell: 132/132 file sạch. Cần môi trường cho phép Node tạo tiến trình con để tiếp tục kiểm tra và bàn giao Chờ soát. Báo cáo cục bộ: `BAN-GIAO-T-080.md` (không commit).
 
 ### T-081 · Toán máy quay góc nhìn thứ nhất / thứ ba (thuần, có test)
-- **Trạng thái**: 🔵 Sẵn sàng
+- **Trạng thái**: 🟣 Chờ soát. Thợ không chạy được test trong hộp cát (spawn EPERM); Điều phối đã chạy lại: `npm run check` sạch, `node --test test/view-math.test.js` 30/30, thử làm hỏng 2 chỗ (kẹp biên sàn, kẹp góc 70°) thì 2 ca đỏ. Lưu ý cho T-088: `pitch` dương ở góc thứ nhất là nhìn lên, ở góc thứ ba là máy quay lên cao; đổi góc nhìn nên đặt lại `pitch`.
 - **Ưu tiên**: P0
 - **Gói ngữ cảnh**: CORE + HALL
 - **Khu vực chạm**: public/js/view-math.js (mới, UMD như `actors.js`), test/view-math.test.js (mới)
 - **Phụ thuộc**: không
 - **Thợ**: gpt-6.1-terra · **Soát**: gpt-6-sol
-- **Người làm**: —
-- **Nhánh**: —
+- **Người làm**: gpt-6.1-terra (Codex CLI qua proxy)
+- **Nhánh**: codex/T-081-toan-may-quay
+- **Ghi chú**: Đã viết module và 30 test; chạy trực tiếp đạt 30/30. Cần chạy lại `npm run check` và `node --test test/view-math.test.js` ngoài môi trường bị chặn trước khi chuyển chờ soát.
 - **Mục tiêu**: Một module thuần, không phụ thuộc, chạy được trong Node, chứa mọi phép tính mà lớp 3D cần, để máy quay và điều khiển kiểm được bằng test.
 - **Tiêu chí xong**:
   - [ ] `SCENE_SIZE` cho `hall`, `yard`, `library`, `arena` (mét); `toWorld(scene, x, z)` và `toFloor(scene, X, Z)` nghịch đảo nhau
