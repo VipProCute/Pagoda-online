@@ -43,6 +43,7 @@ Quy tắc chung khi sửa `kydao-ui.js`:
    <script src="/js/kydao-fx.js?v=1"></script>
    ```
 3. Trên dòng `kydao-ui.js?v=…` đổi giá trị `?v=` thành `kydai1`.
+4. Trên dòng `kydao-draw.js?v=…` đổi giá trị `?v=` thành `skins1` (T-114 đã sửa file này nhưng chưa tăng `?v=`).
 
 ### Bước a2 · `public/js/app.js`: chuyển sự kiện `kd:skin`
 
