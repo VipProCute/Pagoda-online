@@ -203,6 +203,14 @@
   const HIDE_KEY = 'kydao.hideFoeSkin';
   let hideFoe = false;
   try { hideFoe = root.localStorage && root.localStorage.getItem(HIDE_KEY) === '1'; } catch (e) { /* bỏ qua */ }
+  const SKIN_KEY = 'kydao.skin';          // { field, pieces } người chơi ưa thích
+  function loadPref() {
+    try { const K = root.KydaoSkins; return K ? K.normalize(JSON.parse(root.localStorage.getItem(SKIN_KEY) || '{}')) : { field: null, pieces: null }; }
+    catch (e) { return { field: null, pieces: null }; }
+  }
+  function savePref(p) { try { root.localStorage.setItem(SKIN_KEY, JSON.stringify(p)); } catch (e) { /* bỏ qua */ } }
+  let pref = { field: null, pieces: null };
+  let fieldSentAt = 0;                    // lần gần nhất gửi khai mở (ms), chặn bấm liên tục
 
   let ui = null;        // các phần tử DOM
   let S = null;         // phiên ván
@@ -256,9 +264,11 @@
     el.movesBtn = btn('', 'Nước đi ▾', () => { el.moves.hidden = !el.moves.hidden; el.movesBtn.setAttribute('aria-expanded', String(!el.moves.hidden)); }, { 'aria-expanded': 'false' });
     el.viBtn = btn('', 'Chữ Việt', () => setVi(!vi), { 'aria-pressed': 'false' });
     el.boardBtn = btn('', 'Bàn 3D', toggleBoard3D, { 'aria-pressed': 'false' });
+    el.skinBtn = btn('', 'Lãnh địa', () => { el.skins.hidden = !el.skins.hidden; el.skinBtn.setAttribute('aria-expanded', String(!el.skins.hidden)); if (!el.skins.hidden) renderSkins(); }, { 'aria-expanded': 'false' });
+    el.skins = h('div', { class: 'kd-skins', hidden: true });
     el.webgl = hasBoardWebGL();
     el.boardBtn.hidden = !el.webgl;
-    el.actions = h('div', { class: 'kd-actions' }, el.drawBtn, el.resignBtn, el.movesBtn, el.viBtn, el.boardBtn, el.zoomBtn);
+    el.actions = h('div', { class: 'kd-actions' }, el.drawBtn, el.resignBtn, el.movesBtn, el.viBtn, el.boardBtn, el.zoomBtn, el.skinBtn);
     el.confirm = h('div', { class: 'kd-confirm', hidden: true }, h('span', null, 'Đầu hàng ván này?'),
       btn('kd-danger', 'Đầu hàng', () => { confirmOpen = false; renderControls(); send('kd:resign', { gameId: S && S.gameId }, ack => { if (ack && !ack.ok) say(ack.reason || ''); }); }),
       btn('kd-ghost', 'Thôi', () => { confirmOpen = false; renderControls(); }));
@@ -267,7 +277,7 @@
     el.live = h('div', { class: 'kd-sr', 'aria-live': 'polite' });
     el.panel = h('div', { class: 'kd-panel', role: 'dialog', 'aria-label': 'Bảng bàn cờ' },
       h('div', { class: 'kd-head' }, el.title, el.minBtn, el.closeBtn),
-      el.top.root, el.wrap, el.bot.root, el.goBar, el.offer, el.actions, el.confirm, el.moves, el.msg, el.live);
+      el.top.root, el.wrap, el.bot.root, el.goBar, el.offer, el.actions, el.skins, el.confirm, el.moves, el.msg, el.live);
     el.chip = h('button', { type: 'button', class: 'kd-chip', hidden: true, onclick: () => setMin(false) });
     // Chạm thả mới đi quân: khi phóng to, vuốt trong vùng cuộn chỉ kéo bàn.
     let down = null;
@@ -388,6 +398,16 @@
       render();
     });
     render();
+  }
+
+  const canSkin = () => !!(S && S.you && !S.over && root.KydaoSkins && root.KydaoSkins.supports(S.game));
+  /** Gửi skin hiện có của mình lên máy chủ. openField = true khi người chơi bấm "Khai mở". */
+  function sendSkin(openField) {
+    if (!canSkin()) return;
+    const mine = S.skins[S.you];
+    const data = { gameId: S.gameId, pieces: pref.pieces, field: openField ? pref.field : mine.field };
+    if (openField) fieldSentAt = now();
+    send('kd:skin', data, ack => { if (ack && !ack.ok) say(ack.reason || 'Chưa đổi được skin.'); });
   }
 
   function drawAct(act) {
@@ -511,6 +531,37 @@
     timer = setInterval(updateClocks, 250);
   }
 
+  function renderSkins() {
+    if (!ui || !S) return;
+    const K = root.KydaoSkins, box = ui.skins;
+    box.textContent = '';
+    if (!K) return;
+    const row = (title, kind, catalog, current, pick) => {
+      const list = h('div', { class: 'kd-skin-row', role: 'radiogroup', 'aria-label': title });
+      const item = (id, name) => {
+        const b = h('button', { type: 'button', class: 'kd-skin' + (current === id ? ' is-on' : ''), role: 'radio', 'aria-checked': String(current === id), onclick: () => pick(id) });
+        if (id) { const im = h('img', { class: 'kd-skin-img', alt: '', loading: 'lazy', width: '96', height: '60' }); im.src = K.thumb(kind, id); b.appendChild(im); }
+        else b.appendChild(h('span', { class: 'kd-skin-img kd-skin-none' }));
+        b.appendChild(h('span', { class: 'kd-skin-name' }, name));
+        return b;
+      };
+      list.appendChild(item(null, 'Mặc định'));
+      Object.keys(catalog).forEach(id => list.appendChild(item(id, catalog[id].name)));
+      return h('div', { class: 'kd-skin-group' }, h('div', { class: 'kd-skin-title' }, title), list);
+    };
+    box.appendChild(row('Sân của bạn', 'field', K.FIELDS, pref.field, id => { pref.field = id; savePref(pref); renderSkins(); }));
+    box.appendChild(row('Quân của bạn', 'pieces', K.PIECES, pref.pieces, id => { pref.pieces = id; savePref(pref); renderSkins(); sendSkin(false); }));
+    const mine = canSkin() ? S.skins[S.you] : null;
+    const wait = Math.max(0, 20000 - (now() - fieldSentAt));
+    const open = h('button', { type: 'button', class: 'kd-btn kd-gold', onclick: () => { sendSkin(true); ui.skins.hidden = true; ui.skinBtn.setAttribute('aria-expanded', 'false'); } }, pref.field ? 'Khai mở' : 'Về sân mặc định');
+    open.disabled = !mine || mine.field === pref.field || wait > 0;
+    const hide = h('button', { type: 'button', class: 'kd-btn kd-ghost', 'aria-pressed': String(hideFoe), onclick: () => {
+      hideFoe = !hideFoe; try { root.localStorage.setItem(HIDE_KEY, hideFoe ? '1' : '0'); } catch (e) { /* bỏ qua */ } renderSkins(); redraw();
+    } }, hideFoe ? 'Hiện skin đối thủ' : 'Ẩn skin đối thủ');
+    box.appendChild(h('div', { class: 'kd-actions' }, open, hide));
+    if (wait > 0) box.appendChild(h('div', { class: 'kd-skin-note' }, 'Chờ ' + Math.ceil(wait / 1000) + ' giây nữa mới khai mở lại được.'));
+  }
+
   function renderControls() {
     if (!ui || !S) return;
     const player = !!S.you, live = player && !S.over;
@@ -527,6 +578,9 @@
     ui.offer.hidden = !(live && S.offer && S.offer !== S.you);
     if (!ui.offer.hidden) ui.offerText.textContent = 'Đối thủ xin hòa.';
     ui.minBtn.hidden = !player || S.over; // người xem/ván xong thì chỉ đóng
+    const skinOk = canSkin();
+    ui.skinBtn.hidden = !skinOk;
+    if (!skinOk) { ui.skins.hidden = true; ui.skinBtn.setAttribute('aria-expanded', 'false'); }
     ui.closeBtn.hidden = live;            // đang đấu: không đóng được, chỉ thu nhỏ hoặc đầu hàng
   }
 
@@ -599,7 +653,30 @@
   }
 
   /** Gọi sau khi một bên đổi skin. T-115b nối màn khai mở vào đây. */
-  function onSkinEvent(ev) { /* T-115b */ }
+  function boardOffset() {
+    const c = (ui.canvas3d || ui.canvas).getBoundingClientRect(), w = ui.wrap.getBoundingClientRect();
+    return { x: c.left - w.left, y: c.top - w.top, w: c.width, h: c.height };
+  }
+  /** Nửa sân của bên `side` trên màn hình: bên mình luôn ở nửa dưới. */
+  function halfRect(side) {
+    const o = boardOffset(), flip = S.you === 'b';
+    const bottom = (side === 'a') !== flip;
+    return { rect: { x: o.x, y: o.y + (bottom ? o.h / 2 : 0), w: o.w, h: o.h / 2 }, fromBottom: bottom };
+  }
+  function onSkinEvent(ev) {
+    if (ui && !ui.skins.hidden) renderSkins();
+    if (!ev.opened || !ev.field || !ui || ui.panel.hidden) return;
+    const foe = S.you && ev.side !== S.you;
+    if (foe && hideFoe) return;
+    const K = root.KydaoSkins, f = K && K.field(ev.field);
+    if (f) announce((S[ev.side] && S[ev.side].name ? S[ev.side].name + ': ' : '') + f.cry + ' ' + f.name + '.');
+    sound('check');
+    if (ui.board3d && typeof ui.board3d.playFx === 'function') { ui.board3d.playFx('domain', { side: ev.side, fieldId: ev.field }); return; }
+    if (!root.KydaoFx) return;
+    root.KydaoFx.mount(ui.wrap, { reduced: reduced() });
+    const hr = halfRect(ev.side);
+    root.KydaoFx.play('domain', { side: ev.side, fieldId: ev.field, rect: hr.rect, fromBottom: hr.fromBottom });
+  }
 
   /* ---------- API ---------- */
   function flushPending() {
@@ -667,10 +744,14 @@
       hidePromo(); say('');
       ui.panel.classList.toggle('kd-reduced', reduced());
       fit(); render(); tick(); flushPending();
+      pref = loadPref(); fieldSentAt = 0;
+      if (ui.skins) { ui.skins.hidden = true; ui.skinBtn.setAttribute('aria-expanded', 'false'); }
+      if (canSkin() && pref.pieces && S.skins[S.you].pieces !== pref.pieces) sendSkin(false);
       return true;
     },
     close() {
       clearInterval(timer); timer = 0; clearTimeout(resultTimer);
+      if (root.KydaoFx) root.KydaoFx.unmount();
       stopBoard3D();
       if (ui) { ui.panel.remove(); ui.chip.remove(); if (resizeFn) root.removeEventListener('resize', resizeFn); }
       ui = null; S = null; geom = null; minimized = false;
