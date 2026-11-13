@@ -81,30 +81,33 @@
 | T-100 | Nhân vật 3D bám sát 2D: hào quang, pháp tướng, quỷ, trang phục, Obito | 🟣 Chờ soát | P0 | CORE + HALL | gpt-6.1-sol |
 | T-101 | Nhạc riêng cho từng môn cờ | 🟣 Chờ soát | P2 | CORE + KYDAO | gpt-6-luna (Codex CLI qua proxy) |
 | **Đợt Kỳ Đài** ([docs/KE-HOACH-KY-DAI.md](docs/KE-HOACH-KY-DAI.md)) | | | | | |
-| T-110 | Giao thức `kd:skin` trên máy chủ | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | Claude Opus 5.5 |
-| T-111 | Dây chuyền Blender và tài nguyên 8 sân, 8 bộ quân | 🟣 Chờ soát | P0 | CORE + KYDAI | Điều phối (Claude Fable 5.2) |
-| T-112 | Module hiệu ứng 2D `KydaoFx`: khai mở, chấn động phong cấp, chiến thắng | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | Claude Sonnet 5.5 |
-| T-113 | Bàn 3D: nạp `.glb`, skin nửa sân, skin quân, `playFx` | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | Claude Opus 5.5 |
-| T-114 | Bàn 2D: vẽ skin nửa sân, skin quân, `jolt` | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | Claude Sonnet 5.5 |
-| T-115a | Bảng cờ: nạp module, giữ trạng thái skin, truyền vào hàm vẽ | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | gpt-6.1-terra |
-| T-115b | Bảng cờ: bộ chọn Lãnh địa, gửi skin, màn khai mở | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | Claude Sonnet 5.5 |
-| T-115c | Bảng cờ: chấn động phong cấp, hiệu ứng chiến thắng | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | gpt-6.1-terra |
-| T-116 | ui-harness, ảnh chụp, Sổ tay, README cho Kỳ Đài | 🟣 Chờ soát | P1 | CORE + KYDAI + DOCS | gemini-3.8-flash-high + Claude Haiku 5.5 |
-| T-117 | Đồ họa 2D bằng Canva: khung khẩu hiệu, biểu tượng bộ chọn | 🟣 Chờ soát | P2 | CORE + KYDAI | Claude Sonnet 5.5 (Canva) |
-| T-118 | Sân v2: dựng cảnh 3D thật trong Blender, bản mẫu Hỏa Diệm Sơn 👤 duyệt | 🟣 Chờ soát | P0 | CORE + KYDAI | Claude Sonnet 5.5 (Blender) |
-| T-119 | Bàn 2D: dải cảnh quanh bàn, dùng ảnh sân v2, quân 2D từ ảnh render | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | Claude Sonnet 5.5 |
-| T-120 | Bản mẫu nhân vật 3D dựng bằng Blender, đo hiệu năng 👤 duyệt | 🟣 Chờ soát · 👤 duyệt bản mẫu | P1 | CORE + HALL + KYDAI | Claude Sonnet 5.5 (Blender) |
-| T-121 | Bàn 2D: dòng sông sinh động giữa bàn cờ tướng và cờ úp | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | gpt-6.1-terra |
-| T-122 | Bàn 3D: dòng sông sinh động giữa bàn cờ tướng và cờ úp | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | Claude Sonnet 5.5 |
-| T-118b | Sân v2: chỉnh Hỏa Diệm Sơn và dựng 7 sân còn lại | 🟣 Chờ soát | P0 | CORE + KYDAI | Claude Sonnet 5.5 (Blender) |
-| T-123 | Tăng lực chấn động khi phong cấp | 🟣 Chờ soát | P1 | CORE + KYDAI | gpt-6-luna |
-| T-124 | Sửa lỗi từ đợt soát của GPT Sol | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | gemini-3.8-flash-high |
-| T-125 | Bàn 3D dùng ảnh sân v2 có dải cảnh | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | Claude Sonnet 5.5 |
-| T-126a | Ảnh quân cờ 2D render từ mô hình 3D (8 bộ) | 🟣 Chờ soát | P1 | CORE + KYDAI | Claude Sonnet 5.5 (Blender) |
-| T-126b | Bàn 2D vẽ quân bằng ảnh render | 🟣 Chờ soát | P1 | CORE + KYDAO + KYDAI | Claude Sonnet 5.5 |
-| T-127 | Huy hiệu chủ đề trong khẩu hiệu và bộ chọn Lãnh địa | 🟣 Chờ soát | P2 | CORE + KYDAI | gemini-3.8-flash-high |
-| T-128 | Sửa lỗi từ đợt soát vòng 2 của Gemini 4 Argon | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | Claude Sonnet 5.5 |
-| T-129 | Sửa lỗi từ lần nghiệm thu cuối của GPT Sol | 🟣 Chờ soát | P1 | CORE + KYDAO + KYDAI | Claude Sonnet 5.5 |
+| T-110 | Giao thức `kd:skin` trên máy chủ | 🟣 Đã soát đạt · chờ 👤 merge | P0 | CORE + KYDAO + KYDAI | Claude Opus 5.5 |
+| T-111 | Dây chuyền Blender và tài nguyên 8 sân, 8 bộ quân | 🟣 Đã soát đạt · chờ 👤 merge | P0 | CORE + KYDAI | Điều phối (Claude Fable 5.2) |
+| T-112 | Module hiệu ứng 2D `KydaoFx`: khai mở, chấn động phong cấp, chiến thắng | 🟣 Đã soát đạt · chờ 👤 merge | P0 | CORE + KYDAO + KYDAI | Claude Sonnet 5.5 |
+| T-113 | Bàn 3D: nạp `.glb`, skin nửa sân, skin quân, `playFx` | 🟣 Đã soát đạt · chờ 👤 merge | P0 | CORE + KYDAO + KYDAI | Claude Opus 5.5 |
+| T-114 | Bàn 2D: vẽ skin nửa sân, skin quân, `jolt` | 🟣 Đã soát đạt · chờ 👤 merge | P0 | CORE + KYDAO + KYDAI | Claude Sonnet 5.5 |
+| T-115a | Bảng cờ: nạp module, giữ trạng thái skin, truyền vào hàm vẽ | 🟣 Đã soát đạt · chờ 👤 merge | P0 | CORE + KYDAO + KYDAI | gpt-6.1-terra |
+| T-115b | Bảng cờ: bộ chọn Lãnh địa, gửi skin, màn khai mở | 🟣 Đã soát đạt · chờ 👤 merge | P0 | CORE + KYDAO + KYDAI | Claude Sonnet 5.5 |
+| T-115c | Bảng cờ: chấn động phong cấp, hiệu ứng chiến thắng | 🟣 Đã soát đạt · chờ 👤 merge | P0 | CORE + KYDAO + KYDAI | gpt-6.1-terra |
+| T-116 | ui-harness, ảnh chụp, Sổ tay, README cho Kỳ Đài | 🟣 Đã soát đạt · chờ 👤 merge | P1 | CORE + KYDAI + DOCS | gemini-3.8-flash-high + Claude Haiku 5.5 |
+| T-117 | Đồ họa 2D bằng Canva: khung khẩu hiệu, biểu tượng bộ chọn | 🟣 Đã soát đạt · chờ 👤 merge | P2 | CORE + KYDAI | Claude Sonnet 5.5 (Canva) |
+| T-118 | Sân v2: dựng cảnh 3D thật trong Blender, bản mẫu Hỏa Diệm Sơn 👤 duyệt | 🟣 Đã soát đạt · chờ 👤 merge | P0 | CORE + KYDAI | Claude Sonnet 5.5 (Blender) |
+| T-119 | Bàn 2D: dải cảnh quanh bàn, dùng ảnh sân v2, quân 2D từ ảnh render | 🟣 Đã soát đạt · chờ 👤 merge | P0 | CORE + KYDAO + KYDAI | Claude Sonnet 5.5 |
+| T-120 | Bản mẫu nhân vật 3D dựng bằng Blender, đo hiệu năng 👤 duyệt | 🟣 Đã soát đạt, đã đo 118 khung/giây · chờ 👤 merge | P1 | CORE + HALL + KYDAI | Claude Sonnet 5.5 (Blender) |
+| T-121 | Bàn 2D: dòng sông sinh động giữa bàn cờ tướng và cờ úp | 🟣 Đã soát đạt · chờ 👤 merge | P0 | CORE + KYDAO + KYDAI | gpt-6.1-terra |
+| T-122 | Bàn 3D: dòng sông sinh động giữa bàn cờ tướng và cờ úp | 🟣 Đã soát đạt · chờ 👤 merge | P0 | CORE + KYDAO + KYDAI | Claude Sonnet 5.5 |
+| T-118b | Sân v2: chỉnh Hỏa Diệm Sơn và dựng 7 sân còn lại | 🟣 Đã soát đạt · chờ 👤 merge | P0 | CORE + KYDAI | Claude Sonnet 5.5 (Blender) |
+| T-123 | Tăng lực chấn động khi phong cấp | 🟣 Đã soát đạt · chờ 👤 merge | P1 | CORE + KYDAI | gpt-6-luna |
+| T-124 | Sửa lỗi từ đợt soát của GPT Sol | 🟣 Đã soát đạt · chờ 👤 merge | P0 | CORE + KYDAO + KYDAI | gemini-3.8-flash-high |
+| T-125 | Bàn 3D dùng ảnh sân v2 có dải cảnh | 🟣 Đã soát đạt · chờ 👤 merge | P0 | CORE + KYDAO + KYDAI | Claude Sonnet 5.5 |
+| T-126a | Ảnh quân cờ 2D render từ mô hình 3D (8 bộ) | 🟣 Đã soát đạt · chờ 👤 merge | P1 | CORE + KYDAI | Claude Sonnet 5.5 (Blender) |
+| T-126b | Bàn 2D vẽ quân bằng ảnh render | 🟣 Đã soát đạt · chờ 👤 merge | P1 | CORE + KYDAO + KYDAI | Claude Sonnet 5.5 |
+| T-127 | Huy hiệu chủ đề trong khẩu hiệu và bộ chọn Lãnh địa | 🟣 Đã soát đạt · chờ 👤 merge | P2 | CORE + KYDAI | gemini-3.8-flash-high |
+| T-128 | Sửa lỗi từ đợt soát vòng 2 của Gemini 4 Argon | 🟣 Đã soát đạt · chờ 👤 merge | P0 | CORE + KYDAO + KYDAI | Claude Sonnet 5.5 |
+| T-129 | Sửa lỗi từ lần nghiệm thu cuối của GPT Sol | 🟣 Đã soát đạt · chờ 👤 merge | P1 | CORE + KYDAO + KYDAI | Claude Sonnet 5.5 |
+| T-130 | Nhân vật Blender dùng trong game dạng tùy chọn (4 kiểu tóc, gộp vật liệu) | 🟣 Đã soát đạt · chờ 👤 merge | P1 | CORE + HALL + KYDAI | Claude Sonnet 5.5 (Blender) |
+| T-131 | Kịch bản kiểm giao diện tự động cho bàn cờ (`ui-check.js`) | 🟣 Đã soát đạt · chờ 👤 merge | P1 | CORE + KYDAI + OPS | gpt-6.1-terra |
+| T-132 | Sửa lỗi từ đợt soát T-130/T-131 của GPT Sol | 🟣 Đã soát đạt · chờ 👤 merge | P1 | CORE + HALL + OPS | Claude Sonnet 5.5 |
 
 Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạm `package.json`). **T-005**, **T-007**, **T-002** làm song song được với nhóm trên.
 Đợt 2026-11: làm **T-003, T-004, T-006** trước (T-004 gỡ nút thắt `package.json` cho mọi thẻ thêm file JS; T-006 là cổng "CI xanh"). Sau đó theo lịch 6 đợt ở [docs/KE-HOACH-DOT-2026-11.md §10.3](docs/KE-HOACH-DOT-2026-11.md#103-lịch-theo-đợt-và-khóa-vùng-nóng).
@@ -1298,8 +1301,11 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
 - **Nghiệm thu lần cuối** (GPT Sol, 14/11, sau khi hồi hạn mức): không có lỗi chặn; mọi lỗi vòng 1 và vòng 2 đã sửa thật; bất biến bảo mật đều đạt; còn 5 điểm nên sửa + 1 góp ý → **T-129** đã sửa hết (tắt hiệu ứng giữa chừng, tương phản chữ quân ≥ 4,5, nút Khai mở tự hết khóa, bộ chọn dùng được bằng bàn phím, đệm nền tĩnh khi sông chảy, đồng bộ `?v=` trang thử). **Gemini 4 Argon xác nhận T-129: PASS, không còn lỗi chặn, nên sửa hay góp ý.**
 - **T-116 phần harness**: `tools/ui-harness/kydao/index.html` có thêm cờ úp, caro, cờ vây, thế sắp phong cấp, đối thủ khai mở sân, kết thúc theo 7 lý do (Haiku). Chưa có kịch bản Playwright tự động (xem T-008).
 - **T-120 đã đo hiệu năng** (14/11, Chrome thật điều khiển bằng playwright-core, hồ sơ tạm, 1280×800, card tích hợp AMD Radeon, không khóa khung hình): 2 nhân vật 1.002 khung/giây; **60 nhân vật 118 khung/giây đứng yên, 123 khung/giây khi đi** (70.248 tam giác, 481 lượt vẽ). Tiêu chí ≥ 30 khung/giây đạt. Số 3 khung/giây ghi trước đó là do khung trình duyệt trong app bóp requestAnimationFrame còn khoảng 4 lần/giây, không phải do mô hình.
-- **Tổng kết đợt** (nhánh tích hợp `claude/chess-game-graphics-upgrade-553ef6`, CHƯA push, CHƯA mở PR): `npm run check` sạch 168 file; `npm test` **948 đạt, 0 trượt, 3 bỏ qua** trên 951 (2 PostgreSQL, 1 perft sâu). Điều phối đã xem bằng mắt: bàn 2D và 3D có skin, khai mở, phong cấp, kết thúc ván, dòng sông, bộ chọn, huy hiệu.
-- **Còn chờ 👤 chủ dự án**: (1) duyệt bản mẫu nhân vật T-120 và đo khung hình trên trình duyệt thật; (2) quyết cách mở khóa skin (hiện miễn phí); (3) có cho chọn khẩu hiệu không; (4) skin cho cờ vây, caro; (5) vẽ lại 4 huy hiệu ghép tay khi Canva có credit; (6) push nhánh và mở PR.
+- **T-130** (14/11): nhân vật Blender vào game dạng tùy chọn. Nút "Người mới" trên thanh 3D đặt `localStorage['ta-avatar'] = 'blender'`; mặc định vẫn là nhân vật dựng bằng mã. Mỗi nhân vật 3 lượt vẽ, ≤ 1.282 tam giác, 4 kiểu tóc, ≈115 KB. Hào quang, pháp tướng, quỷ theo sau, nhãn tên giữ nguyên từ bản mã; NPC có vai riêng (Obito, sư thầy…) vẫn dùng bản mã. Đo lại bằng Chrome thật: **60 nhân vật 158 khung/giây**. Ảnh: docs/ky-dai/anh/nhan-vat-blender-*.png, nhan-vat-toc.jpg.
+- **T-131** (14/11): `tools/ui-harness/kydao/ui-check.js`, 8 nhóm kiểm × 3 cỡ màn + bản giảm chuyển động = 24 kiểm tra; điều phối chạy bằng Chrome thật (`PW_CHANNEL=chrome`, `playwright-core` cài ngoài repo): **24/24 đạt**. Máy chủ harness đã phục vụ `.mjs` và Three.js.
+- **Soát T-130/T-131**: GPT Sol FAIL (1 lỗi chặn ở máy chủ harness chỉ dùng khi phát triển: kiểm ranh giới thư mục bằng tiền tố; 4 điểm nên sửa) → **T-132** sửa hết → **Gemini 4 Argon xác nhận PASS**; góp ý chặn ký tự NUL đã làm luôn.
+- **Tổng kết đợt** (nhánh tích hợp `claude/chess-game-graphics-upgrade-553ef6`, CHƯA push, CHƯA mở PR): `npm run check` sạch 172 file; `npm test` **962 đạt, 0 trượt, 3 bỏ qua** trên 965 (2 PostgreSQL, 1 perft sâu); `ui-check.js` 24/24. Mọi thẻ T-110 → T-132 đã qua soát độc lập (Gemini 4 Argon hoặc GPT Sol) và điều phối đã xem bằng mắt.
+- **Việc chỉ chủ dự án làm được 👤**: (1) push nhánh, mở PR, merge vào `main` (AGENTS.md §7: agent không tự merge; máy không có `gh`); (2) quyết có bật nhân vật Blender làm mặc định không; (3) quyết cách mở khóa skin (hiện miễn phí); (4) có cho chọn khẩu hiệu không; (5) skin cho cờ vây, caro; (6) vẽ lại 4 huy hiệu ghép tay khi Canva có credit; (7) thử một ván thật giữa hai máy qua mạng.
 - `npm test` trên nhánh tích hợp trước T-121: 906 đạt, 0 trượt, 3 bỏ qua (2 PostgreSQL, 1 perft sâu).
 
 ### T-110 · Thêm giao thức `kd:skin` trên máy chủ

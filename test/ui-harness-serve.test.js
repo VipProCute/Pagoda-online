@@ -29,4 +29,5 @@ test('đường thoát khỏi thư mục gốc bị từ chối 403', () => {
 
 test('mã hóa URL hỏng trả 400', () => {
   assert.strictEqual(resolveFile('/%E0%A4%A').status, 400);
+  assert.strictEqual(resolveFile('/css/kydao.css%00').status, 400);   // ký tự NUL
 });
