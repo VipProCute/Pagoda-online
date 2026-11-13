@@ -32,6 +32,7 @@
 | `DOCS` | Tài liệu | README, docs/, context cho agent |
 | `NAV` | Thanh đổi map, thanh lễ Phật, tab Khám phá | nút điều hướng, thanh dưới, đổi map/nơi |
 | `KYDAO` | Kỳ Đạo: bàn cờ ở Sân chùa | luật cờ, bộ quản lý ván, Elo, bảng bàn cờ |
+| `KYDAI` | Skin sân, skin quân, hiệu ứng bàn cờ | lãnh địa nửa sân, skin quân, chấn động phong cấp, hiệu ứng thắng, tài nguyên Blender |
 | `RANK` | Danh hiệu, Bảng Vàng, màn đối đầu | người giữ danh hiệu, mùa, bảng xếp hạng |
 | `FORTUNE` | Bói toán, lịch âm | xin xăm, tarot, tử vi, `lunar.js` |
 | `GUIDE` | Hướng dẫn người mới | Sổ tay, gợi ý lần đầu, viết lại chữ giao diện |
@@ -159,6 +160,13 @@
 - **Tra khi cần**: `lib/pk/manager.js` (khuôn manager: `arm/disarm`, `finish` idempotent, `resume`, `safe`), `test/pk-manager.test.js` (`makeClock`, env giả), `lib/pk/rng.js` (`makeRng`, `newSeed`), handler `sit` và `inArena`/`martialOnly` trong `server.js`, `ARENA_PROPS`/`seatAt`/`onDown` trong `public/js/hall.js`.
 - **Test**: `test/kydao-*.test.js`, `test/e2e-kydao.test.js`; perft sâu với `PERFT_DEEP=1`; giao diện: `tools/ui-harness/kydao/`.
 - **Bẫy**: máy chủ luôn kiểm lại nước đi (trình duyệt chỉ gợi ý); `ply` phải khớp; **không bao giờ** gửi danh tính quân úp chưa lật (kể cả cho chính người chơi và người xem); không gửi uid; module luật là UMD không DOM; `play` không sửa state cũ; `YARD_TABLES` phải khớp `server.js` ↔ `hall.js`; nhãn bàn không kết thúc bằng `' · NPC'`; ván cờ không cộng công đức.
+
+## `KYDAI` · Skin sân, skin quân và hiệu ứng bàn cờ
+
+- **Đọc kỹ**: `docs/KE-HOACH-KY-DAI.md` (§3 quyết định, §4 hợp đồng); `public/js/kydao-skins.js` (danh mục, do điều phối giữ).
+- **Tra khi cần**: `public/js/kydao-draw.js` (`draw`, `layout`, `cellXY`), `public/js/kydao-ui.js` (`redraw`, `handleMoved`, `showResult`, `toggleBoard3D`), `public/js/world3d/board3d.mjs` (`setState`, `transitionPieces`), `public/js/celebrate.js` + `public/css/celebrate.css` (khuôn hạt và giảm chuyển động), `tools/blender/kydao/`.
+- **Test**: `test/kydao-*.test.js`; trang thử `public/kydao-fx-test.html`, `public/kydao-pieces-test.html`, `public/world3d-board.html`.
+- **Bẫy**: client chỉ gửi **mã** skin, không gửi chữ; skin không được làm khó đọc thế cờ (dấu nước đi luôn vẽ trên skin); cờ úp: mọi quân úp một bên phải giống hệt nhau; thiếu `.glb`/`.webp` thì lùi về `palette`, không được hỏng bàn; không sửa tay file trong `public/img/kydao/` và `public/models/kydao/` (sinh từ Blender); mọi hiệu ứng có bản giảm chuyển động.
 
 ## `RANK` · Danh hiệu, Bảng Vàng, màn đối đầu
 
