@@ -83,7 +83,7 @@
 | **Đợt Kỳ Đài** ([docs/KE-HOACH-KY-DAI.md](docs/KE-HOACH-KY-DAI.md)) | | | | | |
 | T-110 | Giao thức `kd:skin` trên máy chủ | 🔵 Sẵn sàng | P0 | CORE + KYDAO + KYDAI | — |
 | T-111 | Dây chuyền Blender và tài nguyên 8 sân, 8 bộ quân | 🟡 Đang làm | P0 | CORE + KYDAI | Điều phối (Claude Fable 5.2) |
-| T-112 | Module hiệu ứng 2D `KydaoFx`: khai mở, chấn động phong cấp, chiến thắng | 🔵 Sẵn sàng | P0 | CORE + KYDAO + KYDAI | — |
+| T-112 | Module hiệu ứng 2D `KydaoFx`: khai mở, chấn động phong cấp, chiến thắng | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | — |
 | T-113 | Bàn 3D: nạp `.glb`, skin nửa sân, skin quân, `playFx` | 🔵 Sẵn sàng | P0 | CORE + KYDAO + KYDAI | — |
 | T-114 | Bàn 2D: vẽ skin nửa sân, skin quân, `jolt` | ⏳ T-111 | P0 | CORE + KYDAO + KYDAI | — |
 | T-115 | Nối skin và hiệu ứng vào bảng cờ | ⏳ T-110, T-112, T-113, T-114 | P0 | CORE + KYDAO + KYDAI | — |
@@ -1297,20 +1297,20 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
 - **Ngoài phạm vi**: mã giao diện.
 
 ### T-112 · Viết module hiệu ứng 2D `KydaoFx`
-- **Trạng thái**: 🔵 Sẵn sàng
+- **Trạng thái**: 🟣 Chờ soát
 - **Ưu tiên**: P0
 - **Gói ngữ cảnh**: CORE + KYDAO + KYDAI
 - **Khu vực chạm**: public/js/kydao-fx.js (mới), public/css/kydao-fx.css (mới), public/kydao-fx-test.html (mới, trang thử), test/kydao-fx.test.js (mới)
 - **Phụ thuộc**: không · **Thợ**: Claude Sonnet 5.5 · **Soát**: Điều phối
-- **Người làm**: — · **Nhánh**: —
+- **Người làm**: Claude Sonnet 5.5 · **Nhánh**: claude/T-112-kydao-fx
 - **Mục tiêu**: một module độc lập phát ba nhóm hiệu ứng trên lớp phủ của bàn cờ, theo đúng API ở KH §4.4.
 - **Tiêu chí xong**:
-  - [ ] `domain`: khẩu hiệu `cry` + dòng `sub` của sân (lấy từ `KydaoSkins`), vệt sáng quét nửa sân từ mép người chơi ra giữa, hạt theo `fx` của sân; tối đa 1,8 giây; không bắt sự kiện chuột/chạm
-  - [ ] `promote`: bàn rung, vòng sóng lan từ ô phong cấp, gọi `onJolt(map)` mỗi khung để các quân khác nảy lên rồi rơi về chỗ (toán tắt dần là hàm thuần, có test); tối đa 1,2 giây
-  - [ ] `win`: khác nhau theo `reason`: chiếu hết / bắt Tướng (tia sáng dội xuống ô Vua, vết nứt lan), `five` (vẽ sáng dãy 5 quân theo `line`), thắng điểm cờ vây, hết giờ, xin thua, hòa (nhẹ nhàng); bên thắng thấy pháo hoa cánh sen, bên thua thấy bản dịu
-  - [ ] `prefers-reduced-motion` hoặc `ta-fx` tắt: chỉ còn chữ mờ dần, không rung, không hạt; `stop()` dọn sạch canvas và timer
+  - [x] `domain`: khẩu hiệu `cry` + dòng `sub` của sân (lấy từ `KydaoSkins`), vệt sáng quét nửa sân từ mép người chơi ra giữa, hạt theo `fx` của sân; tối đa 1,8 giây; không bắt sự kiện chuột/chạm
+  - [x] `promote`: bàn rung, vòng sóng lan từ ô phong cấp, gọi `onJolt(map)` mỗi khung để các quân khác nảy lên rồi rơi về chỗ (toán tắt dần là hàm thuần, có test); tối đa 1,2 giây
+  - [x] `win`: khác nhau theo `reason`: chiếu hết / bắt Tướng (tia sáng dội xuống ô Vua, vết nứt lan), `five` (vẽ sáng dãy 5 quân theo `line`), thắng điểm cờ vây, hết giờ, xin thua, hòa (nhẹ nhàng); bên thắng thấy pháo hoa cánh sen, bên thua thấy bản dịu
+  - [x] `prefers-reduced-motion` hoặc `ta-fx` tắt: chỉ còn chữ mờ dần, không rung, không hạt; `stop()` dọn sạch canvas và timer
   - [ ] Chữ gán bằng `textContent`; CSS tiền tố `kdfx-`; không phụ thuộc thư viện
-  - [ ] Trang thử có nút cho từng hiệu ứng × từng sân; 375×812 không tràn; ảnh chụp trong bàn giao
+  - [x] Trang thử có nút cho từng hiệu ứng × từng sân; 375×812 không tràn; ảnh chụp trong bàn giao
 - **Ngoài phạm vi**: sửa `kydao-ui.js`, `kydao-draw.js`, `index.html` (T-115 nối sau); bàn 3D.
 
 ### T-113 · Bàn 3D: nạp `.glb`, skin nửa sân, skin quân, `playFx`
