@@ -66,10 +66,10 @@ test('Atlas tải xong: mỗi quân cờ vua đúng một drawImage, ô theo c�
     assert.ok(keys.includes('128,128'), 'q đen');
     assert.ok(keys.includes('512,0'), 'N trắng');
     assert.ok(calls.every(c => c[4] === 128 && c[5] === 128 && c[8] === c[9]));
-    // Ô cờ 50px: T = 1,0·ô; đáy quân (118/128) ở cy + 0,40·ô.
+    // Ô cờ 50px: T = 1,12·ô; đáy quân (118/128) ở cy + 0,44·ô.
     const cell = 50, k = calls.find(c => c[2] === 0 && c[3] === 0), T = k[8];
-    assert.ok(Math.abs(T - cell) < 1e-9);
-    const cy = k[7] + T * 118 / 128 - cell * 0.40;
+    assert.ok(Math.abs(T - cell * 1.12) < 1e-9);
+    const cy = k[7] + T * 118 / 128 - cell * 0.44;
     assert.ok(Math.abs((cy % cell) - cell / 2) < 1e-6, 'tâm ô nguyên, đáy quân đặt đúng');
   } finally { delete global.Image; }
 });

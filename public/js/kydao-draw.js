@@ -333,7 +333,8 @@
 
   /** Atlas quân 2D (render 3D): ô 128×128, hàng 0 = bên a, hàng 1 = bên b; cột K Q R B N P disc. */
   const ATLAS_CELL = 128, ATLAS_COL = { k: 0, q: 1, r: 2, b: 3, n: 4, p: 5, disc: 6 };
-  const ATLAS_T = 1.0, ATLAS_BASE = 118 / 128;
+  // Quân trong ô atlas chỉ rộng chừng 0,4 ô nên phóng 1,12 lần cho đầy ô cờ; Vua cao 0,945 ô vẫn nằm trong ô.
+  const ATLAS_T = 1.12, ATLAS_BASE = 118 / 128, ATLAS_FOOT = 0.44;
   /** Ảnh atlas của skin quân nếu đã tải xong, ngược lại null (vẽ vector). */
   function atlasImage(skin, onAsset) { return skin && skin.atlas ? loadImage(skin.atlas, onAsset) : null; }
   function paintAtlasCell(ctx, img, col, row, dx, dy, T) {
@@ -343,9 +344,9 @@
   function drawChessPiece(ctx, cx, cy, size, ch, rendering, skin, atlas) {
     const col = ATLAS_COL[ch.toLowerCase()];
     if (atlas && col !== undefined && col !== 6) {
-      // Đáy quân (y=118/128 của ô atlas) đặt ở cy + 0,40·ô.
+      // Đáy quân (y=118/128 của ô atlas) đặt ở cy + ATLAS_FOOT·ô.
       const cell = size / 0.92, T = cell * ATLAS_T;
-      paintAtlasCell(ctx, atlas, col, ch === ch.toUpperCase() ? 0 : 1, cx - T / 2, cy + cell * 0.40 - T * ATLAS_BASE, T);
+      paintAtlasCell(ctx, atlas, col, ch === ch.toUpperCase() ? 0 : 1, cx - T / 2, cy + cell * ATLAS_FOOT - T * ATLAS_BASE, T);
       return;
     }
     if (!rendering && ctx.canvas && ctx.canvas.ownerDocument && ctx.getTransform) {
