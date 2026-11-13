@@ -1516,7 +1516,7 @@ def build_lotus(ctx):
                                     (5.3, 3.9, 0.4), (-3.4, 5.1, 0.4), (-2.0, 5.25, 0.34), (-1.2, 5.0, 0.3), (1.5, 5.2, 0.36),
                                     (2.9, 5.0, 0.42), (3.7, 5.3, 0.3), (-4.4, 4.6, 0.28), (4.3, 4.6, 0.3), (-5.35, 1.4, 0.26))):
         x, y, _ = W(u, v)
-        lily_pad(pad if k % 2 else pad2, x, y, -0.19, r, 0)
+        lily_pad(pad if k % 2 else pad2, x, y, -0.145, r, 0)
     pad.finish(sc)
     pad2.finish(sc)
     # tòa sen lớn nở ở góc sau trái
@@ -1524,7 +1524,7 @@ def build_lotus(ctx):
     core = B('seedpod', glow_material('seedpod', '#ffd060', 2.5))
     big = B('bigpad', basalt_material('bigpad', '#2f7a3e', 0.45, bump=1.2))
     x, y, _ = W(-4.9, 4.9)
-    lily_pad(big, x, y, -0.19, 0.78, 0)
+    lily_pad(big, x, y, -0.145, 0.78, 0)
     lotus_flower(pet, core, x, y, -0.1, 2.6, rng, rings=((12, 0.45, 1.0, 0.17), (10, 0.85, 0.9, 0.15), (8, 1.2, 0.75, 0.13), (6, 1.5, 0.55, 0.1)))
     ctx.light(-4.9, 4.9, 0.8, '#ffb0c8', 16.0, 0.2)
     # hoa sen nhỏ rải trên hồ
@@ -1654,7 +1654,7 @@ def build_thunder(ctx):
     bands.finish(sc)
     ctx.light(0.0, 4.8, 0.7, '#9a8aff', 7.0, 0.15)
     # cụm mây giông cuộn quanh (khối mây nổi trên biển mây)
-    cl = B('cloud_puffs', cloud_material('puff', '#ddd2f4', '#6a5a8a'))
+    cl = B('cloud_puffs', cloud_material('puff', '#f8f4ff', '#9a8ac4'))
     for k in range(34):
         u, v = rng.uniform(-5.45, 5.45), rng.uniform(0.0, 5.45)
         if not ctx.free(u, v, 0.1) or ctx.tz(u, v) > -0.1:
@@ -1667,9 +1667,9 @@ def build_thunder(ctx):
 
 
 FIELDS['thunder'] = dict(
-    world=('#2e2448', 0.55), sun=('#dcd4ff', 2.4, 60), glare=(0.9, 0.3, 0.45), exposure=0.5,
-    ground=lambda: ground_material('terrain', 'slate', '#3e3650', '#8a809c', '#a898c8', wet='#1c1630', bump=1.5),
-    liquid=lambda: cloud_material('clouds', '#d6caf0', '#5a4a7a'), liquid_z=-0.18,
+    world=('#2e2448', 0.55), sun=('#dcd4ff', 2.4, 60), glare=(0.9, 0.3, 0.45), exposure=0.7,
+    ground=lambda: ground_material('terrain', 'slate', '#241e32', '#524868', '#7a6a9a', wet='#120e22', bump=1.5),
+    liquid=lambda: cloud_material('clouds', '#f4efff', '#8c7ab8'), liquid_z=-0.18,
     T=dict(off=0.28, amp=0.9, freq=0.6, lo=-0.3, hi=0.5, cap=0.32, depth=-0.6, rim=0.1,
            carve=[('poly', [(-5.4, -0.8), (-5.2, 1.0), (-5.35, 2.5), (-5.2, 4.0), (-4.3, 5.1), (-3.2, 5.3)], 0.75),
                   ('poly', [(5.4, -0.8), (5.2, 1.0), (5.35, 2.5), (5.2, 4.0), (4.3, 5.1), (3.2, 5.3)], 0.75),
@@ -1678,6 +1678,118 @@ FIELDS['thunder'] = dict(
     slab=('#c4bad8', '#2c2640', '#8a5aff'), under=('#8a5aff', 1.4), plinth='#5a526a', ledge='#6a607c',
     groove=('#8a6aff', 0.8), pillar='#625a74', bowl='#1c1828', fire=('#c0a8ff', 7.0), top='orb',
     xq='#6c6486', bank=('#7a6aa0', '#d8d0f0', 'fine'), build=build_thunder)
+
+# ───────────────────────── chủ đề: Sa Mạc (desert) ─────────────────────────
+def strata_material(name, lo, hi, rough=0.85):
+    """Đá sa thạch phong hoá: vân tầng nằm ngang, dập nổi."""
+    M = Mat(name)
+    w = coord3(M, (1.2, 1.2, 9.0))
+    st = M.noise(w, 1.6, 4.0, 0.5, 0.35)
+    fine = M.noise(M.coord('Object', 18.0), 1.0, 5.0, 0.6)
+    col = M.ramp(st, [(0.3, rgb(lo)), (0.7, rgb(hi))])
+    col = M.mixc(col, scaled(rgb(lo), 0.5), M.math('MULTIPLY', M.ramp_f(fine, 0.55, 0.8), 0.5))
+    nrm = M.bump(M.math('ADD', M.math('MULTIPLY', st, 0.9), M.math('MULTIPLY', fine, 0.3)), 1.6, 0.06)
+    return M.finish(M.principled(M.ao(col, 0.3), rough, nrm))
+
+
+def palm(b, leaf, x, y, rng, h=1.2, lean=0.3):
+    a = rng.uniform(0, 6.28)
+    d = Vector((math.cos(a), math.sin(a), 0)) * lean
+    p = Vector((x, y, -0.2))
+    n = 6
+    for k in range(n):
+        q = Vector((x, y, -0.2)) + d * ((k + 1) / n) ** 2 + Vector((0, 0, h * (k + 1) / n))
+        limb(b, p, q, 0.07 * (1 - 0.06 * k), 0.07 * (1 - 0.06 * (k + 1)), 6)
+        p = q
+    for k in range(9):
+        aa = 2 * math.pi * k / 9 + rng.uniform(-0.15, 0.15)
+        dd = Vector((math.cos(aa), math.sin(aa), 0))
+        p1 = p + dd * 0.32 + Vector((0, 0, 0.14))
+        p2 = p + dd * 0.62 + Vector((0, 0, -0.04))
+        limb(leaf, p, p1, 0.05, 0.045, 4)
+        limb(leaf, p1, p2, 0.045, 0.004, 4)
+    leaf.ico(tuple(p + Vector((0.05, 0, -0.04))), 0.06, 2)
+
+
+def cactus(b, x, y, rng):
+    h = rng.uniform(0.35, 0.55)
+    limb(b, (x, y, -0.1), (x, y, h), 0.06, 0.055, 6)
+    b.ico((x, y, h), 0.055, 2)
+    for sg in (-1, 1):
+        zz = h * rng.uniform(0.35, 0.55)
+        limb(b, (x, y, zz), (x + sg * 0.14, y, zz), 0.04, 0.04, 6)
+        limb(b, (x + sg * 0.14, y, zz), (x + sg * 0.14, y, zz + 0.16), 0.04, 0.035, 6)
+
+
+def build_desert(ctx):
+    sc, rng = ctx.sc, ctx.rng
+    sand = lambda n, lo, hi: strata_material(n, lo, hi)
+    # trụ đá phong hoá ở góc sau trái
+    hx, hy, _ = W(-4.95, 4.9)
+    hd = B('hoodoo', sand('hoodoo', '#8a4a2a', '#d09060'))
+    hd.lathe([(0.78, -0.3), (0.6, 0.0), (0.4, 0.28), (0.3, 0.55), (0.42, 0.78), (0.56, 0.96), (0.46, 1.12), (0.0, 1.18)], 20, (hx, hy, 0), True,
+             cap=False, jitter=0.1, seedv=1.7)
+    hd.lathe([(0.34, 0.0), (0.3, 0.3), (0.25, 0.5)], 8, (hx + 0.55, hy - 0.2, 0), True, cap=True)
+    hd.finish(sc)
+    ctx.light(-4.95, 4.9, 1.0, '#ffc888', 10.0, 0.2)
+    # ốc đảo ở góc sau phải: nước xanh, cọ, bụi cây
+    tr = B('palm_trunk', basalt_material('palm_trunk', '#6a4a2c', 0.8, bump=2.0))
+    lf = B('palm_leaf', basalt_material('palm_leaf', '#3f8a3a', 0.6, bump=0.6))
+    px, py, _ = W(5.2, 4.1)
+    palm(tr, lf, px, py, rng, 1.25, 0.35)
+    px, py, _ = W(4.35, 5.05)
+    palm(tr, lf, px, py, rng, 1.0, 0.3)
+    px, py, _ = W(5.3, 5.2)
+    palm(tr, lf, px, py, rng, 0.85, 0.25)
+    tr.finish(sc)
+    lf.finish(sc)
+    bush = B('bushes', basalt_material('oasis_grass', '#5a9a3a', 0.7, bump=0.6))
+    for (u, v) in ((4.0, 4.55), (5.45, 4.65), (4.65, 5.45), (5.0, 3.5), (3.75, 5.2)):
+        x, y, _ = W(u, v)
+        fern(bush, x, y, -0.05, rng, 7, 0.28, 0.035)
+    bush.finish(sc)
+    ctx.light(4.9, 4.9, 0.7, '#8ff0e0', 9.0, 0.2)
+    # tháp gạch nhỏ ở giữa dải sau
+    brick = B('tower', basalt_material('brick', '#b8683e', 0.8, flag=True, bump=1.0))
+    dk = B('tower_door', basalt_material('tower_door', '#2a1a14', 0.7))
+    gl = B('tower_lamp', glow_material('tower_lamp', '#ffb060', 5.0))
+    x, y, _ = W(0.0, 5.0)
+    z = -0.2
+    for hw, hh in ((0.55, 0.3), (0.42, 0.26), (0.3, 0.24)):
+        brick.box((x - hw, y - hw, z), (x + hw, y + hw, z + hh + 0.05), bevel=0.02, seg=1, flat_big=False)
+        brick.box((x - hw - 0.04, y - hw - 0.04, z + hh + 0.02), (x + hw + 0.04, y + hw + 0.04, z + hh + 0.07), bevel=0.01, seg=1, flat_big=False)
+        z += hh + 0.05
+    brick.cone((x, y, z), 0.3, 0.0, 0.3, 4, rzm(math.pi / 4))
+    dk.box((x - 0.12, y - 0.56, -0.2), (x + 0.12, y - 0.5, 0.1), flat_big=False)
+    gl.box((x - 0.08, y - 0.57, -0.14), (x + 0.08, y - 0.54, 0.04))
+    brick.finish(sc)
+    dk.finish(sc)
+    gl.finish(sc)
+    ctx.light(0.0, 4.4, 0.4, '#ffb060', 6.0, 0.1)
+    # đá sa thạch, xương rồng, bụi cát
+    rk = B('rocks', sand('sandrock', '#9a5a38', '#d8a070'))
+    for (u, v, r) in ((-4.7, 0.9, 0.3), (-5.3, 2.4, 0.34), (-4.6, 3.5, 0.24), (4.6, 0.8, 0.3), (5.35, 2.2, 0.36), (-3.3, 5.15, 0.24),
+                      (-2.0, 4.8, 0.2), (2.4, 5.25, 0.26), (1.2, 5.3, 0.2)):
+        x, y, _ = W(u, v)
+        rk.ico((x, y, max(ctx.tz(u, v), -0.1) + r * 0.2), r, 3, (1.2, 1.0, 0.7), 0.3, rng, rot=rzm(rng.uniform(0, 6)), seedv=u * 3.3, smooth=True)
+    rk.finish(sc)
+    cc = B('cacti', basalt_material('cactus', '#5a8a4a', 0.6, bump=0.8))
+    for (u, v) in ((-4.55, 1.8), (4.7, 1.5), (-3.7, 5.2), (-5.35, 3.6)):
+        x, y, _ = W(u, v)
+        cactus(cc, x, y, rng)
+    cc.finish(sc)
+    ctx.motes('#ffd898', 6.0, 60, 0.1, 0.7, 0.012, 0.03, 'dust')
+
+
+FIELDS['desert'] = dict(
+    world=('#f0d8b8', 0.7), sun=('#fff0d0', 3.4, 58), glare=(1.1, 0.15, 0.4), exposure=-0.1,
+    ground=lambda: ground_material('terrain', 'dune', '#c89c5c', '#f0d594', '#a87838', wet='#6a4a2a', bump=1.0),
+    liquid=lambda: water_material('oasis', '#7fe0d8', '#0a6a78', alpha=0.6, ripple=0.2, scale=2.0), liquid_z=-0.18,
+    T=dict(off=0.3, amp=0.45, freq=0.5, lo=-0.1, hi=0.45, cap=0.3, wave=0.07, depth=-0.6, rim=0.05,
+           carve=[('ell', 4.9, 4.9, 0.95, 0.65)], flat=[(-4.95, 4.9, 0.9)], flat_h=0.08),
+    slab=('#f2deae', '#8a4a30', None), under=('#e0a040', 0.6), plinth='#b89868', ledge='#c4a470',
+    groove=('#e0a040', 0.4), pillar='#b08860', bowl='#503420', fire=('#ffb860', 5.0), top='flame',
+    xq='#c0a070', bank=('#8a6a3a', '#d8b878', 'fine'), build=build_desert)
 
 # ==== HẾT CHỦ ĐỀ ====
 
