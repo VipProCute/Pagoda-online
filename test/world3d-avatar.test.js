@@ -107,12 +107,45 @@ test('nhãn và chat chỉ vẽ chữ, giới hạn độ dài, tái dùng textu
   assert.equal(nameplate.material.map.version, version, 'không tải texture lại mỗi khung hình');
   avatar.update({ ...state, view: 'first' });
   assert.equal(nameplate.visible, false); assert.equal(bubble.visible, false);
+  assert.equal(avatar.group.getObjectByName('body').visible, false);
   avatar.update({ ...state, view: 'first', isSelf: false });
   assert.equal(nameplate.visible, true); assert.equal(bubble.visible, true);
+  assert.equal(avatar.group.getObjectByName('body').visible, true);
   avatar.update({ ...state, view: 'third', name: 'Đ'.repeat(100), tag: 'T'.repeat(100) });
   assert.ok(writes.includes('Đ'.repeat(48))); assert.ok(writes.includes('T'.repeat(64)));
   avatar.update({ name: 123, bubble: {}, tag: null });
   assert.equal(nameplate.visible, false); assert.equal(bubble.visible, false);
+  avatar.dispose();
+});
+
+test('Bảng tên chặn ở 28 pixel CSS, mờ gần máy quay, không vẽ tên rỗng sau khi từng có chữ', async () => {
+  const { createAvatar } = await load(), THREE = await import('three');
+  const avatar = createAvatar({}, { createCanvas: canvasFactory() });
+  const label = avatar.group.getObjectByName('nameplate');
+  const camera = new THREE.PerspectiveCamera(55, 1, .1, 100);
+  avatar.update({ name: 'An Tâm', tag: 'Bình an' });
+  const render = (distance, pixels) => {
+    avatar.group.updateMatrixWorld(true);
+    const anchor = label.getWorldPosition(new THREE.Vector3());
+    camera.position.copy(anchor).add(new THREE.Vector3(0, 0, distance));
+    camera.lookAt(anchor); camera.updateMatrixWorld(true);
+    label.onBeforeRender({ domElement: { getBoundingClientRect: () => ({ height: pixels }) } }, null, camera);
+    const scale = label.getWorldScale(new THREE.Vector3());
+    // Khung có danh hiệu cao 112 px trong texture 128 px; bỏ phần trong suốt.
+    return scale.y * camera.projectionMatrix.elements[5] * pixels / (2 * distance) * 112 / 128;
+  };
+  for (const pixels of [667, 1024, 900]) for (const distance of [1.21, 1.5, 3, 10]) {
+    assert.ok(render(distance, pixels) <= 28 + 1e-10);
+  }
+  render(1, 900); assert.equal(label.material.opacity, 0);
+  render(1.8, 900); assert.ok(label.material.opacity > 0 && label.material.opacity < 1);
+  render(3, 900); assert.equal(label.material.opacity, 1);
+  avatar.group.scale.setScalar(2); assert.ok(render(2, 900) <= 28 + 1e-10, 'cả khi nhóm cha có tỉ lệ khác');
+  for (const name of ['', '   ', '\n\t']) {
+    avatar.update({ name, tag: 'Danh hiệu còn lại' });
+    assert.equal(label.visible, false);
+  }
+  avatar.update({ name: 'Trở lại' }); assert.equal(label.visible, true);
   avatar.dispose();
 });
 

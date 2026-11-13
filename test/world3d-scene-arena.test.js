@@ -44,7 +44,14 @@ test('Ba mức đồ họa dựng được cảnh kín, dùng khối kit và kh�
       for (const side of ['left', 'right', 'back', 'front']) {
         assert.ok(walls.some(wall => side === 'left' ? wall.position.x < -9 : side === 'right' ? wall.position.x > 9 : side === 'back' ? wall.position.z < -6 : wall.position.z > 6), side);
       }
-      assert.deepEqual(scene.bounds, { minX: -9.55, maxX: 9.55, minZ: -5.65, maxZ: 5.8 });
+      assert.deepEqual(scene.bounds, { minX: -9.8, maxX: 9.8, minZ: -6.05, maxZ: 6.05 });
+      for (const [x, z] of [[.03, .12], [.97, .97], [.5, .67]]) for (const yaw of [0, Math.PI / 2, Math.PI, -Math.PI / 2]) {
+        const view = ViewMath.createView(); view.yaw = yaw;
+        const pose = ViewMath.cameraPose(view, ViewMath.toWorld('arena', x, z), scene.bounds);
+        near(Math.atan2(pose.pos.y - pose.look.y, Math.hypot(pose.pos.x - pose.look.x, pose.pos.z - pose.look.z)), view.pitch);
+        assert.ok(pose.pos.x >= scene.bounds.minX && pose.pos.x <= scene.bounds.maxX);
+        assert.ok(pose.pos.z >= scene.bounds.minZ && pose.pos.z <= scene.bounds.maxZ);
+      }
     } finally { cleanup(scene, kit); }
   }
 });
@@ -168,7 +175,7 @@ test('dispose dọn một lần và không hủy vật liệu kit đang dùng �
 test('ctx.size quyết định mét và pick hoạt động khi nhóm cảnh tịnh tiến', async () => {
   const { THREE, scene, kit } = await fixture({ size: { width: 24, depth: 15 } });
   try {
-    assert.equal(scene.bounds.maxX, 11.55);
+    assert.equal(scene.bounds.maxX, 11.8);
     scene.group.position.set(3, 2, -4);
     const ray = new THREE.Raycaster(new THREE.Vector3(3, 9, (0.85 - 0.5) * 15 - 4), new THREE.Vector3(0, -1, 0));
     const hit = scene.pick(ray); assert.equal(hit.kind, 'floor'); near(hit.x, 0.5); near(hit.z, 0.85);

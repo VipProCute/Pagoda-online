@@ -118,6 +118,25 @@ test('Mức Thấp tắt bóng, giảm chuyển động giữ đèn đứng yên
   assert.ok(yard.group.children.filter(node => node.isPointLight).every(light => light.intensity === 40));
 });
 
+test('Đêm trong game không có env map vẫn có ánh trăng phủ cổng, cây và bàn đá ở mọi mức', async t => {
+  for (const quality of ['low', 'medium', 'high']) {
+    const { yard, THREE } = await setup(t, { quality });
+    const scene = new THREE.Scene(); scene.add(yard.group);
+    assert.equal(scene.environment, null, 'giống lớp World3D trong game');
+    yard.update({ daylight: false, tables });
+    const ambient = yard.group.children.find(node => node.isHemisphereLight);
+    const moon = yard.group.children.find(node => node.isDirectionalLight);
+    assert.ok(ambient.intensity >= 1.1, 'ánh sáng nền phủ toàn sân');
+    assert.ok(moon.intensity >= .8, 'ánh trăng chiếu rõ các khối');
+    assert.ok(ambient.color.b > ambient.color.r && moon.color.b > moon.color.r, 'đêm có tông xanh trăng');
+    assert.ok(ambient.groundColor.b > ambient.groundColor.r, 'mặt dưới cây và mái vẫn nhận ánh sáng');
+    assert.ok(yard.group.children.filter(node => node.isPointLight).every(light => light.intensity >= 40));
+    yard.update({ daylight: true });
+    assert.equal(ambient.intensity, 1.9); assert.equal(moon.intensity, 2.5);
+    assert.ok(ambient.color.r > ambient.color.b, 'ban ngày giữ tông ấm');
+  }
+});
+
 test('Dữ liệu bàn lỗi không dựng vật lạ; dispose nhiều lần và sau dispose không chọn được', async t => {
   const { THREE, kit, yard } = await setup(t);
   yard.update({ tables: [null, { id: 5, x: .5, z: .5, seats: [] }, { id: 2, x: NaN, z: .5, seats: [] }] });

@@ -1,6 +1,6 @@
 'use strict';
 
-import { createAvatar } from '../avatar.mjs';
+import { createAvatar } from '../avatar.mjs?v=2';
 
 // Cảnh khu đi lại, không phải sàn PK. ctx: { THREE, kit, size: ViewMath.SCENE_SIZE.arena,
 // quality: 'low'|'medium'|'high', reduceMotion }. Không đọc socket, không đổi trạng thái game.
@@ -278,5 +278,6 @@ export function build(ctx) {
   }
   update();
   return { group, update, pick, surfaceHeight, dispose,
-    bounds: { minX: -width / 2 + 0.45, maxX: width / 2 - 0.45, minZ: -depth / 2 + 0.6, maxZ: depth / 2 - 0.45 } };
+    // Biên máy quay bao hết miền đi lại 0.03..0.97, vẫn ở phía trong tường.
+    bounds: { minX: -width / 2 + 0.2, maxX: width / 2 - 0.2, minZ: -depth / 2 + 0.2, maxZ: depth / 2 - 0.2 } };
 }

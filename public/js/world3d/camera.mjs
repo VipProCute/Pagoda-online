@@ -17,8 +17,9 @@ export function createCamera({ camera, math, mode = 'third' }) {
       position.y = content.surfaceHeight?.(self?.x ?? 0.5, self?.z ?? 0.67) || 0;
       const size = math.SCENE_SIZE[state.scene];
       const bounds = content.bounds || { minX: -size.width / 2, maxX: size.width / 2, minZ: -size.depth / 2, maxZ: size.depth / 2 };
-      const pose = math.cameraPose(view, position, bounds);
-      camera.position.set(pose.pos.x, Math.min(6, pose.pos.y), pose.pos.z);
+      // Giới hạn trần cũ cũng rút cả tia, không kẹp riêng Y làm đổi góc cúi.
+      const pose = math.cameraPose(view, position, { ...bounds, maxY: 6 });
+      camera.position.set(pose.pos.x, pose.pos.y, pose.pos.z);
       camera.lookAt(pose.look.x, pose.look.y, pose.look.z);
       camera.updateMatrixWorld();
     }

@@ -48,7 +48,24 @@ function makeLabel(createCanvas, bubble = false) {
   sprite.name = bubble ? 'bubble' : 'nameplate';
   sprite.visible = false;
   let texture = null, previous = null;
+  const labelPosition = new THREE.Vector3(), cameraPosition = new THREE.Vector3(), parentScale = new THREE.Vector3(), cameraSpace = new THREE.Vector3();
+  let baseWidth = 1, baseHeight = 1, contentRatio = 1;
+  // Tính theo pixel CSS, độc lập DPR, áp dụng cả nhân vật do từng cảnh dựng.
+  sprite.onBeforeRender = (renderer, scene, camera) => {
+    sprite.getWorldPosition(labelPosition);
+    camera.getWorldPosition(cameraPosition);
+    const distance = labelPosition.distanceTo(cameraPosition);
+    material.opacity = clamp((distance - 1.2) / 1.2, 0, 1);
+    const depth = -cameraSpace.copy(labelPosition).applyMatrix4(camera.matrixWorldInverse).z;
+    const pixels = renderer.domElement.getBoundingClientRect().height;
+    const maxHeight = (bubble ? 96 : 28) * 2 * Math.max(0, depth) / (contentRatio * camera.projectionMatrix.elements[5] * Math.max(1, pixels));
+    sprite.parent?.getWorldScale(parentScale);
+    const factor = Math.min(1, maxHeight / (baseHeight * Math.abs(parentScale.y || 1)));
+    sprite.scale.set(baseWidth * factor, baseHeight * factor, 1);
+    sprite.updateWorldMatrix(false, false);
+  };
   function set(text, tag = '') {
+    text = text.trim(); tag = tag.trim();
     const key = text + '\n' + tag;
     if (key === previous) return;
     previous = key;
@@ -60,6 +77,7 @@ function makeLabel(createCanvas, bubble = false) {
     ctx.font = `${bubble ? 26 : 30}px system-ui, sans-serif`;
     const lines = bubble ? wrap(ctx, text, 456, 5) : [text];
     const height = bubble ? lines.length * 34 + 28 : tag ? 100 : 64;
+    contentRatio = (height + 12) / canvas.height;
     ctx.fillStyle = bubble ? '#fff1d7' : 'rgba(45,30,24,0.90)';
     ctx.strokeStyle = bubble ? '#bc8b49' : '#ae8650';
     ctx.lineWidth = 2;
@@ -83,7 +101,8 @@ function makeLabel(createCanvas, bubble = false) {
     }
     texture.needsUpdate = true;
     // Khung chữ dùng kích thước cố định để không nhảy khi đổi nội dung.
-    sprite.scale.set(bubble ? 2 : 1.55, bubble ? 1 : 0.3875, 1);
+    baseWidth = bubble ? 2 : 1.55; baseHeight = baseWidth * canvas.height / canvas.width;
+    sprite.scale.set(baseWidth, baseHeight, 1);
     sprite.center.set(0.5, 1 - (height / 2 + 6) / canvas.height);
   }
   return { sprite, set, dispose() { texture?.dispose(); material.dispose(); } };
@@ -263,8 +282,8 @@ export function createAvatar(initialLook = {}, opts = {}) {
     const auraColor = typeof state.aura === 'string' ? state.aura : state.aura?.color;
     auraMaterial.color.set(typeof auraColor === 'string' ? auraColor : '#e7bc67');
     auraMaterial.opacity = reduced ? 0.65 : 0.60 + Math.sin(elapsed * 2) * 0.10;
-    const name = textOf(state.name, 48), tag = textOf(state.tag, 64);
-    const speech = textOf(typeof state.bubble === 'string' ? state.bubble : state.bubble?.text, 180);
+    const name = textOf(state.name, 48).trim(), tag = textOf(state.tag, 64).trim();
+    const speech = textOf(typeof state.bubble === 'string' ? state.bubble : state.bubble?.text, 180).trim();
     nameplate.set(name, tag);
     bubble.set(speech);
     nameplate.sprite.visible = !first && !!name && !!nameplate.sprite.material.map;

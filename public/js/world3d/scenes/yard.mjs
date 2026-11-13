@@ -1,6 +1,6 @@
 'use strict';
 
-import { createAvatar } from '../avatar.mjs';
+import { createAvatar } from '../avatar.mjs?v=2';
 
 /* Cùng hợp đồng build/update/pick/bounds/dispose với hall.mjs.
  * state: { daylight: boolean | 0..1,
@@ -155,6 +155,7 @@ export function build({ THREE, kit, quality = 'medium', reduceMotion = false, si
   Object.assign(sun.shadow.camera, { left: -17, right: 17, top: 18, bottom: -18, near: 0.5, far: 45 });
   sun.shadow.mapSize.set(2048, 2048); sun.shadow.normalBias = 0.045; group.add(sun, sun.target);
   const fill = new THREE.DirectionalLight(0x8ba9c7, 0.55); fill.position.set(6, 9, -8); group.add(fill);
+  const dayAmbient = new THREE.Color(0xffe4bb), dayGround = new THREE.Color(0x594032), daySun = new THREE.Color(0xffdbab);
 
   // Bầu trời chuyển sắc tự vẽ; không tải tài nguyên bên thứ ba.
   const skyColors = [0x121e36, 0x79b9d3, 0x8f6970, 0xe7cfae, 0x26392e, 0x94a984].map(c => new THREE.Color(c));
@@ -244,7 +245,12 @@ export function build({ THREE, kit, quality = 'medium', reduceMotion = false, si
     skyMaterial.uniforms.topColor.value.lerpColors(skyColors[0], skyColors[1], daylight);
     skyMaterial.uniforms.horizonColor.value.lerpColors(skyColors[2], skyColors[3], daylight);
     skyMaterial.uniforms.groundColor.value.lerpColors(skyColors[4], skyColors[5], daylight);
-    ambient.intensity = 0.38 + daylight * 1.52; sun.intensity = 0.17 + daylight * 2.33; fill.intensity = 0.2 + daylight * 0.35;
+    // Game dùng giờ Việt Nam thật, khác trang thử mặc định ban ngày và có env map.
+    // Giữ ánh trăng phủ toàn sân kể cả mức Thấp, không phụ thuộc bản đồ phản xạ.
+    ambient.color.set(0xaac7ed).lerp(dayAmbient, daylight);
+    ambient.groundColor.set(0x65758b).lerp(dayGround, daylight);
+    sun.color.set(0xb6d0ff).lerp(daySun, daylight);
+    ambient.intensity = 1.15 + daylight * 0.75; sun.intensity = 0.85 + daylight * 1.65; fill.intensity = 0.55;
     glow.emissiveIntensity = 0.12 + (1 - daylight) * 2.5;
     lights.forEach(light => { light.intensity = 3 + (1 - daylight) * 37; });
     orbMaterial.color.setHex(daylight > 0.5 ? 0xffe2a3 : 0xd9dfeb);

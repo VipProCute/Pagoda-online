@@ -38,6 +38,26 @@ test('Máy quay thứ nhất ở tầm mắt và nhìn về phía bàn thờ', (
 test('Máy quay thứ nhất theo độ cao mục tiêu', () => { const pose = math.cameraPose(math.createView({ mode: 'first' }), { x: 1, y: 2, z: 3 }, bounds); close(pose.pos.y, 3.55); });
 test('Máy quay thứ ba ở sau lưng và nhìn mục tiêu', () => { const pose = math.cameraPose(math.createView(), target, bounds); assert.equal(pose.pos.z, 3); assert.deepEqual(pose.look, { x: 0, y: 1.55, z: 0 }); });
 test('Máy quay thứ ba không ra ngoài tường', () => { const view = math.createView(); view.rotate(Math.PI / 2, 0); const pose = math.cameraPose(view, target, bounds); close(pose.pos.x, -4); });
+test('Sát bốn tường và góc phòng, máy quay rút cả tia nhưng giữ đúng góc cúi', () => {
+  for (const [x, z, yaw] of [[0, 2.4, 0], [0, -2.4, Math.PI], [-3.4, 0, Math.PI / 2], [3.4, 0, -Math.PI / 2], [-3.4, 2.4, Math.PI / 4], [3.95, 2.95, -Math.PI / 4]]) {
+    for (const pitch of [5, 20, 70]) {
+      const view = math.createView(); Object.assign(view, { yaw, pitch: pitch * Math.PI / 180, dist: 9 });
+      const pose = math.cameraPose(view, { x, z }, bounds);
+      const dx = pose.pos.x - pose.look.x, dy = pose.pos.y - pose.look.y, dz = pose.pos.z - pose.look.z;
+      close(Math.atan2(dy, Math.hypot(dx, dz)), view.pitch);
+      assert.ok(pose.pos.x >= bounds.minX - 1e-10 && pose.pos.x <= bounds.maxX + 1e-10);
+      assert.ok(pose.pos.z >= bounds.minZ - 1e-10 && pose.pos.z <= bounds.maxZ + 1e-10);
+      assert.ok(Math.hypot(dx, dy, dz) < view.dist);
+      assert.ok(Math.min(Math.abs(pose.pos.x - bounds.minX), Math.abs(pose.pos.x - bounds.maxX),
+        Math.abs(pose.pos.z - bounds.minZ), Math.abs(pose.pos.z - bounds.maxZ)) < 1e-10, 'tia dài nhất chạm một biên');
+    }
+  }
+});
+test('Không chạm tường thì giữ đủ khoảng cách máy quay', () => {
+  const view = math.createView(); view.dist = 2;
+  const pose = math.cameraPose(view, target, bounds);
+  close(Math.hypot(pose.pos.x - pose.look.x, pose.pos.y - pose.look.y, pose.pos.z - pose.look.z), view.dist);
+});
 test('Máy quay thứ ba không thấp hơn sàn', () => { const pose = math.cameraPose(math.createView(), { x: 0, y: -20, z: 0 }, bounds); assert.equal(pose.pos.y, 0.3); });
 test('Đi thẳng theo hướng nhìn', () => { const next = math.moveTarget('hall', 0.5, 0.5, 0, 1, 0, 0.12); close(next.x, 0.5); close(next.z, 0.38); });
 test('Đi ngang sang phải theo máy quay', () => { const next = math.moveTarget('hall', 0.5, 0.5, 0, 0, 1, 0.12); assert.ok(next.x > 0.5); close(next.z, 0.5); });

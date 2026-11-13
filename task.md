@@ -72,7 +72,7 @@
 | T-085 | Cảnh Sân chùa 3D | 🟣 Chờ soát | P1 | CORE + HALL + KYDAO | gpt-6.1-sol (Codex CLI qua proxy) |
 | T-086 | Cảnh Tàng Kinh Các 3D | 🟣 Chờ soát | P1 | CORE + HALL | gpt-6.1-sol (Codex CLI qua proxy) |
 | T-087 | Cảnh Sân đấu (khu đi lại) 3D | 🟣 Chờ soát | P1 | CORE + HALL + PK | gpt-6-astra (Codex CLI qua proxy) |
-| T-088 | Nối 3D vào game: nút 2D/3D, góc nhìn 1/3, điều khiển | 🟡 Đang làm (dở, chưa gộp) | P0 | CORE + HALL + NAV | gpt-6.1-sol (Codex CLI qua proxy) |
+| T-088 | Nối 3D vào game: nút 2D/3D, góc nhìn 1/3, điều khiển | 🟣 Chờ soát | P0 | CORE + HALL + NAV | gpt-6.1-sol (Codex CLI qua proxy) |
 | T-089 | Cài đặt đồ họa, tự dò máy yếu | 🟣 Chờ soát | P1 | CORE + HALL | gpt-6-luna |
 | T-090 | Vẽ lại quân cờ 2D đẹp hơn | 🟣 Chờ soát | P1 | CORE + KYDAO | gpt-6.1-sol |
 | T-091 | Bàn cờ 3D, quân tiện tròn | 🟣 Chờ soát | P1 | CORE + KYDAO | gpt-6.1-sol |
@@ -1141,7 +1141,8 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
 - **Ngoài phạm vi**: mọi thứ trong `arena.js`.
 
 ### T-088 · Nối 3D vào game: nút 2D/3D, góc nhìn 1/3, điều khiển
-- **Trạng thái**: 🟡 Đang làm, DỞ DANG (2026-11-13). Thợ gpt-6.1-sol bị cắt giữa chừng vì hết hạn mức GPT. Mã dở lưu ở nhánh `codex/T-088-noi-3d-vao-game` (commit "Tạm lưu T-088 dở dang"), CHƯA gộp. Đã có: `Hall.view3d` trong `hall.js`, `view3d-ui.js`, `view3d.css`, `camera.mjs`, `input.mjs`, bảng cảnh trong `index.mjs`, sửa `index.html`/`app.js`/`arena.js`. Check sạch, 3 file test liên quan 37/37. Chưa làm: `npm test` đầy đủ, chơi thử trên trình duyệt, kiểm ẩn nút góc nhìn khi PK, gộp nhánh tích hợp mới (đã có cảnh Sân chùa, Tàng Kinh Các) vào nhánh thẻ.
+- **Trạng thái**: 🟣 Chờ soát. Điều phối soát 13/11: hai vòng gpt-6.1-sol. npm run check sạch 155 file, npm test 825 đạt 0 trượt 3 bỏ qua. Chơi thử game thật trên trình duyệt: bật 3D, WASD, phím V, đủ 4 cảnh, console không lỗi; vòng 2 đã sửa máy quay chúi sàn, bảng tên quá to, Sân chùa tối. Việc ẩn nút góc nhìn khi PK mới kiểm bằng test, chưa thử trận thật; chưa thử trên điện thoại.
+- **Người làm**: gpt-6.1-sol (Codex CLI qua proxy) · **Nhánh**: `codex/T-088-noi-3d-vao-game`
 - **Ưu tiên**: P0
 - **Gói ngữ cảnh**: CORE + HALL + NAV
 - **Khu vực chạm**: public/js/hall.js (chỉ **thêm** `Hall.view3d`: `snapshot()`, `hold(on)`, `emit(kind, data)`; không sửa hàm vẽ), public/js/world3d/camera.mjs, input.mjs (mới), public/js/view3d-ui.js (mới: nút, lưu `ta-view`), public/js/app.js (vùng khởi tạo Hall + phím tắt), public/index.html (`importmap`, nút, `<script>`, `?v=`), public/css/view3d.css (mới, tiền tố `v3-`), public/js/arena.js (chỉ chỗ gọi `Hall.attach`), test/hall-view3d.test.js (mới)
@@ -1158,6 +1159,7 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
   - [ ] Không có WebGL2 hoặc `start` lỗi: báo một câu ngắn, ở lại 2D
   - [ ] `npm run check`, `npm test` không thêm ca trượt; ảnh 3 cỡ màn, 2 góc nhìn
 - **Ngoài phạm vi**: không đổi giao thức socket, không sửa `server.js`, không sửa các hàm `draw*` của `hall.js`.
+- **Ghi chú bàn giao vòng 2**: Kiểm cú pháp trực tiếp 155 file JS/MJS sạch; 8 file test trực tiếp đạt 89/89. `npm run check` / `node --test` gặp spawn EPERM; chạy trực tiếp `e2e-scene` vẫn có 2 ca lỗi spawn EPERM ở helper mở server. Chưa chạy lại toàn bộ npm test hoặc kiểm ảnh/WebGL; nhờ điều phối chơi thử bốn mục và chạy e2e ngoài sandbox. Đã tăng cache của script và chuỗi import 3D. Chi tiết bốn mục, file ngoài vùng chạm bắt buộc và giới hạn kiểm chứng trong `BAN-GIAO-T-088.md` (không commit).
 
 ### T-089 · Cài đặt đồ họa, tự dò máy yếu
 - **Trạng thái**: 🟣 Chờ soát. Điều phối chạy lại: npm run check sạch, node --test test/gfx-detect.test.js 5/5. Lưu ý: điện thoại hiện luôn vào mức Thấp; nới sau khi đo máy thật. · **Ưu tiên**: P1 · **Gói ngữ cảnh**: CORE + HALL

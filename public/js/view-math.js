@@ -48,11 +48,21 @@
     if (view.mode === 'first') {
       return { pos: eye, look: { x: eye.x + direction.x, y: eye.y + direction.y, z: eye.z + direction.z } };
     }
+    // Rút cả tia về mắt để giữ góc cúi, thay vì đẩy riêng X/Z lên đầu người.
+    const offset = { x: -direction.x * view.dist, y: direction.y * view.dist, z: -direction.z * view.dist };
+    let t = 1;
+    for (const axis of ['x', 'z']) {
+      if (offset[axis] > 0) t = Math.min(t, (bounds[axis === 'x' ? 'maxX' : 'maxZ'] - eye[axis]) / offset[axis]);
+      else if (offset[axis] < 0) t = Math.min(t, (bounds[axis === 'x' ? 'minX' : 'minZ'] - eye[axis]) / offset[axis]);
+    }
+    if (Number.isFinite(bounds.maxY) && offset.y > 0) t = Math.min(t, (bounds.maxY - eye.y) / offset.y);
+    // Sát tường hơn 12% khoảng cách thì ưu tiên ở trong bounds, không xuyên tường.
+    t = clamp(t, 0, 1);
     return {
       pos: {
-        x: clamp(eye.x - direction.x * view.dist, bounds.minX, bounds.maxX),
-        y: Math.max(0.3, eye.y + Math.sin(view.pitch) * view.dist),
-        z: clamp(eye.z - direction.z * view.dist, bounds.minZ, bounds.maxZ)
+        x: eye.x + offset.x * t,
+        y: Math.max(0.3, eye.y + offset.y * t),
+        z: eye.z + offset.z * t
       },
       look: eye
     };
