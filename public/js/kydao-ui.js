@@ -573,7 +573,17 @@
       const list = h('div', { class: 'kd-skin-row', role: 'radiogroup', 'aria-label': title });
       const item = (id, name) => {
         const b = h('button', { type: 'button', class: 'kd-skin' + (current === id ? ' is-on' : ''), role: 'radio', 'aria-checked': String(current === id), onclick: () => pick(id) });
-        if (id) { const im = h('img', { class: 'kd-skin-img', alt: '', loading: 'lazy', width: '96', height: '60' }); im.src = K.thumb(kind, id); b.appendChild(im); }
+        if (id) {
+          const im = h('img', { class: 'kd-skin-img', alt: '', loading: 'lazy', width: '96', height: '60' });
+          if (kind === 'field' && K.crest) {
+            im.src = K.crest(id);
+            if (im.classList && typeof im.classList.add === 'function') im.classList.add('kd-skin-crest');
+            else im.className = (im.className ? im.className + ' ' : '') + 'kd-skin-crest';
+          } else {
+            im.src = K.thumb(kind, id);
+          }
+          b.appendChild(im);
+        }
         else b.appendChild(h('span', { class: 'kd-skin-img kd-skin-none' }));
         b.appendChild(h('span', { class: 'kd-skin-name' }, name));
         return b;

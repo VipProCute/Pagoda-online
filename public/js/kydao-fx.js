@@ -190,12 +190,13 @@
     const banner = doc.createElement('div');
     banner.className = 'kdfx-banner';
     banner.setAttribute('aria-live', 'polite');
+    const crest = doc.createElement('img'); crest.className = 'kdfx-crest'; crest.alt = ''; crest.hidden = true; if (typeof crest.setAttribute === 'function') crest.setAttribute('hidden', '');
     const cry = doc.createElement('div'); cry.className = 'kdfx-cry';
     const sub = doc.createElement('div'); sub.className = 'kdfx-sub';
-    banner.appendChild(cry); banner.appendChild(sub);
+    banner.appendChild(crest); banner.appendChild(cry); banner.appendChild(sub);
     wrapEl.appendChild(canvas); wrapEl.appendChild(banner);
     M = {
-      wrap: wrapEl, canvas, banner, cry, sub,
+      wrap: wrapEl, canvas, banner, crest, cry, sub,
       ctx: canvas.getContext ? canvas.getContext('2d') : null,
       reduced: !!(opts && opts.reduced),
       effects: [], parts: [], raf: 0, last: 0, timers: [], bannerTimer: 0,
@@ -241,11 +242,18 @@
     clearTimeout(m.bannerTimer);
     m.cry.textContent = title || '';
     m.sub.textContent = sub || '';
+    if (m.crest) {
+      const src = o && o.crest ? o.crest : '';
+      m.crest.hidden = !src;
+      if (src) m.crest.src = src;
+      else if (typeof m.crest.removeAttribute === 'function') m.crest.removeAttribute('src');
+      else m.crest.src = '';
+    }
     m.banner.style.setProperty('--kdfx-glow', (o && o.glow) || '#ffd27a');
     m.banner.className = 'kdfx-banner kdfx-' + ((o && o.kind) || 'domain') + ' kdfx-tone-' + ((o && o.tone) || 'win') + (isReduced() ? ' kdfx-reduced' : '');
     void m.banner.offsetWidth;                                   // khởi động lại animation CSS
     m.banner.classList.add('is-on');
-    m.bannerTimer = setTimeout(() => { if (M === m) { m.banner.classList.remove('is-on'); m.cry.textContent = ''; m.sub.textContent = ''; } }, (o && o.ms) || DOMAIN_MS);
+    m.bannerTimer = setTimeout(() => { if (M === m) { m.banner.classList.remove('is-on'); if (m.crest) m.crest.hidden = true; m.cry.textContent = ''; m.sub.textContent = ''; } }, (o && o.ms) || DOMAIN_MS);
   }
 
   function loop(now) {
@@ -316,7 +324,7 @@
     const skins = root.KydaoSkins;
     const f = skins && skins.field ? skins.field(o.fieldId) : null;
     const glow = f ? f.palette.glow : '#ffd27a';
-    showBanner(f ? f.cry : 'Khai mở lãnh địa!', f ? f.sub : '', { kind: 'domain', glow, ms: DOMAIN_MS });
+    showBanner(f ? f.cry : 'Khai mở lãnh địa!', f ? f.sub : '', { kind: 'domain', glow, ms: DOMAIN_MS, crest: skins && skins.crest ? skins.crest(o.fieldId) : null });
     if (isReduced() || o.bannerOnly) return;
     const fit0 = () => { fit(); return { x: 0, y: m.h / 2, w: m.w, h: m.h / 2 }; };
     const rect = o.rect && isNum(o.rect.w) ? o.rect : fit0();
@@ -513,7 +521,7 @@
     m.effects = []; m.parts = [];
     endPromote();
     if (m.ctx) { m.ctx.setTransform(1, 0, 0, 1, 0, 0); m.ctx.clearRect(0, 0, m.canvas.width, m.canvas.height); }
-    m.banner.classList.remove('is-on'); m.cry.textContent = ''; m.sub.textContent = '';
+    m.banner.classList.remove('is-on'); if (m.crest) m.crest.hidden = true; m.cry.textContent = ''; m.sub.textContent = '';
   }
 
   const api = {

@@ -68,3 +68,4 @@
 .kd-skin-note { font-size: 12px; color: var(--muted); }
 .kd-gold { background: var(--gold, #e7c45a); color: #2a1a05; font-weight: 700; }
 .kd-gold:disabled { opacity: .5; }
+.kd-skin-img.kd-skin-crest { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; background: #0b0b10; }

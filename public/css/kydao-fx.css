@@ -52,3 +52,9 @@
 @media (prefers-reduced-motion: reduce) {
   .kdfx-banner .kdfx-cry, .kdfx-banner .kdfx-sub { animation: kdfxFade 1.4s linear both !important; filter: none; }
 }
+.kdfx-crest { width: clamp(56px, 22%, 112px); height: auto; aspect-ratio: 1; border-radius: 50%; margin-bottom: 6px; box-shadow: 0 0 18px var(--kdfx-glow, #ffd27a); }
+.kdfx-crest[hidden] { display: none; }
+.kdfx-banner.is-on .kdfx-crest { animation: kdfxCrest 1.8s cubic-bezier(.2, .9, .25, 1) both; }
+@keyframes kdfxCrest { 0% { transform: scale(.2) rotate(-40deg); opacity: 0; } 18% { transform: scale(1.12) rotate(0); opacity: 1; } 28% { transform: scale(1); } 85% { opacity: 1; } 100% { opacity: 0; } }
+.kdfx-banner.kdfx-reduced .kdfx-crest { animation: none; }
+@media (prefers-reduced-motion: reduce) { .kdfx-banner.is-on .kdfx-crest { animation: none; } }
