@@ -93,15 +93,15 @@
 | T-117 | Đồ họa 2D bằng Canva: khung khẩu hiệu, biểu tượng bộ chọn | 🟣 Chờ soát | P2 | CORE + KYDAI | Claude Sonnet 5.5 (Canva) |
 | T-118 | Sân v2: dựng cảnh 3D thật trong Blender, bản mẫu Hỏa Diệm Sơn 👤 duyệt | 🟣 Chờ soát | P0 | CORE + KYDAI | Claude Sonnet 5.5 (Blender) |
 | T-119 | Bàn 2D: dải cảnh quanh bàn, dùng ảnh sân v2, quân 2D từ ảnh render | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | Claude Sonnet 5.5 |
-| T-120 | Bản mẫu nhân vật 3D dựng bằng Blender, đo hiệu năng 👤 duyệt | ⏳ T-111 | P1 | CORE + HALL + KYDAI | — |
+| T-120 | Bản mẫu nhân vật 3D dựng bằng Blender, đo hiệu năng 👤 duyệt | 🟣 Chờ soát · 👤 duyệt bản mẫu | P1 | CORE + HALL + KYDAI | Claude Sonnet 5.5 (Blender) |
 | T-121 | Bàn 2D: dòng sông sinh động giữa bàn cờ tướng và cờ úp | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | gpt-6.1-terra |
 | T-122 | Bàn 3D: dòng sông sinh động giữa bàn cờ tướng và cờ úp | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | Claude Sonnet 5.5 |
 | T-118b | Sân v2: chỉnh Hỏa Diệm Sơn và dựng 7 sân còn lại | 🟣 Chờ soát | P0 | CORE + KYDAI | Claude Sonnet 5.5 (Blender) |
 | T-123 | Tăng lực chấn động khi phong cấp | 🟣 Chờ soát | P1 | CORE + KYDAI | gpt-6-luna |
 | T-124 | Sửa lỗi từ đợt soát của GPT Sol | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | gemini-3.8-flash-high |
 | T-125 | Bàn 3D dùng ảnh sân v2 có dải cảnh | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | Claude Sonnet 5.5 |
-| T-126a | Ảnh quân cờ 2D render từ mô hình 3D (8 bộ) | 🟡 Đang làm | P1 | CORE + KYDAI | Claude Sonnet 5.5 (Blender) |
-| T-126b | Bàn 2D vẽ quân bằng ảnh render | ⏳ T-126a | P1 | CORE + KYDAO + KYDAI | — |
+| T-126a | Ảnh quân cờ 2D render từ mô hình 3D (8 bộ) | 🟣 Chờ soát | P1 | CORE + KYDAI | Claude Sonnet 5.5 (Blender) |
+| T-126b | Bàn 2D vẽ quân bằng ảnh render | 🟣 Chờ soát | P1 | CORE + KYDAO + KYDAI | Claude Sonnet 5.5 |
 | T-127 | Huy hiệu chủ đề trong khẩu hiệu và bộ chọn Lãnh địa | 🟣 Chờ soát | P2 | CORE + KYDAI | gemini-3.8-flash-high |
 | T-128 | Sửa lỗi từ đợt soát vòng 2 của Gemini 4 Argon | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | Claude Sonnet 5.5 |
 
@@ -1291,6 +1291,9 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
 - **Soát vòng 2** (Gemini 4 Argon, sau T-124): các lỗi vòng 1 đã sửa đủ; tìm thêm 4 điểm (tải thừa ảnh v1, vòng lặp sông chạy ngầm, đổi cỡ bàn giữa hiệu ứng, bàn 3D tải cả .glb lẫn ảnh): **T-128** đã sửa hết.
 - **Lỗi điều phối tự bắt khi xem trình duyệt**: bộ chọn "Lãnh địa" bị bóp còn 28 px trong khung flex (test DOM giả không thấy); đã sửa bằng `flex: 0 0 auto` và cuộn vào tầm nhìn khi mở.
 - **T-116**: README, Sổ tay (`public/data/so-tay.vi.json`), ARCHITECTURE đã cập nhật. Phần ui-harness tự động chưa làm; hiện dùng 4 trang thử tay (`/kydao-kydai-test.html`, `/kydao-fx-test.html`, `/kydao-skins-test.html`, `/world3d-board.html`).
+- **T-126a/b**: 8 atlas quân 2D render từ mô hình 3D (`public/img/kydao/pieces2d/`, mỗi bộ khoảng 40 KB); bàn 2D vẽ quân có skin bằng atlas, vector là đường dự phòng. Điều phối đã xem trên bảng cờ thật và phóng quân lên 1,12 ô cho đầy ô.
+- **T-120**: bản mẫu nhân vật áo lam nam/nữ (1.156 / 1.184 tam giác, 97 KB, 15 xương, 4 hoạt ảnh idle/walk/sit/bow) và hào quang lưới; ảnh ở docs/ky-dai/anh/nhan-vat-*.jpg; trang thử `/world3d-avatar.html` khu "Bản mẫu Blender". **Chưa đo được hiệu năng**: khung trình duyệt của điều phối bị bóp còn 3 khung/giây ngay cả với 2 nhân vật, nên số đo vô nghĩa; 60 nhân vật tốn 481 lượt vẽ (8 vật liệu mỗi nhân vật), cần gộp vật liệu thành 1 (màu theo đỉnh) trước khi dùng thật. 👤 Chủ dự án mở trang thử trên trình duyệt thật, bấm "Dừng cảnh dựng bằng mã" rồi "Nhân 60" để xem số khung hình, và duyệt hình dáng trước khi làm T-121 → T-125 cũ (trang phục, tóc, hào quang 9 bậc, pháp tướng, NPC).
+- `npm test` trên nhánh tích hợp sau T-126b: **942 đạt, 0 trượt, 3 bỏ qua** (2 PostgreSQL, 1 perft sâu), tổng 945.
 - `npm test` trên nhánh tích hợp trước T-121: 906 đạt, 0 trượt, 3 bỏ qua (2 PostgreSQL, 1 perft sâu).
 
 ### T-110 · Thêm giao thức `kd:skin` trên máy chủ
