@@ -80,6 +80,16 @@
 | T-093 | README, Sổ tay cho 3D và góc nhìn | 🟣 Chờ soát | P2 | CORE + DOCS | gemini-3.8-flash-high (Codex CLI qua proxy) |
 | T-100 | Nhân vật 3D bám sát 2D: hào quang, pháp tướng, quỷ, trang phục, Obito | 🟣 Chờ soát | P0 | CORE + HALL | gpt-6.1-sol |
 | T-101 | Nhạc riêng cho từng môn cờ | 🟣 Chờ soát | P2 | CORE + KYDAO | gpt-6-luna (Codex CLI qua proxy) |
+| **Đợt Kỳ Đài** ([docs/KE-HOACH-KY-DAI.md](docs/KE-HOACH-KY-DAI.md)) | | | | | |
+| T-110 | Giao thức `kd:skin` trên máy chủ | 🔵 Sẵn sàng | P0 | CORE + KYDAO + KYDAI | — |
+| T-111 | Dây chuyền Blender và tài nguyên 8 sân, 8 bộ quân | 🟡 Đang làm | P0 | CORE + KYDAI | Điều phối (Claude Fable 5.2) |
+| T-112 | Module hiệu ứng 2D `KydaoFx`: khai mở, chấn động phong cấp, chiến thắng | 🔵 Sẵn sàng | P0 | CORE + KYDAO + KYDAI | — |
+| T-113 | Bàn 3D: nạp `.glb`, skin nửa sân, skin quân, `playFx` | 🔵 Sẵn sàng | P0 | CORE + KYDAO + KYDAI | — |
+| T-114 | Bàn 2D: vẽ skin nửa sân, skin quân, `jolt` | ⏳ T-111 | P0 | CORE + KYDAO + KYDAI | — |
+| T-115 | Nối skin và hiệu ứng vào bảng cờ | ⏳ T-110, T-112, T-113, T-114 | P0 | CORE + KYDAO + KYDAI | — |
+| T-116 | ui-harness, ảnh chụp, Sổ tay, README cho Kỳ Đài | ⏳ T-115 | P1 | CORE + KYDAI + DOCS | — |
+| T-117 | Đồ họa 2D bằng Canva: khung khẩu hiệu, biểu tượng bộ chọn | ⏳ T-115 | P2 | CORE + KYDAI | — |
+| T-120 | Bản mẫu nhân vật 3D dựng bằng Blender, đo hiệu năng 👤 duyệt | ⏳ T-111 | P1 | CORE + HALL + KYDAI | — |
 
 Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạm `package.json`). **T-005**, **T-007**, **T-002** làm song song được với nhóm trên.
 Đợt 2026-11: làm **T-003, T-004, T-006** trước (T-004 gỡ nút thắt `package.json` cho mọi thẻ thêm file JS; T-006 là cổng "CI xanh"). Sau đó theo lịch 6 đợt ở [docs/KE-HOACH-DOT-2026-11.md §10.3](docs/KE-HOACH-DOT-2026-11.md#103-lịch-theo-đợt-và-khóa-vùng-nóng).
@@ -1250,6 +1260,135 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
 - **Ghi chú bàn giao**: Ánh xạ mã môn → MP3, chuyển nhạc nền và khôi phục theo cảnh; test audio 3/3, kydao-app 16/16 đạt. `npm run check` bị sandbox chặn spawn `node.exe` (EPERM); `git add`/commit bị từ chối tạo `.git/worktrees/T-101/index.lock` (Permission denied). Cú pháp file sửa đã kiểm bằng `node --check`. Xem `BAN-GIAO-T-101.md`.
 
 **Ý tưởng của đợt 3D (⚪, chờ chủ dự án chọn; mô tả ở KE-HOACH-3D §3):** T-094 ngày đêm và đèn lồng · T-095 tiếng nói theo khoảng cách · T-096 trang trí lễ theo âm lịch · T-097 sàn PK 3D máy quay thứ ba cố định · T-098 chụp ảnh lưu niệm · T-099 bản đồ nhỏ.
+
+### Đợt Kỳ Đài · nâng cấp đồ họa các môn cờ
+
+> Thiết kế và hợp đồng: [docs/KE-HOACH-KY-DAI.md](docs/KE-HOACH-KY-DAI.md). Nhánh tích hợp: `claude/chess-game-graphics-upgrade-553ef6` (thợ tách nhánh từ đây). Danh mục skin `public/js/kydao-skins.js` do điều phối giữ: thợ **không sửa**, cần đổi thì ghi vào bàn giao.
+
+### T-110 · Thêm giao thức `kd:skin` trên máy chủ
+- **Trạng thái**: 🔵 Sẵn sàng
+- **Ưu tiên**: P0
+- **Gói ngữ cảnh**: CORE + KYDAO + KYDAI
+- **Khu vực chạm**: lib/kydao/manager.js, server.js (chỉ thêm handler `kd:skin` cạnh các handler `kd:*`), docs/KY-DAO-GIAO-THUC.md, test/kydao-manager.test.js, test/e2e-kydao.test.js, test/kydao-skins.test.js (mới)
+- **Phụ thuộc**: không · **Thợ**: Claude Opus 5.5 · **Soát**: Điều phối
+- **Người làm**: — · **Nhánh**: —
+- **Mục tiêu**: hai người chơi và người xem thấy cùng một skin sân, skin quân của từng bên; máy chủ chỉ chuyển tiếp mã skin đã kiểm.
+- **Tiêu chí xong**:
+  - [ ] `kd:skin { gameId, field?, pieces? }`: chỉ người đang chơi ván đó, ván chưa kết thúc, môn thuộc `KydaoSkins.GAMES`; sai thì `ack({ ok:false, reason })`, không ném lỗi
+  - [ ] Mã skin đi qua `KydaoSkins.normalize`; khóa lạ, kiểu lạ, `__proto__` đều thành `null` (có test)
+  - [ ] Phát `kd:skin { gameId, side, field, pieces, opened }` cho cả phòng ván (người chơi + người xem); `opened` đúng nghĩa KH §4.2
+  - [ ] Giới hạn: đổi `field` tối đa 1 lần / 20 giây mỗi người (thời gian tiêm qua `now`); đổi `pieces` tối đa 1 lần / 3 giây
+  - [ ] `kd:start`, `resume`, `watch` có `skins: { a, b }`; ván mới bắt đầu bằng `null`
+  - [ ] Payload không chứa uid; cờ úp không lộ thêm gì (quét đệ quy như test hiện có)
+  - [ ] `docs/KY-DAO-GIAO-THUC.md` có mục `kd:skin`; `npm run check` + `npm test` sạch
+- **Ngoài phạm vi**: lưu bền, mở khóa skin, giao diện, `kydao-skins.js`.
+
+### T-111 · Dựng dây chuyền Blender và tài nguyên 8 sân, 8 bộ quân
+- **Trạng thái**: 🟡 Đang làm
+- **Ưu tiên**: P0
+- **Gói ngữ cảnh**: CORE + KYDAI
+- **Khu vực chạm**: tools/blender/kydao/* (mới), public/img/kydao/** (mới), public/models/kydao/** (mới), public/img/NOTICE.txt
+- **Phụ thuộc**: không · **Người làm**: Điều phối (Claude Fable 5.2, Blender MCP) · **Nhánh**: claude/chess-game-graphics-upgrade-553ef6
+- **Mục tiêu**: mỗi skin trong danh mục có ảnh nửa sân 2D, ảnh xem trước và mô hình `.glb`, sinh lại được bằng script.
+- **Tiêu chí xong**:
+  - [ ] `tools/blender/kydao/` có script dựng cảnh theo `id`, đọc màu từ danh mục, xuất `.webp` + `.glb`; có README cách chạy
+  - [ ] 8 sân + 8 bộ quân đạt ngân sách KH §4.5 (bảng số tam giác và dung lượng trong bàn giao)
+  - [ ] `public/img/NOTICE.txt` ghi nguồn (tự dựng bằng Blender)
+- **Ngoài phạm vi**: mã giao diện.
+
+### T-112 · Viết module hiệu ứng 2D `KydaoFx`
+- **Trạng thái**: 🔵 Sẵn sàng
+- **Ưu tiên**: P0
+- **Gói ngữ cảnh**: CORE + KYDAO + KYDAI
+- **Khu vực chạm**: public/js/kydao-fx.js (mới), public/css/kydao-fx.css (mới), public/kydao-fx-test.html (mới, trang thử), test/kydao-fx.test.js (mới)
+- **Phụ thuộc**: không · **Thợ**: Claude Sonnet 5.5 · **Soát**: Điều phối
+- **Người làm**: — · **Nhánh**: —
+- **Mục tiêu**: một module độc lập phát ba nhóm hiệu ứng trên lớp phủ của bàn cờ, theo đúng API ở KH §4.4.
+- **Tiêu chí xong**:
+  - [ ] `domain`: khẩu hiệu `cry` + dòng `sub` của sân (lấy từ `KydaoSkins`), vệt sáng quét nửa sân từ mép người chơi ra giữa, hạt theo `fx` của sân; tối đa 1,8 giây; không bắt sự kiện chuột/chạm
+  - [ ] `promote`: bàn rung, vòng sóng lan từ ô phong cấp, gọi `onJolt(map)` mỗi khung để các quân khác nảy lên rồi rơi về chỗ (toán tắt dần là hàm thuần, có test); tối đa 1,2 giây
+  - [ ] `win`: khác nhau theo `reason`: chiếu hết / bắt Tướng (tia sáng dội xuống ô Vua, vết nứt lan), `five` (vẽ sáng dãy 5 quân theo `line`), thắng điểm cờ vây, hết giờ, xin thua, hòa (nhẹ nhàng); bên thắng thấy pháo hoa cánh sen, bên thua thấy bản dịu
+  - [ ] `prefers-reduced-motion` hoặc `ta-fx` tắt: chỉ còn chữ mờ dần, không rung, không hạt; `stop()` dọn sạch canvas và timer
+  - [ ] Chữ gán bằng `textContent`; CSS tiền tố `kdfx-`; không phụ thuộc thư viện
+  - [ ] Trang thử có nút cho từng hiệu ứng × từng sân; 375×812 không tràn; ảnh chụp trong bàn giao
+- **Ngoài phạm vi**: sửa `kydao-ui.js`, `kydao-draw.js`, `index.html` (T-115 nối sau); bàn 3D.
+
+### T-113 · Bàn 3D: nạp `.glb`, skin nửa sân, skin quân, `playFx`
+- **Trạng thái**: 🔵 Sẵn sàng
+- **Ưu tiên**: P0
+- **Gói ngữ cảnh**: CORE + KYDAO + KYDAI
+- **Khu vực chạm**: public/js/world3d/board3d.mjs, public/js/world3d/board-assets.mjs (mới), public/world3d-board.html (trang thử), test/kydao-board3d.test.js
+- **Phụ thuộc**: không (thiếu `.glb` thì dùng `palette`) · **Thợ**: Claude Opus 5.5 · **Soát**: Điều phối
+- **Người làm**: — · **Nhánh**: —
+- **Mục tiêu**: bàn 3D hiện skin từng nửa sân, skin quân từng bên và ba hiệu ứng, cùng dữ liệu `o.skins` như bàn 2D.
+- **Tiêu chí xong**:
+  - [ ] `board-assets.mjs`: nạp lười `GLTFLoader` từ `/vendor/three-addons/loaders/GLTFLoader.js`, có bộ nhớ đệm, lỗi/404 thì trả `null` và bàn vẫn chạy
+  - [ ] `setState(o)` đọc `o.skins`: mỗi nửa sân đổi vật liệu theo `palette` và gắn mô hình `fieldModel(id)` nếu có; quân mỗi bên đổi chất liệu theo `PIECES[id]`, dùng mô hình `piecesModel(id)` nếu có
+  - [ ] `playFx('domain'|'promote'|'win', opts)`: khai mở (nửa sân trồi lên/đổi màu dần), phong cấp (máy quay rung, các quân nảy theo khoảng cách tới ô phong cấp, vòng sóng), chiến thắng (Vua thua đổ, ánh sáng dội)
+  - [ ] Giảm chuyển động: đổi tức thì, không rung; mức đồ họa Thấp: không hạt
+  - [ ] `dispose()` giải phóng hình, vật liệu, texture của skin; đổi skin 20 lần không tăng `renderer.info.memory`
+  - [ ] Trang thử có bộ chọn skin từng bên và nút cho từng hiệu ứng; ảnh chụp trong bàn giao
+- **Ngoài phạm vi**: `kydao-ui.js`, giao thức, cờ vây/caro (chỉ cần `playFx('win')`).
+
+### T-114 · Bàn 2D: vẽ skin nửa sân, skin quân, `jolt`
+- **Trạng thái**: ⏳ Chờ T-111 (ảnh nửa sân)
+- **Ưu tiên**: P0
+- **Gói ngữ cảnh**: CORE + KYDAO + KYDAI
+- **Khu vực chạm**: public/js/kydao-draw.js, public/kydao-pieces-test.html, test/kydao-draw-skins.test.js (mới)
+- **Phụ thuộc**: T-111 · **Thợ**: Claude Sonnet 5.5 · **Soát**: Điều phối
+- **Người làm**: — · **Nhánh**: —
+- **Mục tiêu**: `KydaoDraw.draw` vẽ đúng skin từng nửa sân và skin quân từng bên theo `o.skins`, và độ lệch `o.jolt`.
+- **Tiêu chí xong**:
+  - [ ] Nửa sân: phủ ảnh `fieldImage(id)` (nạp lười, chưa có ảnh thì tô theo `palette`), nét kẻ theo `palette.line`; lật bàn (`flip`) vẫn đúng nửa
+  - [ ] Dấu nước vừa đi, ô chọn, ô bị chiếu, điểm gợi ý luôn nằm trên skin và đủ tương phản trên cả 8 sân
+  - [ ] Quân: màu thân, viền, ánh sáng theo `PIECES[id].a|b`; khóa bộ nhớ đệm bitmap có mã skin; cờ úp: mọi quân úp cùng một bên vẽ **giống hệt nhau**
+  - [ ] `o.jolt[ô] = {dx,dy}` dịch quân khi vẽ; không có `o.skins`/`o.jolt` thì hình ra y như cũ (test so điểm ảnh hoặc lệnh vẽ)
+  - [ ] Trang thử hiện 8 sân × 8 bộ quân cho cờ vua và cờ tướng
+- **Ngoài phạm vi**: `kydao-ui.js`, hiệu ứng.
+
+### T-115 · Nối skin và hiệu ứng vào bảng cờ
+- **Trạng thái**: ⏳ Chờ T-110, T-112, T-113, T-114
+- **Ưu tiên**: P0
+- **Gói ngữ cảnh**: CORE + KYDAO + KYDAI
+- **Khu vực chạm**: public/js/kydao-ui.js, public/css/kydao.css, public/js/app.js (chỉ danh sách sự kiện `kd:*` chuyển cho KydaoUI), public/index.html (nạp `kydao-skins.js`, `kydao-fx.js`, CSS, `?v=`), test/kydao-ui-core.test.js, test/kydao-ui-games.test.js
+- **Phụ thuộc**: T-110, T-112, T-113, T-114 · **Thợ**: Claude Opus 5.5 · **Soát**: Điều phối
+- **Người làm**: — · **Nhánh**: —
+- **Mục tiêu**: trong ván thật, người chơi chọn skin, bấm khai mở, thấy khẩu hiệu; phong cấp làm chấn động bàn; kết thúc ván có hiệu ứng chiến thắng ở cả 5 môn, cả 2D và 3D.
+- **Tiêu chí xong**:
+  - [ ] Nút "Lãnh địa" mở bộ chọn: hàng skin sân, hàng skin quân (ảnh xem trước, tên), nút "Khai mở"; lựa chọn lưu `localStorage`; skin quân tự gửi lúc bắt đầu ván, skin sân chỉ gửi khi bấm
+  - [ ] Nhận `kd:skin`: cập nhật `o.skins`, `opened` thì chạy `domain` (2D hoặc 3D tuỳ bàn đang bật); người xem cũng thấy
+  - [ ] Công tắc "Ẩn skin của đối thủ" (lưu `localStorage`)
+  - [ ] `handleMoved` giữ `info` của luật: cờ vua có `promotion` thì chạy `promote` + âm thanh
+  - [ ] `kd:end`: chạy `win` trước rồi mới hiện `.kd-result`; caro tự tính dãy thắng bằng `KyGomoku`
+  - [ ] Nút chạm ≥ 44px; 375×812 không che đồng hồ và bàn; giảm chuyển động chạy đúng
+- **Ngoài phạm vi**: luật cờ, máy chủ, mở khóa skin.
+
+### T-116 · ui-harness, ảnh chụp, Sổ tay, README cho Kỳ Đài
+- **Trạng thái**: ⏳ Chờ T-115
+- **Ưu tiên**: P1 · **Gói ngữ cảnh**: CORE + KYDAI + DOCS
+- **Khu vực chạm**: tools/ui-harness/kydao/*, README.md, public/js/guide.js (mục Kỳ Đạo), docs/agents/ARCHITECTURE.md
+- **Phụ thuộc**: T-115 · **Thợ**: Claude Haiku 5.5 · **Soát**: Điều phối
+- **Mục tiêu**: kịch bản giả lập khai mở, phong cấp, 5 kiểu thắng; ảnh 375/768/1280; tài liệu người chơi và bản đồ mã cập nhật.
+- **Tiêu chí xong**:
+  - [ ] Harness phát `kd:skin`, nước phong cấp, `kd:end` từng `reason`; lỗi console là trượt
+  - [ ] README và Sổ tay có mục "Lãnh địa và skin quân"; ARCHITECTURE §6 thêm điểm đồng bộ danh mục ↔ tài nguyên Blender
+
+### T-117 · Đồ họa 2D bằng Canva: khung khẩu hiệu, biểu tượng bộ chọn
+- **Trạng thái**: ⏳ Chờ T-115 (cần biết kích thước thật)
+- **Ưu tiên**: P2 · **Gói ngữ cảnh**: CORE + KYDAI
+- **Khu vực chạm**: public/img/kydao/ui/* (mới), public/img/NOTICE.txt
+- **Người làm**: Điều phối (Canva)
+- **Mục tiêu**: khung nền khẩu hiệu theo từng chủ đề và 8 biểu tượng chủ đề cho bộ chọn; mỗi ảnh ≤ 40 KB, ghi nguồn.
+
+### T-120 · Bản mẫu nhân vật 3D dựng bằng Blender, đo hiệu năng
+- **Trạng thái**: ⏳ Chờ T-111 · 👤 chủ dự án duyệt bản mẫu trước khi làm tiếp T-121 → T-125 (trang phục, tóc, hào quang 9 bậc, pháp tướng, NPC)
+- **Ưu tiên**: P1 · **Gói ngữ cảnh**: CORE + HALL + KYDAI
+- **Khu vực chạm**: tools/blender/avatar/* (mới), public/models/avatar/* (mới), public/world3d-avatar.html (thêm cột so sánh)
+- **Mục tiêu**: một nhân vật nam + một nữ dựng bằng Blender (có xương, đi/đứng/ngồi/lạy), một bộ trang phục, một hào quang dạng lưới 3D; đặt cạnh nhân vật dựng bằng mã để so.
+- **Tiêu chí xong**:
+  - [ ] ≤ 1.200 tam giác mỗi nhân vật, `.glb` ≤ 180 KB; 60 nhân vật trên màn vẫn ≥ 30 khung/giây ở mức Thấp (số đo trong bàn giao)
+  - [ ] Ảnh so sánh cũ/mới gửi chủ dự án; **chưa** thay `avatar.mjs`
+- **Ngoài phạm vi**: thay nhân vật trong game.
 
 ---
 
