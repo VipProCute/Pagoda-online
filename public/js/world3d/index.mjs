@@ -1,14 +1,87 @@
 'use strict';
 
+import { createCamera } from './camera.mjs?v=1';
+import { createInput } from './input.mjs?v=1';
+
 // Nạp module này bằng import() khi bật 3D; Three.js chỉ nạp trong start().
 // scene: 'test' hoặc module { build(ctx) → { group, update, pick, dispose } }.
 // ctx gồm THREE, scene, camera, renderer, on, quality, view, reducedMotion.
 // World3D sở hữu tài nguyên GPU trong group; dispose() của cảnh dọn phần còn lại.
-// setView chỉ giữ lựa chọn first/third cho bộ máy quay được nối ở thẻ sau.
 let active = null;
 let generation = 0;
 const QUALITY = { low: 1, medium: 1.5, high: 2 };
 const failure = reason => ({ ok: false, reason });
+const SCENES = {
+  hall: () => import('./scenes/hall.mjs?v=1'),
+  arena: () => import('./scenes/arena.mjs?v=1'),
+  yard: () => import('./scenes/yard.mjs?v=1'),
+  library: () => import('./scenes/library.mjs?v=1')
+};
+
+function clearPeople(world) {
+  for (const entry of world.people.values()) { entry.avatar.dispose(); entry.avatar.group.removeFromParent(); }
+  world.people.clear();
+}
+
+function updatePeople(world, state, dt) {
+  // Cảnh Sân đấu đã tự vẽ người chơi; lớp nối bổ sung NPC và các cảnh còn lại.
+  const list = (world.sceneName === 'arena' ? [] : state.players || []).concat(state.npcs || []);
+  const seen = new Set();
+  for (const person of list) {
+    seen.add(person.id);
+    let entry = world.people.get(person.id);
+    if (!entry) {
+      entry = { avatar: world.createAvatar(person.look, { role: person.role }), look: '' };
+      world.people.set(person.id, entry); world.ctx.scene.add(entry.avatar.group);
+    }
+    const look = JSON.stringify(person.look);
+    if (look !== entry.look) { entry.avatar.setLook(person.look); entry.look = look; }
+    const pos = globalThis.ViewMath.toWorld(state.scene, person.x, person.z);
+    entry.avatar.group.position.set(pos.x, world.content.surfaceHeight?.(person.x, person.z) || 0, pos.z);
+    entry.person = person;
+    entry.avatar.update({ ...person, isSelf: person.id === state.me, view: world.ctx.view, reducedMotion: world.ctx.reducedMotion }, dt);
+  }
+  for (const [id, entry] of world.people) if (!seen.has(id)) {
+    entry.avatar.dispose(); entry.avatar.group.removeFromParent(); world.people.delete(id);
+  }
+}
+
+function choose(world, event) {
+  const rect = world.canvas.getBoundingClientRect();
+  world.cursor.set((event.clientX - rect.left) / rect.width * 2 - 1, 1 - (event.clientY - rect.top) / rect.height * 2);
+  world.raycaster.setFromCamera(world.cursor, world.ctx.camera);
+  world.ctx.scene.updateMatrixWorld(true);
+  const state = world.getState();
+  const visible = hit => {
+    if (hit.object.userData.enabled === false) return false;
+    for (let p = hit.object; p; p = p.parent) if (!p.visible) return false;
+    return true;
+  };
+  const solid = world.raycaster.intersectObject(world.content.group, true).find(visible);
+  let selected = null, distance = solid?.distance ?? Infinity;
+  for (const entry of world.people.values()) {
+    if (entry.person.id === state.me) continue;
+    const hit = world.raycaster.intersectObject(entry.avatar.group, true).find(visible);
+    if (hit && hit.distance < distance) { selected = entry.person; distance = hit.distance; }
+  }
+  if (selected) {
+    if (selected.onTable) {
+      const table = state.tables.find(t => t.occupants.includes(selected.id));
+      if (table) world.fire('table', table.id, table.occupants.indexOf(selected.id));
+    } else if (selected.seated && state.scene === 'library') world.fire('seat', selected.sit);
+    else world.fire(selected.role ? 'npc' : 'person', selected.id);
+    return;
+  }
+  const hit = world.content.pick?.(world.raycaster);
+  if (!hit) return;
+  const kind = ({ bowl: 'altar', lib: 'library', jar: 'fortune' })[hit.kind] || hit.kind;
+  if (kind === 'floor') world.fire(kind, hit.x, hit.z);
+  else if (kind === 'table') world.fire(kind, hit.id ?? hit.table, hit.seat ?? -1);
+  else if (kind === 'seat') world.fire(kind, hit.i ?? hit.index ?? hit.seat ?? hit.id);
+  else if (kind === 'person' || kind === 'npc') world.fire(kind, hit.id);
+  else if (kind === 'reader') world.fire(kind, hit.type);
+  else world.fire(kind);
+}
 
 function buildTest({ THREE }) {
   const group = new THREE.Group();
@@ -65,7 +138,13 @@ function schedule(world) {
     const dt = world.last === null ? 0 : Math.min(0.1, (time - world.last) / 1000);
     world.last = time;
     try {
-      world.content.update?.(world.getState(), dt);
+      world.input?.update(time);
+      const state = world.getState();
+      world.content.update?.({ ...state, view: world.ctx.view }, dt);
+      if (world.sceneName !== 'test') {
+        updatePeople(world, state, dt);
+        world.rig.update(state, world.content);
+      }
       world.renderer.render(world.ctx.scene, world.ctx.camera);
     } catch (error) {
       const notify = world.ctx.on.error;
@@ -77,22 +156,30 @@ function schedule(world) {
   });
 }
 
-export function setScene(scene = 'test') {
+export async function setScene(scene = 'test') {
   if (!active) return failure('Chưa mở cảnh 3D.');
-  const builder = scene === 'test' ? buildTest : scene?.build;
-  if (typeof builder !== 'function') return failure('Chưa có cảnh 3D này.');
-  const content = builder(active.ctx);
-  if (!content?.group?.isObject3D) return failure('Cảnh 3D chưa có nhóm hình.');
-  release(active.content);
-  active.content = content;
-  active.ctx.scene.add(content.group);
-  return { ok: true };
+  const world = active, revision = ++world.revision;
+  try {
+    const module = typeof scene === 'string' && Object.hasOwn(SCENES, scene) ? await SCENES[scene]() : scene;
+    if (active !== world || revision !== world.revision) return failure('Đã hủy đổi cảnh 3D.');
+    const builder = scene === 'test' ? buildTest : module?.build;
+    if (typeof builder !== 'function') return failure('Cảnh này chưa có 3D. Xin dùng giao diện 2D.');
+    const content = builder({ ...world.ctx, size: globalThis.ViewMath?.SCENE_SIZE[scene], reduceMotion: world.ctx.reducedMotion });
+    if (!content?.group?.isObject3D) return failure('Cảnh 3D chưa có nhóm hình.');
+    clearPeople(world); release(world.content);
+    world.content = content; world.sceneName = scene;
+    world.ctx.scene.add(content.group);
+    return { ok: true };
+  } catch (error) {
+    return failure('Cảnh này chưa có 3D. Xin dùng giao diện 2D.');
+  }
 }
 
 export function setView(view) {
   if (!active) return failure('Chưa mở cảnh 3D.');
   if (view !== 'first' && view !== 'third') return failure('Góc nhìn chưa hợp lệ.');
   active.ctx.view = view;
+  active.rig?.setView(view);
   return { ok: true };
 }
 
@@ -116,11 +203,12 @@ export function stop() {
   globalThis.removeEventListener('resize', world.resize);
   world.observer?.disconnect();
   world.canvas.removeEventListener('webglcontextlost', world.contextLost);
-  try { release(world.content); } finally { world.renderer.dispose(); }
+  world.input?.dispose(); clearPeople(world);
+  try { release(world.content); } finally { world.kit?.disposeKit(); world.renderer.dispose(); }
 }
 
 // Luôn trả kết quả thay vì ném lỗi, để bên gọi quay về 2D khi thiếu WebGL2/lỗi nạp.
-export async function start({ canvas, scene = 'test', getState = () => ({}), on = {}, quality = 'medium' } = {}) {
+export async function start({ canvas, scene = 'test', getState = () => ({}), on = {}, quality = 'medium', view = 'third', joystick } = {}) {
   stop();
   const ticket = generation;
   let renderer = null;
@@ -128,17 +216,22 @@ export async function start({ canvas, scene = 'test', getState = () => ({}), on 
     if (!canvas || typeof canvas.getContext !== 'function') return failure('Chưa có khung vẽ 3D.');
     const context = canvas.getContext('webgl2', { antialias: true, alpha: false });
     if (!context) return failure('Máy chưa hỗ trợ WebGL2. Xin dùng giao diện 2D.');
-    const THREE = await import('three');
+    const [THREE, kit, avatars] = await Promise.all([import('three'), import('./kit.mjs?v=2'), import('./avatar.mjs?v=1')]);
     if (ticket !== generation) return failure('Đã hủy mở cảnh 3D.');
     renderer = new THREE.WebGLRenderer({ canvas, context });
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.15;
     const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 100);
     camera.position.set(8, 7, 10);
     camera.lookAt(0, 0.5, 0);
     const root = new THREE.Scene();
     root.background = new THREE.Color(0x292620);
     const world = {
-      canvas, renderer, getState, content: null, frame: 0, last: null,
-      ctx: { THREE, scene: root, camera, renderer, on, quality: 'medium', view: 'third', reducedMotion: !!globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches }
+      canvas, renderer, getState, kit, createAvatar: avatars.createAvatar, people: new Map(), revision: 0,
+      raycaster: new THREE.Raycaster(), cursor: new THREE.Vector2(),
+      content: null, frame: 0, last: null,
+      fire: (kind, ...args) => on.fire ? on.fire(kind, ...args) : on[kind]?.(...args),
+      ctx: { THREE, kit, scene: root, camera, renderer, on, quality: Object.hasOwn(QUALITY, quality) ? quality : 'medium', view: 'third', reducedMotion: !!globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches }
     };
     world.resize = () => resize(world);
     world.visibility = () => {
@@ -153,8 +246,14 @@ export async function start({ canvas, scene = 'test', getState = () => ({}), on 
       on.error?.('Đã mất kết nối đồ họa 3D. Xin trở về giao diện 2D.');
     };
     active = world;
-    const result = setScene(scene);
+    const result = await setScene(scene);
+    if (active !== world) return failure('Đã hủy mở cảnh 3D.');
     if (!result.ok) { stop(); return result; }
+    if (scene !== 'test' && globalThis.ViewMath) {
+      world.rig = createCamera({ camera, math: globalThis.ViewMath, mode: view });
+      world.input = createInput({ canvas, camera: world.rig, math: globalThis.ViewMath, getState, fire: world.fire, choose: event => choose(world, event), joystick });
+    }
+    setView(view);
     setQuality(Object.hasOwn(QUALITY, quality) ? quality : 'medium');
     document.addEventListener('visibilitychange', world.visibility);
     globalThis.addEventListener('resize', world.resize);

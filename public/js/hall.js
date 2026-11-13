@@ -982,7 +982,7 @@
     if (lines.length === maxLines && lines.join(' ').length < text.length) lines[maxLines - 1] = lines[maxLines - 1].replace(/\s*\S*$/, '') + '…';
     return lines.map(l => { while (g.measureText(l).width > maxW && l.length > 2) l = l.slice(0, -2) + '…'; return l; });
   }
-  function drawPlayers(now, dt) {
+  function stepPlayers(now, dt) {
     const k = 1 - Math.exp(-dt / 90);
     // mỗi người chỉ hiện ở đúng cảnh mình đang ở (chánh điện, sân chùa, Tàng Kinh Các, Sân đấu); ở Võ Học Các thì không hiện
     const list = [...players.values()].filter(p => viewOf(p) === scene);
@@ -993,6 +993,7 @@
       p.dx += (p.x - p.dx) * k; p.dz += (p.z - p.dz) * k;
       const vx = p.dx - ox, vz = p.dz - oz, sp = Math.hypot(vx * 1.6, vz);
       p.walking = sp > 0.0003;
+      if (p.walking) p.viewYaw = Math.atan2(vx * 1.6, vz);
       if (p.walking) { p.idleT = now; if (vz > 0.0004) p.front = true; else if (vz < -0.0004) p.front = false; }
       else if (now - (p.idleT || 0) > 700) p.front = false;
       // tới bồ đoàn thì ngồi xuống
@@ -1005,6 +1006,10 @@
       p.hy = p.seated ? 104 - SIT_LIFT : 104;
       p.lift = (p.lift || 0) + ((scene === 'arena' && onPlat(p.dx, p.dz) ? platH(p.dz) : 0) - (p.lift || 0)) * kl;   // bước lên võ đài
     }
+    return list;
+  }
+  function drawPlayers(now, dt) {
+    const list = stepPlayers(now, dt);
     const items = list.map(p => ({ z: p.dz, p }));
     if (scene === 'arena') for (const pr of ARENA_PROPS) items.push({ z: pr.z, pr });
     else if (scene === 'yard') for (const pr of YARD_PROPS) items.push({ z: pr.z, pr });
@@ -1917,12 +1922,13 @@
     return null;
   }
 
-  let paused = false;
+  let paused = false, held3d = false;
   function frame(ts) {
     const dt = Math.min(64, ts - (last || ts)); last = ts;
     if (W && H && !document.hidden && !paused) {
       const now = serverNow();
       if (scene !== 'hall') { const day = yardInDaylight(now); if (day !== yardDay || day !== sceneDay) { yardDay = sceneDay = day; bg = null; } }
+      if (held3d) { stepPlayers(ts, dt); requestAnimationFrame(frame); return; }
       if (!bg) { if (scene === 'yard') drawYard(); else if (scene === 'library') drawLibrary(); else if (scene === 'arena') drawArenaYard(); else drawBg(); }
       g.setTransform(1, 0, 0, 1, 0, 0);
       g.drawImage(bg, 0, 0);
@@ -2046,8 +2052,57 @@
 
   function mk(p) { return new Actors.Player(p); }          // người chơi: cùng lớp gốc Actor với NPC
 
+  // Bản chụp dùng danh sách trường cho phép, không chia sẻ đối tượng nội bộ hay uid.
+  function freezeView(value) {
+    if (value && typeof value === 'object') { Object.values(value).forEach(freezeView); Object.freeze(value); }
+    return value;
+  }
+  function viewSnapshot() {
+    const now = serverNow(), time = performance.now();
+    const actor = p => {
+      const bowAge = p.bowAt ? (time - p.bowAt) / 1500 : 1;
+      const aura = p.au && p.au.t && p.au.until > now ? { t: p.au.t, until: p.au.until, color: tierColor(p.au.t) } : null;
+      // NPC trả lời dùng giờ máy chủ; lời tự nói và chat dùng đồng hồ hoạt ảnh.
+      const bubbleAge = p.bubble ? (p.bubble.t > 1e11 ? now : time) - p.bubble.t : Infinity;
+      const tag = scene === 'arena' && tagger ? tagger(p.id) : null;
+      return {
+        id: p.id, name: p.name, look: { g: p.look.g, c: p.look.c, h: p.look.h, npcFashion: !!p.look.npcFashion },
+        x: p.dx, z: p.dz, dx: p.dx, dz: p.dz, yaw: p.viewYaw ?? (p.front ? 0 : Math.PI), front: p.front,
+        walking: !!p.walking, seated: !!p.seated, onTable: !!p.onTable,
+        sit: p.seated ? (p.onTable ? 'bench' : p.sit) : -1, bow: bowAge >= 0 && bowAge < 1 ? Math.sin(Math.PI * bowAge) : 0,
+        aura, bubble: p.bubble && bubbleAge < 6500 ? { text: p.bubble.text } : null,
+        talk: p.talk || 0, reading: p.rd || '', tag: tag ? tag.text : '', role: p.isNpc ? p.npc.role : ''
+      };
+    };
+    return freezeView({
+      scene, me, now, daylight: yardInDaylight(now),
+      players: [...players.values()].filter(p => viewOf(p) === scene).map(actor),
+      npcs: liveNpcs().filter(p => viewOf(p) === scene).map(actor),
+      incense: incense.map(p => ({ id: p.id, x: p.x, tilt: p.tilt, litAt: p.litAt, until: p.until })),
+      altar: { ...altar }, seats: LIB_SEATS.map(p => p.slice()),
+      tables: YARD_TABLES.map(p => {
+        const t = tableState.get(p.id);
+        return { id: p.id, x: p.x, z: p.z, seats: p.seats.map(s => s.slice()),
+          status: t ? t.status : 'free', game: t ? t.game : '', watchers: t ? t.watchers : 0,
+          occupants: t ? t.seats.map(s => s ? s.pid : null) : [null, null] };
+      })
+    });
+  }
+
   root.Hall = {
     COLORS, HAIRS,
+    view3d: {
+      snapshot: viewSnapshot,
+      hold(on) { held3d = !!on; },
+      fire(kind, ...args) {
+        if (!['floor', 'altar', 'statue', 'library', 'read', 'dojo', 'seat', 'person', 'npc', 'fortune', 'reader', 'table'].includes(kind)) return;
+        if (kind === 'floor') {
+          if (!Number.isFinite(args[0]) || !Number.isFinite(args[1])) return;
+          args = [clamp(args[0], 0.03, 0.97), clamp(args[1], 0.12, 0.97)];
+        }
+        return handlers[kind] && handlers[kind](...args);
+      }
+    },
     init(canvas, h) {
       cv = canvas; g = cv.getContext('2d'); Object.assign(handlers, h || {});
       if (root.ResizeObserver) RO = new ResizeObserver(resize); else root.addEventListener('resize', resize);

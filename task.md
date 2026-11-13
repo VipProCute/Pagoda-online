@@ -72,7 +72,7 @@
 | T-085 | Cảnh Sân chùa 3D | ⏳ T-082 | P1 | CORE + HALL + KYDAO | — |
 | T-086 | Cảnh Tàng Kinh Các 3D | ⏳ T-082 | P1 | CORE + HALL | — |
 | T-087 | Cảnh Sân đấu (khu đi lại) 3D | 🟣 Chờ soát | P1 | CORE + HALL + PK | gpt-6-astra (Codex CLI qua proxy) |
-| T-088 | Nối 3D vào game: nút 2D/3D, góc nhìn 1/3, điều khiển | ⏳ T-081, T-083, T-084 | P0 | CORE + HALL + NAV | — |
+| T-088 | Nối 3D vào game: nút 2D/3D, góc nhìn 1/3, điều khiển | 🟡 Đang làm | P0 | CORE + HALL + NAV | gpt-6.1-sol |
 | T-089 | Cài đặt đồ họa, tự dò máy yếu | 🟣 Chờ soát | P1 | CORE + HALL | gpt-6-luna |
 | T-090 | Vẽ lại quân cờ 2D đẹp hơn | 🟣 Chờ soát | P1 | CORE + KYDAO | gpt-6.1-sol |
 | T-091 | Bàn cờ 3D, quân tiện tròn | 🟣 Chờ soát | P1 | CORE + KYDAO | gpt-6.1-sol |
@@ -1137,7 +1137,8 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
 - **Ngoài phạm vi**: mọi thứ trong `arena.js`.
 
 ### T-088 · Nối 3D vào game: nút 2D/3D, góc nhìn 1/3, điều khiển
-- **Trạng thái**: ⏳ Chờ T-081, T-083, T-084 (các cảnh khác xong sau thì bật dần)
+- **Trạng thái**: 🟡 Đang làm
+- **Người làm**: gpt-6.1-sol (Codex CLI qua proxy) · **Nhánh**: `codex/T-088-noi-3d-vao-game`
 - **Ưu tiên**: P0
 - **Gói ngữ cảnh**: CORE + HALL + NAV
 - **Khu vực chạm**: public/js/hall.js (chỉ **thêm** `Hall.view3d`: `snapshot()`, `hold(on)`, `emit(kind, data)`; không sửa hàm vẽ), public/js/world3d/camera.mjs, input.mjs (mới), public/js/view3d-ui.js (mới: nút, lưu `ta-view`), public/js/app.js (vùng khởi tạo Hall + phím tắt), public/index.html (`importmap`, nút, `<script>`, `?v=`), public/css/view3d.css (mới, tiền tố `v3-`), public/js/arena.js (chỉ chỗ gọi `Hall.attach`), test/hall-view3d.test.js (mới)

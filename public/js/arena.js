@@ -770,6 +770,7 @@
     ui.invites.hidden = screen === 'lobby' || screen === 'match';
     ui.hturn.hidden = ui.hbar.hidden = screen !== 'match';
     ui.root.dataset.screen = screen;
+    if (root.View3D) root.View3D.setPK(S.visible && screen !== 'roster');
     yardOn(screen === 'roster' && S.visible);
     if (screen === 'roster') renderRoster();
     if (screen === 'lobby' || screen === 'match') startPaint(); else stopPaint();
@@ -2068,6 +2069,7 @@
     S.visible = false; S.resuming = false;
     if (root.SFX) root.SFX.setMusicScene('temple');
     yardOn(false);
+    if (root.View3D) root.View3D.setPK(false);
     clearInterval(S.tick); S.tick = 0; stopPaint();
     clearMatchTimers();
     if (S.mounted) {
