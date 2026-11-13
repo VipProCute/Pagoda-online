@@ -397,7 +397,8 @@ export function createWoodenFish(quality = 'medium') {
   b.ball('cushion', 0.74, 0.09, -0.22, 0.085); return b.finish('woodenFish');
 }
 
-export function createBuddhaStatue(quality = 'medium') {
+// headless: bỏ phần đầu để cảnh gắn ảnh mặt riêng (tượng giữa Chánh điện, giống bản 2D).
+export function createBuddhaStatue(quality = 'medium', { headless = false } = {}) {
   const b = builder(options(quality).quality);
   b.cylinder('stone', 0, 0.12, 0, 0.94, 1.04, 0.24);
   b.cylinder('gold', 0, 0.30, 0, 0.78, 0.87, 0.16);
@@ -417,6 +418,7 @@ export function createBuddhaStatue(quality = 'medium') {
   b.ball('gold', -0.36, 0.76, 0.17, 0.48, 1.25, 0.44, 0.83);
   b.ball('gold', 0.36, 0.76, 0.17, 0.48, 1.25, 0.44, 0.83);
   b.ball('gold', 0, 1.25, -0.03, 0.49, 0.82, 1.22, 0.62);
+  if (!headless) {
   b.ball('gold', 0, 1.98, 0, 0.29, 0.87, 1.14, 0.86);
   b.ball('bronze', 0, 2.20, -0.02, 0.26, 0.95, 0.60, 0.92);
   b.ball('gold', 0, 2.34, -0.02, 0.10, 0.8, 1.2, 0.8);
@@ -424,6 +426,7 @@ export function createBuddhaStatue(quality = 'medium') {
   b.ball('gold', 0, 1.98, 0.245, 0.045, 0.75, 1, 1.2);
   for (const x of [-0.10, 0.10]) b.beam('bronze', [x - 0.045, 2.035, 0.226], [x + 0.045, 2.025, 0.232], 0.009);
   b.path('bronze', [[-0.065, 1.88, 0.226], [0, 1.866, 0.24], [0.065, 1.88, 0.226]], 0.008, 3);
+  }
   for (const sign of [-1, 1]) {
     b.beam('gold', [sign * 0.34, 1.51, 0], [sign * 0.54, 1.10, 0.10], 0.13, 0.11);
     b.beam('gold', [sign * 0.54, 1.10, 0.10], [sign * 0.16, 0.94, 0.38], 0.10, 0.08);
