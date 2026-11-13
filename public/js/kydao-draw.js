@@ -24,21 +24,26 @@
   const isChess = game => game === 'chess';
 
   /** Tỉ lệ rộng/cao nên có của canvas. */
-  function aspect(game) { return isChess(game) || isGrid(game) ? 1 : 9.2 / 10.2; }
+  function aspect(game, margin) {
+    const m = margin > 0 ? margin : 0;
+    if (isChess(game) || isGrid(game)) return 1;
+    return m > 0 ? (8 + 2 * m) / (9 + 2 * m) : 9.2 / 10.2;
+  }
 
   /** Hình học cho canvas w×h (px CSS). */
-  function layout(game, w, h, size) {
+  function layout(game, w, h, size, margin) {
     const d = dimOf(game, size);
+    const m = margin > 0 ? margin : 0;
     if (isGrid(game)) {
       const cell = Math.min(w, h) / (d.cols + 1);
-      return { game, cols: d.cols, rows: d.rows, cell, ox: (w - cell * (d.cols - 1)) / 2, oy: (h - cell * (d.rows - 1)) / 2, w, h };
+      return { game, cols: d.cols, rows: d.rows, cell, ox: (w - cell * (d.cols - 1)) / 2, oy: (h - cell * (d.rows - 1)) / 2, w, h, margin: 0 };
     }
     if (isChess(game)) {
-      const cell = Math.floor(Math.min(w, h) / 8);
-      return { game, cols: 8, rows: 8, cell, ox: Math.round((w - cell * 8) / 2), oy: Math.round((h - cell * 8) / 2), w, h };
+      const cell = Math.floor(Math.min(w, h) / (8 + 2 * m));
+      return { game, cols: 8, rows: 8, cell, ox: Math.round((w - cell * 8) / 2), oy: Math.round((h - cell * 8) / 2), w, h, margin: m };
     }
-    const cell = Math.min(w / 9.2, h / 10.2);
-    return { game, cols: d.cols, rows: d.rows, cell, ox: (w - cell * 8) / 2, oy: (h - cell * 9) / 2, w, h };
+    const cell = m > 0 ? Math.min(w / (8 + 2 * m), h / (9 + 2 * m)) : Math.min(w / 9.2, h / 10.2);
+    return { game, cols: d.cols, rows: d.rows, cell, ox: (w - cell * 8) / 2, oy: (h - cell * 9) / 2, w, h, margin: m };
   }
 
   /** Tâm của ô (cờ vua) / giao điểm (cờ tướng) tại toạ độ logic. */
@@ -148,7 +153,7 @@
       const s = o.skins[side];
       if (!s || (o.hideSkins && o.hideSkins[side])) continue;
       const f = cat.field(s.field), p = cat.pieces(s.pieces);
-      if (f && f.palette) { out[side].field = { id: s.field, pal: f.palette, src: cat.fieldImage ? cat.fieldImage(s.field) : null }; any = true; }
+      if (f && f.palette) { out[side].field = { id: s.field, pal: f.palette, src: cat.fieldImage ? cat.fieldImage(s.field) : null, src2: cat.fieldImage2 ? cat.fieldImage2(s.field, o.game) : null }; any = true; }
       if (p && p[side]) { out[side].pieces = { id: s.pieces, c: p[side] }; any = true; }
     }
     return any ? out : null;
@@ -188,6 +193,21 @@
     ctx.translate(cx, cy);
     if (rotated) ctx.rotate(Math.PI);
     ctx.drawImage(img, -dw / 2, -dh / 2, dw, dh);
+    ctx.restore();
+    return true;
+  }
+
+  /** Vẽ ảnh sân v2 (có dải cảnh) cho một nửa. dest = hình chữ nhật đích gồm cả dải cảnh; m = bề rộng dải cảnh tính theo ô.
+   *  rotated = nửa nằm phía trên màn hình (xoay 180°). Trả true nếu đã vẽ. */
+  function paintField2(ctx, dest, rotated, f, m, onAsset) {
+    if (!f.src2) return false;
+    const img = loadImage(f.src2, onAsset);
+    if (!img) return false;
+    const sx = 192 - m * 128, sw = (8 + 2 * m) * 128, sh = (4 + m) * 128;
+    ctx.save();
+    ctx.beginPath(); ctx.rect(dest.x, dest.y, dest.w, dest.h); ctx.clip();
+    if (rotated) { ctx.translate(dest.x + dest.w, dest.y + dest.h); ctx.rotate(Math.PI); ctx.drawImage(img, sx, 0, sw, sh, 0, 0, dest.w, dest.h); }
+    else ctx.drawImage(img, sx, 0, sw, sh, dest.x, dest.y, dest.w, dest.h);
     ctx.restore();
     return true;
   }
@@ -484,28 +504,49 @@
   /* ---------- Vẽ nền ---------- */
   /** Skin sân cờ vua: ảnh nửa sân (nếu đã tải) rồi phủ ô sáng/tối theo palette; chưa có ảnh thì tô đặc. */
   function skinChessFields(ctx, g, flip, sk) {
+    const m = g.margin || 0, used = { a: false, b: false };
     for (const h of chessHalves(g, flip)) {
       const f = sk[h.side].field;
       if (!f) continue;
-      const img = paintFieldImage(ctx, h.rect, h.rotated, f, sk.onAsset);
+      const dest = h.rotated ? { x: g.ox - m * g.cell, y: g.oy - m * g.cell, w: (8 + 2 * m) * g.cell, h: (4 + m) * g.cell }
+        : { x: g.ox - m * g.cell, y: g.oy + 4 * g.cell, w: (8 + 2 * m) * g.cell, h: (4 + m) * g.cell };
+      const v2 = paintField2(ctx, dest, h.rotated, f, m, sk.onAsset);
+      used[h.side] = v2;
+      const img = v2 || paintFieldImage(ctx, h.rect, h.rotated, f, sk.onAsset);
       for (let r = h.side === 'a' ? 0 : 4; r < (h.side === 'a' ? 4 : 8); r++) for (let c = 0; c < 8; c++) {
         const p = cellXY(g, c, r, flip), dark = (c + r) % 2 === 0;
-        ctx.fillStyle = img ? rgba(dark ? f.pal.dark : f.pal.light, dark ? 0.7 : 0.55) : (dark ? f.pal.dark : f.pal.light);
+        ctx.fillStyle = v2 ? (dark ? 'rgba(0,0,0,0.10)' : 'rgba(255,255,255,0.06)') : img ? rgba(dark ? f.pal.dark : f.pal.light, dark ? 0.7 : 0.55) : (dark ? f.pal.dark : f.pal.light);
         ctx.fillRect(p.x - g.cell / 2, p.y - g.cell / 2, g.cell, g.cell);
       }
     }
     const seam = g.oy + g.cell * 4;
-    seamBand(ctx, g, g.ox, g.cell * 8, seam, halfTone(sk[flip ? 'a' : 'b'].field, '#d3b88e'), halfTone(sk[flip ? 'b' : 'a'].field, '#d3b88e'));
+    seamBand(ctx, g, g.ox - m * g.cell, (8 + 2 * m) * g.cell, seam, halfTone(sk[flip ? 'a' : 'b'].field, '#d3b88e'), halfTone(sk[flip ? 'b' : 'a'].field, '#d3b88e'));
+    return used;
   }
 
   function drawChessBoard(ctx, g, flip, sk) {
+    const mg = g.margin || 0;
+    if (mg > 0) {
+      // Dải cảnh của nửa không có skin: màu gỗ sẫm để không lộ nền trong suốt.
+      for (const h of chessHalves(g, flip)) {
+        if (sk && sk[h.side].field) continue;
+        ctx.fillStyle = '#2a1c12';
+        ctx.fillRect(g.ox - mg * g.cell, h.rotated ? g.oy - mg * g.cell : g.oy + 4 * g.cell, (8 + 2 * mg) * g.cell, (4 + mg) * g.cell);
+      }
+    }
     for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
       const p = cellXY(g, c, r, flip);
       ctx.fillStyle = (c + r) % 2 === 0 ? '#b58863' : '#f0d9b5'; // ô a1 là ô sẫm
       ctx.fillRect(p.x - g.cell / 2, p.y - g.cell / 2, g.cell, g.cell);
     }
-    if (hasField(sk)) skinChessFields(ctx, g, flip, sk);
+    const v2 = hasField(sk) ? skinChessFields(ctx, g, flip, sk) : { a: false, b: false };
     ctx.save();
+    if (v2.a && v2.b) { ctx.beginPath(); ctx.rect(0, 0, 0, 0); ctx.clip(); }
+    else if (v2.a || v2.b) {
+      // Vân và khung gỗ chỉ vẽ cho nửa không có ảnh v2.
+      const other = chessHalves(g, flip).find(h => !v2[h.side]);
+      ctx.beginPath(); ctx.rect(other.rect.x, other.rect.y, other.rect.w, other.rect.h); ctx.clip();
+    }
     // Vân mảnh liên tục trên các ô, không che nhãn hay nước đi.
     ctx.strokeStyle = 'rgba(93,53,25,.09)'; ctx.lineWidth = Math.max(0.45, g.cell * 0.009);
     for (let i = 0; i < 32; i++) {
@@ -550,7 +591,8 @@
   function drawRiver(ctx, g, flip, vi, t) {
     const y4 = cellXY(g, 0, 4, flip).y, y5 = cellXY(g, 0, 5, flip).y;
     const y0 = Math.min(y4, y5), y1 = Math.max(y4, y5), hh = y1 - y0;
-    const x0 = g.ox - g.cell * 0.1, x1 = g.ox + g.cell * 8.1;
+    const mm = g.margin > 0 ? g.margin : 0.1;
+    const x0 = g.ox - g.cell * mm, x1 = g.ox + g.cell * (8 + mm);
     const frac = value => value - Math.floor(value);
     ctx.save(); ctx.beginPath(); ctx.rect(x0, y0, x1 - x0, hh); ctx.clip();
     const water = ctx.createLinearGradient(0, y0, 0, y1);
@@ -599,6 +641,17 @@
 
   function drawXiangqiBoard(ctx, g, flip, vi, sk, t) {
     const m = g.cell * 0.6;
+    const mg = g.margin > 0 ? g.margin : 0, mv = mg > 0 ? mg : 0.6;
+    const destOf = h => (h.rotated ? { x: g.ox - mv * g.cell, y: g.oy - mv * g.cell, w: (8 + 2 * mv) * g.cell, h: (4 + mv) * g.cell }
+      : { x: g.ox - mv * g.cell, y: g.oy + 5 * g.cell, w: (8 + 2 * mv) * g.cell, h: (4 + mv) * g.cell });
+    if (mg > 0) {
+      // Dải cảnh của nửa không có skin: màu gỗ sẫm, bàn mặc định vẽ đè lên sau.
+      for (const h of xiangqiHalves(g, flip)) {
+        if (sk && sk[h.side].field) continue;
+        const d = destOf(h);
+        ctx.fillStyle = '#2a1c12'; ctx.fillRect(d.x, d.y, d.w, d.h);
+      }
+    }
     const wood = ctx.createLinearGradient(0, g.oy - m, g.w, g.oy + g.cell * 9 + m);
     wood.addColorStop(0, '#f5db9f'); wood.addColorStop(0.5, '#e9c88b'); wood.addColorStop(1, '#cca363');
     ctx.fillStyle = wood;
@@ -619,6 +672,11 @@
     ctx.lineWidth = Math.max(0.6, g.cell * 0.02); ctx.strokeStyle = '#f9e1ac';
     ctx.strokeRect(g.ox - m + edge, g.oy - m + edge, g.cell * 8 + m * 2 - edge * 2, g.cell * 9 + m * 2 - edge * 2);
     ctx.restore();
+    const v2 = { a: false, b: false };
+    if (hasField(sk)) for (const h of xiangqiHalves(g, flip)) {
+      const f = sk[h.side].field;
+      if (f) v2[h.side] = paintField2(ctx, destOf(h), h.rotated, f, mv, sk.onAsset);
+    }
     const P = (c, r) => cellXY(g, c, r, flip);
     // style = null: nét mặc định; có style: { color, k } (k nhân độ dày nét).
     const strokeGrid = style => {
@@ -639,13 +697,14 @@
       for (const h of halves) {
         const f = fieldOf(h);
         if (!f) continue;
-        // Nền: ảnh nửa sân + lớp sáng mờ; chưa có ảnh thì tô đặc theo palette.
+        // Nền: ảnh v2 (đã vẽ ở trên) + lớp sáng rất nhẹ; không thì ảnh v1 + lớp sáng mờ; chưa có ảnh thì tô đặc theo palette.
+        if (v2[h.side]) { ctx.fillStyle = 'rgba(255,255,255,0.10)'; ctx.fillRect(h.rect.x, h.rect.y, h.rect.w, h.rect.h); continue; }
         if (paintFieldImage(ctx, h.rect, h.rotated, f, sk.onAsset)) ctx.fillStyle = rgba(mixc(f.pal.light, '#ffffff', 0.2), 0.38);
         else ctx.fillStyle = mixc(f.pal.light, f.pal.dark, 0.3);
         ctx.fillRect(h.rect.x, h.rect.y, h.rect.w, h.rect.h);
       }
       const top = halves.find(h => h.rotated), bottom = halves.find(h => !h.rotated);
-      seamBand(ctx, g, g.ox - m, g.cell * 8 + m * 2, g.oy + g.cell * 4.5, halfTone(fieldOf(top), '#e9c88b'), halfTone(fieldOf(bottom), '#e9c88b'));
+      seamBand(ctx, g, g.ox - mv * g.cell, g.cell * (8 + 2 * mv), g.oy + g.cell * 4.5, halfTone(fieldOf(top), '#e9c88b'), halfTone(fieldOf(bottom), '#e9c88b'));
       for (const h of halves) {
         const f = fieldOf(h);
         ctx.save(); ctx.beginPath(); ctx.rect(h.full.x, h.full.y, h.full.w, h.full.h); ctx.clip();
@@ -708,7 +767,7 @@
   }
 
   function draw(ctx, o) {
-    const g = layout(o.game, o.w, o.h, o.size);
+    const g = layout(o.game, o.w, o.h, o.size, o.margin);
     const flip = !!o.flip, chess = isChess(o.game);
     ctx.setTransform((o.dpr || 1), 0, 0, (o.dpr || 1), 0, 0);
     ctx.clearRect(0, 0, o.w, o.h);

@@ -466,6 +466,15 @@
   }
 
   /* ---------- vẽ ---------- */
+  /** Bề rộng dải cảnh quanh bàn (tính theo ô). Chỉ bật khi có ít nhất một bên đang hiện skin sân và màn đủ rộng,
+   *  để ô cờ trên điện thoại không bị nhỏ đi. */
+  function fieldMargin(availW) {
+    if (!S || !root.KydaoSkins || !root.KydaoSkins.supports(S.game) || ui.board3d) return 0;
+    const foe = S.you === 'a' ? 'b' : S.you === 'b' ? 'a' : null;
+    const shown = side => !!(S.skins && S.skins[side] && S.skins[side].field) && !(hideFoe && foe === side);
+    if (!shown('a') && !shown('b')) return 0;
+    return availW >= 620 ? 1.5 : availW >= 460 ? 0.75 : 0;
+  }
   function fit() {
     if (!ui || !S || ui.panel.hidden) return;
     const D = root.KydaoDraw;
@@ -476,7 +485,9 @@
     } catch (e) { padX = 8; }
     const availW = Math.max(160, (ui.wrap.clientWidth || ui.panel.clientWidth || 320) - padX);
     const availH = Math.max(160, (root.innerHeight || 700) - 250);
-    const asp = D.aspect(S.game);
+    const margin = fieldMargin(availW);
+    ui.canvas._margin = margin;
+    const asp = D.aspect(S.game, margin);
     const base = Math.floor(Math.min(availW, availH * asp));
     const w = Math.floor(base * S.zoom), hh = Math.floor(w / asp);
     ui.viewport.style.width = base + 'px'; ui.viewport.style.height = Math.floor(base / asp) + 'px';
@@ -503,7 +514,7 @@
   function redraw() {
     if (!ui || !S || ui.panel.hidden || !ui.canvas._w) return;
     const options = {
-      game: S.game, size: S.state.size, w: ui.canvas._w, h: ui.canvas._h, dpr: ui.canvas._dpr, board: S.state.board || S.state.cells,
+      game: S.game, size: S.state.size, w: ui.canvas._w, h: ui.canvas._h, dpr: ui.canvas._dpr, margin: ui.canvas._margin || 0, board: S.state.board || S.state.cells,
       dead: S.marks ? S.marks.dead : [], win: S.win, reveal: S.reveal,
       flip: S.you === 'b', selected: S.sel, targets: S.targets, last: S.last,
       checkSq: S.inCheck && !S.over ? kingSquare(S, sessionTurn(S)) : null, vi
@@ -578,7 +589,7 @@
     const open = h('button', { type: 'button', class: 'kd-btn kd-gold', onclick: () => { sendSkin(true); ui.skins.hidden = true; ui.skinBtn.setAttribute('aria-expanded', 'false'); } }, pref.field ? 'Khai mở' : 'Về sân mặc định');
     open.disabled = !mine || mine.field === pref.field || wait > 0;
     const hide = h('button', { type: 'button', class: 'kd-btn kd-ghost', 'aria-pressed': String(hideFoe), onclick: () => {
-      hideFoe = !hideFoe; try { root.localStorage.setItem(HIDE_KEY, hideFoe ? '1' : '0'); } catch (e) { /* bỏ qua */ } renderSkins(); redraw();
+      hideFoe = !hideFoe; try { root.localStorage.setItem(HIDE_KEY, hideFoe ? '1' : '0'); } catch (e) { /* bỏ qua */ } renderSkins(); fit(); redraw();
     } }, hideFoe ? 'Hiện skin đối thủ' : 'Ẩn skin đối thủ');
     box.appendChild(h('div', { class: 'kd-actions' }, open, hide));
     if (wait > 0) box.appendChild(h('div', { class: 'kd-skin-note' }, 'Chờ ' + Math.ceil(wait / 1000) + ' giây nữa mới khai mở lại được.'));
@@ -843,7 +854,7 @@
         renderControls();
       } else if (type === 'skin' && S) {
         if (applySkin(S, ev)) {
-          redraw();
+          fit(); redraw();
           try { onSkinEvent(ev); } catch (e) { /* hiệu ứng lỗi không được chặn nước đi */ }
         }
       } else if (type === 'end' && S && ev.gameId === S.gameId) {

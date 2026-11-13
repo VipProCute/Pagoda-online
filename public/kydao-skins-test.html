@@ -18,7 +18,7 @@
 </head>
 <body>
 <h1>Bàn 2D có skin <select id="pa"></select> <select id="pb"></select></h1>
-<div style="display:flex;gap:10px;flex-wrap:wrap"><canvas id="bc" style="width:360px;height:360px"></canvas><canvas id="bx" style="width:330px;height:366px"></canvas></div>
+<div style="display:flex;gap:10px;flex-wrap:wrap"><canvas id="bc" style="width:484px;height:484px"></canvas><canvas id="bx" style="width:484px;height:528px"></canvas></div>
 <h1>Sân (ảnh nửa sân 2D và ảnh xem trước)</h1>
 <div class="grid" id="fields"></div>
 <h1>Bộ quân (ảnh xem trước)</h1>
@@ -41,12 +41,12 @@
   function board(id, game, state, w, h) {
     const c = document.getElementById(id), dpr = Math.min(2, window.devicePixelRatio || 1);
     c.width = w * dpr; c.height = h * dpr;
-    D.draw(c.getContext('2d'), { game, w, h, dpr, board: state.board, flip: false, last: [], targets: [], vi: true,
+    D.draw(c.getContext('2d'), { game, w, h, dpr, board: state.board, flip: false, last: [], targets: [], vi: true, margin: 1.5,
       skins: { a: skin(document.getElementById('pa')), b: skin(document.getElementById('pb')) }, onAsset: paint });
   }
   function paint() {
-    board('bc', 'chess', window.KyChess.create(), 360, 360);
-    board('bx', 'xiangqi', window.KyXiangqi.create(), 330, 366);
+    board('bc', 'chess', window.KyChess.create(), 484, 484);
+    board('bx', 'xiangqi', window.KyXiangqi.create(), 484, 528);
   }
   fill(document.getElementById('pa'), 0); fill(document.getElementById('pb'), 3);
   paint();
