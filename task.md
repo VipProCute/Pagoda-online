@@ -66,7 +66,7 @@
 | **Đợt 3D** ([docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md)) | | | | | |
 | T-080 | Dựng nền 3D (Three.js, khung World3D, trang thử) | 🟣 Chờ soát | P0 | CORE + HALL + OPS | gpt-6.1-sol (Codex CLI qua proxy) |
 | T-081 | Toán máy quay góc nhìn thứ nhất / thứ ba (thuần, có test) | 🟣 Chờ soát | P0 | CORE + HALL | gpt-6.1-terra (Codex CLI qua proxy) |
-| T-082 | Bộ khối dựng kiến trúc chùa (kit.mjs) | ⏳ T-080 | P0 | CORE + HALL | — |
+| T-082 | Bộ khối dựng kiến trúc chùa (kit.mjs) | 🟣 Chờ soát | P0 | CORE + HALL | gpt-6.1-sol (Codex CLI qua proxy) |
 | T-083 | Nhân vật 3D low-poly và NPC | 🟣 Chờ soát | P0 | CORE + HALL | gpt-6.1-sol (Codex CLI qua proxy) |
 | T-084 | Cảnh Chánh điện 3D | ⏳ T-082 | P0 | CORE + HALL | — |
 | T-085 | Cảnh Sân chùa 3D | ⏳ T-082 | P1 | CORE + HALL + KYDAO | — |
@@ -1047,19 +1047,23 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
 - **Ngoài phạm vi**: không import Three.js, không đụng DOM, không sửa file có sẵn.
 
 ### T-082 · Bộ khối dựng kiến trúc chùa (kit.mjs)
-- **Trạng thái**: ⏳ Chờ T-080
+- **Trạng thái**: 🟣 Chờ soát. Vòng 1 (gpt-6.1-terra) còn thô, vòng 2 (gpt-6.1-sol) đạt. Điều phối chạy lại: npm run check sạch, test world3d 20/20, xem /world3d-kit.html: 26 khối, mái cong đầu đao, console không lỗi.
 - **Ưu tiên**: P0
 - **Gói ngữ cảnh**: CORE + HALL
 - **Khu vực chạm**: public/js/world3d/kit.mjs (mới), public/world3d-kit.html (mới, trang thử)
 - **Phụ thuộc**: T-080
 - **Thợ**: gpt-6.1-terra · **Soát**: gpt-6-sol + Gemini Argon (ảnh)
+- **Người làm**: gpt-6.1-sol (Codex CLI qua proxy)
+- **Nhánh**: codex/T-082-khoi-dung
 - **Mục tiêu**: Thư viện hàm dựng hình bằng mã, dùng chung cho 4 cảnh: mái ngói cong đầu đao, cột gỗ, tường, cửa bức bàn, nền gạch, bậc đá, đèn lồng, bồ đoàn, kệ kinh, bàn đá + ghế, cây bồ đề, lư hương, chuông, mõ; bảng vật liệu dùng chung (gỗ, ngói, đá, đồng, vải).
 - **Tiêu chí xong**:
-  - [ ] Mỗi hàm trả `THREE.Group` gốc ở mặt sàn, đơn vị mét; nhận `quality` để giảm số mặt; gộp geometry tĩnh; vật liệu lấy từ một bảng dùng chung (không tạo mới mỗi lần gọi)
-  - [ ] `disposeKit()` giải phóng hết
+  - [x] Mỗi hàm trả `THREE.Group` gốc ở mặt sàn, đơn vị mét; nhận `quality` để giảm số mặt; gộp geometry tĩnh; vật liệu lấy từ một bảng dùng chung (không tạo mới mỗi lần gọi)
+  - [x] `disposeKit()` giải phóng hết
   - [ ] Trang thử bày toàn bộ khối trên lưới, có nhãn tên; chụp ảnh gửi kèm bàn giao
-  - [ ] Toàn bộ khối trên trang thử < 60 nghìn tam giác ở mức Vừa
+  - [x] Toàn bộ khối trên trang thử < 60 nghìn tam giác ở mức Vừa
 - **Ngoài phạm vi**: không dựng cảnh hoàn chỉnh, không tải mô hình/ảnh ngoài.
+
+- **Ghi chú**: Vòng 2 giữ 14 API cũ, thêm 11 khối và `roof({width, depth, tiers, quality})`, `templeHall({width, depth, quality})`. Mái bốn phía có đầu đao cong, ngói ống từng viên, kìm nóc và chồng diêm; chánh điện thân nhà 16×10 m. Trang thử bày 26 khối có nhãn, nền tối, tự căn toàn cảnh và chọn xem gần; 55.874 tam giác khối dựng (55.876 kể cả nền) ở mức Vừa. `node test/world3d-kit.test.js`: 8/8 đạt; kiểm cú pháp trực tiếp đạt. Theo chỉ dẫn vòng 2: không tạo tiến trình con, không stage/commit; điều phối chạy kiểm tổng, mở trình duyệt và chụp ảnh. Bàn giao cục bộ: `BAN-GIAO-T-082.md` (không commit).
 
 ### T-083 · Nhân vật 3D low-poly và NPC
 - **Trạng thái**: 🟣 Chờ soát
