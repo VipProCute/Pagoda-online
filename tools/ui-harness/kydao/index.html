@@ -7,62 +7,136 @@
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="/css/style.css">
 <link rel="stylesheet" href="/css/kydao.css">
+<link rel="stylesheet" href="/css/kydao-fx.css">
 </head>
 <body>
 <main style="padding:16px;display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start">
   <button type="button" class="kd-btn" id="b-chess">Cờ vua</button>
   <button type="button" class="kd-btn" id="b-xq">Cờ tướng</button>
   <button type="button" class="kd-btn" id="b-black">Cờ vua (cầm Đen)</button>
+  <button type="button" class="kd-btn" id="b-jieqi">Cờ úp</button>
+  <button type="button" class="kd-btn" id="b-caro">Caro</button>
+  <button type="button" class="kd-btn" id="b-go">Cờ vây 9×9</button>
+  <button type="button" class="kd-btn" id="b-promo">Cờ vua sắp phong cấp</button>
   <button type="button" class="kd-btn" id="b-opp">Giả lập đối thủ đi</button>
+  <label style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">Mã sân
+    <select id="s-field" class="kd-btn"></select>
+  </label>
+  <button type="button" class="kd-btn" id="b-foe">Đối thủ khai mở sân</button>
+  <label style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">Lý do
+    <select id="s-reason" class="kd-btn"></select>
+  </label>
+  <label style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">Kết quả
+    <select id="s-result" class="kd-btn"></select>
+  </label>
   <button type="button" class="kd-btn" id="b-end">Giả lập kết thúc</button>
   <pre id="log" style="width:100%;font-size:12px;color:var(--muted)"></pre>
 </main>
 <script src="/js/kydao/chess.js"></script>
 <script src="/js/kydao/xiangqi.js"></script>
+<script src="/js/kydao/go.js"></script>
+<script src="/js/kydao/gomoku.js"></script>
+<script src="/js/kydao-skins.js"></script>
+<script src="/js/kydao-fx.js"></script>
 <script src="/js/kydao-draw.js"></script>
 <script src="/js/kydao-ui.js"></script>
 <script>
 (function () {
   var log = document.getElementById('log'), cur = null;
-  var t0 = Date.now();
+  var fieldSel = document.getElementById('s-field');
+  var reasonSel = document.getElementById('s-reason');
+  var resultSel = document.getElementById('s-result');
+
   function say(s) { log.textContent = s + '\n' + log.textContent.slice(0, 1500); }
-  function start(game, you) {
-    var Mod = game === 'chess' ? KyChess : KyXiangqi;
-    var st = Mod.create({});
-    cur = { mod: Mod, game: game, state: st, ply: 0, gameId: 'g-' + game, you: you };
-    t0 = Date.now();
+  function addOptions(sel, values) {
+    values.forEach(function (v) {
+      var o = document.createElement('option');
+      o.value = v;
+      o.textContent = v;
+      sel.appendChild(o);
+    });
+  }
+  function modOf(game) {
+    if (game === 'chess') return KyChess;
+    if (game === 'xiangqi' || game === 'jieqi') return KyXiangqi;
+    if (game === 'go') return KyGo;
+    return KyGomoku;
+  }
+  // Cờ tướng và cờ úp dùng apply (cờ úp cần apply để lật quân); các ván khác dùng play.
+  function step(state, move) {
+    if (cur.game === 'xiangqi' || cur.game === 'jieqi') return cur.mod.apply(state, move);
+    return cur.mod.play(state, move, state.turn);
+  }
+  function other(side) { return side === 'a' ? 'b' : 'a'; }
+
+  function start(game, opts, you) {
+    var mod = modOf(game);
+    var st = mod.create(opts || {});
+    cur = { mod: mod, game: game, state: st, ply: 0, gameId: 'g-' + game + '-' + Date.now(), you: you,
+      skins: { a: { field: null, pieces: null }, b: { field: null, pieces: null } } };
     var clock = { a: 300000, b: 300000, turn: 'a', turnStartedAt: Date.now(), incMs: 3000 };
     KydaoUI.open({
       gameId: cur.gameId, table: 2, game: game, rated: false, pace: 'fast', you: you,
       a: { pid: 'x', name: 'Khách A', elo: 1498, prov: true }, b: { pid: 'y', name: 'Kỳ Vương', elo: 1532, prov: false },
-      state: st, ply: 0, moves: [], clock: clock
+      state: st, ply: 0, moves: [], clock: clock, skins: cur.skins
     }, {
       send: function (name, data, cb) {
         say('gửi ' + name + ' ' + JSON.stringify(data));
         if (name === 'kd:move') {
-          var r = cur.mod.play(cur.state, data.move);
+          var r = step(cur.state, data.move);
           if (r.ok) { cur.state = r.state; cur.ply++; }
           cb({ ok: !!r.ok, reason: r.reason, ply: cur.ply });
+        } else if (name === 'kd:skin') {
+          // Máy chủ giả: chuẩn hóa rồi phát lại như máy chủ thật.
+          var mine = cur.skins[cur.you];
+          var want = KydaoSkins.normalize({ field: 'field' in data ? data.field : mine.field, pieces: 'pieces' in data ? data.pieces : mine.pieces });
+          var opened = want.field !== mine.field && want.field !== null;
+          cur.skins[cur.you] = want;
+          cb({ ok: true, field: want.field, pieces: want.pieces });
+          KydaoUI.apply({ type: 'kd:skin', gameId: cur.gameId, side: cur.you, field: want.field, pieces: want.pieces, opened: opened });
         } else cb({ ok: true });
       },
       sound: function (k) { say('âm: ' + k); }
     });
   }
-  document.getElementById('b-chess').onclick = function () { start('chess', 'a'); };
-  document.getElementById('b-xq').onclick = function () { start('xiangqi', 'a'); };
-  document.getElementById('b-black').onclick = function () { start('chess', 'b'); };
+
+  addOptions(fieldSel, Object.keys(KydaoSkins.FIELDS));
+  addOptions(reasonSel, ['checkmate', 'resign', 'timeout', 'stalemate', 'agreed', 'five', 'score']);
+  addOptions(resultSel, ['a', 'b', 'draw']);
+
+  document.getElementById('b-chess').onclick = function () { start('chess', {}, 'a'); };
+  document.getElementById('b-xq').onclick = function () { start('xiangqi', {}, 'a'); };
+  document.getElementById('b-black').onclick = function () { start('chess', {}, 'b'); };
+  document.getElementById('b-jieqi').onclick = function () { start('jieqi', { variant: 'jieqi', seed: 7 }, 'a'); };
+  document.getElementById('b-caro').onclick = function () { start('gomoku', {}, 'a'); };
+  document.getElementById('b-go').onclick = function () { start('go', { size: 9 }, 'a'); };
+  document.getElementById('b-promo').onclick = function () { start('chess', { fen: 'r3k2r/1P3ppp/8/8/8/8/5PPP/R3K2R w KQkq - 0 1' }, 'a'); };
   document.getElementById('b-opp').onclick = function () {
     if (!cur) return;
     var turn = cur.mod.turn(cur.state);
     if (turn === cur.you) { say('chưa tới lượt đối thủ'); return; }
-    var list = cur.mod.legalMoves(cur.state), mv = list[Math.floor(Math.random() * list.length)];
-    var text = cur.mod.notation(cur.state, mv), r = cur.mod.play(cur.state, mv);
+    var list = cur.mod.legalMoves(cur.state);
+    if (!list.length) { say('không còn nước đi'); return; }
+    var mv = list[Math.floor(Math.random() * list.length)];
+    var text = typeof cur.mod.notation === 'function' ? cur.mod.notation(cur.state, mv) : String(mv);
+    var r = step(cur.state, mv);
+    if (!r.ok) { say('nước đi bị từ chối: ' + (r.reason || '')); return; }
     cur.state = r.state; cur.ply++;
-    KydaoUI.apply({ type: 'kd:moved', gameId: cur.gameId, ply: cur.ply, move: mv, text: text, side: turn, capture: !!(r.info && r.info.capture), check: !!(r.info && r.info.check),
+    KydaoUI.apply({ type: 'kd:moved', gameId: cur.gameId, ply: cur.ply, move: mv, text: text, side: turn,
+      capture: !!(r.info && r.info.capture), check: !!(r.info && r.info.check),
       clock: { a: 290000, b: 290000, turn: cur.mod.turn(r.state), turnStartedAt: Date.now(), incMs: 3000 } });
   };
+  // Đối thủ khai mở sân: bên đối thủ là bên không phải mình.
+  document.getElementById('b-foe').onclick = function () {
+    if (!cur) { say('chưa mở ván'); return; }
+    var side = other(cur.you), f = fieldSel.value;
+    cur.skins[side] = { field: f, pieces: null };
+    KydaoUI.apply({ type: 'kd:skin', gameId: cur.gameId, side: side, field: f, pieces: null, opened: true });
+  };
   document.getElementById('b-end').onclick = function () {
-    if (cur) KydaoUI.apply({ type: 'kd:end', gameId: cur.gameId, result: 'a', reason: 'resign', text: 'Đen đầu hàng.', elo: { a: { from: 1498, to: 1510 }, b: { from: 1532, to: 1520 } } });
+    if (!cur) { say('chưa mở ván'); return; }
+    KydaoUI.apply({ type: 'kd:end', gameId: cur.gameId, result: resultSel.value, reason: reasonSel.value, text: '(giả lập)',
+      elo: { a: { from: 1498, to: 1510 }, b: { from: 1532, to: 1520 } } });
   };
 })();
 </script>
