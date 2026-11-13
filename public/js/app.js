@@ -334,7 +334,7 @@
 
   /* ---------- Kỳ Đạo: bàn đá, lời mời và bảng cờ ---------- */
   const KD_NAMES = { chess: 'Cờ vua', xiangqi: 'Cờ tướng', jieqi: 'Cờ tướng úp', go: 'Cờ vây', gomoku: 'Caro' };
-  const KD_BOARD_GAMES = new Set(['chess', 'xiangqi']);
+  const KD_BOARD_GAMES = new Set(['chess', 'xiangqi', 'jieqi', 'go', 'gomoku']);
   let kdTables = [], kdLobby = null, kdTarget = null, kdStart = null, kdReconnectWatch = null;
   let kdPlayerPid = null;                                  // ván phục hồi có thể vẫn giữ pid trước khi nối lại
   let kdFetch = 0, kdOffers = [], kdOfferTimer = 0;
@@ -438,14 +438,26 @@
     });
   }
   function kdRules() {
-    return { game: $('input[name="kd-game"]:checked').value, rated: $('input[name="kd-mode"]:checked').value === 'rated', pace: $('input[name="kd-pace"]:checked').value };
+    const game = $('input[name="kd-game"]:checked').value;
+    const rules = { game, rated: $('input[name="kd-mode"]:checked').value === 'rated', pace: $('input[name="kd-pace"]:checked').value };
+    if (game === 'go') { rules.size = Number($('#kd-size').value); if (rules.size !== 9) rules.rated = false; }
+    return rules;
+  }
+  function updateKydaoSize() {
+    const go = $('input[name="kd-game"]:checked').value === 'go';
+    $('#kd-size-label').hidden = !go;
+    const friendlyOnly = go && Number($('#kd-size').value) !== 9;
+    $$('input[name="kd-mode"]').forEach(e => { if (e.value === 'rated') e.disabled = friendlyOnly; });
+    if (friendlyOnly) $$('input[name="kd-mode"]').forEach(e => { e.checked = e.value === 'friendly'; });
   }
   function setKydaoRules(r) {
-    $$('input[name="kd-game"]').forEach(e => { e.checked = e.value === (r.game || 'chess'); });
+    $$('input[name="kd-game"]').forEach(e => { e.checked = e.value === (kdSupported(r.game) ? r.game : 'chess'); });
     $$('input[name="kd-mode"]').forEach(e => { e.checked = e.value === (r.rated ? 'rated' : 'friendly'); });
     $$('input[name="kd-pace"]').forEach(e => { e.checked = e.value === (r.pace || 'normal'); });
+    $('#kd-size').value = String(r.size || 9); updateKydaoSize();
   }
   $('#kd-rules').addEventListener('change', () => {
+    updateKydaoSize();
     if (kdTarget != null) return;
     $('#kd-ready').disabled = true;
     $('#kd-lobby-note').textContent = 'Bấm Chọn luật để áp dụng. Sau đó cả hai cùng sẵn sàng.';
@@ -528,7 +540,7 @@
     Hall.setTables(t); renderKydaoLobby();
   });
   socket.on('kd:start', openKydaoStart);
-  ['moved', 'offer', 'end'].forEach(type => socket.on('kd:' + type, d => {
+  ['moved', 'marks', 'offer', 'end'].forEach(type => socket.on('kd:' + type, d => {
     KydaoUI.apply({ ...d, type: 'kd:' + type });
   }));
 

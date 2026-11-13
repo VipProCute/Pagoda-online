@@ -20,6 +20,11 @@
 .kd-clock.kd-low { color: var(--son-ink); }
 .kd-boardwrap { position: relative; display: grid; place-items: center; background: #0f0906; border-radius: 10px; padding: 4px; }
 .kd-canvas { display: block; touch-action: manipulation; max-width: 100%; border-radius: 6px; }
+.kd-viewport { overflow: auto; max-width: 100%; overscroll-behavior: contain; }
+.kd-viewport.kd-zoomed .kd-canvas { max-width: none; touch-action: pan-x pan-y; }
+.kd-viewport.kd-zoomed { cursor: grab; }
+.kd-score { font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+.kd-go .kd-actions { flex-wrap: wrap; }
 .kd-promo, .kd-result {
   position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
   display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center;

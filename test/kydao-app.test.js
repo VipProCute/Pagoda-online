@@ -22,7 +22,7 @@ function setup() {
     }
     return elements.get(id);
   }
-  const radios = { 'kd-game': ['chess', 'xiangqi'], 'kd-mode': ['friendly', 'rated'], 'kd-pace': ['normal', 'fast'] };
+  const radios = { 'kd-game': ['chess', 'xiangqi', 'jieqi', 'go', 'gomoku'], 'kd-mode': ['friendly', 'rated'], 'kd-pace': ['normal', 'fast'] };
   for (const key of Object.keys(radios)) radios[key] = radios[key].map((value, i) => ({ value, checked: i === 0 }));
   const select = s => {
     const name = /name="([^"]+)"/.exec(s);
@@ -111,10 +111,28 @@ test('Bàn đang đấu mở người xem; đóng bảng gửi unwatch', () => {
 });
 
 test('Môn chưa có bảng không xem hoặc sẵn sàng được', () => {
-  const h = setup(); h.setTables([table({ status: 'playing', game: 'go' })]);
+  const h = setup(); h.setTables([table({ status: 'playing', game: 'unknown' })]);
   h.ctx.openKydaoTable(1, -1); assert.equal(h.sent.some(x => x.name === 'kd:watch'), false);
-  h.setTables([table({ status: 'waiting', game: 'jieqi', seats: [{ pid: 7 }, null] })]);
+  h.setTables([table({ status: 'waiting', game: 'unknown', seats: [{ pid: 7 }, null] })]);
   h.ctx.openKydaoTable(1, 0); assert.equal(h.el('kd-ready').disabled, true);
+});
+
+test('Cả năm môn mở được bảng và nhạc dùng đúng mã; cỡ vây lớn chỉ giao hữu', () => {
+  for (const game of ['chess', 'xiangqi', 'jieqi', 'go', 'gomoku']) {
+    const h = setup(); h.push('kd:start', start({ game }));
+    assert.equal(h.opened.game, game); assert.equal(h.musicGames.at(-1), game);
+    h.ui.close();
+    h.setTables([table({ status: 'playing', game })]); h.ctx.openKydaoTable(1, -1);
+    assert.equal(h.sent.at(-1).name, 'kd:watch');
+  }
+  const h = setup();
+  h.ctx.setKydaoRules({ game: 'go', size: 19, rated: true });
+  assert.deepEqual(copy(h.ctx.kdRules()), { game: 'go', size: 19, rated: false, pace: 'normal' });
+  assert.equal(h.radios['kd-mode'].find(x => x.value === 'rated').disabled, true);
+  h.el('kd-size').value = '9'; h.el('kd-rules').listeners.change();
+  assert.equal(h.radios['kd-mode'].find(x => x.value === 'rated').disabled, false);
+  h.push('kd:marks', { gameId: 'van-1', dead: ['A1'], deadlineAt: 181000 });
+  assert.deepEqual(h.applied.at(-1), { type: 'kd:marks', gameId: 'van-1', dead: ['A1'], deadlineAt: 181000 });
 });
 
 test('Đổi lựa chọn luật khóa sẵn sàng tới khi máy chủ xác nhận bộ luật mới', () => {
@@ -204,11 +222,11 @@ test('Lời mời hết hạn đóng hộp; môn chưa hỗ trợ không bật n
   h.push('kd:invited', { inviteId: 'moi-1', game: 'chess', expiresAt: 21000, from: { name: 'Bạn' } });
   h.ctx.serverNow = () => 22000; h.timers.values().next().value();
   assert.equal(h.el('dlg-kd-invite').open, false);
-  h.push('kd:invited', { game: 'go' }); assert.equal(h.el('dlg-kd-invite').open, false);
+  h.push('kd:invited', { game: 'unknown' }); assert.equal(h.el('dlg-kd-invite').open, false);
 });
 
 test('Nạp luật, nét quân mới và bảng trước app, giữ importmap và lớp bảng trên 3D', () => {
-  const files = ['kydao/chess.js', 'kydao/xiangqi.js', 'kydao-draw.js', 'kydao-ui.js', 'app.js'];
+  const files = ['kydao/chess.js', 'kydao/xiangqi.js', 'kydao/go.js', 'kydao/gomoku.js', 'kydao-draw.js', 'kydao-ui.js', 'app.js'];
   const positions = files.map(f => html.indexOf('/js/' + f + '?v='));
   assert.ok(positions.every((p, i) => p > 0 && (!i || p > positions[i - 1])));
   assert.match(html, /type="importmap".*three/); assert.match(html, /view3d-ui\.js\?v=/);

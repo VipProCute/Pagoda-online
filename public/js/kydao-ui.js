@@ -1,10 +1,9 @@
 /*
- * Kỳ Đạo · Bảng bàn cờ (KydaoUI): khung, đồng hồ, cờ vua, cờ tướng (T-032).
- * Cờ vây / caro / cờ úp do T-033; nối socket và index.html do T-034.
+ * Kỳ Đạo · Bảng bàn cờ (KydaoUI): năm môn, đồng hồ và tính điểm vây.
  *
  * API công khai:
  *   KydaoUI.open(start, hooks)   mở bảng từ StartPayload (kd:start, hoặc `start` của ack kd:resume)
- *   KydaoUI.apply(event)         đưa sự kiện máy chủ vào: { type:'kd:moved'|'kd:start'|'kd:end'|'kd:offer', ...dữ liệu }
+ *   KydaoUI.apply(event)         nhận kd:moved, kd:start, kd:marks, kd:end, kd:offer.
  *   KydaoUI.close()              đóng bảng và chip
  *   KydaoUI.isOpen()
  * hooks (đều tùy chọn):
@@ -24,9 +23,11 @@
   'use strict';
 
   const GAME_NAME = { chess: 'Cờ vua', xiangqi: 'Cờ tướng', jieqi: 'Cờ tướng úp', go: 'Cờ vây', gomoku: 'Caro' };
-  const SIDE_NAME = { chess: { a: 'Trắng', b: 'Đen' }, xiangqi: { a: 'Đỏ', b: 'Đen' } };
+  const SIDE_NAME = { chess: { a: 'Trắng', b: 'Đen' }, xiangqi: { a: 'Đỏ', b: 'Đen' }, go: { a: 'Đen', b: 'Trắng' }, gomoku: { a: 'X', b: 'O' } };
   const PROMO_NAME = { q: 'Hậu', r: 'Xe', b: 'Tượng', n: 'Mã' };
-  const SUPPORTED = { chess: 'KyChess', xiangqi: 'KyXiangqi' };
+  const SUPPORTED = { chess: 'KyChess', xiangqi: 'KyXiangqi', jieqi: 'KyXiangqi', go: 'KyGo', gomoku: 'KyGomoku' };
+  const isGrid = game => game === 'go' || game === 'gomoku';
+  const lastSquares = (game, move) => isGrid(game) ? (move === 'pass' ? [] : [move]) : [move.slice(0, 2), move.slice(2, 4)];
 
   function moduleFor(game) {
     const k = SUPPORTED[game];
@@ -82,15 +83,16 @@
       a: start.a || {}, b: start.b || {}, state: start.state, ply: Number(start.ply) || 0,
       moves: Array.isArray(start.moves) ? start.moves.map(x => ({ m: x.m, t: x.t, r: x.r })) : [],
       clock: start.clock || null, over: false, sel: null, targets: [], last: [], inCheck: false,
-      offer: start.offer || null, downgraded: start.downgraded || null
+      offer: start.offer || null, downgraded: start.downgraded || null,
+      marks: start.marks || null, win: [], zoom: 1
     };
-    if (S.moves.length) { const m = S.moves[S.moves.length - 1].m; S.last = [m.slice(0, 2), m.slice(2, 4)]; }
+    if (S.moves.length) S.last = lastSquares(S.game, S.moves[S.moves.length - 1].m);
     if (S.game === 'chess' && mod.inCheck) S.inCheck = !!mod.inCheck(S.state);
     return S;
   }
 
   const sessionTurn = S => S.mod.turn(S.state);
-  const canPlay = S => !!S.you && !S.over && sessionTurn(S) === S.you;
+  const canPlay = S => !!S.you && !S.over && !S.marks && sessionTurn(S) === S.you;
 
   function legalFrom(S, from) {
     return S.mod.legalMoves(S.state).filter(m => m.slice(0, 2) === from);
@@ -102,7 +104,12 @@
    *  { kind:'move', move } · { kind:'promo', from, to, options:[q,r,b,n] }
    */
   function tapSquare(S, sq) {
+    if (S.game === 'go' && S.marks && S.you && !S.over && sq) {
+      const p = root.KydaoDraw.parseSq('go', sq, S.state.size);
+      return p && S.state.board[p.row * S.state.size + p.col] ? { kind: 'mark', point: sq } : { kind: 'none' };
+    }
     if (!sq || !canPlay(S)) return { kind: 'none' };
+    if (isGrid(S.game)) return S.mod.legalMoves(S.state).includes(sq) ? { kind: 'move', move: sq } : { kind: 'none' };
     const D = root.KydaoDraw;
     const q = D.parseSq(S.game, sq);
     const piece = q ? S.state.board[D.boardIndex(S.game, q.col, q.row)] : null;
@@ -125,12 +132,13 @@
 
   /** Áp một nước lên phiên (đã có `text`). Trả { ok, reason?, info? }. Không sửa gì nếu lỗi. */
   function pushMove(S, move, text, reveal, clock, check) {
-    const r = applyFn(S.mod)(S.state, move, reveal);
+    const r = S.game === 'jieqi' ? applyFn(S.mod)(S.state, move, reveal) : applyFn(S.mod)(S.state, move);
     if (!r || !r.ok) return { ok: false, reason: (r && r.reason) || 'Nước đi không hợp lệ.' };
     S.state = r.state;
     S.ply += 1;
     S.moves.push({ m: move, t: text, r: reveal || undefined });
-    S.last = [move.slice(0, 2), move.slice(2, 4)];
+    S.last = lastSquares(S.game, move);
+    if (r.info && r.info.line) S.win = r.info.line;
     S.inCheck = check !== undefined ? !!check : !!(r.info && r.info.check);
     if (clock) S.clock = clock;
     S.sel = null; S.targets = [];
@@ -216,7 +224,14 @@
     el.canvas = h('canvas', { class: 'kd-canvas', 'aria-label': 'Bàn cờ', role: 'img' });
     el.promo = h('div', { class: 'kd-promo', hidden: true });
     el.result = h('div', { class: 'kd-result', hidden: true, role: 'alertdialog', 'aria-label': 'Kết quả ván cờ' });
-    el.wrap = h('div', { class: 'kd-boardwrap' }, el.canvas, el.promo, el.result);
+    el.viewport = h('div', { class: 'kd-viewport', tabindex: '0', 'aria-label': 'Bàn cờ; phóng to rồi vuốt hoặc kéo để xem các giao điểm' }, el.canvas);
+    el.wrap = h('div', { class: 'kd-boardwrap' }, el.viewport, el.promo, el.result);
+    el.scoreText = h('div', { class: 'kd-score', role: 'status' });
+    el.passBtn = btn('', 'Bỏ lượt', () => { if (S && canPlay(S)) sendMove('pass'); });
+    el.agreeBtn = btn('', 'Đồng ý điểm', () => scoringAct('kd:agree'));
+    el.continueBtn = btn('', 'Đánh tiếp', () => scoringAct('kd:resume-play'));
+    el.goBar = h('div', { class: 'kd-go' }, el.scoreText, h('div', { class: 'kd-actions' }, el.passBtn, el.agreeBtn, el.continueBtn));
+    el.zoomBtn = btn('', 'Phóng to', () => { S.zoom = S.zoom === 1 ? 2.5 : 1; el.zoomBtn.textContent = S.zoom === 1 ? 'Phóng to' : 'Thu về'; el.zoomBtn.setAttribute('aria-pressed', String(S.zoom !== 1)); fit(); redraw(); });
     el.offerText = h('span', { class: 'kd-offer-text' });
     el.offer = h('div', { class: 'kd-offerbar', hidden: true }, el.offerText,
       btn('', 'Đồng ý', () => drawAct('accept')), btn('kd-ghost', 'Từ chối', () => drawAct('decline')));
@@ -225,8 +240,9 @@
     el.movesBtn = btn('', 'Nước đi ▾', () => { el.moves.hidden = !el.moves.hidden; el.movesBtn.setAttribute('aria-expanded', String(!el.moves.hidden)); }, { 'aria-expanded': 'false' });
     el.viBtn = btn('', 'Chữ Việt', () => setVi(!vi), { 'aria-pressed': 'false' });
     el.boardBtn = btn('', 'Bàn 3D', toggleBoard3D, { 'aria-pressed': 'false' });
-    el.boardBtn.hidden = !hasBoardWebGL();
-    el.actions = h('div', { class: 'kd-actions' }, el.drawBtn, el.resignBtn, el.movesBtn, el.viBtn, el.boardBtn);
+    el.webgl = hasBoardWebGL();
+    el.boardBtn.hidden = !el.webgl;
+    el.actions = h('div', { class: 'kd-actions' }, el.drawBtn, el.resignBtn, el.movesBtn, el.viBtn, el.boardBtn, el.zoomBtn);
     el.confirm = h('div', { class: 'kd-confirm', hidden: true }, h('span', null, 'Đầu hàng ván này?'),
       btn('kd-danger', 'Đầu hàng', () => { confirmOpen = false; renderControls(); send('kd:resign', { gameId: S && S.gameId }, ack => { if (ack && !ack.ok) say(ack.reason || ''); }); }),
       btn('kd-ghost', 'Thôi', () => { confirmOpen = false; renderControls(); }));
@@ -235,9 +251,21 @@
     el.live = h('div', { class: 'kd-sr', 'aria-live': 'polite' });
     el.panel = h('div', { class: 'kd-panel', role: 'dialog', 'aria-label': 'Bảng bàn cờ' },
       h('div', { class: 'kd-head' }, el.title, el.minBtn, el.closeBtn),
-      el.top.root, el.wrap, el.bot.root, el.offer, el.actions, el.confirm, el.moves, el.msg, el.live);
+      el.top.root, el.wrap, el.bot.root, el.goBar, el.offer, el.actions, el.confirm, el.moves, el.msg, el.live);
     el.chip = h('button', { type: 'button', class: 'kd-chip', hidden: true, onclick: () => setMin(false) });
-    el.canvas.addEventListener('pointerdown', onPointer);
+    // Chạm thả mới đi quân: khi phóng to, vuốt trong vùng cuộn chỉ kéo bàn.
+    let down = null;
+    el.canvas.addEventListener('pointerdown', e => { down = { x: e.clientX, y: e.clientY, left: el.viewport.scrollLeft, top: el.viewport.scrollTop }; });
+    el.canvas.addEventListener('pointermove', e => {
+      if (!down || !S || S.zoom === 1 || e.pointerType !== 'mouse') return;
+      el.viewport.scrollLeft = down.left + down.x - e.clientX;
+      el.viewport.scrollTop = down.top + down.y - e.clientY;
+    });
+    el.canvas.addEventListener('pointercancel', () => { down = null; });
+    el.canvas.addEventListener('pointerup', e => {
+      if (down && Math.hypot(e.clientX - down.x, e.clientY - down.y) < 8 && Math.abs(el.viewport.scrollLeft - down.left) < 4 && Math.abs(el.viewport.scrollTop - down.top) < 4) onPointer(e);
+      down = null;
+    });
     document.body.append(el.panel, el.chip);
     return el;
   }
@@ -257,6 +285,7 @@
     if (!S) return;
     const r = tapSquare(S, sq);
     if (r.kind === 'move') sendMove(r.move);
+    else if (r.kind === 'mark') scoringAct('kd:mark', { point: r.point });
     else if (r.kind === 'promo') showPromo(r);
     else hidePromo();
     redraw();
@@ -282,7 +311,7 @@
   }
 
   async function toggleBoard3D() {
-    if (!ui || !S) return;
+    if (!ui || !S || !['chess', 'xiangqi'].includes(S.game)) return;
     if (ui.board3d) { stopBoard3D(); fit(); redraw(); return; }
     const panel = ui, session = S, token = {};
     panel.boardLoad = token; panel.boardBtn.disabled = true; panel.boardBtn.textContent = 'Đang mở…';
@@ -291,7 +320,7 @@
       if (ui !== panel || S !== session || panel.boardLoad !== token) return;
       panel.canvas3d = h('canvas', { class: 'kd-canvas', tabindex: '0', 'aria-label': 'Bàn cờ 3D. Kéo hoặc dùng phím mũi tên để xoay; cuộn để thu phóng.' });
       panel.canvas3d.style.width = panel.canvas._w + 'px'; panel.canvas3d.style.height = panel.canvas._h + 'px';
-      panel.canvas.style.display = 'none'; panel.wrap.prepend(panel.canvas3d);
+      panel.canvas.style.display = 'none'; panel.viewport.prepend(panel.canvas3d);
       panel.board3d = createBoard3D({ canvas: panel.canvas3d, game: S.game });
       panel.board3d.onPick(onSquare);
       panel.canvas3d.addEventListener('webglcontextlost', e => {
@@ -319,7 +348,13 @@
   function hidePromo() { if (ui) ui.promo.hidden = true; }
 
   function sendMove(move) {
-    const prev = { state: S.state, ply: S.ply, n: S.moves.length, last: S.last, check: S.inCheck, clock: S.clock };
+    if (!S || !canPlay(S)) return;
+    if (S.game === 'jieqi') {
+      // Chờ máy chủ lật quân; không áp thử quân úp trên trình duyệt.
+      send('kd:move', { gameId: S.gameId, ply: S.ply, move }, ack => { if (ack && !ack.ok) { if (ack.code === 'stale') resume(); else say(ack.reason || 'Không đi được nước này.'); } });
+      return;
+    }
+    const prev = { state: S.state, ply: S.ply, n: S.moves.length, last: S.last, check: S.inCheck, clock: S.clock, win: S.win };
     const text = S.mod.notation(S.state, move) || move;
     const gid = S.gameId;
     const before = S.ply;
@@ -331,7 +366,7 @@
       if (!S || S.gameId !== gid || (ack && ack.ok)) return;
       if (ack && ack.code === 'stale') { resume(); return; }
       if (S.ply === before + 1) { // hoàn lại nước áp thử
-        S.state = prev.state; S.ply = prev.ply; S.moves.length = prev.n; S.last = prev.last; S.inCheck = prev.check; S.clock = prev.clock;
+        S.state = prev.state; S.ply = prev.ply; S.moves.length = prev.n; S.last = prev.last; S.inCheck = prev.check; S.clock = prev.clock; S.win = prev.win;
       }
       say((ack && ack.reason) || 'Không đi được nước này.');
       render();
@@ -352,6 +387,18 @@
 
   function resume() {
     send('kd:resume', {}, ack => { if (ack && ack.ok && ack.start) api.open(ack.start, hooks); });
+  }
+
+  function scoringAct(event, data) {
+    if (!S || !S.you || S.over || !S.marks) return;
+    const gid = S.gameId;
+    send(event, Object.assign({ gameId: gid }, data), ack => { if (S && S.gameId === gid && ack && !ack.ok) say(ack.reason || ''); });
+  }
+
+  function applyMarks(session, ev) {
+    if (ev.clock) session.clock = ev.clock;
+    session.marks = ev.deadlineAt == null ? null : { dead: ev.dead || [], agreed: ev.agreed || {}, deadlineAt: ev.deadlineAt };
+    session.state = Object.assign({}, session.state, { phase: session.marks ? 'mark' : 'play', dead: [], agreed: [], passes: session.marks ? 2 : 0, turn: ev.clock && ev.clock.turn || session.state.turn });
   }
 
   function setVi(v) {
@@ -383,7 +430,10 @@
     const availW = Math.max(160, (ui.wrap.clientWidth || ui.panel.clientWidth || 320) - padX);
     const availH = Math.max(160, (root.innerHeight || 700) - 250);
     const asp = D.aspect(S.game);
-    const w = Math.floor(Math.min(availW, availH * asp)), hh = Math.floor(w / asp);
+    const base = Math.floor(Math.min(availW, availH * asp));
+    const w = Math.floor(base * S.zoom), hh = Math.floor(w / asp);
+    ui.viewport.style.width = base + 'px'; ui.viewport.style.height = Math.floor(base / asp) + 'px';
+    ui.viewport.classList.toggle('kd-zoomed', S.zoom > 1);
     const dpr = Math.min(2, root.devicePixelRatio || 1);
     ui.canvas.style.width = w + 'px'; ui.canvas.style.height = hh + 'px';
     ui.canvas.width = Math.round(w * dpr); ui.canvas.height = Math.round(hh * dpr);
@@ -397,7 +447,8 @@
   function redraw() {
     if (!ui || !S || ui.panel.hidden || !ui.canvas._w) return;
     const options = {
-      game: S.game, w: ui.canvas._w, h: ui.canvas._h, dpr: ui.canvas._dpr, board: S.state.board,
+      game: S.game, size: S.state.size, w: ui.canvas._w, h: ui.canvas._h, dpr: ui.canvas._dpr, board: S.state.board || S.state.cells,
+      dead: S.marks ? S.marks.dead : [], win: S.win, reveal: S.reveal,
       flip: S.you === 'b', selected: S.sel, targets: S.targets, last: S.last,
       checkSq: S.inCheck && !S.over ? kingSquare(S, sessionTurn(S)) : null, vi
     };
@@ -409,7 +460,7 @@
 
   function fillPlayer(p, side) {
     const info = S[side] || {};
-    p.dot.className = 'kd-dot kd-dot-' + side;
+    p.dot.className = 'kd-dot kd-dot-' + (S.game === 'go' ? (side === 'a' ? 'b' : 'a') : side);
     p.name.textContent = (info.name || (side === 'a' ? 'Bên 1' : 'Bên 2')) + ' · ' + sideLabel(side) + (S.you === side ? ' (bạn)' : '');
     p.elo.textContent = info.elo == null ? '' : info.elo + (info.prov ? '?' : '');
     p.root.dataset.side = side;
@@ -426,6 +477,7 @@
       p.root.classList.toggle('kd-turn', !S.over && !!S.clock && S.clock.turn === side);
     };
     set(ui.top, top); set(ui.bot, bot);
+    if (S.game === 'go' && S.marks) renderGo();
     if (minimized) ui.chip.textContent = 'Đang đánh cờ · ' + fmtClock(clockRemaining(S.clock, S.you || 'a', t));
   }
 
@@ -442,7 +494,11 @@
     ui.drawBtn.hidden = ui.resignBtn.hidden = !live;
     ui.actions.hidden = false;
     ui.drawBtn.disabled = S.offer === S.you;
-    ui.viBtn.hidden = S.game === 'chess';
+    ui.viBtn.hidden = !['xiangqi', 'jieqi'].includes(S.game);
+    ui.boardBtn.hidden = !['chess', 'xiangqi'].includes(S.game) || !ui.webgl;
+    ui.zoomBtn.hidden = !isGrid(S.game);
+    ui.goBar.hidden = S.game !== 'go';
+    renderGo();
     ui.viBtn.setAttribute('aria-pressed', String(vi));
     ui.confirm.hidden = !(live && confirmOpen);
     ui.offer.hidden = !(live && S.offer && S.offer !== S.you);
@@ -451,11 +507,26 @@
     ui.closeBtn.hidden = live;            // đang đấu: không đóng được, chỉ thu nhỏ hoặc đầu hàng
   }
 
+  function renderGo() {
+    if (!ui || !S || S.game !== 'go') return;
+    const marking = !!S.marks, live = !!S.you && !S.over;
+    ui.passBtn.hidden = !live || marking; ui.passBtn.disabled = !canPlay(S);
+    ui.agreeBtn.hidden = ui.continueBtn.hidden = !live || !marking;
+    ui.agreeBtn.disabled = !!(marking && S.marks.agreed[S.you]);
+    const dead = marking ? S.marks.dead.map(n => root.KydaoDraw.parseSq('go', n, S.state.size)).filter(Boolean).map(p => p.row * S.state.size + p.col) : [];
+    const score = S.mod.score(Object.assign({}, S.state, { dead }));
+    ui.scoreText.textContent = 'Tạm tính: Đen ' + score.a + ' · Trắng ' + score.b + ' (bù ' + score.komi + ')' + (marking ? ' · ' + fmtClock(S.marks.deadlineAt - now()) + '. Chạm nhóm quân chết; hai bên đồng ý để kết thúc.' + (S.marks.agreed.a ? ' Đen đã đồng ý.' : '') + (S.marks.agreed.b ? ' Trắng đã đồng ý.' : '') : ' · Hai lần bỏ lượt để tính điểm.');
+  }
+
   function renderMoves() {
     ui.moves.textContent = '';
+    const label = m => {
+      const r = m.r, names = root.KydaoDraw.VIET;
+      return (m.t || m.m) + (r && r.mover ? ' · lật ' + names[r.mover] : '') + (r && r.captured ? ' · ăn quân úp ' + names[r.captured] : '');
+    };
     for (let i = 0; i < S.moves.length; i += 2) {
       const a = S.moves[i], b = S.moves[i + 1];
-      ui.moves.appendChild(h('li', { value: Math.floor(i / 2) + 1 }, (a.t || a.m) + (b ? '   ' + (b.t || b.m) : '')));
+      ui.moves.appendChild(h('li', { value: Math.floor(i / 2) + 1 }, label(a) + (b ? '   ' + label(b) : '')));
     }
     ui.moves.scrollTop = ui.moves.scrollHeight;
   }
@@ -480,6 +551,7 @@
     else if (S.you) head = ev.result === S.you ? 'Bạn thắng' : 'Bạn thua';
     else head = (sideLabel(ev.result) || '') + ' thắng';
     ui.result.appendChild(h('div', { class: 'kd-result-head' }, head));
+    if (ev.score) ui.result.appendChild(h('div', { class: 'kd-result-text' }, 'Đen ' + ev.score.a + ' · Trắng ' + ev.score.b + ' (bù ' + ev.score.komi + ')'));
     if (ev.text) ui.result.appendChild(h('div', { class: 'kd-result-text' }, ev.text));
     if (ev.elo && S.you && ev.elo[S.you]) {
       const e = ev.elo[S.you], d = e.to - e.from;
@@ -523,6 +595,20 @@
     const r = handleMoved(S, ev);
     if (r === 'gap' || r === 'bad') { if (S.you) resume(); else send('kd:watch', { table: S.table }); return; }
     if (r === 'applied') {
+      if (ev.reveal) {
+        const names = root.KydaoDraw.VIET;
+        say((ev.reveal.mover ? 'Lật quân: ' + names[ev.reveal.mover] + '.' : '') + (ev.reveal.captured ? ' Quân úp bị ăn: ' + names[ev.reveal.captured] + '.' : ''));
+      }
+      if (S.game === 'jieqi' && ev.reveal && ev.reveal.mover && !reduced()) {
+        const session = S, started = Date.now(), square = ev.move.slice(2, 4);
+        const animate = () => {
+          if (S !== session || !ui || S.over) return;
+          const progress = Math.min(1, (Date.now() - started) / 280);
+          S.reveal = progress < 1 ? { square, progress } : null; redraw();
+          if (progress < 1) root.requestAnimationFrame(animate);
+        };
+        animate();
+      }
       hidePromo();
       const mover = ev.side || (S.moves.length % 2 ? 'a' : 'b');
       if (S.you && mover !== S.you) announce('Đối thủ: ' + (ev.text || ev.move));
@@ -538,7 +624,7 @@
     open(start, h2) {
       if (!start || typeof start !== 'object') return false;
       const mod = moduleFor(start.game);
-      if (!mod || !root.KydaoDraw) return false; // môn chưa hỗ trợ (cờ vây/caro/cờ úp: T-033)
+      if (!mod || !root.KydaoDraw) return false;
       stopBoard3D();
       hooks = h2 || hooks || {};
       clearTimeout(resultTimer);
@@ -551,6 +637,7 @@
       }
       ui.panel.hidden = false; ui.chip.hidden = true; ui.result.hidden = true; ui.moves.hidden = true;
       ui.movesBtn.setAttribute('aria-expanded', 'false');
+      ui.zoomBtn.textContent = 'Phóng to'; ui.zoomBtn.setAttribute('aria-pressed', 'false'); ui.viewport.scrollLeft = ui.viewport.scrollTop = 0;
       hidePromo(); say('');
       ui.panel.classList.toggle('kd-reduced', reduced());
       fit(); render(); tick(); flushPending();
@@ -569,13 +656,17 @@
       const type = String(ev.type || '').replace(/^kd:/, '');
       if (type === 'start') api.open(ev, hooks);
       else if (type === 'moved') onMoved(ev);
-      else if (type === 'offer' && S && ev.gameId === S.gameId) {
+      else if (type === 'marks' && S && S.game === 'go' && ev.gameId === S.gameId) {
+        applyMarks(S, ev); render();
+      } else if (type === 'offer' && S && ev.gameId === S.gameId) {
         S.offer = ev.state === 'open' ? (ev.from || null) : null;
         if (ev.state === 'declined') say('Lời xin hòa bị từ chối.');
         else if (ev.state === 'expired') say('Lời xin hòa đã hết hạn.');
         renderControls();
       } else if (type === 'end' && S && ev.gameId === S.gameId) {
         S.over = true; S.sel = null; S.targets = []; S.offer = null;
+        S.reveal = null;
+        if (S.game === 'jieqi' && ev.final) S.state = ev.final;
         if (S.clock) S.clock = settleClock(S.clock, now(), ev.result, ev.reason);
         confirmOpen = false;
         hidePromo(); render(); tick();
