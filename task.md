@@ -89,7 +89,7 @@
 | T-115a | Bảng cờ: nạp module, giữ trạng thái skin, truyền vào hàm vẽ | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | gpt-6.1-terra |
 | T-115b | Bảng cờ: bộ chọn Lãnh địa, gửi skin, màn khai mở | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | Claude Sonnet 5.5 |
 | T-115c | Bảng cờ: chấn động phong cấp, hiệu ứng chiến thắng | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | gpt-6.1-terra |
-| T-116 | ui-harness, ảnh chụp, Sổ tay, README cho Kỳ Đài | 🟣 Chờ soát (tài liệu xong; harness tự động chưa làm) | P1 | CORE + KYDAI + DOCS | gemini-3.8-flash-high |
+| T-116 | ui-harness, ảnh chụp, Sổ tay, README cho Kỳ Đài | 🟣 Chờ soát | P1 | CORE + KYDAI + DOCS | gemini-3.8-flash-high + Claude Haiku 5.5 |
 | T-117 | Đồ họa 2D bằng Canva: khung khẩu hiệu, biểu tượng bộ chọn | 🟣 Chờ soát | P2 | CORE + KYDAI | Claude Sonnet 5.5 (Canva) |
 | T-118 | Sân v2: dựng cảnh 3D thật trong Blender, bản mẫu Hỏa Diệm Sơn 👤 duyệt | 🟣 Chờ soát | P0 | CORE + KYDAI | Claude Sonnet 5.5 (Blender) |
 | T-119 | Bàn 2D: dải cảnh quanh bàn, dùng ảnh sân v2, quân 2D từ ảnh render | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | Claude Sonnet 5.5 |
@@ -104,6 +104,7 @@
 | T-126b | Bàn 2D vẽ quân bằng ảnh render | 🟣 Chờ soát | P1 | CORE + KYDAO + KYDAI | Claude Sonnet 5.5 |
 | T-127 | Huy hiệu chủ đề trong khẩu hiệu và bộ chọn Lãnh địa | 🟣 Chờ soát | P2 | CORE + KYDAI | gemini-3.8-flash-high |
 | T-128 | Sửa lỗi từ đợt soát vòng 2 của Gemini 4 Argon | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | Claude Sonnet 5.5 |
+| T-129 | Sửa lỗi từ lần nghiệm thu cuối của GPT Sol | 🟣 Chờ soát | P1 | CORE + KYDAO + KYDAI | Claude Sonnet 5.5 |
 
 Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạm `package.json`). **T-005**, **T-007**, **T-002** làm song song được với nhóm trên.
 Đợt 2026-11: làm **T-003, T-004, T-006** trước (T-004 gỡ nút thắt `package.json` cho mọi thẻ thêm file JS; T-006 là cổng "CI xanh"). Sau đó theo lịch 6 đợt ở [docs/KE-HOACH-DOT-2026-11.md §10.3](docs/KE-HOACH-DOT-2026-11.md#103-lịch-theo-đợt-và-khóa-vùng-nóng).
@@ -1294,6 +1295,10 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
 - **T-126a/b**: 8 atlas quân 2D render từ mô hình 3D (`public/img/kydao/pieces2d/`, mỗi bộ khoảng 40 KB); bàn 2D vẽ quân có skin bằng atlas, vector là đường dự phòng. Điều phối đã xem trên bảng cờ thật và phóng quân lên 1,12 ô cho đầy ô.
 - **T-120**: bản mẫu nhân vật áo lam nam/nữ (1.156 / 1.184 tam giác, 97 KB, 15 xương, 4 hoạt ảnh idle/walk/sit/bow) và hào quang lưới; ảnh ở docs/ky-dai/anh/nhan-vat-*.jpg; trang thử `/world3d-avatar.html` khu "Bản mẫu Blender". **Chưa đo được hiệu năng**: khung trình duyệt của điều phối bị bóp còn 3 khung/giây ngay cả với 2 nhân vật, nên số đo vô nghĩa; 60 nhân vật tốn 481 lượt vẽ (8 vật liệu mỗi nhân vật), cần gộp vật liệu thành 1 (màu theo đỉnh) trước khi dùng thật. 👤 Chủ dự án mở trang thử trên trình duyệt thật, bấm "Dừng cảnh dựng bằng mã" rồi "Nhân 60" để xem số khung hình, và duyệt hình dáng trước khi làm T-121 → T-125 cũ (trang phục, tóc, hào quang 9 bậc, pháp tướng, NPC).
 - `npm test` trên nhánh tích hợp sau T-126b: **942 đạt, 0 trượt, 3 bỏ qua** (2 PostgreSQL, 1 perft sâu), tổng 945.
+- **Nghiệm thu lần cuối** (GPT Sol, 14/11, sau khi hồi hạn mức): không có lỗi chặn; mọi lỗi vòng 1 và vòng 2 đã sửa thật; bất biến bảo mật đều đạt; còn 5 điểm nên sửa + 1 góp ý → **T-129** đã sửa hết (tắt hiệu ứng giữa chừng, tương phản chữ quân ≥ 4,5, nút Khai mở tự hết khóa, bộ chọn dùng được bằng bàn phím, đệm nền tĩnh khi sông chảy, đồng bộ `?v=` trang thử). **Gemini 4 Argon xác nhận T-129: PASS, không còn lỗi chặn, nên sửa hay góp ý.**
+- **T-116 phần harness**: `tools/ui-harness/kydao/index.html` có thêm cờ úp, caro, cờ vây, thế sắp phong cấp, đối thủ khai mở sân, kết thúc theo 7 lý do (Haiku). Chưa có kịch bản Playwright tự động (xem T-008).
+- **Tổng kết đợt** (nhánh tích hợp `claude/chess-game-graphics-upgrade-553ef6`, CHƯA push, CHƯA mở PR): `npm run check` sạch 168 file; `npm test` **948 đạt, 0 trượt, 3 bỏ qua** trên 951 (2 PostgreSQL, 1 perft sâu). Điều phối đã xem bằng mắt: bàn 2D và 3D có skin, khai mở, phong cấp, kết thúc ván, dòng sông, bộ chọn, huy hiệu.
+- **Còn chờ 👤 chủ dự án**: (1) duyệt bản mẫu nhân vật T-120 và đo khung hình trên trình duyệt thật; (2) quyết cách mở khóa skin (hiện miễn phí); (3) có cho chọn khẩu hiệu không; (4) skin cho cờ vây, caro; (5) vẽ lại 4 huy hiệu ghép tay khi Canva có credit; (6) push nhánh và mở PR.
 - `npm test` trên nhánh tích hợp trước T-121: 906 đạt, 0 trượt, 3 bỏ qua (2 PostgreSQL, 1 perft sâu).
 
 ### T-110 · Thêm giao thức `kd:skin` trên máy chủ
