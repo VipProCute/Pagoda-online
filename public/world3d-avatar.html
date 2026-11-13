@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nhân vật 3D · Chùa Tâm An</title>
+  <style>
+    :root { color-scheme: light; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #f3ecdd; color: #463323; font: 15px/1.55 system-ui, sans-serif; }
+    main { max-width: 1440px; margin: auto; padding: 28px 32px; }
+    .av-kicker { color: #986e35; letter-spacing: .18em; font-size: 11px; font-weight: 700; }
+    h1 { font: 40px/1.1 Georgia, 'Times New Roman', serif; margin: 10px 0; }
+    .av-intro { margin: 0 0 22px; color: #7c6852; }
+    .av-layout { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 20px; }
+    .av-stage { position: relative; border: 1px solid #ad9169; border-radius: 18px; overflow: hidden; background: #303a32; }
+    canvas { display: block; width: 100%; height: 70vh; min-height: 440px; touch-action: none; cursor: grab; }
+    canvas:active { cursor: grabbing; }
+    .av-hint { position: absolute; left: 20px; bottom: 12px; color: #e4d1ad; pointer-events: none; font-size: 12px; }
+    aside { background: #e9dfcc; padding: 18px; border: 1px solid #d5c5a9; border-radius: 18px; }
+    label { display: block; margin-bottom: 12px; font-size: 13px; color: #6e573d; }
+    select, button { min-height: 44px; width: 100%; padding: 8px 10px; margin-top: 4px; border: 1px solid #c6ad84; border-radius: 7px; background: #faf6ed; color: #463323; font: inherit; }
+    button { background: #735539; color: #fff1d7; cursor: pointer; }
+    button:disabled { opacity: .55; cursor: default; }
+    input { width: 18px; height: 18px; vertical-align: middle; accent-color: #8b633c; }
+    .av-check { margin-top: 16px; }
+    .av-note { font-size: 12px; color: #806b52; }
+    .av-status { border-bottom: 1px solid #d4c5ac; padding: 10px 0 16px; min-height: 66px; font-size: 13px; }
+    a { color: #80532e; }
+    @media (max-width: 800px) {
+      main { padding: 20px 14px; } h1 { font-size: 32px; }
+      .av-layout { grid-template-columns: 1fr; } canvas { height: 60vh; min-height: 360px; }
+      aside { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+      aside label { margin: 0; } .av-wide { grid-column: 1 / -1; }
+    }
+  </style>
+  <script type="importmap">
+    { "imports": { "three": "/vendor/three/three.module.js?v=0.187.0" } }
+  </script>
+</head>
+<body>
+  <main>
+    <div class="av-kicker">CHÙA TÂM AN · XƯỞNG NHÂN VẬT</div>
+    <h1>Một dáng hình, một duyên gặp.</h1>
+    <p class="av-intro">Áo dài mộc, sắc áo quen và những vị khách nơi sân chùa.</p>
+    <div class="av-layout">
+      <div class="av-stage">
+        <canvas id="world" aria-label="Bộ sưu tập nhân vật 3D; kéo để xoay, cuộn để thu phóng" tabindex="0"></canvas>
+        <p class="av-hint">Kéo để xoay · Cuộn để gần xa · Phím mũi tên để xoay</p>
+      </div>
+      <aside>
+        <label class="av-wide">Bộ sưu tập
+          <select id="collection"><option value="gallery">Khách và năm vị NPC</option><option value="looks">Mười hai sắc áo</option><option value="crowd">Sáu mươi nhân vật</option></select>
+        </label>
+        <label class="av-wide">Tư thế
+          <select id="pose"><option value="idle">Chắp tay, đứng thở</option><option value="walk">Bước đi</option><option value="bow">Vái lạy</option><option value="cushion">Ngồi bồ đoàn</option><option value="bench">Ngồi ghế đá</option></select>
+        </label>
+        <label>Nhân vật mẫu
+          <select id="gender"><option value="nu">Nữ</option><option value="nam">Nam</option></select>
+        </label>
+        <label>Kiểu tóc
+          <select id="hair"><option value="0">Tóc dài</option><option value="1" selected>Búi tóc</option><option value="2">Tóc ngắn</option><option value="3">Khăn vấn</option></select>
+        </label>
+        <label class="av-wide">Sắc áo nhân vật mẫu <select id="color"></select></label>
+        <label class="av-check av-wide"><input type="checkbox" id="reduced"> Giảm chuyển động</label>
+        <label class="av-check av-wide"><input type="checkbox" id="first"> Ẩn nhân vật mẫu ở góc nhìn thứ nhất</label>
+        <button class="av-wide" type="button" id="measure">Đo FPS · 60 nhân vật</button>
+        <p class="av-status av-wide" id="status" role="status">Đang mở cảnh nhân vật…</p>
+        <p class="av-note av-wide">Nhãn tên, danh hiệu và lời nói luôn hướng về máy quay. Bộ đo khởi động 2 giây, lấy mẫu 10 giây ở mức Vừa.</p>
+      </aside>
+    </div>
+    <p class="av-note">Trang thử độc lập · <a href="/world3d-test.html">Thử nền 3D</a> · <a href="/">Về chùa</a></p>
+  </main>
+  <script type="module">
+    import * as THREE from 'three';
+    import { createAvatar, AVATAR_COLORS } from '/js/world3d/avatar.mjs?v=1';
+
+    const byId = id => document.getElementById(id);
+    const canvas = byId('world'), status = byId('status');
+    const names = ['Đỏ son', 'Vàng nghệ', 'Hồng sen', 'Xanh ngọc', 'Tím Huế', 'Trắng ngà', 'Xanh lam', 'Cam', 'Áo tràng lam', 'Áo tràng nâu', 'Xanh lá', 'Đen tuyền'];
+    names.forEach((name, i) => {
+      const option = document.createElement('option'); option.value = i; option.textContent = name; byId('color').append(option);
+    });
+    byId('color').value = '2';
+    byId('reduced').checked = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const npcDefs = [
+      { name: 'Lão Ăn Mày', role: 'beggar', c: 9, h: 3 },
+      { name: 'Vạn Lý Độc Hành', role: 'wanderer', c: 11, h: 3 },
+      { name: 'Obito', role: 'obito', c: 11, h: 2 },
+      { name: 'Tảo Địa Tăng', role: 'sweeper', c: 8, h: 2 },
+      { name: 'Thầy bói', role: 'fortune', c: 4, h: 2 }
+    ];
+    let renderer, frame = 0, last = 0, time = 0, measurement = null, stopped = false;
+    let avatars = [], seats = [];
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color('#303a32');
+    scene.fog = new THREE.Fog('#303a32', 22, 50);
+    const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 80);
+    const target = new THREE.Vector3(0, 0.65, 0);
+    let yaw = 0.20, pitch = 0.96, distance = 14;
+    function orbit() {
+      camera.position.set(target.x + Math.sin(yaw) * Math.sin(pitch) * distance,
+        target.y + Math.cos(pitch) * distance, target.z + Math.cos(yaw) * Math.sin(pitch) * distance);
+      camera.lookAt(target);
+    }
+    scene.add(new THREE.HemisphereLight('#ffe8bf', '#4c5242', 2.7));
+    const sun = new THREE.DirectionalLight('#ffd6a0', 3.2); sun.position.set(-5, 9, 6); scene.add(sun);
+    const rim = new THREE.DirectionalLight('#b7d0c2', 1.2); rim.position.set(5, 4, -5); scene.add(rim);
+    const resources = new Set();
+    function keep(value) { resources.add(value); return value; }
+    const floor = new THREE.Mesh(keep(new THREE.CircleGeometry(18, 64)), keep(new THREE.MeshStandardMaterial({ color: '#8a7960', roughness: 1 })));
+    floor.rotation.x = -Math.PI / 2; scene.add(floor);
+    const cushionGeometry = keep(new THREE.CylinderGeometry(0.40, 0.43, 0.15, 12));
+    const cushionMaterial = keep(new THREE.MeshStandardMaterial({ color: '#a78045', roughness: 1, flatShading: true }));
+    const benchGeometry = keep(new THREE.BoxGeometry(0.9, 0.13, 0.46));
+    const stoneMaterial = keep(new THREE.MeshStandardMaterial({ color: '#9e9b87', roughness: 1 }));
+    const legGeometry = keep(new THREE.BoxGeometry(0.14, 0.21, 0.30));
+    function clearCollection() {
+      avatars.forEach(item => item.avatar.dispose()); avatars = [];
+      seats.forEach(seat => scene.remove(seat)); seats = [];
+    }
+    function buildCollection() {
+      clearCollection();
+      const mode = byId('collection').value, count = mode === 'crowd' ? 60 : mode === 'looks' ? 12 : 8;
+      const columns = mode === 'crowd' ? 10 : 4, rows = Math.ceil(count / columns);
+      for (let i = 0; i < count; i++) {
+        const npc = mode === 'gallery' && i >= 3 ? npcDefs[i - 3] : mode === 'crowd' && i % 10 < 5 ? npcDefs[i % 10] : null;
+        const look = { g: i % 2 ? 'nam' : 'nu', c: npc?.c ?? i % 12, h: npc?.h ?? i % 4 };
+        const avatar = createAvatar(look, { role: npc?.role, isSelf: i === 0 });
+        const x = (i % columns - (columns - 1) / 2) * 2.05;
+        const z = ((rows - 1) / 2 - Math.floor(i / columns)) * 2.6;
+        avatar.group.position.set(x, 0, z); scene.add(avatar.group);
+        const seat = new THREE.Group(); seat.position.set(x, 0, z);
+        const cushion = new THREE.Mesh(cushionGeometry, cushionMaterial); cushion.position.y = 0.075; seat.add(cushion);
+        const bench = new THREE.Group();
+        const slab = new THREE.Mesh(benchGeometry, stoneMaterial); slab.position.set(0, 0.275, -0.05); bench.add(slab);
+        for (const sign of [-1, 1]) { const leg = new THREE.Mesh(legGeometry, stoneMaterial); leg.position.set(sign * 0.29, 0.105, -0.05); bench.add(leg); }
+        seat.add(bench); scene.add(seat); seats.push(seat);
+        avatars.push({ avatar, name: npc?.name ?? (mode === 'looks' ? names[i] : i === 0 ? 'An Nhiên' : i === 1 ? 'Minh Tâm' : 'Thiện Duyên'), cushion, bench });
+      }
+      distance = mode === 'crowd' ? 27 : mode === 'looks' ? 17 : 14;
+      orbit(); setLook();
+    }
+    function setLook() {
+      avatars[0]?.avatar.setLook({ g: byId('gender').value, c: Number(byId('color').value), h: Number(byId('hair').value) });
+    }
+    function triangleCount(avatar) {
+      let count = 0;
+      avatar.group.traverseVisible(object => { if (object.isMesh) count += (object.geometry.index?.count ?? object.geometry.attributes.position.count) / 3; else if (object.isSprite) count += 2; });
+      return count;
+    }
+    function resize() {
+      const rect = canvas.getBoundingClientRect();
+      camera.aspect = rect.width / Math.max(1, rect.height); camera.updateProjectionMatrix();
+      renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.5)); renderer.setSize(rect.width, rect.height, false);
+    }
+    function draw(now) {
+      if (stopped) return;
+      const dt = last ? Math.min(0.1, (now - last) / 1000) : 0; last = now; time += dt;
+      const pose = byId('pose').value, reducedMotion = byId('reduced').checked;
+      for (let i = 0; i < avatars.length; i++) {
+        const item = avatars[i];
+        item.cushion.visible = pose === 'cushion'; item.bench.visible = pose === 'bench';
+        item.avatar.update({ name: item.name, tag: i === 0 ? 'Tâm an · Duyên lành' : '',
+          walking: pose === 'walk', yaw: 0, bow: pose === 'bow' ? reducedMotion ? 0.8 : (1 - Math.cos(time * 1.7)) * 0.45 : 0,
+          sit: pose === 'cushion' || pose === 'bench' ? pose : false, talk: i === 0,
+          aura: i === 0, bubble: i === 0 ? 'Một lời lành, một ngày an.' : '',
+          view: byId('first').checked ? 'first' : 'third', reducedMotion
+        }, dt);
+      }
+      renderer.render(scene, camera);
+      if (measurement) {
+        if (now >= measurement.start) {
+          measurement.frames++;
+          const seconds = (now - measurement.start) / 1000;
+          if (seconds >= 10) {
+            const fps = measurement.frames / seconds;
+            const maxTriangles = Math.max(...avatars.map(item => triangleCount(item.avatar)));
+            const result = { fps: Number(fps.toFixed(1)), avatars: avatars.length, maxTriangles, triangles: renderer.info.render.triangles,
+              calls: renderer.info.render.calls, width: canvas.width, height: canvas.height, pixelRatio: renderer.getPixelRatio(),
+              quality: 'medium', reducedMotion, pose, camera: { yaw, pitch, distance }, seconds: Number(seconds.toFixed(2)), date: new Date().toISOString() };
+            window.avatarBenchmark = result;
+            status.textContent = `${result.fps} FPS · ${result.avatars} nhân vật · tối đa ${maxTriangles} tam giác/người · ${result.calls} lượt vẽ · ${result.width} × ${result.height}. ${fps >= 30 ? 'Đạt mốc 30 FPS.' : 'Chưa đạt mốc 30 FPS trên máy này.'}`;
+            measurement = null; byId('measure').disabled = false;
+          } else status.textContent = `Đang đo: ${Math.floor(seconds)}/10 giây · ${(measurement.frames / Math.max(0.01, seconds)).toFixed(1)} FPS`;
+        }
+      }
+      frame = requestAnimationFrame(draw);
+    }
+    function cancelMeasurement() { measurement = null; byId('measure').disabled = false; status.textContent = 'Cảnh đã sẵn sàng. Kéo để xem từ mọi phía.'; }
+    for (const id of ['collection', 'pose', 'reduced', 'first']) byId(id).addEventListener('change', () => { cancelMeasurement(); if (id === 'collection') buildCollection(); });
+    for (const id of ['gender', 'hair', 'color']) byId(id).addEventListener('change', () => { cancelMeasurement(); setLook(); });
+    byId('measure').addEventListener('click', () => {
+      byId('collection').value = 'crowd'; byId('pose').value = 'walk'; byId('first').checked = false;
+      buildCollection(); measurement = { start: performance.now() + 2000, frames: 0 }; byId('measure').disabled = true;
+      status.textContent = 'Đang khởi động bộ đo trong 2 giây…';
+    });
+    let drag = null;
+    canvas.addEventListener('pointerdown', event => { drag = { x: event.clientX, y: event.clientY }; canvas.setPointerCapture(event.pointerId); });
+    canvas.addEventListener('pointermove', event => {
+      if (!drag) return; yaw -= (event.clientX - drag.x) * 0.006; pitch = THREE.MathUtils.clamp(pitch + (event.clientY - drag.y) * 0.006, 0.25, 1.48);
+      drag = { x: event.clientX, y: event.clientY }; orbit();
+    });
+    for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) canvas.addEventListener(type, () => { drag = null; });
+    canvas.addEventListener('wheel', event => { event.preventDefault(); distance = THREE.MathUtils.clamp(distance * Math.exp(event.deltaY * 0.001), 3, 42); orbit(); }, { passive: false });
+    canvas.addEventListener('keydown', event => {
+      if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return;
+      event.preventDefault();
+      if (event.key === 'ArrowLeft') yaw -= 0.12; if (event.key === 'ArrowRight') yaw += 0.12;
+      if (event.key === 'ArrowUp') distance = Math.max(3, distance - 1); if (event.key === 'ArrowDown') distance = Math.min(42, distance + 1); orbit();
+    });
+    function stop() {
+      if (stopped) return; stopped = true; cancelAnimationFrame(frame); clearCollection();
+      resources.forEach(resource => resource.dispose()); renderer?.dispose(); observer?.disconnect();
+    }
+    const observer = new ResizeObserver(() => { if (renderer && !stopped) resize(); });
+    canvas.addEventListener('webglcontextlost', event => { event.preventDefault(); stop(); status.textContent = 'Đã mất kết nối đồ họa. Xin tải lại trang thử.'; });
+    document.addEventListener('visibilitychange', () => {
+      if (stopped) return;
+      cancelAnimationFrame(frame); last = 0;
+      if (measurement) cancelMeasurement();
+      if (!document.hidden) frame = requestAnimationFrame(draw);
+    });
+    window.addEventListener('pagehide', stop);
+    try {
+      renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+      renderer.setClearColor('#303a32'); renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      buildCollection(); resize(); observer.observe(canvas); cancelMeasurement(); frame = requestAnimationFrame(draw);
+    } catch (error) { stop(); status.textContent = 'Chưa mở được WebGL2. Xin thử bằng trình duyệt có hỗ trợ đồ họa 3D.'; }
+  </script>
+</body>
+</html>

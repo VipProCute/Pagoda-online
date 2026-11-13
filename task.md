@@ -67,7 +67,7 @@
 | T-080 | Dựng nền 3D (Three.js, khung World3D, trang thử) | 🟣 Chờ soát | P0 | CORE + HALL + OPS | gpt-6.1-sol (Codex CLI qua proxy) |
 | T-081 | Toán máy quay góc nhìn thứ nhất / thứ ba (thuần, có test) | 🔵 Sẵn sàng | P0 | CORE + HALL | — |
 | T-082 | Bộ khối dựng kiến trúc chùa (kit.mjs) | ⏳ T-080 | P0 | CORE + HALL | — |
-| T-083 | Nhân vật 3D low-poly và NPC | ⏳ T-080 | P0 | CORE + HALL | — |
+| T-083 | Nhân vật 3D low-poly và NPC | 🟣 Chờ soát | P0 | CORE + HALL | gpt-6.1-sol (Codex CLI qua proxy) |
 | T-084 | Cảnh Chánh điện 3D | ⏳ T-082 | P0 | CORE + HALL | — |
 | T-085 | Cảnh Sân chùa 3D | ⏳ T-082 | P1 | CORE + HALL + KYDAO | — |
 | T-086 | Cảnh Tàng Kinh Các 3D | ⏳ T-082 | P1 | CORE + HALL | — |
@@ -1061,7 +1061,9 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
 - **Ngoài phạm vi**: không dựng cảnh hoàn chỉnh, không tải mô hình/ảnh ngoài.
 
 ### T-083 · Nhân vật 3D low-poly và NPC
-- **Trạng thái**: ⏳ Chờ T-080
+- **Trạng thái**: 🟣 Chờ soát
+- **Người làm**: gpt-6.1-sol (Codex CLI qua proxy)
+- **Nhánh**: codex/T-083-nhan-vat-3d
 - **Ưu tiên**: P0
 - **Gói ngữ cảnh**: CORE + HALL
 - **Khu vực chạm**: public/js/world3d/avatar.mjs (mới), public/world3d-avatar.html (mới, trang thử)
@@ -1069,12 +1071,13 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
 - **Thợ**: gpt-6.1-sol · **Soát**: Claude Sonnet 5.5 + Gemini Argon (ảnh)
 - **Mục tiêu**: Nhân vật 3D khớp với nhân vật 2D hiện có (`look = { g:'nam'|'nu', c:0..11, h:0..3 }`, xem `drawAvatar` trong `hall.js`), và các NPC (`drawNpcAccessory`).
 - **Tiêu chí xong**:
-  - [ ] `createAvatar(look, opts)` → `{ group, update(state, dt), setLook, dispose }`; `state` có `walking`, `yaw`, `bow` (0..1), `sit`, `talk`, `aura`, `name`, `tag`, `bubble`
-  - [ ] Hoạt cảnh đi, đứng thở, vái lạy, ngồi bồ đoàn, ngồi ghế đá; giảm chuyển động thì chỉ đổi tư thế
-  - [ ] Nhãn tên + bong bóng chat là sprite `CanvasTexture` (chữ vẽ bằng `fillText`), luôn quay về máy quay, ẩn với chính mình ở góc nhìn thứ nhất
-  - [ ] NPC: Lão Ăn Mày, Vạn Lý Độc Hành, Obito, Tảo Địa Tăng, thầy bói (phụ kiện theo vai)
+  - [x] `createAvatar(look, opts)` → `{ group, update(state, dt), setLook, dispose }`; `state` có `walking`, `yaw`, `bow` (0..1), `sit`, `talk`, `aura`, `name`, `tag`, `bubble`
+  - [x] Hoạt cảnh đi, đứng thở, vái lạy, ngồi bồ đoàn, ngồi ghế đá; giảm chuyển động thì chỉ đổi tư thế
+  - [x] Nhãn tên + bong bóng chat là sprite `CanvasTexture` (chữ vẽ bằng `fillText`), luôn quay về máy quay, ẩn với chính mình ở góc nhìn thứ nhất
+  - [x] NPC: Lão Ăn Mày, Vạn Lý Độc Hành, Obito, Tảo Địa Tăng, thầy bói (phụ kiện theo vai)
   - [ ] ≤ 600 tam giác mỗi nhân vật; 60 nhân vật vẫn ≥ 30 khung hình/giây trên máy bàn (ghi số đo)
 - **Ngoài phạm vi**: không sửa `hall.js`; không đổi dữ liệu `look`.
+- **Ghi chú bàn giao**: Đã có `/world3d-avatar.html`, kéo xoay/cuộn thu phóng, đổi ngoại hình/tư thế và đo 60 nhân vật (khởi động 2 giây + lấy mẫu 10 giây, kết quả tại `window.avatarBenchmark`). Tối đa 492 tam giác/người kể cả hào quang, bóng tiếp xúc và hai nhãn; 576 cấu hình đã kiểm bằng test. Kiểm cú pháp trực tiếp 134 file sạch; test mới 4/4 và `hall-npcs` 4/4 đạt. `npm run check`, `node --test` và e2e cảnh gặp EPERM khi tạo tiến trình con; điều phối chạy lại và kiểm ảnh/FPS. Thêm `test/world3d-avatar.test.js` ngoài khu vực để kiểm hợp đồng mới. Chi tiết trong `BAN-GIAO-T-083.md` (không commit).
 
 ### T-084 · Cảnh Chánh điện 3D
 - **Trạng thái**: ⏳ Chờ T-082
