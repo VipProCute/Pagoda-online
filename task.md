@@ -89,13 +89,16 @@
 | T-115a | Bảng cờ: nạp module, giữ trạng thái skin, truyền vào hàm vẽ | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | gpt-6.1-terra |
 | T-115b | Bảng cờ: bộ chọn Lãnh địa, gửi skin, màn khai mở | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | Claude Sonnet 5.5 |
 | T-115c | Bảng cờ: chấn động phong cấp, hiệu ứng chiến thắng | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | gpt-6.1-terra |
-| T-116 | ui-harness, ảnh chụp, Sổ tay, README cho Kỳ Đài | ⏳ T-115c | P1 | CORE + KYDAI + DOCS | — |
-| T-117 | Đồ họa 2D bằng Canva: khung khẩu hiệu, biểu tượng bộ chọn | ⏳ T-115c | P2 | CORE + KYDAI | — |
-| T-118 | Sân v2: dựng cảnh 3D thật trong Blender, bản mẫu Hỏa Diệm Sơn 👤 duyệt | 🔵 Sẵn sàng | P0 | CORE + KYDAI | — |
-| T-119 | Bàn 2D: dải cảnh quanh bàn, dùng ảnh sân v2, quân 2D từ ảnh render | ⏳ T-118 (👤 duyệt) | P0 | CORE + KYDAO + KYDAI | — |
+| T-116 | ui-harness, ảnh chụp, Sổ tay, README cho Kỳ Đài | 🟡 Đang làm (tài liệu) | P1 | CORE + KYDAI + DOCS | gemini-3.8-flash-high |
+| T-117 | Đồ họa 2D bằng Canva: khung khẩu hiệu, biểu tượng bộ chọn | 🟣 Chờ soát | P2 | CORE + KYDAI | Claude Sonnet 5.5 (Canva) |
+| T-118 | Sân v2: dựng cảnh 3D thật trong Blender, bản mẫu Hỏa Diệm Sơn 👤 duyệt | 🟣 Chờ soát | P0 | CORE + KYDAI | Claude Sonnet 5.5 (Blender) |
+| T-119 | Bàn 2D: dải cảnh quanh bàn, dùng ảnh sân v2, quân 2D từ ảnh render | 🟡 Đang làm | P0 | CORE + KYDAO + KYDAI | Claude Sonnet 5.5 |
 | T-120 | Bản mẫu nhân vật 3D dựng bằng Blender, đo hiệu năng 👤 duyệt | ⏳ T-111 | P1 | CORE + HALL + KYDAI | — |
-| T-121 | Bàn 2D: dòng sông sinh động giữa bàn cờ tướng và cờ úp | 🔵 Sẵn sàng | P0 | CORE + KYDAO + KYDAI | — |
-| T-122 | Bàn 3D: dòng sông sinh động giữa bàn cờ tướng và cờ úp | 🔵 Sẵn sàng | P0 | CORE + KYDAO + KYDAI | — |
+| T-121 | Bàn 2D: dòng sông sinh động giữa bàn cờ tướng và cờ úp | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | gpt-6.1-terra |
+| T-122 | Bàn 3D: dòng sông sinh động giữa bàn cờ tướng và cờ úp | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | Claude Sonnet 5.5 |
+| T-118b | Sân v2: chỉnh Hỏa Diệm Sơn và dựng 7 sân còn lại | 🟡 Đang làm | P0 | CORE + KYDAI | Claude Sonnet 5.5 (Blender) |
+| T-123 | Tăng lực chấn động khi phong cấp | 🟣 Chờ soát | P1 | CORE + KYDAI | gpt-6-luna |
+| T-124 | Sửa lỗi từ đợt soát của GPT Sol | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | gemini-3.8-flash-high |
 
 Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạm `package.json`). **T-005**, **T-007**, **T-002** làm song song được với nhóm trên.
 Đợt 2026-11: làm **T-003, T-004, T-006** trước (T-004 gỡ nút thắt `package.json` cho mọi thẻ thêm file JS; T-006 là cổng "CI xanh"). Sau đó theo lịch 6 đợt ở [docs/KE-HOACH-DOT-2026-11.md §10.3](docs/KE-HOACH-DOT-2026-11.md#103-lịch-theo-đợt-và-khóa-vùng-nóng).
@@ -1271,6 +1274,16 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
 
 > Thiết kế và hợp đồng: [docs/KE-HOACH-KY-DAI.md](docs/KE-HOACH-KY-DAI.md). Nhánh tích hợp: `claude/chess-game-graphics-upgrade-553ef6` (thợ tách nhánh từ đây). Danh mục skin `public/js/kydao-skins.js` do điều phối giữ: thợ **không sửa**, cần đổi thì ghi vào bàn giao.
 
+### Nhật ký điều phối đợt Kỳ Đài (2026-11-13)
+
+- **Soát độc lập**: T-110 do Gemini 4 Argon soát: PASS. Phần giao diện (T-112, T-113, T-114, T-115a/b/c) do GPT Sol soát: FAIL với 1 lỗi chặn và 4 lỗi nên sửa; T-124 đã sửa hết (đặc tả [docs/ky-dai/T-124-DAC-TA-SUA-SOAT.md](docs/ky-dai/T-124-DAC-TA-SUA-SOAT.md)); chờ soát lại khi GPT hồi hạn mức.
+- **T-117**: đủ 8 huy hiệu `public/img/kydao/ui/crest-<id>.webp`. Bốn cái đầu do AI của Canva vẽ; Canva hết credit nên bốn cái sau (ocean, lotus, thunder, desert) ghép tay trong trình soạn Canva từ thành phần miễn phí, phong cách hơi khác. Khi có credit nên vẽ lại bốn cái sau. Huy hiệu chưa được dùng trong giao diện (xem Hộp thư đến).
+- **T-118**: bản mẫu Hỏa Diệm Sơn v2 đã gửi chủ dự án xem; **T-118b** dựng lại theo góp ý và làm 7 sân còn lại ([docs/ky-dai/T-118b-DAC-TA-8-SAN.md](docs/ky-dai/T-118b-DAC-TA-8-SAN.md)).
+- **T-121, T-122**: dòng sông giữa bàn cờ tướng và cờ úp, 2D và 3D; điều phối đã xem bằng mắt (ảnh ở docs/ky-dai/anh/).
+- **T-123**: bàn rung 6–16 px theo cỡ ô, có dư chấn (thợ gpt-6-luna; GLM flash qua Codex CLI trả 429 nên không dùng được cho vòng agent).
+- **Hạn mức**: GPT chạm giới hạn lúc 23:30 ngày 13/11 (hồi 00:51 ngày 14/11); Canva hết credit tạo ảnh và tạo thiết kế.
+- `npm test` trên nhánh tích hợp trước T-121: 906 đạt, 0 trượt, 3 bỏ qua (2 PostgreSQL, 1 perft sâu).
+
 ### T-110 · Thêm giao thức `kd:skin` trên máy chủ
 - **Trạng thái**: 🟣 Chờ soát. Đã gộp vào nhánh tích hợp (commit b35815d). Điều phối chạy lại: check sạch, 220 test Kỳ Đạo đạt. Soát độc lập Gemini 4 Argon (13/11, chỉ đọc): PASS, không lỗi chặn; góp ý thêm 3 ca test (đã ghi Hộp thư đến).
 - **Ưu tiên**: P0
@@ -1488,6 +1501,8 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
 
 Lấy từ README "Việc nên làm tiếp" và lúc rà repo. Điều phối viết lại thành thẻ đủ trường khi muốn làm.
 
+- ⚪ Dùng huy hiệu chủ đề `public/img/kydao/ui/crest-<id>.webp` trong bộ chọn "Lãnh địa" (cạnh tên sân) và cạnh khẩu hiệu khai mở (`.kdfx-banner`). Gói: KYDAI. Thợ gợi ý: gpt-6-luna.
+- ⚪ `public/js/app.js:561–562` ghép `cfg.kinds`, `cfg.tracks` từ máy chủ vào `innerHTML` (mã có từ trước đợt Kỳ Đài; GPT Sol phát hiện 2026-11-13). Dựng phần tử và gán chữ bằng `textContent`. Gói: CORE. Trái bất biến AGENTS.md §3.5.
 - ⚪ Thêm 3 ca test cho `kd:skin` (soát T-110, Gemini 4 Argon, 2026-11-13): (1) gọi `skin` khi đồng hồ vừa quá hạn mà hẹn giờ chưa nổ (nhánh `expired` trong `lib/kydao/manager.js`); (2) e2e gọi `kd:skin` khi đang ở Chánh điện để ghim `where: 'any'`; (3) gửi `field` giữ nguyên + `pieces` mới khi `field` còn trong hạn 20 giây. Gói: KYDAO + KYDAI. Thợ gợi ý: gpt-6-luna.
 - ⚪ Cờ vua: nhận diện thế cờ chết tổng quát (hàng rào Tốt khóa có Tốt phụ, ví dụ FEN `4k3/8/8/p1p1p1p1/P1P1P1P1/P7/8/4K3 w - - 0 1`); hiện chỉ có 4 ca thiếu quân + một mẫu hàng rào đúng khớp. Đổi tên biến tiếng Việt (`ten`, `ca`, `ds`) trong test sang tiếng Anh. Gói: KYDAO. (Soát T-021, 2026-11-11.)
 - ⚪ Chưa có test nào cho `lib/moderation.js` (`checkMessage`, `checkName`, `clean`), trong khi đây là bất biến AGENTS.md §3.6 (chặn link, dãy số chống lừa đảo). Thêm test cả ca dương và ca âm ("chim cút", "đi ngủ" không bị bắt). Gói: SOCIAL. (Soát T-003 phát hiện 2026-11-11.)
