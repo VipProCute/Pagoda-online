@@ -81,9 +81,9 @@
 | T-100 | Nhân vật 3D bám sát 2D: hào quang, pháp tướng, quỷ, trang phục, Obito | 🟣 Chờ soát | P0 | CORE + HALL | gpt-6.1-sol |
 | T-101 | Nhạc riêng cho từng môn cờ | 🟣 Chờ soát | P2 | CORE + KYDAO | gpt-6-luna (Codex CLI qua proxy) |
 | **Đợt Kỳ Đài** ([docs/KE-HOACH-KY-DAI.md](docs/KE-HOACH-KY-DAI.md)) | | | | | |
-| T-110 | Giao thức `kd:skin` trên máy chủ | 🔵 Sẵn sàng | P0 | CORE + KYDAO + KYDAI | — |
+| T-110 | Giao thức `kd:skin` trên máy chủ | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | Claude Opus 5.5 |
 | T-111 | Dây chuyền Blender và tài nguyên 8 sân, 8 bộ quân | 🟣 Chờ soát | P0 | CORE + KYDAI | Điều phối (Claude Fable 5.2) |
-| T-112 | Module hiệu ứng 2D `KydaoFx`: khai mở, chấn động phong cấp, chiến thắng | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | — |
+| T-112 | Module hiệu ứng 2D `KydaoFx`: khai mở, chấn động phong cấp, chiến thắng | 🟣 Chờ soát | P0 | CORE + KYDAO + KYDAI | Claude Sonnet 5.5 |
 | T-113 | Bàn 3D: nạp `.glb`, skin nửa sân, skin quân, `playFx` | 🔵 Sẵn sàng | P0 | CORE + KYDAO + KYDAI | — |
 | T-114 | Bàn 2D: vẽ skin nửa sân, skin quân, `jolt` | 🔵 Sẵn sàng | P0 | CORE + KYDAO + KYDAI | — |
 | T-115 | Nối skin và hiệu ứng vào bảng cờ | ⏳ T-110, T-112, T-113, T-114 | P0 | CORE + KYDAO + KYDAI | — |
@@ -1266,22 +1266,23 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
 > Thiết kế và hợp đồng: [docs/KE-HOACH-KY-DAI.md](docs/KE-HOACH-KY-DAI.md). Nhánh tích hợp: `claude/chess-game-graphics-upgrade-553ef6` (thợ tách nhánh từ đây). Danh mục skin `public/js/kydao-skins.js` do điều phối giữ: thợ **không sửa**, cần đổi thì ghi vào bàn giao.
 
 ### T-110 · Thêm giao thức `kd:skin` trên máy chủ
-- **Trạng thái**: 🔵 Sẵn sàng
+- **Trạng thái**: 🟣 Chờ soát
 - **Ưu tiên**: P0
 - **Gói ngữ cảnh**: CORE + KYDAO + KYDAI
 - **Khu vực chạm**: lib/kydao/manager.js, server.js (chỉ thêm handler `kd:skin` cạnh các handler `kd:*`), docs/KY-DAO-GIAO-THUC.md, test/kydao-manager.test.js, test/e2e-kydao.test.js, test/kydao-skins.test.js (mới)
 - **Phụ thuộc**: không · **Thợ**: Claude Opus 5.5 · **Soát**: Điều phối
-- **Người làm**: — · **Nhánh**: —
+- **Người làm**: Claude Opus 5.5 · **Nhánh**: claude/T-110-giao-thuc-skin
 - **Mục tiêu**: hai người chơi và người xem thấy cùng một skin sân, skin quân của từng bên; máy chủ chỉ chuyển tiếp mã skin đã kiểm.
 - **Tiêu chí xong**:
-  - [ ] `kd:skin { gameId, field?, pieces? }`: chỉ người đang chơi ván đó, ván chưa kết thúc, môn thuộc `KydaoSkins.GAMES`; sai thì `ack({ ok:false, reason })`, không ném lỗi
-  - [ ] Mã skin đi qua `KydaoSkins.normalize`; khóa lạ, kiểu lạ, `__proto__` đều thành `null` (có test)
-  - [ ] Phát `kd:skin { gameId, side, field, pieces, opened }` cho cả phòng ván (người chơi + người xem); `opened` đúng nghĩa KH §4.2
-  - [ ] Giới hạn: đổi `field` tối đa 1 lần / 20 giây mỗi người (thời gian tiêm qua `now`); đổi `pieces` tối đa 1 lần / 3 giây
-  - [ ] `kd:start`, `resume`, `watch` có `skins: { a, b }`; ván mới bắt đầu bằng `null`
-  - [ ] Payload không chứa uid; cờ úp không lộ thêm gì (quét đệ quy như test hiện có)
-  - [ ] `docs/KY-DAO-GIAO-THUC.md` có mục `kd:skin`; `npm run check` + `npm test` sạch
+  - [x] `kd:skin { gameId, field?, pieces? }`: chỉ người đang chơi ván đó, ván chưa kết thúc, môn thuộc `KydaoSkins.GAMES`; sai thì `ack({ ok:false, reason })`, không ném lỗi
+  - [x] Mã skin đi qua `KydaoSkins.normalize`; khóa lạ, kiểu lạ, `__proto__` đều thành `null` (có test)
+  - [x] Phát `kd:skin { gameId, side, field, pieces, opened }` cho cả phòng ván (người chơi + người xem); `opened` đúng nghĩa KH §4.2
+  - [x] Giới hạn: đổi `field` tối đa 1 lần / 20 giây mỗi người (thời gian tiêm qua `now`); đổi `pieces` tối đa 1 lần / 3 giây
+  - [x] `kd:start`, `resume`, `watch` có `skins: { a, b }`; ván mới bắt đầu bằng `null`
+  - [x] Payload không chứa uid; cờ úp không lộ thêm gì (quét đệ quy như test hiện có)
+  - [x] `docs/KY-DAO-GIAO-THUC.md` có mục `kd:skin`; `npm run check` + `npm test` sạch
 - **Ngoài phạm vi**: lưu bền, mở khóa skin, giao diện, `kydao-skins.js`.
+- **Ghi chú bàn giao**: `api.skin` trong manager + một dòng `kdPass` ở server.js; giao thức ở KY-DAO-GIAO-THUC §5.4. Giới hạn tính riêng từng người trong một ván, nhân `KYDAO_TIME_SCALE`; vượt giới hạn trả `code:'rate'` + `retryAt`; gửi lại mã đang dùng thì không phát, không tính lượt. Check sạch; Kỳ Đạo 206/207 (1 bỏ qua PERFT_DEEP); npm test 866 đạt, 0 trượt, 3 bỏ qua (PG, PERFT_DEEP). Ngoài khu vực: 2 chỗ thêm tên sự kiện ở ARCHITECTURE.md §4.
 
 ### T-111 · Dựng dây chuyền Blender và tài nguyên 8 sân, 8 bộ quân
 - **Trạng thái**: 🟡 Đang làm

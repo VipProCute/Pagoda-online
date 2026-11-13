@@ -217,6 +217,51 @@ test('đang xem bàn 1 rồi ngồi bàn 2: thôi nhận gói của bàn 1', asy
   assert.equal(W.s.log.slice(before).some(x => x.ev === 'kd:moved'), false, 'không còn nhận kd:moved của bàn 1');
 });
 
+test('kd:skin (T-110): người chơi đổi skin nửa sân của mình; đối thủ và người xem nhận cùng gói; ảnh chụp ván có skins', async t => {
+  const srv = await startServer(); t.after(() => srv.stop());
+  const A = await yard(t, srv, 'An', UID.a), B = await yard(t, srv, 'Binh', UID.b), W = await yard(t, srv, 'Xem', UID.w), O = await yard(t, srv, 'Ngoai', UID.o);
+  assert.equal((await call(A.s, 'kd:sit', { table: 4, seat: 0 })).ok, true);
+  assert.equal((await call(B.s, 'kd:sit', { table: 4, seat: 1 })).ok, true);
+  assert.equal((await call(A.s, 'kd:setup', { table: 4, game: 'jieqi', rated: false, pace: 'fast' })).ok, true);
+  const started = waitFor(A.s, 'kd:start');
+  await call(A.s, 'kd:ready', { table: 4, ready: true });
+  await call(B.s, 'kd:ready', { table: 4, ready: true });
+  const sa = await started;
+  const none = { a: { field: null, pieces: null }, b: { field: null, pieces: null } };
+  assert.deepEqual(sa.skins, none, 'ván mới bắt đầu bằng null');
+  const watchStart = waitFor(W.s, 'kd:start');
+  assert.equal((await call(W.s, 'kd:watch', { table: 4 })).ok, true);
+  assert.deepEqual((await watchStart).skins, none);
+
+  // người xem, người ngoài không đổi được; mã lạ thành null; thiếu khóa thì báo lỗi
+  assert.equal((await call(W.s, 'kd:skin', { gameId: sa.gameId, field: 'volcano' })).reason, 'Bạn không phải người chơi của ván này.');
+  assert.equal((await call(O.s, 'kd:skin', { gameId: sa.gameId, field: 'volcano' })).ok, false);
+  assert.equal((await call(A.s, 'kd:skin', { gameId: sa.gameId })).reason, 'Chưa chọn skin.');
+  assert.deepEqual(await call(A.s, 'kd:skin', { gameId: sa.gameId, field: '__proto__', pieces: { a: 1 } }), { ok: true, field: null, pieces: null });
+
+  const got = [A, B, W].map(c => waitFor(c.s, 'kd:skin'));
+  assert.deepEqual(await call(A.s, 'kd:skin', { gameId: sa.gameId, field: 'volcano', pieces: 'magma' }), { ok: true, field: 'volcano', pieces: 'magma' });
+  const expected = { gameId: sa.gameId, side: 'a', field: 'volcano', pieces: 'magma', opened: true };
+  for (const p of await Promise.all(got)) assert.deepEqual(p, expected);
+  const tooSoon = await call(A.s, 'kd:skin', { gameId: sa.gameId, field: 'river' });
+  assert.equal(tooSoon.ok, false); assert.equal(tooSoon.code, 'rate'); assert.ok(Number.isFinite(tooSoon.retryAt));
+  assert.equal((await call(B.s, 'kd:skin', { gameId: sa.gameId, pieces: 'jade' })).ok, true);
+
+  const want = { a: { field: 'volcano', pieces: 'magma' }, b: { field: null, pieces: 'jade' } };
+  assert.deepEqual((await call(B.s, 'kd:resume', {})).start.skins, want);
+  const again = waitFor(W.s, 'kd:start', x => x.resumed && x.skins.b.pieces === 'jade');
+  assert.equal((await call(W.s, 'kd:watch', { table: 4 })).ok, true);
+  assert.deepEqual((await again).skins, want);
+
+  // không gói nào chứa uid; kd:skin của cờ úp chỉ có mã skin
+  const blob = everything(A, B, W, O).join('\n');
+  for (const uid of Object.values(UID)) assert.ok(!blob.includes(uid), 'lộ uid ' + uid);
+  for (const c of [A, B, W]) for (const x of c.s.log.filter(x => x.ev === 'kd:skin')) {
+    assert.deepEqual(Object.keys(x.payload).sort(), ['field', 'gameId', 'opened', 'pieces', 'side']);
+  }
+  assert.equal(O.s.log.some(x => x.ev === 'kd:skin'), false, 'người ngoài không nhận kd:skin');
+});
+
 test('máy chủ khởi động lại giữa ván: kd:resume báo ván bị hủy, không ai bị tính thua', async t => {
   const srv = await startServer(); t.after(() => srv.stop());
   const A = await yard(t, srv, 'An', UID.a), B = await yard(t, srv, 'Binh', UID.b);

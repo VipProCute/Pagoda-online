@@ -1413,7 +1413,8 @@ io.on('connection', socket => {
     { event: 'setup', where: 'yard', fn: 'setup' }, { event: 'ready', where: 'yard', fn: 'ready' },
     { event: 'stand', where: 'yard', fn: 'stand' }, { event: 'invite:cancel', where: 'hall', fn: 'cancelInvite' }, { event: 'respond', where: 'hall', fn: 'respond' },
     { event: 'draw', where: 'any', fn: 'draw' }, { event: 'resign', where: 'any', fn: 'resign' }, { event: 'mark', where: 'any', fn: 'mark' },
-    { event: 'agree', where: 'any', fn: 'agree' }, { event: 'resume-play', where: 'any', fn: 'resumePlay' }, { event: 'resume', where: 'any', fn: 'resume' }
+    { event: 'agree', where: 'any', fn: 'agree' }, { event: 'resume-play', where: 'any', fn: 'resumePlay' }, { event: 'resume', where: 'any', fn: 'resume' },
+    { event: 'skin', where: 'any', fn: 'skin' }      // skin sân/quân của chính mình; manager kiểm mã bằng KydaoSkins.normalize
   ].forEach(kdPass);
   socket.on('kd:tables', kydaoOnly('hall', d => {
     const r = kydao.tables(kdUser(p), d);
