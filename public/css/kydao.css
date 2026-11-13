@@ -55,3 +55,16 @@
 @media (prefers-reduced-motion: reduce) {
   .kd-panel, .kd-chip, .kd-btn { transition: none !important; animation: none !important; }
 }
+
+/* Bộ chọn Lãnh địa */
+.kd-skins { display: grid; gap: 8px; padding: 8px; border-radius: 10px; background: rgba(0,0,0,.28); max-height: 46vh; overflow: auto; }
+.kd-skin-title { font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+.kd-skin-row { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; scroll-snap-type: x proximity; }
+.kd-skin { flex: 0 0 auto; width: 104px; min-height: 44px; padding: 4px; display: grid; gap: 2px; justify-items: center; border-radius: 8px; border: 2px solid transparent; background: rgba(255,255,255,.06); color: inherit; cursor: pointer; scroll-snap-align: start; }
+.kd-skin.is-on { border-color: var(--gold, #e7c45a); background: rgba(231,196,90,.14); }
+.kd-skin-img { width: 96px; height: 60px; border-radius: 5px; object-fit: cover; display: block; background: #2a211c; }
+.kd-skin-none { background: repeating-conic-gradient(#b58863 0 25%, #f0d9b5 0 50%) 0 0 / 30px 30px; }
+.kd-skin-name { font-size: 12px; line-height: 1.2; text-align: center; }
+.kd-skin-note { font-size: 12px; color: var(--muted); }
+.kd-gold { background: var(--gold, #e7c45a); color: #2a1a05; font-weight: 700; }
+.kd-gold:disabled { opacity: .5; }

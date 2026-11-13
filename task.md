@@ -1368,19 +1368,19 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
 - **Ngoài phạm vi**: mọi thứ không ghi trong phần T-115a của đặc tả; luật cờ; máy chủ; mở khóa skin.
 
 ### T-115b · Bảng cờ: bộ chọn Lãnh địa, gửi skin, màn khai mở
-- **Trạng thái**: ⏳ Chờ T-115a
+- **Trạng thái**: 🟣 Chờ soát
 - **Ưu tiên**: P0
 - **Gói ngữ cảnh**: CORE + KYDAO + KYDAI
 - **Đặc tả từng bước (BẮT BUỘC làm theo)**: [docs/ky-dai/T-115-DAC-TA.md](docs/ky-dai/T-115-DAC-TA.md), phần T-115b
 - **Khu vực chạm**: public/js/kydao-ui.js, public/css/kydao.css, public/index.html (chỉ `?v=`), test/kydao-ui-games.test.js
 - **Phụ thuộc**: T-115a · **Thợ**: Claude Sonnet 5.5 · **Soát**: Gemini 4 Argon (hoặc GPT Sol) + Điều phối chạy test và xem trình duyệt
-- **Người làm**: — · **Nhánh**: —
+- **Người làm**: Claude Sonnet 5.5 · **Nhánh**: claude/T-115b-bo-chon-lanh-dia
 - **Mục tiêu**: người chơi bấm "Lãnh địa", chọn skin sân và skin quân, bấm "Khai mở"; cả bàn thấy khẩu hiệu và nửa sân đổi.
 - **Tiêu chí xong**:
-  - [ ] Đủ 9 bước b1 → b9 của đặc tả
-  - [ ] Skin quân tự gửi lúc vào ván; skin sân chỉ gửi khi bấm "Khai mở"; người xem, cờ vây, caro không thấy nút
-  - [ ] Công tắc "Ẩn skin đối thủ" lưu `localStorage`
-  - [ ] Không có `innerHTML`; nút ≥ 44px; `npm run check` + 4 file test trong đặc tả đạt
+  - [x] Đủ 9 bước b1 → b9 của đặc tả
+  - [x] Skin quân tự gửi lúc vào ván; skin sân chỉ gửi khi bấm "Khai mở"; người xem, cờ vây, caro không thấy nút
+  - [x] Công tắc "Ẩn skin đối thủ" lưu `localStorage`
+  - [x] Không có `innerHTML`; nút ≥ 44px; `npm run check` + 4 file test trong đặc tả đạt
 - **Ngoài phạm vi**: mọi thứ không ghi trong phần T-115b của đặc tả; luật cờ; máy chủ; mở khóa skin.
 
 ### T-115c · Bảng cờ: chấn động phong cấp, hiệu ứng chiến thắng
