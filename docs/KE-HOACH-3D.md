@@ -102,3 +102,12 @@ Thứ tự trên `hall.js` so với đợt 2026-11: T-042 → T-043 → T-062 đ
 | Lệch vùng chạm giữa 2D và 3D (bồ đoàn, bàn đá) | toạ độ lấy từ cùng hằng số (`LIB_SEATS`, `YARD_TABLES`) qua `snapshot()`; test đồng bộ |
 | Test chạy trong `node:vm` hỏng vì đổi API `Hall` | T-088 chỉ **thêm** API, không đổi tên cũ |
 | Mô hình ngoài viết sai phạm vi | mỗi thẻ một worktree; Điều phối xem diff và chạy lại `npm run check` + test trước khi nhận |
+
+## 7. Chỗ dừng (2026-11-13, 18:15)
+
+- **Đã gộp vào nhánh tích hợp** `claude/game-3d-graphics-upgrade-c0aff2` (chưa push): T-080, T-081, T-082, T-083, T-084, T-085, T-086, T-087, T-089, T-090, T-091. `npm run check` sạch 151 file; test 3D + cờ 250/250.
+- **Dở dang:** T-088 (nối 3D vào game) ở nhánh `codex/T-088-noi-3d-vao-game`, worktree `.claude/worktrees/T-088`, chưa gộp. Chi tiết trong thẻ T-088 ở `task.md`.
+- **Chưa bắt đầu:** T-092 (ui-harness, ảnh), T-093 (README, Sổ tay).
+- **Việc kế tiếp:** (1) gộp nhánh tích hợp vào nhánh T-088; (2) soát diff `hall.js`/`app.js`/`index.html`, chạy `npm test`; (3) chạy máy chủ, bật 3D, thử cả hai góc nhìn ở bốn cảnh, kiểm PK ẩn nút góc nhìn; (4) thiếu thì giao vòng 2; (5) nhận T-088 rồi mới giao T-092, T-093.
+- **Còn nợ khi soát:** Sân chùa và Tàng Kinh Các mới xem góc nhìn thứ ba ở trang thử; chưa thử kỹ góc nhìn thứ nhất và vùng chạm (bàn đá, bồ đoàn).
+- **Hạn mức:** tài khoản ChatGPT báo hết hạn mức lúc 15:39, mở lại khoảng 19:50 cùng ngày. Trong lúc chờ có thể dùng `claude-sonnet-5-5` hoặc Gemini qua proxy.

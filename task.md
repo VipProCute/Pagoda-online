@@ -69,10 +69,10 @@
 | T-082 | Bộ khối dựng kiến trúc chùa (kit.mjs) | 🟣 Chờ soát | P0 | CORE + HALL | gpt-6.1-sol (Codex CLI qua proxy) |
 | T-083 | Nhân vật 3D low-poly và NPC | 🟣 Chờ soát | P0 | CORE + HALL | gpt-6.1-sol (Codex CLI qua proxy) |
 | T-084 | Cảnh Chánh điện 3D | 🟣 Chờ soát | P0 | CORE + HALL | gpt-6.1-sol |
-| T-085 | Cảnh Sân chùa 3D | ⏳ T-082 | P1 | CORE + HALL + KYDAO | — |
-| T-086 | Cảnh Tàng Kinh Các 3D | ⏳ T-082 | P1 | CORE + HALL | — |
+| T-085 | Cảnh Sân chùa 3D | 🟣 Chờ soát | P1 | CORE + HALL + KYDAO | gpt-6.1-sol (Codex CLI qua proxy) |
+| T-086 | Cảnh Tàng Kinh Các 3D | 🟣 Chờ soát | P1 | CORE + HALL | gpt-6.1-sol (Codex CLI qua proxy) |
 | T-087 | Cảnh Sân đấu (khu đi lại) 3D | 🟣 Chờ soát | P1 | CORE + HALL + PK | gpt-6-astra (Codex CLI qua proxy) |
-| T-088 | Nối 3D vào game: nút 2D/3D, góc nhìn 1/3, điều khiển | 🟡 Đang làm | P0 | CORE + HALL + NAV | gpt-6.1-sol |
+| T-088 | Nối 3D vào game: nút 2D/3D, góc nhìn 1/3, điều khiển | 🟡 Đang làm (dở, chưa gộp) | P0 | CORE + HALL + NAV | gpt-6.1-sol (Codex CLI qua proxy) |
 | T-089 | Cài đặt đồ họa, tự dò máy yếu | 🟣 Chờ soát | P1 | CORE + HALL | gpt-6-luna |
 | T-090 | Vẽ lại quân cờ 2D đẹp hơn | 🟣 Chờ soát | P1 | CORE + KYDAO | gpt-6.1-sol |
 | T-091 | Bàn cờ 3D, quân tiện tròn | 🟣 Chờ soát | P1 | CORE + KYDAO | gpt-6.1-sol |
@@ -1103,7 +1103,8 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
 - **Ghi chú**: Có trang thử `public/world3d-scene-hall.html` với 6 khách và nhân vật mình, WASD/chạm sàn, kéo/cuộn/chụm, góc nhìn 1/3 và ba mức đồ họa. Test cảnh trực tiếp đạt 8/8, Hall NPC đạt 4/4; `node --check` sạch. Theo chỉ dẫn điều phối, chưa chạy lệnh tạo tiến trình con, chưa chụp ảnh và chưa add/commit; chi tiết ở `BAN-GIAO-T-084.md` (không commit file bàn giao).
 
 ### T-085 · Cảnh Sân chùa 3D
-- **Trạng thái**: ⏳ Chờ T-082 · **Ưu tiên**: P1 · **Gói ngữ cảnh**: CORE + HALL + KYDAO
+- **Trạng thái**: 🟣 Chờ soát. Điều phối soát 13/11: vòng 2 (gpt-6.1-sol, bị cắt vì hết hạn mức nhưng mã đã đủ) đạt về hình; check sạch, test 9/9; đã sửa tiêu đề trang thử. Chưa soát kỹ góc nhìn thứ nhất và pick trên trình duyệt. · **Ưu tiên**: P1 · **Gói ngữ cảnh**: CORE + HALL + KYDAO
+- **Người làm**: gpt-6.1-sol (Codex CLI qua proxy) · **Nhánh**: codex/T-085-canh-san-chua
 - **Khu vực chạm**: public/js/world3d/scenes/yard.mjs (mới)
 - **Phụ thuộc**: T-080, T-082 · **Thợ**: gpt-6.1-terra · **Soát**: gpt-6-sol + Gemini Argon
 - **Mục tiêu**: Sân chùa 3D: mặt tiền chánh điện, 4 bàn đá đúng `YARD_TABLES` (biển tên bàn, người ngồi), hai thầy bói, cây, trời ngày/đêm theo `state.daylight`.
@@ -1114,13 +1115,16 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
 - **Ngoài phạm vi**: không sửa `hall.js`, `server.js`.
 
 ### T-086 · Cảnh Tàng Kinh Các 3D
-- **Trạng thái**: ⏳ Chờ T-082 · **Ưu tiên**: P1 · **Gói ngữ cảnh**: CORE + HALL
+- **Trạng thái**: 🟣 Chờ soát. Điều phối soát 13/11: vòng 2 (gpt-6.1-sol, dừng vì hết hạn mức nhưng mã đã đủ) đạt về hình; check sạch, test 11/11. Chưa soát kỹ góc nhìn thứ nhất và pick chỗ ngồi trên trình duyệt. · **Ưu tiên**: P1 · **Gói ngữ cảnh**: CORE + HALL
+- **Người làm**: gpt-6.1-sol (Codex CLI qua proxy)
+- **Nhánh**: `codex/T-086-canh-tang-kinh-cac`
 - **Khu vực chạm**: public/js/world3d/scenes/library.mjs (mới)
 - **Phụ thuộc**: T-080, T-082 · **Thợ**: gpt-6.1-terra · **Soát**: gpt-6-sol + Gemini Argon
 - **Mục tiêu**: Tàng Kinh Các 3D: kệ kinh quanh tường, 8 bồ đoàn đúng `state.seats`, đèn dầu, cửa sổ có nắng.
 - **Tiêu chí xong**:
   - [ ] `pick` trả `seat` (chỉ số 0–7), `shelf`, `floor`; bồ đoàn có người ngồi thì nhân vật ở tư thế ngồi
   - [ ] Ảnh 2 góc nhìn trong bàn giao
+- **Ghi chú**: Đã dựng cảnh và trang thử; kiểm thử trực tiếp 2/2 đạt. Điều phối cần kiểm giao diện, chụp ảnh hai góc và chạy các lệnh còn lại.
 - **Ngoài phạm vi**: không sửa `LIB_SEATS`.
 
 ### T-087 · Cảnh Sân đấu (khu đi lại) 3D
@@ -1137,8 +1141,7 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
 - **Ngoài phạm vi**: mọi thứ trong `arena.js`.
 
 ### T-088 · Nối 3D vào game: nút 2D/3D, góc nhìn 1/3, điều khiển
-- **Trạng thái**: 🟡 Đang làm
-- **Người làm**: gpt-6.1-sol (Codex CLI qua proxy) · **Nhánh**: `codex/T-088-noi-3d-vao-game`
+- **Trạng thái**: 🟡 Đang làm, DỞ DANG (2026-11-13). Thợ gpt-6.1-sol bị cắt giữa chừng vì hết hạn mức GPT. Mã dở lưu ở nhánh `codex/T-088-noi-3d-vao-game` (commit "Tạm lưu T-088 dở dang"), CHƯA gộp. Đã có: `Hall.view3d` trong `hall.js`, `view3d-ui.js`, `view3d.css`, `camera.mjs`, `input.mjs`, bảng cảnh trong `index.mjs`, sửa `index.html`/`app.js`/`arena.js`. Check sạch, 3 file test liên quan 37/37. Chưa làm: `npm test` đầy đủ, chơi thử trên trình duyệt, kiểm ẩn nút góc nhìn khi PK, gộp nhánh tích hợp mới (đã có cảnh Sân chùa, Tàng Kinh Các) vào nhánh thẻ.
 - **Ưu tiên**: P0
 - **Gói ngữ cảnh**: CORE + HALL + NAV
 - **Khu vực chạm**: public/js/hall.js (chỉ **thêm** `Hall.view3d`: `snapshot()`, `hold(on)`, `emit(kind, data)`; không sửa hàm vẽ), public/js/world3d/camera.mjs, input.mjs (mới), public/js/view3d-ui.js (mới: nút, lưu `ta-view`), public/js/app.js (vùng khởi tạo Hall + phím tắt), public/index.html (`importmap`, nút, `<script>`, `?v=`), public/css/view3d.css (mới, tiền tố `v3-`), public/js/arena.js (chỉ chỗ gọi `Hall.attach`), test/hall-view3d.test.js (mới)
