@@ -835,8 +835,8 @@ export function createBoard3D({ canvas, game, skins: catalogInput, quality: qual
     const h = { id, side, def, tones, group, pivot, rimPivot, map, overlay, rimMat, decor, res, decorRes: new Set(), progress: 1, v2: null, dead: false };
     buildDecor(h);
     board.add(group);
-    loadFieldModel(h);
-    loadFieldImage(h);
+    // Thử ảnh v2 trước; chỉ khi không có/lỗi mới nạp .glb nửa sân (không tải cả hai). Đồ trang trí dựng bằng mã vẫn hiện trong lúc chờ.
+    loadFieldImage(h).then(ok => { if (!ok && !stopped && !h.dead && halves[h.side] === h) loadFieldModel(h); });
     return h;
   }
   // Đồ trang trí rẻ dựng bằng mã theo `fx` của sân (vài chục tam giác mỗi món), dùng khi chưa có .glb.
@@ -905,14 +905,16 @@ export function createBoard3D({ canvas, game, skins: catalogInput, quality: qual
   /* ---- T-125 · Ảnh sân v2: mặt phẳng ảnh phủ nửa bàn + dải cảnh; thay lớp phủ palette, đồ trang trí và thành gỗ của nửa đó.
    * Ảnh nạp qua board-assets (dùng chung, nhớ cả kết quả thiếu); mỗi bàn tự bọc thành THREE.Texture riêng và dispose cùng nửa sân. ---- */
   function loadFieldImage(h) {
-    if (!fieldImages || !catalog || typeof catalog.fieldImage2 !== 'function') return;
+    // Trả Promise<boolean>: true khi ảnh v2 đã gắn (không cần .glb nửa sân).
+    if (!fieldImages || !catalog || typeof catalog.fieldImage2 !== 'function') return Promise.resolve(false);
     let url = null;
     try { url = catalog.fieldImage2(h.id, game); } catch (e) { url = null; }
-    if (!url) return;
-    imageApi().then(api => (api && typeof api.loadImage === 'function' ? api.loadImage(url) : null)).then(img => {
-      if (!img || stopped || h.dead || h.v2 || halves[h.side] !== h) return;
+    if (!url) return Promise.resolve(false);
+    return imageApi().then(api => (api && typeof api.loadImage === 'function' ? api.loadImage(url) : null)).then(img => {
+      if (!img || stopped || h.dead || h.v2 || halves[h.side] !== h) return false;
       attachFieldImage(h, img);
-    }).catch(() => {});
+      return !!h.v2;
+    }).catch(() => false);
   }
   // Nét lưới cờ tướng của một nửa, vẽ trong toạ độ bàn (x, z) rồi ánh xạ sang ảnh của mặt phẳng.
   function paintHalfGrid(ctx, tw, th, h, fp) {

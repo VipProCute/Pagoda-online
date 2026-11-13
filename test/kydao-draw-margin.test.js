@@ -93,3 +93,26 @@ test('ảnh v2 chưa tải thì vẫn vẽ theo đường cũ, không ném lỗi
     assert.equal(g2.cell, 40);
   }
 });
+
+test('ảnh v2 đang tải thì không tải ảnh v1; v2 lỗi mới dùng v1 (cờ vua và cờ tướng)', () => {
+  const made = [];
+  global.Image = class { constructor() { made.push(this); this.naturalWidth = 1408; this.naturalHeight = 704; } };
+  try {
+    const skins = { a: { field: 'volcano', pieces: 'magma' }, b: { field: 'glacier', pieces: 'ice' } };
+    for (const [game, size] of [['chess', [440, 440]], ['xiangqi', [440, 480]]]) {
+      const mod = game === 'chess' ? KyChess : KyXiangqi;
+      const o = { game, w: size[0], h: size[1], dpr: 1, board: mod.create().board, skins, margin: 1.5 };
+      const before = made.length;
+      KydaoDraw.draw(recorder().ctx, o);
+      const mine = made.slice(before);
+      assert.equal(mine.length, 2, game + ': chỉ hai yêu cầu ảnh v2, chưa có v1');
+      assert.ok(mine.every(i => /fields2/.test(i.src)), game + ': toàn ảnh v2');
+      mine.forEach(i => i.onerror());
+      KydaoDraw.draw(recorder().ctx, o);
+      const v1 = made.slice(before + 2); // ảnh v1 dùng chung hai môn nên môn sau có thể đã có sẵn trong bộ nhớ đệm
+      assert.equal(v1.length, game === 'chess' ? 2 : 0, game + ': v2 lỗi thì tải v1');
+      assert.ok(v1.every(i => /\/fields\//.test(i.src)));
+      assert.equal(KydaoDraw.imageState(mine[0].src), 'err');
+    }
+  } finally { delete global.Image; }
+});

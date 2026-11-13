@@ -217,7 +217,7 @@
   let ui = null;        // các phần tử DOM
   let S = null;         // phiên ván
   let hooks = {};
-  let timer = 0, resizeFn = null, geom = null;
+  let timer = 0, resizeFn = null, visFn = null, geom = null;
   let riverTime = 0, riverRaf = 0, riverLast = 0;
   let vi = false;
   try { vi = root.localStorage && root.localStorage.getItem(VI_KEY) === '1'; } catch (e) { /* bỏ qua */ }
@@ -341,6 +341,7 @@
     ui.board3d = null; ui.canvas3d = null;
     ui.canvas.style.display = '';
     ui.boardBtn.disabled = false; ui.boardBtn.textContent = 'Bàn 3D'; ui.boardBtn.setAttribute('aria-pressed', 'false');
+    if (S && !minimized) startRiver(); // về bàn 2D: vòng sông đã dừng lúc bật 3D, chạy lại
   }
 
   async function toggleBoard3D() {
@@ -349,7 +350,7 @@
     const panel = ui, session = S, token = {};
     panel.boardLoad = token; panel.boardBtn.disabled = true; panel.boardBtn.textContent = 'Đang mở…';
     try {
-      const { createBoard3D } = await import('/js/world3d/board3d.mjs?v=5');
+      const { createBoard3D } = await import('/js/world3d/board3d.mjs?v=6');
       if (ui !== panel || S !== session || panel.boardLoad !== token) return;
       panel.canvas3d = h('canvas', { class: 'kd-canvas', tabindex: '0', 'aria-label': 'Bàn cờ 3D. Kéo hoặc dùng phím mũi tên để xoay; cuộn để thu phóng.' });
       panel.canvas3d.style.width = panel.canvas._w + 'px'; panel.canvas3d.style.height = panel.canvas._h + 'px';
@@ -461,7 +462,7 @@
     ui.panel.hidden = minimized;
     ui.chip.hidden = !minimized;
     if (typeof hooks.onMinimize === 'function') hooks.onMinimize(minimized);
-    if (!minimized) { fit(); redraw(); }
+    if (!minimized) { fit(); redraw(); startRiver(); }
     tick();
   }
 
@@ -486,6 +487,9 @@
     const availW = Math.max(160, (ui.wrap.clientWidth || ui.panel.clientWidth || 320) - padX);
     const availH = Math.max(160, (root.innerHeight || 700) - 250);
     const margin = fieldMargin(availW);
+    const asp0 = D.aspect(S.game, margin), w0 = Math.floor(Math.floor(Math.min(availW, availH * asp0)) * S.zoom);
+    // Đổi cỡ canvas hoặc dải cảnh thì hạt hiệu ứng 2D (chụp toạ độ lúc bắt đầu) sẽ lệch: dừng trước khi đổi.
+    if (w0 !== ui.canvas._w || Math.floor(w0 / asp0) !== ui.canvas._h || margin !== ui.canvas._margin) stopFx();
     ui.canvas._margin = margin;
     const asp = D.aspect(S.game, margin);
     const base = Math.floor(Math.min(availW, availH * asp));
@@ -505,7 +509,9 @@
   function riverLoop(ts) {
     riverRaf = 0;
     if (!ui || !S || (S.game !== 'xiangqi' && S.game !== 'jieqi') || reduced()) return;
-    if (!ui.panel.hidden && !ui.board3d && !minimized && ts - riverLast >= 80) { riverLast = ts; riverTime = ts; if (!S.jolt) redraw(); }
+    // Bảng ẩn, bàn 3D, thu nhỏ hoặc tab ẩn: dừng hẳn; startRiver() gọi lại khi quay về.
+    if (ui.panel.hidden || ui.board3d || minimized || (root.document && root.document.hidden)) return;
+    if (ts - riverLast >= 80) { riverLast = ts; riverTime = ts; if (!S.jolt) redraw(); }
     riverRaf = root.requestAnimationFrame(riverLoop);
   }
   function startRiver() { if (!riverRaf && root.requestAnimationFrame && S && (S.game === 'xiangqi' || S.game === 'jieqi') && !reduced()) riverRaf = root.requestAnimationFrame(riverLoop); }
@@ -827,6 +833,8 @@
         ui = build();
         resizeFn = () => { stopFx(); fit(); redraw(); };
         root.addEventListener('resize', resizeFn);
+        visFn = () => { if (root.document && !root.document.hidden) startRiver(); };
+        if (root.document && typeof root.document.addEventListener === 'function') root.document.addEventListener('visibilitychange', visFn);
       }
       ui.panel.hidden = false; ui.chip.hidden = true; ui.result.hidden = true; ui.moves.hidden = true;
       ui.movesBtn.setAttribute('aria-expanded', 'false');
@@ -841,11 +849,11 @@
       return true;
     },
     close() {
+      stopBoard3D();
       if (riverRaf && root.cancelAnimationFrame) root.cancelAnimationFrame(riverRaf); riverRaf = 0;
       clearInterval(timer); timer = 0; clearTimeout(resultTimer);
       if (root.KydaoFx) root.KydaoFx.unmount();
-      stopBoard3D();
-      if (ui) { ui.panel.remove(); ui.chip.remove(); if (resizeFn) root.removeEventListener('resize', resizeFn); }
+      if (ui) { ui.panel.remove(); ui.chip.remove(); if (resizeFn) root.removeEventListener('resize', resizeFn); if (visFn && root.document && typeof root.document.removeEventListener === 'function') root.document.removeEventListener('visibilitychange', visFn); visFn = null; }
       ui = null; S = null; geom = null; minimized = false;
       if (typeof hooks.onClose === 'function') hooks.onClose();
     },

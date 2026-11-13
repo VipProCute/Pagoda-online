@@ -778,6 +778,17 @@ test('Kỳ Đài 3D: cờ tướng/cờ úp có ảnh v2 bắt đầu từ hàng
   }
 });
 
+test('Kỳ Đài 3D: ảnh sân v2 có thì không nạp .glb nửa sân; ảnh null (404) mới nạp .glb', async () => {
+  const st = Chess.create({}), models = [];
+  const assets = { ...imageAssets(['volcano']), loadModel: async url => { models.push(url); return null; } };
+  const { env, view } = await openBoard('chess', { assets });
+  view.setState({ board: st.board, skins: { a: { field: 'volcano' }, b: { field: 'river' } } }); await settle(); env.flush();
+  assert.ok(imagePlane('a'), 'nửa a có ảnh v2');
+  assert.ok(!models.includes('/models/kydao/fields/volcano.glb'), 'có ảnh v2 thì không gọi loadModel cho sân');
+  assert.ok(models.includes('/models/kydao/fields/river.glb'), 'ảnh 404 thì mới nạp .glb của sân');
+  view.dispose();
+});
+
 test('Kỳ Đài 3D: fieldImages:false, thiếu loadImage hoặc lỗi mạng thì giữ cách cũ, không lỗi', async () => {
   const { createBoard3D } = await modulePromise, st = Chess.create({});
   const assets = imageAssets(true);
