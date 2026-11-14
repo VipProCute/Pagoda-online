@@ -1,9 +1,30 @@
 'use strict';
-/* T-110: danh mục skin Kỳ Đài (public/js/kydao-skins.js) dùng ở máy chủ để kiểm mã client gửi lên. */
+
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const KydaoSkins = require('../public/js/kydao-skins.js');
 
+test('đá cờ vây và caro có mã riêng, màu hai bên luôn phân biệt', () => {
+  const hex = /^#[0-9a-f]{6}$/i;
+  const luminance = color => {
+    const channels = [1, 3, 5].map(index => parseInt(color.slice(index, index + 2), 16) / 255)
+      .map(value => value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4);
+    return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
+  };
+  for (const game of ['go', 'gomoku']) {
+    assert.equal(KydaoSkins.supportsPieces(game), true);
+    for (const id of Object.keys(KydaoSkins.STONES)) {
+      assert.deepEqual(KydaoSkins.normalize({ field: 'volcano', pieces: id }, game), { field: null, pieces: id });
+    }
+    for (const id of ['jade', '__proto__']) assert.deepEqual(KydaoSkins.normalize({ pieces: id }, game), { field: null, pieces: null });
+  }
+  assert.deepEqual(KydaoSkins.normalize({ pieces: 'cosmos' }), { field: null, pieces: null });
+  const stones = Object.values(KydaoSkins.STONES);
+  assert.equal(stones.length, 8);
+  for (const stone of stones) for (const side of ['a', 'b']) for (const key of ['base', 'accent', 'mark']) assert.match(stone[side][key], hex);
+  for (const dark of stones) for (const light of stones) assert.ok(luminance(dark.a.base) < luminance(light.b.base));
+});
+/* T-110: danh mục skin Kỳ Đài (public/js/kydao-skins.js) dùng ở máy chủ để kiểm mã client gửi lên. */
 test('normalize: mã hợp lệ giữ nguyên, mã lạ và kiểu lạ thành null', () => {
   assert.deepEqual(KydaoSkins.normalize({ field: 'volcano', pieces: 'magma' }), { field: 'volcano', pieces: 'magma' });
   assert.deepEqual(KydaoSkins.normalize({ field: 'river' }), { field: 'river', pieces: null });

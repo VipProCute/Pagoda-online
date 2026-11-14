@@ -52,12 +52,12 @@ function managerEnv(config = {}) {
   return { clock, sent, rooms, saved, active, ratings, deps, manager: createKydaoManager(deps) };
 }
 
-function startGame(env, game = 'chess', rated = false) {
+function startGame(env, game = 'chess', rated = false, size) {
   const a = { uid: 'uid-secret-a', pid: 'pid-a', name: 'An' };
   const b = { uid: 'uid-secret-b', pid: 'pid-b', name: 'Bình' };
   const m = env.manager;
   for (const result of [m.sit(a, { table: 1, seat: 0 }), m.sit(b, { table: 1, seat: 1 }),
-    m.setup(a, { table: 1, game, pace: 'fast', rated }), m.ready(a, { table: 1, ready: true }),
+    m.setup(a, { table: 1, game, pace: 'fast', rated, ...(size ? { size } : {}) }), m.ready(a, { table: 1, ready: true }),
     m.ready(b, { table: 1, ready: true })]) assert.equal(result.ok, true, result.reason);
   const start = m.resume(a).start;
   assert.ok(start);
@@ -811,9 +811,38 @@ test('kd:skin: chỉ người chơi; mã lạ, kiểu lạ, __proto__ thành nul
     const g = managerEnv();
     const s = startGame(g, game);
     assert.deepEqual(s.start.skins, NULL_SKINS);
-    assert.equal(g.manager.skin(s.a, { gameId: s.gameId, field: 'volcano' }).reason, 'Môn này chưa có skin.');
+    assert.equal(g.manager.skin(s.a, { gameId: s.gameId, field: 'volcano' }).reason, 'Môn này không có skin sân.');
     assert.equal(g.sent.some(x => x.ev === 'kd:skin'), false);
     g.manager.shutdown();
+  }
+});
+
+test('kd:skin: caro và cờ vây chín nhân chín chỉ đổi bộ đá, giữ giới hạn ba giây', () => {
+  for (const game of ['gomoku', 'go']) {
+    const e = managerEnv(); const m = e.manager;
+    const { a, b, gameId } = startGame(e, game, false, game === 'go' ? 9 : undefined);
+    const viewer = { uid: 'uid-v', pid: 'pv', name: 'Khách' };
+    assert.equal(m.watch(viewer, { table: 1 }).ok, true);
+    assert.equal(m.skin(viewer, { gameId, pieces: 'cosmos' }).reason, 'Bạn không phải người chơi của ván này.');
+    assert.equal(m.skin(a, { gameId, field: 'volcano' }).reason, 'Môn này không có skin sân.');
+    assert.deepEqual(m.skin(a, { gameId, pieces: 'cosmos' }), { ok: true, field: null, pieces: 'cosmos' });
+    const expected = { gameId, side: 'a', field: null, pieces: 'cosmos', opened: false };
+    assert.deepEqual(e.sent.filter(x => x.ev === 'kd:skin').map(x => [x.uid, x.payload]), [[a.uid, expected], [b.uid, expected]]);
+    assert.deepEqual(e.rooms.filter(x => x.ev === 'kd:skin').map(x => [x.room, x.payload]), [['kd:1', expected]]);
+    assert.equal(m.skin(a, { gameId, pieces: 'forest' }).code, 'rate');
+    e.clock.advance(2999);
+    assert.equal(m.skin(a, { gameId, pieces: 'forest' }).code, 'rate');
+    e.clock.advance(1);
+    assert.deepEqual(m.skin(a, { gameId, pieces: 'forest', field: 'river' }), { ok: true, field: null, pieces: 'forest' });
+    assert.deepEqual(e.rooms.at(-1).payload, { gameId, side: 'a', field: null, pieces: 'forest', opened: false });
+    const want = { a: { field: null, pieces: 'forest' }, b: { field: null, pieces: null } };
+    assert.deepEqual(m.resume(a).start.skins, want);
+    assert.equal(m.watch(viewer, { table: 1 }).ok, true);
+    assert.deepEqual(e.sent.filter(x => x.ev === 'kd:start' && x.uid === viewer.uid).at(-1).payload.skins, want);
+    e.clock.advance(3000);
+    assert.deepEqual(m.skin(a, { gameId, pieces: 'jade' }), { ok: true, field: null, pieces: null });
+    assert.deepEqual(e.rooms.at(-1).payload, { gameId, side: 'a', field: null, pieces: null, opened: false });
+    m.shutdown();
   }
 });
 

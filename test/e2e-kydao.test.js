@@ -262,6 +262,27 @@ test('kd:skin (T-110): người chơi đổi skin nửa sân của mình; đối
   assert.equal(O.s.log.some(x => x.ev === 'kd:skin'), false, 'người ngoài không nhận kd:skin');
 });
 
+test('kd:skin: ván caro phát bộ đá cho hai người chơi và người xem', async t => {
+  const srv = await startServer(); t.after(() => srv.stop());
+  const A = await yard(t, srv, 'An', UID.a), B = await yard(t, srv, 'Binh', UID.b), W = await yard(t, srv, 'Xem', UID.w);
+  assert.equal((await call(A.s, 'kd:sit', { table: 2, seat: 0 })).ok, true);
+  assert.equal((await call(B.s, 'kd:sit', { table: 2, seat: 1 })).ok, true);
+  assert.equal((await call(A.s, 'kd:setup', { table: 2, game: 'gomoku', rated: false, pace: 'fast' })).ok, true);
+  const started = waitFor(A.s, 'kd:start');
+  await call(A.s, 'kd:ready', { table: 2, ready: true });
+  await call(B.s, 'kd:ready', { table: 2, ready: true });
+  const start = await started;
+  assert.equal((await call(W.s, 'kd:watch', { table: 2 })).ok, true);
+  assert.equal((await call(W.s, 'kd:skin', { gameId: start.gameId, pieces: 'cosmos' })).ok, false);
+  assert.equal((await call(A.s, 'kd:skin', { gameId: start.gameId, field: 'volcano' })).reason, 'Môn này không có skin sân.');
+  const got = [A, B, W].map(client => waitFor(client.s, 'kd:skin'));
+  assert.deepEqual(await call(A.s, 'kd:skin', { gameId: start.gameId, field: 'volcano', pieces: 'cosmos' }), { ok: true, field: null, pieces: 'cosmos' });
+  const expected = { gameId: start.gameId, side: 'a', field: null, pieces: 'cosmos', opened: false };
+  for (const payload of await Promise.all(got)) assert.deepEqual(payload, expected);
+  assert.equal((await call(A.s, 'kd:skin', { gameId: start.gameId, pieces: 'forest' })).code, 'rate');
+  assert.deepEqual((await call(B.s, 'kd:resume', {})).start.skins.a, { field: null, pieces: 'cosmos' });
+});
+
 test('máy chủ khởi động lại giữa ván: kd:resume báo ván bị hủy, không ai bị tính thua', async t => {
   const srv = await startServer(); t.after(() => srv.stop());
   const A = await yard(t, srv, 'An', UID.a), B = await yard(t, srv, 'Binh', UID.b);
