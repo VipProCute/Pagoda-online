@@ -242,7 +242,7 @@ test('khóa skin: ghi sổ hỏng khi mua thì không trả QR, khoản vừa t�
   // kho JSON ghi qua file tạm `<db>.tmp` rồi đổi tên: một THƯ MỤC trùng tên file tạm làm lần ghi thất bại (cả Windows lẫn Linux)
   const blocker = srv.dataFile + '.tmp';
   const unblock = () => { try { fs.rmSync(blocker, { recursive: true, force: true }); } catch (e) { /* đã dọn */ } };
-  t.after(unblock);                 // chạy trước srv.stop() (after chạy ngược thứ tự đăng ký): kho ghi lại được thì tắt máy chủ êm
+  t.after(unblock);                 // đăng ký trước nên chạy trước srv.stop() (after chạy theo thứ tự đăng ký): kho ghi lại được thì tắt máy chủ êm; đừng đảo hai dòng này
   t.after(() => srv.stop());
   assert.equal((await srv.admin('/api/admin/kydao-shop', 'POST', { on: true, price: 20000 })).status, 200);
   const A = await open(t, srv, 'Dao Huu A', UID.a);
