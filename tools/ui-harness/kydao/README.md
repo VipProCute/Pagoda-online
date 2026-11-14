@@ -49,3 +49,27 @@ Máy chủ giả xử lý `kd:skin` của chính mình (chuẩn hóa bằng `Kyd
 
 - Harness không ẩn quân cờ úp: ván cờ úp truyền cả trạng thái đầy đủ cho bảng (chưa dùng `view()`), nên không kiểm được việc che quân ở phía client.
 - Phong cấp chưa được điều khiển: nước phong cấp đi theo lượt ngẫu nhiên, không chọn quân.
+
+## Thử đầu-cuối với máy chủ thật
+
+`e2e-real.js` bật `server.js` thật ở cổng trống (dữ liệu tạm, qua `test/helpers/live.js`) và mở trang thật (`index.html` + `app.js` + `kydao-ui.js`) bằng hai trình duyệt Playwright ở hai context riêng (An, Bình; cùng cỡ điện thoại 390×844). Người xem C là bot socket (`test/helpers/client.js`). Hai người ngồi bàn bằng cách chạm biển tên bàn đá trên canvas Sân chùa (đường chạm thật), chọn luật ở hộp `kd-lobby`, đi quân bằng cách chạm ô trên `.kd-canvas`. Không dùng máy chủ giả.
+
+```
+PW_CHANNEL=chrome node tools/ui-harness/kydao/e2e-real.js
+```
+
+Cần `playwright` hoặc `playwright-core` (không nằm trong `package.json`): đặt `NODE_PATH` trỏ tới nơi đã cài. Biến tùy chọn: `PW_CHANNEL=chrome` dùng Chrome cài sẵn; `SHOTS` đổi thư mục ảnh (mặc định `kydao-e2e-shots` trong thư mục tạm). Thoát mã 1 nếu có bước trượt; luôn tắt trình duyệt và máy chủ ở `finally`.
+
+Các bước:
+
+1. A và B vào chùa, ra Sân chùa, ngồi hai ghế bàn 1, chọn cờ vua giao hữu, sẵn sàng: cả hai thấy `.kd-panel`.
+2. A mở Lãnh địa, chọn Hỏa Diệm Sơn và Dung Nham, Khai mở: A và B thấy `.kdfx-banner.is-on`; canvas phía B đổi ở nửa của A (so trung bình màu từng nửa canvas).
+3. B khai mở Trường Giang: A thấy khẩu hiệu.
+4. A bật "Ẩn skin đối thủ": nửa B trên canvas A về mặc định, canvas B không đổi.
+5. A khai mở lần hai ngay: nút bị khóa và dòng `.kd-skin-note` có chữ "giây"; ép gửi lên máy chủ thì `.kd-msg` hiện lý do "Đợi N giây…".
+6. Bot C `kd:watch` bàn 1: `kd:start` có `skins` đúng của cả hai bên.
+7. Đi e4, e5, Nf3, Nc6 bằng chạm canvas; A đầu hàng và xác nhận: cả hai thấy khẩu hiệu rồi `.kd-result`.
+8. Cờ tướng ở bàn 3: A khai mở Trường Giang, canvas B đổi theo thời gian (băm điểm ảnh khác nhau giữa các lần lấy mẫu), B đầu hàng, hiện bảng kết quả.
+9. Không `pageerror`, không `console.error`, không HTTP ≥ 500, nhật ký máy chủ không có lỗi.
+
+Ảnh chụp từng mốc nằm ở `SHOTS` (`e2e-*.png`); khi một bước trượt, ảnh cả hai trang lưu thành `fail-<số bước>-<tên>.png`. Ảnh tiêu biểu của một lần chạy đạt: `docs/ky-dai/anh/e2e-*.png`.
