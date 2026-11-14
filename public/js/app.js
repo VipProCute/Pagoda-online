@@ -560,11 +560,22 @@
     renderPrayers(r.prayers); renderBoard(r.board); renderDonations(r.donations, r.funds);
     setStats(r.today, r.online); setMerit(r.merit);
     setChant(r.chant);
-    $('#incKinds').innerHTML = cfg.kinds.map((k, i) => `<label class="chipr"><input type="radio" name="kind" value="${k}"${i === 0 ? ' checked' : ''}><span>${k}</span></label>`).join('');
-    $('#trackList').innerHTML = Object.entries(cfg.tracks).map(([id, t]) => {
+    // T-180: dựng bằng DOM + textContent (tên loại nhang, tên bài kinh do máy chủ gửi, không chèn qua innerHTML)
+    $('#incKinds').replaceChildren(...cfg.kinds.map((k, i) => {
+      const lb = document.createElement('label'); lb.className = 'chipr';
+      const inp = document.createElement('input'); inp.type = 'radio'; inp.name = 'kind'; inp.value = k; if (i === 0) inp.checked = true;
+      const sp = document.createElement('span'); sp.textContent = k;
+      lb.append(inp, sp);
+      return lb;
+    }));
+    $('#trackList').replaceChildren(...Object.entries(cfg.tracks).map(([id, t]) => {
       const m = Math.max(1, Math.round(t.duration / 60));
-      return `<button type="button" class="track" data-track="${id}"><b>${t.title}</b><small>khoảng ${m} phút</small></button>`;
-    }).join('');
+      const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'track'; btn.dataset.track = id;
+      const b = document.createElement('b'); b.textContent = t.title;
+      const sm = document.createElement('small'); sm.textContent = `khoảng ${m} phút`;
+      btn.append(b, sm);
+      return btn;
+    }));
     $('#donCard').hidden = !cfg.donation && !r.donations.length;
     $('#actVoice').hidden = !cfg.voice;
     closeDlg('join');
@@ -770,11 +781,20 @@
   function renderDonations(list, funds) {
     if (list) donations = list.slice().reverse();
     if (funds) {
-      $('#funds').innerHTML = funds.map(f => {
+      $('#funds').replaceChildren(...funds.map(f => {
         const pct = f.goal ? Math.min(100, Math.round(f.raised / f.goal * 100)) : 0;
+        const box = document.createElement('div'); box.className = 'fund';
+        const top = document.createElement('div'); top.className = 'top';
         const name = document.createElement('span'); name.textContent = f.name;
-        return `<div class="fund"><div class="top">${name.outerHTML}<span>${VND(f.raised)}${f.goal ? ' · ' + pct + '%' : ''}</span></div>${f.goal ? `<div class="bar"><i style="width:${pct}%"></i></div>` : ''}</div>`;
-      }).join('');
+        const amt = document.createElement('span'); amt.textContent = VND(f.raised) + (f.goal ? ' · ' + pct + '%' : '');
+        top.append(name, amt); box.append(top);
+        if (f.goal) {
+          const bar = document.createElement('div'); bar.className = 'bar';
+          const fill = document.createElement('i'); fill.style.width = pct + '%';
+          bar.append(fill); box.append(bar);
+        }
+        return box;
+      }));
     }
     const ul = $('#dons'); ul.textContent = '';
     if (!donations.length) { ul.innerHTML = '<li class="empty" style="display:block">Chưa có lượt cúng dường nào.</li>'; return; }
@@ -926,8 +946,13 @@
       const d = cfg.donation;
       $('#dnSub').textContent = `Tiền chuyển thẳng vào tài khoản ${d.bank} ${d.account}${d.accountName ? ' (' + d.accountName + ')' : ''}. Website không giữ tiền.`;
       $('#dnFormHint').textContent = 'Khi nhà chùa xác nhận đã nhận, nhân vật của bạn tỏa hào quang theo số tiền, cộng dồn qua nhiều lần cúng dường.';
-      $('#dnFunds').innerHTML = cfg.donation.funds.map((f, i) => `<label class="opt"><input type="radio" name="fund" value="${f.id}"${i === 0 ? ' checked' : ''}><span><b></b></span></label>`).join('');
-      $$('#dnFunds .opt b').forEach((b, i) => { b.textContent = cfg.donation.funds[i].name; });
+      $('#dnFunds').replaceChildren(...cfg.donation.funds.map((f, i) => {
+        const lb = document.createElement('label'); lb.className = 'opt';
+        const inp = document.createElement('input'); inp.type = 'radio'; inp.name = 'fund'; inp.value = f.id; if (i === 0) inp.checked = true;
+        const sp = document.createElement('span'), b = document.createElement('b'); b.textContent = f.name; sp.append(b);
+        lb.append(inp, sp);
+        return lb;
+      }));
       $('#dnName').value = myName;
     }
     openDlg('donate');

@@ -888,6 +888,46 @@ test('kd:skin: giới hạn sân 20 giây, quân 3 giây, theo đồng hồ tiê
   fast.manager.shutdown();
 });
 
+test('kd:skin: đồng hồ bên đang đi vừa quá hạn mà hẹn giờ chưa nổ thì xử thua hết giờ, trả stale, không phát kd:skin', () => {
+  const e = managerEnv(); e.deps.setTimer = () => 0;     // hẹn giờ không bao giờ nổ
+  const m = e.manager;
+  const { a, b, gameId } = startGame(e);
+  assert.equal(m.move(a, { gameId, ply: 0, move: 'e2e4' }).ok, true);   // tới lượt b, b còn 300000 ms
+  e.clock.advance(300000);
+  const count = () => e.sent.filter(x => x.ev === 'kd:skin').length + e.rooms.filter(x => x.ev === 'kd:skin').length;
+  const before = count();
+  const r = m.skin(a, { gameId, field: 'volcano', pieces: 'magma' });
+  assert.equal(r.ok, false); assert.equal(r.code, 'stale'); assert.equal(r.reason, 'Ván đã kết thúc.');
+  const end = e.sent.filter(x => x.ev === 'kd:end').at(-1).payload;
+  assert.equal(end.reason, 'timeout'); assert.equal(end.result, 'a', 'bên b hết giờ nên a thắng');
+  assert.equal(count(), before, 'không phát kd:skin cho ai');
+  // Ván đã kết thúc: b gọi tiếp cũng bị từ chối.
+  assert.equal(m.skin(b, { gameId, field: 'river' }).ok, false);
+  assert.equal(m.resume(a).start, null);
+  m.shutdown();
+});
+
+test('kd:skin: trong hạn 20 giây của sân, gửi lại đúng sân đang dùng kèm bộ quân mới thì đổi quân; đổi sang sân khác thì bị từ chối', () => {
+  const e = managerEnv(); const m = e.manager;
+  const { a, gameId } = startGame(e);
+  assert.equal(m.move(a, { gameId, ply: 0, move: 'e2e4' }).ok, true);
+  const t0 = e.clock.now();
+  assert.equal(m.skin(a, { gameId, field: 'volcano', pieces: 'magma' }).ok, true);
+  e.clock.advance(5000);       // quá 3 giây của quân, chưa tới 20 giây của sân
+  e.rooms.length = 0;
+  assert.deepEqual(m.skin(a, { gameId, field: 'volcano', pieces: 'jade' }), { ok: true, field: 'volcano', pieces: 'jade' });
+  assert.deepEqual(e.rooms.filter(x => x.ev === 'kd:skin').map(x => x.payload),
+    [{ gameId, side: 'a', field: 'volcano', pieces: 'jade', opened: false }], 'sân không đổi nên không chạy màn khai mở');
+  assert.deepEqual(m.resume(a).start.skins.a, { field: 'volcano', pieces: 'jade' });
+  // Chiều ngược: sang sân khác còn trong hạn thì từ chối, quân kèm theo cũng không đổi.
+  e.clock.advance(3000);
+  const r = m.skin(a, { gameId, field: 'river', pieces: 'ice' });
+  assert.equal(r.ok, false); assert.equal(r.code, 'rate'); assert.equal(r.retryAt, t0 + 20000);
+  assert.equal(r.reason, 'Đợi 12 giây nữa mới đổi được sân.');
+  assert.deepEqual(m.resume(a).start.skins.a, { field: 'volcano', pieces: 'jade' });
+  m.shutdown();
+});
+
 test('kd:skin: ván đã kết thúc bị từ chối; đấu lại bắt đầu bằng null; bàn trong chỉ gửi hai người chơi', () => {
   const e = managerEnv(); const m = e.manager;
   const { a, b, gameId } = startGame(e);
