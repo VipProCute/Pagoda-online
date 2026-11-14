@@ -95,6 +95,12 @@ HÌNH ẢNH TRONG THƯ MỤC NÀY — NGUỒN GỐC VÀ GIẤY PHÉP
 7) Mô hình nhân vật mẫu: public/models/avatar/{nam,nu,hao-quang}.glb và ảnh docs/ky-dai/anh/nhan-vat-*.jpg
    Tự dựng bằng Blender từ script tools/blender/avatar/build.py (hình khối, xương, hoạt ảnh sinh bằng mã, không dùng
    mô hình hay ảnh của bên thứ ba), là tác phẩm gốc của dự án. Không sửa tay: sửa script rồi chạy lại.
+
+8) Mô hình Pháp Tướng 3D: public/models/fx/{demon-4,lotus,aura-kit}.glb và ảnh docs/phap-tuong/anh/ban-mau-*.jpg
+   Tự dựng bằng Blender từ script tools/blender/fx/build_*.py (hình khối, xương, hoạt ảnh sinh bằng mã, không dùng
+   mô hình của bên thứ ba), là tác phẩm gốc của dự án. Không sửa tay: sửa script rồi chạy lại.
+   Ảnh ý tưởng docs/phap-tuong/anh/y-tuong-*.jpg do mô hình tạo ảnh AI sinh ra từ hình 2D của dự án
+   (public/img/fx/demon-*.webp), chỉ dùng làm tham chiếu nội bộ cho người dựng, không đưa vào game.
    Giấy phép: CC0 1.0 như mục 1.
 
 8) Ảnh đá cờ vây và caro 8 bộ: public/img/kydao/stones/<id>.webp và docs/ky-dai/anh/da-tong-hop.jpg
