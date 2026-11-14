@@ -64,3 +64,52 @@ test('app.js: dựng #incKinds và #trackList giữ nguyên văn chữ lạ dư�
   assert.equal(tracks[0].children[1].textContent, 'khoảng 2 phút');
   assert.equal(tracks[1].children[1].textContent, 'khoảng 1 phút', 'tối thiểu 1 phút');
 });
+
+/* ---------- T-180 (tiếp): quỹ cúng dường ---------- */
+const sliceBetween = (a, b) => { const i = app.indexOf(a), j = app.indexOf(b, i); assert.ok(i > 0 && j > i, 'không thấy đoạn ' + a); return app.slice(i, j); };
+const dnSnippet = sliceBetween("$('#dnFunds')", "$('#dnName').value = myName");
+const fundsSnippet = sliceBetween('if (funds) {', "const ul = $('#dons')");
+
+test('app.js: #dnFunds và #funds không còn gán bằng innerHTML/outerHTML', () => {
+  assert.doesNotMatch(dnSnippet, /innerHTML|insertAdjacentHTML|outerHTML/);
+  assert.doesNotMatch(fundsSnippet, /innerHTML|insertAdjacentHTML|outerHTML/);
+});
+
+function fakeDom2() {
+  const { document, Node } = fakeDom();
+  const make = document.createElement;
+  document.createElement = tag => { const n = make(tag); n.style = {}; return n; };
+  return { document, Node };
+}
+
+test('app.js: #dnFunds giữ id và tên quỹ độc dưới dạng giá trị/text, không sinh phần tử lạ', () => {
+  const { document, Node } = fakeDom2();
+  const box = new Node('div');
+  const funds = [{ id: '"><img src=x onerror=1>', name: '<b>x</b>' }, { id: 'xay-chua', name: 'Xây chùa' }];
+  vm.runInNewContext(dnSnippet, { $: () => box, document, cfg: { donation: { funds } } });
+  assert.equal(box.children.length, 2);
+  box.children.forEach((lb, i) => {
+    assert.equal(lb.tag, 'label'); assert.equal(lb.className, 'opt'); assert.equal(lb.children.length, 2);
+    const [inp, sp] = lb.children;
+    assert.equal(inp.tag, 'input'); assert.equal(inp.type, 'radio'); assert.equal(inp.name, 'fund'); assert.equal(inp.value, funds[i].id);
+    assert.equal(!!inp.checked, i === 0);
+    assert.equal(sp.tag, 'span'); assert.equal(sp.children.length, 1);
+    assert.equal(sp.children[0].tag, 'b'); assert.equal(sp.children[0].textContent, funds[i].name);
+  });
+});
+
+test('app.js: #funds dựng khối quỹ bằng DOM: tên giữ nguyên văn, có thanh tiến độ khi có mục tiêu', () => {
+  const { document, Node } = fakeDom2();
+  const box = new Node('div');
+  const funds = [{ name: '<img src=x onerror=1>', raised: 500000, goal: 1000000 }, { name: 'Không mục tiêu', raised: 1234, goal: 0 }];
+  vm.runInNewContext(fundsSnippet, { $: () => box, document, funds, VND: n => n + 'đ' });
+  const [a, b] = box.children;
+  assert.equal(a.className, 'fund');
+  const [top, bar] = a.children;
+  assert.equal(top.className, 'top'); assert.equal(top.children.length, 2);
+  assert.equal(top.children[0].tag, 'span'); assert.equal(top.children[0].textContent, funds[0].name);
+  assert.equal(top.children[1].textContent, '500000đ · 50%');
+  assert.equal(bar.className, 'bar'); assert.equal(bar.children[0].tag, 'i'); assert.equal(bar.children[0].style.width, '50%');
+  assert.equal(b.children.length, 1, 'không có mục tiêu thì không có thanh');
+  assert.equal(b.children[0].children[1].textContent, '1234đ');
+});

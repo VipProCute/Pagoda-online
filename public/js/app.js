@@ -781,11 +781,20 @@
   function renderDonations(list, funds) {
     if (list) donations = list.slice().reverse();
     if (funds) {
-      $('#funds').innerHTML = funds.map(f => {
+      $('#funds').replaceChildren(...funds.map(f => {
         const pct = f.goal ? Math.min(100, Math.round(f.raised / f.goal * 100)) : 0;
+        const box = document.createElement('div'); box.className = 'fund';
+        const top = document.createElement('div'); top.className = 'top';
         const name = document.createElement('span'); name.textContent = f.name;
-        return `<div class="fund"><div class="top">${name.outerHTML}<span>${VND(f.raised)}${f.goal ? ' · ' + pct + '%' : ''}</span></div>${f.goal ? `<div class="bar"><i style="width:${pct}%"></i></div>` : ''}</div>`;
-      }).join('');
+        const amt = document.createElement('span'); amt.textContent = VND(f.raised) + (f.goal ? ' · ' + pct + '%' : '');
+        top.append(name, amt); box.append(top);
+        if (f.goal) {
+          const bar = document.createElement('div'); bar.className = 'bar';
+          const fill = document.createElement('i'); fill.style.width = pct + '%';
+          bar.append(fill); box.append(bar);
+        }
+        return box;
+      }));
     }
     const ul = $('#dons'); ul.textContent = '';
     if (!donations.length) { ul.innerHTML = '<li class="empty" style="display:block">Chưa có lượt cúng dường nào.</li>'; return; }
@@ -937,8 +946,13 @@
       const d = cfg.donation;
       $('#dnSub').textContent = `Tiền chuyển thẳng vào tài khoản ${d.bank} ${d.account}${d.accountName ? ' (' + d.accountName + ')' : ''}. Website không giữ tiền.`;
       $('#dnFormHint').textContent = 'Khi nhà chùa xác nhận đã nhận, nhân vật của bạn tỏa hào quang theo số tiền, cộng dồn qua nhiều lần cúng dường.';
-      $('#dnFunds').innerHTML = cfg.donation.funds.map((f, i) => `<label class="opt"><input type="radio" name="fund" value="${f.id}"${i === 0 ? ' checked' : ''}><span><b></b></span></label>`).join('');
-      $$('#dnFunds .opt b').forEach((b, i) => { b.textContent = cfg.donation.funds[i].name; });
+      $('#dnFunds').replaceChildren(...cfg.donation.funds.map((f, i) => {
+        const lb = document.createElement('label'); lb.className = 'opt';
+        const inp = document.createElement('input'); inp.type = 'radio'; inp.name = 'fund'; inp.value = f.id; if (i === 0) inp.checked = true;
+        const sp = document.createElement('span'), b = document.createElement('b'); b.textContent = f.name; sp.append(b);
+        lb.append(inp, sp);
+        return lb;
+      }));
       $('#dnName').value = myName;
     }
     openDlg('donate');
