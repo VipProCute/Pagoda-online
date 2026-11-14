@@ -13,34 +13,46 @@
   const DURATION = Object.freeze({ emerge: 0.9, vanish: 0.6, taunt: 2.0, window: 10 });
   const LIMITS = Object.freeze({
     demon: Object.freeze({ low: 2, medium: 6, high: 12 }),
-    aura: Object.freeze({ low: 2, medium: 8, high: Infinity })
+    aura: Object.freeze({ low: 2, medium: 8, high: Infinity }),
+    merit: Object.freeze({ low: 2, medium: 8, high: Infinity })
   });
   const AURA_HIGH_RANGE = 25;
   // Điều phối chỉnh khi xem trong game (T-203): lùi 1,2 m, lệch 0,35 m, thấp 0,8 m để mặt quỷ hiện ngay trên đầu chủ và gọn trong khung.
   // Máy quay bị tường ép lại gần (Sân đấu có lúc chỉ 1 m): thu nhỏ quỷ từ scale xuống scaleNear và nâng
   // điểm đặt để mặt quỷ vẫn ở trên đầu chủ, cả con nằm gọn trong khung. fitNear..fitFar là khoảng cách ngang.
+  // T-204: hạ lift 1,3 → 0,5 để ở Sân đấu (máy quay 1,0–1,5 m) sừng và mặt quỷ không lọt dưới bảng
+  // "Sân đang vắng"; sideNear 0,75 đẩy quỷ sang trái màn hình khi máy quay sát để không nấp sau đầu chủ.
   const SELF_STAND = Object.freeze({ back: 1.2, side: 0.35, y: 0.8, bodyTurn: 0.6, headMax: 1.0, minCamera: 0.6,
-    scale: 1.1, scaleNear: 0.45, fitNear: 1.0, fitFar: 3.1, lift: 1.3, sink: 0.25 });
+    scale: 1.1, scaleNear: 0.45, fitNear: 1.0, fitFar: 3.1, lift: 0.5, sink: 0.25, sideNear: 0.75,
+    fadeNear: 0.35, fadeFar: 1.0, fadeMin: 0.25 });
 
   // Quỷ đứng bên kia chủ, lệch trái màn hình; thân quay 3/4, đầu ngoái về máy quay.
-  // Trả thêm scale (độ phóng của quỷ) theo khoảng cách máy quay.
+  // Trả thêm cỡ, độ mờ và dấu sát chủ theo khoảng cách máy quay.
   function selfStand(camera, opts = SELF_STAND) {
     if (!camera || !Number.isFinite(camera.x) || !Number.isFinite(camera.z)) return null;
     const cx = camera.x, cz = camera.z, d = Math.hypot(cx, cz);
-    if (!Number.isFinite(d) || d < opts.minCamera || d === 0) return null;
+    if (!Number.isFinite(d) || d < 1e-6) return null;
+    const close = d < opts.minCamera;
     const near = Number.isFinite(opts.fitNear) ? opts.fitNear : 0, far = Number.isFinite(opts.fitFar) ? opts.fitFar : 0;
-    const fit = far > near ? Math.max(0, Math.min(1, (d - near) / (far - near))) : 1;
+    const fit = close ? 0 : far > near ? Math.max(0, Math.min(1, (d - near) / (far - near))) : 1;
     const big = Number.isFinite(opts.scale) ? opts.scale : 1, small = Number.isFinite(opts.scaleNear) ? opts.scaleNear : big;
     const scale = small + (big - small) * fit;
     const y = opts.y + (big - scale) * (opts.lift || 0) - (1 - fit) * (opts.sink || 0);
     const ux = cx / d, uz = cz / d;
-    const x = -ux * opts.back - uz * opts.side, z = -uz * opts.back + ux * opts.side;
+    // T-204: máy quay sát thì đẩy quỷ lệch ngang thêm (sideNear) để mặt quỷ không nấp sau đầu và hào quang của chủ.
+    const side = Number.isFinite(opts.sideNear) ? opts.sideNear + (opts.side - opts.sideNear) * fit : opts.side;
+    const x = -ux * opts.back - uz * side, z = -uz * opts.back + ux * side;
     const yaw = Math.atan2(ux, uz) + opts.bodyTurn;
     const look = Math.atan2(cx - x, cz - z);
     let head = (look - yaw) % (Math.PI * 2);
     if (head <= -Math.PI) head += Math.PI * 2;
     if (head > Math.PI) head -= Math.PI * 2;
-    return { x, y, z, yaw, head: Math.max(-opts.headMax, Math.min(opts.headMax, head)), scale };
+    let fade = 1;
+    if (Number.isFinite(opts.fadeNear) && Number.isFinite(opts.fadeFar) && Number.isFinite(opts.fadeMin) && opts.fadeFar > opts.fadeNear) {
+      const k = Math.max(0, Math.min(1, (d - opts.fadeNear) / (opts.fadeFar - opts.fadeNear)));
+      fade = opts.fadeMin + (1 - opts.fadeMin) * k * k * (3 - 2 * k);
+    }
+    return { x, y, z, yaw, head: Math.max(-opts.headMax, Math.min(opts.headMax, head)), scale, fade, ...(close ? { close: true } : {}) };
   }
 
   function isSitting(sit) {
@@ -133,11 +145,11 @@
   }
   function slots(list, self, quality, kind = 'demon') {
     if (quality !== 'low' && quality !== 'medium' && quality !== 'high') quality = 'medium';
-    if (kind !== 'demon' && kind !== 'aura') kind = 'demon';
+    if (kind !== 'demon' && kind !== 'aura' && kind !== 'merit') kind = 'demon';
     const result = new Set();
     if (self != null) result.add(self);
     const candidates = (Array.isArray(list) ? list : []).filter(item => item && item.id != null && item.id !== self &&
-      Number.isFinite(item.distance) && !(kind === 'aura' && quality === 'high' && item.distance > AURA_HIGH_RANGE));
+      Number.isFinite(item.distance) && !(kind !== 'demon' && quality === 'high' && item.distance > AURA_HIGH_RANGE));
     candidates.sort((first, second) => {
       const distance = first.distance - second.distance;
       if (distance) return distance;
@@ -152,9 +164,11 @@
     const people = (Array.isArray(list) ? list : []).filter(item => item && item.id != null);
     const demons = slots(people.filter(item => item.demon), self, quality, 'demon');
     const auras = slots(people.filter(item => item.aura), self, quality, 'aura');
+    const merits = slots(people.filter(item => item.merit), self, quality, 'merit');
     return new Map(people.map(item => {
       const demon = !!item.demon && demons.has(item.id), aura = !!item.aura && auras.has(item.id);
-      return [item.id, { demon, aura, slot: demon || aura || (!item.demon && !item.aura) }];
+      const merit = !!item.merit && merits.has(item.id);
+      return [item.id, { demon, aura, merit, slot: demon || aura || merit || (!item.demon && !item.aura && !item.merit) }];
     }));
   }
   const api = { ANCHOR, DURATION, LIMITS, SELF_STAND, selfStand, isSitting, spring, springVec, turn, poseOf, phaseOf, tauntOf, slots, fxSlots };

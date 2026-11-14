@@ -13,8 +13,8 @@ const QUALITY = { low: 1, medium: 1.5, high: 2 };
 const failure = reason => ({ ok: false, reason });
 const SCENES = {
   hall: () => import('./scenes/hall.mjs?v=1'),
-  arena: () => import('./scenes/arena.mjs?v=9'),
-  yard: () => import('./scenes/yard.mjs?v=9'),
+  arena: () => import('./scenes/arena.mjs?v=10'),
+  yard: () => import('./scenes/yard.mjs?v=10'),
   library: () => import('./scenes/library.mjs?v=1')
 };
 
@@ -34,7 +34,8 @@ function updatePeople(world, state, dt) {
     return [p.id, cam ? Math.hypot(w.x - cam.x, w.z - cam.z) : Infinity];
   }));
   const SM = globalThis.StandMath;
-  const slots = SM ? SM.fxSlots(list.map(p => ({ id: p.id, distance: distance.get(p.id), demon: !!p.demon, aura: !!p.aura })), state.me, quality) : null;
+  const slots = SM ? SM.fxSlots(list.map(p => ({ id: p.id, distance: distance.get(p.id), demon: !!p.demon, aura: !!p.aura,
+    merit: Number(p.meritRank) > 0 })), state.me, quality) : null;
   for (const person of list) {
     seen.add(person.id);
     let entry = world.people.get(person.id);
@@ -49,7 +50,7 @@ function updatePeople(world, state, dt) {
     entry.person = person;
     const s = slots?.get(person.id);
     entry.avatar.update({ ...person, now: state.now, isSelf: person.id === state.me, view: world.ctx.view, reducedMotion: world.ctx.reducedMotion,
-      quality, fx: { distance: distance.get(person.id), slot: s ? s.slot : true, ...(s ? { slots: { demon: s.demon, aura: s.aura } } : {}) } }, dt);
+      quality, fx: { distance: distance.get(person.id), slot: s ? s.slot : true, ...(s ? { slots: { demon: s.demon, aura: s.aura, merit: s.merit } } : {}) } }, dt);
   }
   for (const [id, entry] of world.people) if (!seen.has(id)) {
     entry.avatar.dispose(); entry.avatar.group.removeFromParent(); world.people.delete(id);
@@ -228,7 +229,7 @@ export async function start({ canvas, scene = 'test', getState = () => ({}), on 
     if (!canvas || typeof canvas.getContext !== 'function') return failure('Chưa có khung vẽ 3D.');
     const context = canvas.getContext('webgl2', { antialias: true, alpha: false });
     if (!context) return failure('Máy chưa hỗ trợ WebGL2. Xin dùng giao diện 2D.');
-    const [THREE, kit, avatars] = await Promise.all([import('three'), import('./kit.mjs?v=2'), import('./avatar-glb.mjs?v=6')]);
+    const [THREE, kit, avatars] = await Promise.all([import('three'), import('./kit.mjs?v=2'), import('./avatar-glb.mjs?v=7')]);
     if (ticket !== generation) return failure('Đã hủy mở cảnh 3D.');
     renderer = new THREE.WebGLRenderer({ canvas, context });
     renderer.outputColorSpace = THREE.SRGBColorSpace;

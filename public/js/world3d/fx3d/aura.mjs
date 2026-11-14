@@ -1,9 +1,9 @@
 'use strict';
 
 import * as THREE from 'three';
-import { register } from './index.mjs?v=4';
+import { register } from './index.mjs?v=5';
 
-export const AURA_KIT_URL = '/models/fx/aura-kit.glb?v=2';
+export const AURA_KIT_URL = '/models/fx/aura-kit.glb?v=3';
 export const AURA_3D_TIERS = Object.freeze([5]);
 const isSitting = sit => sit === true || sit === 'cushion' || sit === 'bench' || (Number.isInteger(sit) && sit >= 0);
 
@@ -21,21 +21,22 @@ export function auraPart(env) {
       const asset = await env.assets.load(AURA_KIT_URL);
       settled = true; empty = !asset;
       if (disposed) { release(); return; }
-      const source = asset?.scene.getObjectByName('shell');
+      const source = asset?.scene.getObjectByName('flames') || asset?.scene.getObjectByName('shell');
       if (!source?.isMesh) { failed = true; return; }
       holder = env.group('aura'); holder.visible = false;
       const layers = [
-        { scale: [1, 1, 1], opacity: 1, seed: 0 },
-        { scale: [1.1, 1.22, 1.1], opacity: 0.7, seed: 0.37 },
-        { scale: [1.2, 1.45, 1.2], opacity: 0.45, seed: 0.71 }
+        { scale: [1, 1, 1], rot: 0, opacity: 1, seed: 0 },
+        { scale: [1.12, 0.82, 1.12], rot: Math.PI / 9, opacity: 0.75, seed: 0.37 },
+        { scale: [0.9, 0.68, 0.9], rot: -Math.PI / 9, opacity: 0.6, seed: 0.71 }
       ];
-      for (const [level, layer] of layers.entries()) for (const side of [THREE.BackSide, THREE.FrontSide]) {
-        const mat = env.track(env.materials.flameShellMaterial({ side, seed: layer.seed }));
+      for (const [level, layer] of layers.entries()) {
+        const mat = env.track(env.materials.flameShellMaterial({ tongue: true, seed: layer.seed }));
         const shell = new THREE.Mesh(source.geometry, mat);
         shell.scale.set(...layer.scale);
-        shell.renderOrder = side === THREE.BackSide ? env.RENDER.shellBack : env.RENDER.shellFront;
+        shell.rotation.y = layer.rot;
+        shell.renderOrder = env.RENDER.shellFront;
         shell.frustumCulled = false; shell.castShadow = false;
-        holder.add(shell); shells.push({ shell, mat, level, opacity: layer.opacity, side });
+        holder.add(shell); shells.push({ shell, mat, level, opacity: layer.opacity });
       }
     } catch (error) {
       settled = true; failed = true; hide();
@@ -60,17 +61,17 @@ export function auraPart(env) {
     if (!env.reducedMotion && Number.isFinite(dt)) t += Math.max(0, dt);
     holder.visible = true; holder.scale.y = isSitting(state.sit) ? 0.8 : 1;
     syncQuality();
-    for (const { mat, opacity, side } of shells) {
+    for (const { mat, opacity } of shells) {
       mat.uniforms.uColor.value.set(state.color || '#8fd3ff');
-      mat.uniforms.uOpacity.value = (state.fade ?? 1) * opacity * (side === THREE.BackSide ? 0.45 : 1);
+      mat.uniforms.uOpacity.value = (state.fade ?? 1) * opacity;
       env.materials.tick(mat, t);
     }
     if (points?.visible) {
       points.material.color.set(state.color || '#8fd3ff'); points.material.opacity = state.fade ?? 1;
       const position = points.geometry.attributes.position;
       for (let j = 0; j < position.count; j++) {
-        const radius = 0.45 + 0.15 * ((j * 7) % 5) / 5, angle = j * 2.4 + t * 0.5;
-        position.setXYZ(j, Math.sin(angle) * radius, ((t * 0.35 + j / 32) % 1) * 2.1, Math.cos(angle) * radius);
+        const radius = 0.3 + 0.15 * ((j * 7) % 5) / 4, angle = j * 2.4 + t * 0.5;
+        position.setXYZ(j, Math.sin(angle) * radius, ((t * 0.35 + j / 32) % 1) * 1.2, Math.cos(angle) * radius);
       }
       position.needsUpdate = true;
     }

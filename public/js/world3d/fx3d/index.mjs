@@ -2,7 +2,7 @@
 
 import * as THREE from 'three';
 import { sharedAssets } from './assets.mjs?v=1';
-import * as materials from './materials.mjs?v=4';
+import * as materials from './materials.mjs?v=5';
 
 export const PARTS = Object.freeze(['demon', 'lotus', 'aura', 'merit']);
 // Trong mỗi người, ghi chiều sâu của quỷ trước lượt màu và dải lửa.
@@ -77,7 +77,8 @@ export function createFx3d(host, opts = {}) {
     root.visible = true;
     for (const [name, instance] of instances) {
       try {
-        if (ctx.slots && typeof ctx.slots === 'object' && ctx.slots[name === 'demon' ? 'demon' : 'aura'] === false) {
+        const slotKey = name === 'lotus' ? 'aura' : name;
+        if (ctx.slots && typeof ctx.slots === 'object' && ctx.slots[slotKey] === false) {
           covers[name] = false;
           instance.hide?.();
           continue;

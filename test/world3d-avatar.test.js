@@ -4,7 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 
-const load = () => import('../public/js/world3d/avatar.mjs?v=7');
+const load = () => import('../public/js/world3d/avatar.mjs?v=8');
 function canvasFactory(writes = []) {
   return () => ({ width: 0, height: 0, getContext: () => ({
     clearRect() {}, beginPath() {}, roundRect() {}, fill() {}, stroke() {}, fillRect() {},

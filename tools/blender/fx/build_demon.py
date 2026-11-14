@@ -1,4 +1,4 @@
-"""Chùa Tâm An · Ma Vương điêu khắc bằng mã, phần A của thẻ T-154.
+"""Chùa Tâm An · Ma Vương điêu khắc bằng mã, phần A của thẻ T-204.
 
 Chạy bằng Blender 5.x, không giao diện:
     blender -b --python-expr "import runpy; runpy.run_path(
@@ -63,11 +63,15 @@ TEXTURE_SOURCE = {}
 
 # Mọi số đo giữ ở đây; phần hình học điêu khắc nằm trong các hàm dựng bên dưới.
 SPEC = {4: {
-    'tri_limit': 4000, 'kb_limit': 600, 'body_tris': 1500, 'img': 512,
-    'head_scale': 1.2, 'head_pivot': (0, 0, .80), 'head_refine': 518,
-    'colors': {'skin': '#922326', 'horn': '#3a241a', 'claw': '#1c1011',
+    'tri_limit': 6000, 'kb_limit': 1536, 'body_tris': 2600, 'img': 1024,
+    'flame_tris': 640, 'front_head_min': 1800, 'uv_margin_px': 8,
+    # Vòng 3: giáp +252, sừng +228, gai +48, vòng tay +32, đuôi +40.
+    # Giữ lượt dựng mặt vòng 2; lấy 600 tam giác từ thân sau khi làm mịn đầu.
+    'body_reallocate': 600,
+    'head_scale': 1.2, 'head_pivot': (0, 0, .80), 'head_refine': 1000,
+    'colors': {'skin': '#9a2a28', 'horn': '#3a241a', 'claw': '#141012',
                'fang': '#ece0c4', 'armor': '#68291b', 'gold': '#995721',
-               'mouth': '#3a0806', 'eye': '#ffc23a', 'crack': '#ff7a1a'},
+               'mouth': '#ff5a1a', 'eye': '#ffd04a', 'crack': '#ff7a1a'},
     # đường tay: vai, khuỷu, cổ tay (bên trái +X); trục bàn tay
     'arm': {'path': [((.55, 0, .82), .20), ((.675, -.20, .74), .221),
                      ((.84, -.38, .66), .156), ((.82, -.58, .63), .182),
@@ -419,6 +423,7 @@ HAND_A = np.array(S['hand']['axis'], float)
 HAND_A /= np.linalg.norm(HAND_A)
 HAND_L = np.array((-HAND_A[1], HAND_A[0], 0.))      # hướng ngang, ra ngoài với tay trái
 HAND_P = ARM_W + HAND_A * .075                          # tâm lòng bàn tay
+PALM_P = HAND_P + np.array((0., -.035, .03))             # lòng hướng ra trước, nâng 3 cm
 
 
 def head_space(v, inverse=False):
@@ -457,7 +462,7 @@ def body_base():
                      .168, .182, extend=1.12),
            blob_axis(ARM_E + fo_dir * .22 + (.04, 0, -.055), ARM_E + fo_dir * .90 + (.04, 0, -.035),
                      .13, .14, extend=1.10),
-           ellipsoid(tuple(HAND_P), (.15, .135, .063), (0, 0, math.degrees(math.atan2(-HAND_A[0], HAND_A[1]))))]
+           ellipsoid(tuple(PALM_P), (.112, .04, .105))]
     for piece in arm:
         P += both(piece)
     # hàm dưới: tách khỏi hộp sọ bằng khe miệng mở
@@ -481,8 +486,14 @@ def body_detail():
             ellipsoid((.065, .145, .51), (.052, .035, .255))]                                    # cơ dựng sống lưng dẹt
     for piece in side:
         P += both(piece)
-    face = [tube([(.025, -.275, 1.265), (.085, -.31, 1.285), (.17, -.275, 1.33),
-                  (.25, -.19, 1.355)], [.038, .059, .052, .025], seg=16, rings=24),              # mày dày chữ V, đuôi ôm về thái dương
+    # Mày là nêm dẹt liền trán: nửa trên lùi vào sọ, mép dưới che hốc mắt chữ V.
+    brow = ellipsoid((0, 0, 0), (.151, .095, .048), seg=32, rings=20)
+    brow_height = brow['v'][:, 2] / .048
+    # Dẹt tiết diện trên/dưới, đẩy mặt trên vào sọ; mép dưới nhô ra thành cạnh nêm.
+    brow['v'][:, 2] = .048 * np.sign(brow_height) * np.abs(brow_height) ** .45
+    brow['v'][:, 1] += .045 * brow_height + .035 * smoothstep(0, .8, brow_height)
+    brow['v'] = brow['v'] @ euler_matrix((0, -32, 0)).T + np.array((.127, -.225, 1.318))
+    face = [brow,
             ellipsoid((.205, -.205, 1.115), (.09, .105, .075), (0, -18, -15)),                    # má gồ dưới hốc mắt
             ellipsoid((.13, -.30, 1.05), (.085, .108, .046), (0, -16, 0)),                        # mõm rộng nhe nanh
             ellipsoid((.10, -.36, 1.09), (.065, .035, .022), (0, -22, 0)),                        # nếp nhăn mõm
@@ -490,8 +501,8 @@ def body_detail():
             ellipsoid((.20, -.07, .955), (.045, .12, .085), (0, 0, -10))]                          # góc hàm vuông
     for piece in face:
         P += both(scale_head_piece(piece))
-    P += [scale_head_piece(piece) for piece in [ellipsoid((0, -.305, 1.17), (.052, .095, .10)),
-          ellipsoid((.049, -.345, 1.105), (.042, .04, .033)), ellipsoid((-.049, -.345, 1.105), (.042, .04, .033)),                                       # mũi to bè
+    P += [scale_head_piece(piece) for piece in [ellipsoid((0, -.305, 1.145), (.065, .095, .075)),
+          ellipsoid((.060, -.345, 1.105), (.049, .04, .033)), ellipsoid((-.060, -.345, 1.105), (.049, .04, .033)),                                       # sống mũi ngắn, cánh mũi bè
           ellipsoid((0, -.29, 1.07), (.16, .125, .06)),                                         # mõm trên
           ellipsoid((0, -.27, .837), (.157, .105, .035)),                                        # bờ hàm dưới
           ellipsoid((0, -.045, 1.425), (.195, .19, .12), seg=32, rings=22),                        # vòm sọ tròn, không gờ ngang
@@ -500,43 +511,47 @@ def body_detail():
     angles = np.linspace(0, 2 * math.pi, 25)
     rim = [(.041 * math.cos(a), -.238, 1.39 + .070 * math.sin(a)) for a in angles]
     P.append(scale_head_piece(tube(rim, [.015] * len(rim), seg=10, rings=48)))
+    # Gờ mu bàn tay chìm một phần vào lòng dẹt, cùng hợp voxel với cổ tay.
+    for off in (-.055, 0., .055):
+        ridge = blob_axis(PALM_P + (off, .030, -.035), PALM_P + (off, .030, .065),
+                          .014, .018, seg=12, rings=8)
+        P += both(ridge)
     return P
 
 
 def make_fingers(hi):
-    """Năm ngón có vuốt đen dài cong, bàn tay xòe ngửa ra trước."""
+    """Quạt năm ngón trong mặt phẳng X–Z; ba đốt vồ ra trước, vuốt móc xuống."""
     out = []
-    z = np.array((0., 0., 1.))
-    seg, rings = (10, 20) if hi else (5, 3)
-    # (lệch ngang, góc xòe, hệ số dài, bán kính) từ ngón cái ra ngón út
-    table = [(.088, 65, .86, .029), (.052, 20, 1.0, .026), (.012, 2, 1.1, .026),
-             (-.028, -18, 1.0, .0245), (-.066, -35, .82, .022)]
-    for idx, (off, fan, scale, rad) in enumerate(table):
-        off, scale, rad = off * 1.5, scale * 1.3, rad * 1.5
-        thumb = idx == 0
-        base = HAND_P + HAND_L * off + HAND_A * (-.015 if thumb else .1125)
+    up, forward = np.array((0., 0., 1.)), np.array((0., -1., 0.))
+    seg, rings = (12, 24) if hi else (6, 5)
+    # Lệch ngang, cao gốc, góc từ +Z ra ngoài, chiều dài ba đốt, bán kính.
+    table = [(-.082, -.018, -70, .120, .034), (-.055, .065, -32, .170, .034),
+             (0., .086, 0, .190, .034), (.052, .072, 32, .175, .032),
+             (.087, .040, 55, .150, .030)]
+    for off, height, fan, length, rad in table:
+        base = PALM_P + HAND_L * off + up * height
         th = math.radians(fan)
-        flat_dir = HAND_A * math.cos(th) + HAND_L * math.sin(th)
-        lengths = [.06 * scale, .055 * scale] + ([] if thumb else [.045 * scale])
-        pitch = [18, 46] if thumb else [8, 30, 52]
+        # HAND_L chỉ lấy thành phần X để các ngón không lại bị rút ngắn khi nhìn trước.
+        flat_dir = np.array((math.sin(th), 0., math.cos(th)))
         pts, cur = [base], base.copy()
-        for length, pit in zip(lengths, pitch):
+        for fraction, pit in zip((.38, .34, .28), (8, 30, 55)):
             p = math.radians(pit)
-            cur = cur + length * (math.cos(p) * flat_dir + math.sin(p) * z)
+            cur = cur + length * fraction * (math.cos(p) * flat_dir + math.sin(p) * forward)
             pts.append(cur.copy())
-        radii = [rad, rad * .95, rad * .82, rad * .7][:len(pts)]
-        finger = tube(pts, radii, seg=seg, rings=rings, kind='skin', ref=(0, 0, 1), bone='hand', part='finger')
-        # vuốt: tiếp từ đầu ngón, cong lên dần
-        c_len = [.065, .0585, .052]
-        c_pit = [(64, 82, 100) if not thumb else (62, 82, 98)][0]
+        radii = [rad, rad * .94, rad * .84, .024 if rad >= .032 else .022]
+        joint_ridge = lambda t: 1 + .10 * np.exp(-((t - .38) / .085) ** 2) + .08 * np.exp(-((t - .72) / .08) ** 2)
+        finger = tube(pts, radii, seg=seg, rings=rings, ridge=joint_ridge,
+                      kind='skin', ref=(0, -1, 0), bone='hand', part='finger')
+        # Vuốt dài 13 cm, gốc dày hơn 25%; móc mạnh ra −Y rồi quặp xuống.
         cpts, cur = [pts[-1]], pts[-1].copy()
-        for length, pit in zip(c_len, c_pit):
+        for claw_length, pit in zip((.0455, .0455, .039), (65, 100, 145)):
             p = math.radians(pit)
-            cur = cur + length * (math.cos(p) * flat_dir + math.sin(p) * z)
+            cur = cur + claw_length * (math.cos(p) * flat_dir + math.sin(p) * forward)
             cpts.append(cur.copy())
-        claw = tube(cpts, [radii[-1] * .95, radii[-1] * .6, radii[-1] * .3, .0015],
-                    seg=seg, rings=max(4, rings // 2) if hi else 4, pointed=True,
-                    kind='claw', bone='hand', part='claw')
+        claw_root = radii[-1] * 1.25
+        claw = tube(cpts, [claw_root, claw_root * .68, claw_root * .32, .0],
+                    seg=10 if hi else 5, rings=16 if hi else 4, pointed=True,
+                    ref=(0, -1, 0), kind='claw', bone='hand', part='claw')
         out += both(finger) + both(claw)
     return out
 
@@ -551,7 +566,7 @@ def make_parts(hi):
     # sừng lớn cong xoắn, có vòng gờ
     horn = tube([(.24, .0, 1.27), (.45, .065, 1.34), (.63, .12, 1.48), (.68, .10, 1.65),
                  (.62, .015, 1.78), (.53, -.06, 1.835), (.45, -.09, 1.85)],
-                [.132, .122, .097, .073, .045, .022, .0], seg=20 if hi else 6, rings=72 if hi else 11,
+                [.132, .122, .097, .073, .045, .022, .0], seg=20 if hi else 9, rings=72 if hi else 14,
                 ridge=horn_ridge if hi else None, twist=1.8, flat=.88,
                 pointed=True, kind='horn', bone='head', part='horn_big')
     # Gốc sừng đi cùng sọ lớn hơn, ngọn vẫn ở 1,85 m theo hợp đồng.
@@ -599,8 +614,8 @@ def make_parts(hi):
             ((.615, .025, 1.01), (.2925, .2925, .0975), 22),
             ((.71, -.008, .91), (.2665, .273, .0793), 31),
             ((.78, -.04, .81), (.2275, .2405, .0676), 39))):
-        shell = ellipsoid(center, radii, (0, tilt, 0), seg=28 if hi else (7 if layer == 0 else 6),
-                          rings=14 if hi else (4 if layer == 0 else 3), kind='armor',
+        shell = ellipsoid(center, radii, (0, tilt, 0), seg=28 if hi else (12 if layer == 0 else 10),
+                          rings=14 if hi else (5 if layer == 0 else 4), kind='armor',
                           bone='upper_arm', part='pauldron', shell_center=center, shell_radii=radii, tilt=tilt)
         out += both(shell)
     for base, mid, tip, r in (
@@ -608,13 +623,13 @@ def make_parts(hi):
             ((.70, .08, 1.06), (.79, .21, 1.22), (.91, .35, 1.25), .0611),
             ((.83, .07, .975), (.96, .19, 1.095), (1.10, .32, 1.11), .0559)):
         spike = tube([base, mid, tip], [r, r * .65, .0],
-                     seg=10 if hi else 4, rings=10 if hi else 3, pointed=True,
+                     seg=10 if hi else 6, rings=10 if hi else 3, pointed=True,
                      kind='armor', bone='upper_arm', part='spike')
         out += both(spike)
     # vòng giáp cổ tay
     fo = ARM_W - ARM_E
     for a, b in ((.62, .84),):
-        cuff = tube([ARM_E + fo * a, ARM_E + fo * b], [.191, .198], seg=20 if hi else 6, rings=4 if hi else 2,
+        cuff = tube([ARM_E + fo * a, ARM_E + fo * b], [.191, .198], seg=20 if hi else 10, rings=4 if hi else 2,
                     ridge=(lambda t: 1 + .04 * np.sin(math.pi * 2 * t * 2)) if hi else None,
                     kind='armor', bone='forearm', part='cuff')
         out += both(cuff)
@@ -632,7 +647,7 @@ def make_parts(hi):
                  .10 * (math.cos(2 * math.pi * 1.25 * u) - 1) * math.sin(math.pi * u),
                  .075 - 1.195 * u) for u in s]
     out.append(tube(tail_pts, [.195 * (1 - u) ** .85 + .003 for u in s], seg=28 if hi else 5,
-                    rings=84 if hi else 8, flat=.83, twist=2 * math.pi * 1.25, pointed=True,
+                    rings=84 if hi else 12, flat=.83, twist=2 * math.pi * 1.25, pointed=True,
                     kind='smoke', bone='tail', part='tail'))
     wisps = [[(.10, .02, -.10), (.245, .06, -.19), (.265, .10, -.29), (.19, .13, -.35)],
              [(-.10, .03, -.38), (-.225, .06, -.44), (-.23, .12, -.55), (-.15, .15, -.61)]]
@@ -693,7 +708,7 @@ def remesh_np(v, faces, voxel):
 
 
 DEC_FACTOR = float(globals().get('DEC_FACTOR', 1.0))
-DEC_HEAD = float(globals().get('DEC_HEAD', .003))
+DEC_HEAD = float(globals().get('DEC_HEAD', .004))
 
 
 def decimate_np(v, tris, target):
@@ -762,9 +777,9 @@ def smooth_low_head(v, tris, hi_v, hi_t):
             * (1 - smoothstep(.26, .35, np.abs(h[:, 0])))
             * (1 - smoothstep(-.10, .02, h[:, 1]))
             * smoothstep(.05, .45, -normals[:, 1]))
-    relaxed = taubin(v, tris, 4, lam=.4, mu=-.42, mask=mask)
+    relaxed = taubin(v, tris, 6, lam=.4, mu=-.42, mask=mask)
     delta = relaxed - v
-    relaxed = v + delta * np.minimum(1., .012 / (np.linalg.norm(delta, axis=1) + 1e-12))[:, None]
+    relaxed = v + delta * np.minimum(1., .015 / (np.linalg.norm(delta, axis=1) + 1e-12))[:, None]
     bvh = BVHTree.FromPolygons(hi_v.tolist(), hi_t.tolist())
     out = v.copy()
     for i in np.flatnonzero(mask > 1e-4):
@@ -776,6 +791,8 @@ def smooth_low_head(v, tris, hi_v, hi_t):
         if np.linalg.norm(point - v[i]) > .025 or np.dot(np.array(normal), normals[i]) < .25:
             continue
         out[i] = relaxed[i] + (point - relaxed[i]) * mask[i]
+    delta = out - v
+    out = v + delta * np.minimum(1., .015 / (np.linalg.norm(delta, axis=1) + 1e-12))[:, None]
     # Lùi bước nếu đỉnh dịch làm tam giác nhỏ quanh mắt/môi bị lật hoặc xẹp.
     old_fn = np.cross(v[tris[:, 1]] - v[tris[:, 0]], v[tris[:, 2]] - v[tris[:, 0]])
     old_area2 = np.sum(old_fn * old_fn, axis=1)
@@ -805,6 +822,9 @@ def carve_mouth(v, tris):
     cutters += both(scale_head_piece(ellipsoid((.114, -.252, 1.234), (.095, .105, .055),
                                               (0, -27, 0), seg=32, rings=24)))
     cutters.append(scale_head_piece(ellipsoid((0, -.258, 1.39), (.029, .055, .055), seg=28, rings=24)))
+    # Hai lỗ nhỏ dưới cánh mũi, khoét cùng lượt với miệng và hốc mắt.
+    cutters += both(scale_head_piece(ellipsoid((.062, -.377, 1.098), (.020, .035, .014),
+                                              (0, -12, 0), seg=20, rings=14)))
     cut_v, cut_f = merge(cutters)
     data = np_mesh('T154_mouth_cut', cut_v, cut_f, smooth=False)
     obj = own(bpy.data.objects.new('T154_mouth_cut', data))
@@ -871,10 +891,14 @@ FRONT_CREASES = [  # (đường trong mặt phẳng X-Z với x>=0, bề rộng,
     ([(0, .50), (.15, .495)], .007, .007), ([(0, .385), (.15, .38)], .007, .007), ([(0, .27), (.14, .265)], .007, .007),
     ([(.12, .17), (.22, .10), (.25, .03)], .008, .008),
     ([(.24, .52), (.33, .46), (.36, .36)], .008, .007),
-    ([(.07, 1.145), (.115, 1.075), (.16, 1.02)], .008, .008),    # rãnh mũi-miệng
+]
+FACE_CREASES = [  # Tọa độ đầu trước phóng lớn: nhăn mũi, môi và ba rãnh giữa mày.
+    ([(.07, 1.145), (.115, 1.075), (.16, 1.02)], .008, .010),
     ([(.045, 1.115), (.07, 1.09), (.12, 1.075)], .005, .007),   # nếp môi nhe nanh
     ([(.11, 1.12), (.15, 1.105), (.19, 1.08)], .005, .006),
-    ([(.0, 1.335), (.03, 1.305)], .007, .007),
+    # Một rãnh giữa và một cặp đối xứng: sâu thực 5,0–5,5 mm sau phóng đầu ×1,2.
+    ([(0, 1.280), (0, 1.315), (0, 1.345)], .0045, .0042),
+    ([(.030, 1.295), (.036, 1.330), (.040, 1.360)], .0045, .0046),
 ]
 BACK_CREASES = [
     ([(0, 1.12), (0, .80), (0, .48), (0, .18)], .026, .018),
@@ -892,6 +916,11 @@ def crease_field(V, N):
     back = smoothstep(.15, .6, N[:, 1])
     for pts, w, d in FRONT_CREASES:
         depth = np.maximum(depth, d * np.exp(-(poly_dist2(ax, z, pts) / w) ** 2) * front)
+    local = head_space(V, inverse=True)
+    face_front = front * smoothstep(-.10, -.22, local[:, 1])
+    for pts, w, d in FACE_CREASES:
+        depth = np.maximum(depth, S['head_scale'] * d
+                           * np.exp(-(poly_dist2(np.abs(local[:, 0]), local[:, 2], pts) / w) ** 2) * face_front)
     for pts, w, d in BACK_CREASES:
         depth = np.maximum(depth, d * np.exp(-(poly_dist2(ax, z, pts) / w) ** 2) * back)
     # vòng rãnh quanh cánh tay: gốc bắp tay, khuỷu, gốc cẳng tay, cổ tay
@@ -922,19 +951,26 @@ def apply_face(V, col, emit):
     socket = np.maximum(socket, smoothstep(-.35, .2, e3) * face)
     eye_col = lin(S['colors']['eye'])
     col *= 1 - .6 * socket[:, None]
-    col = col * (1 - eyes[:, None]) + eye_col[None, :] * (.18 * eyes)[:, None]
-    emit = emit * (1 - eyes[:, None]) + eye_col[None, :] * (eyes * (1 - .7 * pupil))[:, None]
-    # Hốc elip: thành trước đỏ sẫm, đáy đỏ đen. Họng chỉ có một quầng sáng nhỏ.
+    core = np.maximum(smoothstep(.30, .90, e), smoothstep(.35, .90, e3)) * inset
+    hot_eye = eye_col[None, :] * (1 - .72 * core[:, None]) + lin('#fff2c4')[None, :] * (.72 * core)[:, None]
+    col = col * (1 - eyes[:, None]) + hot_eye * (.65 * eyes)[:, None]
+    emit = emit * (1 - eyes[:, None]) + hot_eye * (eyes * (1 - .80 * pupil))[:, None]
+    # Phần lớn hốc đỏ đen; chỉ một quầng nhỏ ở thành họng sâu được phát sáng.
     oval = 1 - (x / .176) ** 2 - ((z - .948) / .124) ** 2
     mouth = smoothstep(-.10, .12, oval) * smoothstep(-.39, -.245, y) * smoothstep(.015, -.035, y)
     deep = smoothstep(-.28, -.065, y)
-    m_col = lin('#29080c')[None, :] * (1 - deep[:, None]) + lin('#080204')[None, :] * deep[:, None]
+    m_col = lin('#2a0605')[None, :] * (1 - deep[:, None]) + lin('#100203')[None, :] * deep[:, None]
     col = col * (1 - mouth[:, None]) + m_col * mouth[:, None]
-    throat = np.exp(-((x / .067) ** 2 + ((z - .946) / .055) ** 2)) * smoothstep(-.22, -.075, y)
-    m_emit = lin('#ff5318')[None, :] * (mouth * throat * .075)[:, None]
+    throat_depth = smoothstep(-.24, -.075, y)
+    throat = np.exp(-((x / .105) ** 2 + ((z - .946) / .080) ** 2)) * throat_depth
+    # Chặn quầng trong elip 64×43 mm: tối đa 12,6% diện tích hốc chiếu trước.
+    glow_radius = (x / .064) ** 2 + ((z - .946) / .043) ** 2
+    glow = smoothstep(1., .12, glow_radius) * throat_depth
+    # Mọi điểm đều ≤ 40% phát sáng vòng 1, không còn phát sáng nền toàn miệng.
+    m_emit = lin(S['colors']['mouth'])[None, :] * (mouth * (.10 + .72 * throat) * .40 * glow)[:, None]
     emit = emit * (1 - mouth[:, None]) + m_emit
-    brow_z = 1.255 + .43 * ax
-    brow = np.exp(-((z - brow_z) / .035) ** 2) * face * smoothstep(.28, .22, ax)
+    brow_z = 1.215 + .62 * ax
+    brow = np.exp(-((z - brow_z) / .024) ** 2) * face * smoothstep(.28, .22, ax)
     col = col * (1 - .35 * brow[:, None])
     return col, emit, socket
 
@@ -947,17 +983,17 @@ def skin_fields(V, head=True, strength=1.0, N=None):
     plate = smoothstep(0, .45, f2 - f1)
     f1b, _, cid2 = voronoi(V, .0075, 23)
     disp = (plate - .45) * .0034 + (.5 - np.minimum(f1b, 1)) * .0007
-    # Vi vảy ở mặt nhẹ hơn thân để không che độ cong trán/má trên ảnh pháp tuyến 512.
+    # So vòng 1: vi vảy thân còn 55%, mặt còn 40% của mức cũ (.60).
     local = head_space(V, inverse=True)
     face_relief = (smoothstep(.90, 1.08, local[:, 2]) * smoothstep(.05, -.15, local[:, 1])
                    * smoothstep(.35, .25, np.abs(local[:, 0])))
-    disp *= 1 - .40 * face_relief
+    disp *= .55 - .31 * face_relief
     # Ô lớn kéo dài theo chiều đứng, chỉ giữ vài nhánh nền; tránh mạng nứt đất khô.
     warp = .045 * np.stack([np.sin(y * 15 + z * 11), np.sin(z * 14 + x * 13), np.sin(x * 16 + y * 12)], 1)
     stretched = (V + warp) * np.array((1., 1., .58))
     c1, c2, _ = voronoi(stretched, .19, 5)
     crack = smoothstep(.075, .012, c2 - c1)
-    patch = smoothstep(.58, .78, valnoise(V, .29, 3))
+    patch = smoothstep(.48, .72, valnoise(V, .29, 3))
     front = (smoothstep(-.03, -.14, y) * smoothstep(.10, .24, z) * smoothstep(.92, .76, z)
              * smoothstep(.47, .30, ax))
     arms = smoothstep(.45, .60, ax) * smoothstep(.20, .45, z) * smoothstep(1.0, .90, z)
@@ -971,19 +1007,38 @@ def skin_fields(V, head=True, strength=1.0, N=None):
     center = np.exp(-(poly_dist2(x, z, chest_path) / .009) ** 2)
     branches = np.zeros(len(V))
     for pts in ([(.012, .66), (.10, .70), (.145, .67), (.23, .73), (.31, .72)],
-                [(.015, .49), (.09, .45), (.11, .40), (.175, .37), (.18, .29)]):
+                [(.015, .49), (.09, .45), (.11, .40), (.175, .37), (.18, .29)],
+                [(.025, .79), (.12, .76), (.18, .79), (.27, .76), (.36, .80)],
+                [(.01, .35), (.065, .31), (.105, .24), (.16, .21)]):
         branches = np.maximum(branches, np.exp(-(poly_dist2(ax, z, pts) / .0055) ** 2))
     forearm_path = [(-.79, .58), (-.71, .62), (-.64, .605), (-.57, .68), (-.50, .655), (-.39, .74)]
     arm_line = np.exp(-(poly_dist2(y, z, forearm_path) / .007) ** 2)
     arm_line *= arms * (.65 + .35 * np.sin(x * 27 + y * 15) ** 2)
     cm = np.maximum(cm, np.maximum(np.maximum(center, branches * .85) * front, arm_line) * strength)
+    # Vân dài trên cơ vai và mu bàn tay, đọc rõ cả khi nhìn xéo.
+    shoulder_line = np.exp(-(poly_dist2(ax, z, [(.48, .92), (.55, .84), (.61, .81), (.65, .72), (.72, .69)]) / .007) ** 2)
+    cm = np.maximum(cm, shoulder_line * arms * strength)
+    for sign in (1, -1):
+        hand_local = V * np.array((sign, 1., 1.)) - PALM_P
+        hand_region = (np.abs(hand_local[:, 0]) < .13) * (np.abs(hand_local[:, 2]) < .13)
+        hand_line = np.exp(-(poly_dist2(hand_local[:, 0], hand_local[:, 2],
+                              [(-.03, -.10), (-.01, -.04), (-.025, .0), (.015, .05), (.0, .10)]) / .005) ** 2)
+        cm = np.maximum(cm, hand_line * hand_region * smoothstep(-.01, .025, hand_local[:, 1])
+                        * smoothstep(.10, .055, hand_local[:, 1]) * strength)
+    # Mặt gần như liền da: chỉ viền mắt thứ ba và hai vệt ngắn ở thái dương/má.
+    face_line = np.zeros(len(V))
+    for pts in ([(.0, 1.465), (.027, 1.455), (.040, 1.42), (.043, 1.39)],
+                [(.25, 1.25), (.237, 1.225), (.246, 1.20)],
+                [(.23, 1.145), (.212, 1.125), (.195, 1.12)]):
+        face_line = np.maximum(face_line, np.exp(-(poly_dist2(np.abs(local[:, 0]), local[:, 2], pts) / .00225) ** 2))
+    cm = cm * (1 - face_relief)
+    cm = np.maximum(cm, face_line * face_relief * strength * .55)
     # Hai nhánh dung nham thưa phía lưng; không phủ kín thành mạng ô.
     back_line = np.zeros(len(V))
     for pts in ([(-.29, .79), (-.23, .75), (-.245, .69), (-.16, .63), (-.18, .56)],
                 [(.08, .42), (.13, .48), (.115, .54), (.20, .59), (.24, .67)]):
         back_line = np.maximum(back_line, np.exp(-(poly_dist2(x, z, pts) / .007) ** 2))
     cm = np.maximum(cm, back_line * back * .55 * strength)
-    disp = disp - cm * .0030
     glow_crease = np.zeros(len(V))
     cavity = np.zeros(len(V))
     if N is not None:
@@ -995,25 +1050,34 @@ def skin_fields(V, head=True, strength=1.0, N=None):
         cr = crease_field(V, N)
         disp = disp - cr
         cavity = np.clip(cr / .018, 0, 1)
-        glow_crease = np.clip(cr / .009, 0, 1) * smoothstep(.56, .74, valnoise(V, .22, 6)) * region * .3
+        glow_crease = (np.clip(cr / .009, 0, 1) * smoothstep(.56, .74, valnoise(V, .22, 6))
+                       * region * .3 * (1 - face_relief))
         cm = np.maximum(cm, glow_crease)
+    # Ngực bớt rối 15%; giữ vân bụng, vai và cẳng tay cùng cường độ cũ.
+    chest = front * smoothstep(.54, .64, z)
+    cm *= 1 - .15 * chest
+    disp -= cm * .0030
     base = lin(S['colors']['skin'])
     shade = (.80 + .75 * plate) * (.88 + .26 * cid) * (.9 + .2 * valnoise(V, .09, 8))
+    detail_gain = .55 - .15 * face_relief
+    shade = 1 + (shade - 1) * detail_gain
     col = base[None, :] * shade[:, None]
-    col[:, 1] *= .55 + .45 * cid2
-    col[:, 2] *= .8 + .4 * cid2
+    col[:, 1] *= 1 + (-.45 + .45 * cid2) * detail_gain
+    col[:, 2] *= 1 + (-.2 + .4 * cid2) * detail_gain
     # Giảm bão hòa 8% trong sRGB, giữ sắc đỏ rượu ấm của ảnh đích.
     srgb = np.where(col <= .0031308, col * 12.92, 1.055 * np.maximum(col, 0) ** (1 / 2.4) - .055)
     grey = srgb @ np.array((.2126, .7152, .0722))
     srgb = grey[:, None] + .92 * (srgb - grey[:, None])
     col = np.where(srgb <= .04045, srgb / 12.92, ((srgb + .055) / 1.055) ** 2.4)
-    ridge = .18 * plate * (1 - cavity)
-    col = col * (1 - ridge[:, None]) + lin('#a43b29')[None, :] * (ridge * shade)[:, None]
-    col *= (1 - .32 * cavity[:, None])
+    # Đỉnh khối theo hướng bề mặt lớn, không lấy từng ô vảy làm đốm sáng.
+    form = smoothstep(-.25, .65, -N[:, 1] + .35 * N[:, 2]) if N is not None else valnoise(V, .16, 8)
+    ridge = .32 * form * (1 - cavity)
+    col = col * (1 - ridge[:, None]) + lin('#c24a36')[None, :] * ridge[:, None]
+    col = col * (1 - .55 * cavity[:, None]) + lin('#3f0d0e')[None, :] * (.55 * cavity)[:, None]
     col = col * (1 - .75 * cm[:, None])
     core = smoothstep(.55, 1.0, cm)
-    hot = lin(S['colors']['crack'])[None, :] * (1 - core[:, None]) + lin(S['colors']['eye'])[None, :] * core[:, None]
-    emit = hot * (np.sqrt(cm) * 1.05)[:, None]
+    hot = lin(S['colors']['crack'])[None, :] * (1 - core[:, None]) + lin('#ffb040')[None, :] * core[:, None]
+    emit = hot * (np.sqrt(cm) * 1.20)[:, None]
     if head:
         col, emit, socket = apply_face(V, col, emit)
         # Các hốc đã khoét thật: chỉ thêm nhăn nhỏ để không ép bẹp sàn mắt khi bake.
@@ -1043,15 +1107,16 @@ def paint_piece(p, V):
         return np.zeros(len(V)), col, emit
     if kind == 'tongue':
         crease = np.exp(-(V[:, 0] / .008) ** 2)
-        col = lin('#701723')[None, :] * (.7 + .3 * valnoise(V, .035, 12))[:, None]
+        col = lin('#801c28')[None, :] * (.85 + .15 * valnoise(V, .035, 12))[:, None]
         col *= 1 - .35 * crease[:, None]
-        emit = np.repeat((lin('#d03b1b') * .012)[None, :], len(V), axis=0)
+        emit = np.repeat((lin('#d03b1b') * .004)[None, :], len(V), axis=0)
         return np.zeros(len(V)), col, emit
     if kind == 'horn':
         ring = .5 + .5 * np.sin(2 * math.pi * tt * 11)
         base = lin(S['colors']['horn'])
         col = base[None, :] * ((.55 + .9 * ring) * (.8 + .5 * valnoise(V, .02, 4)))[:, None]
-        col = col + lin('#5a3a28')[None, :] * (smoothstep(.55, 1.0, tt) * .35)[:, None]
+        tip = smoothstep(.55, 1.0, tt) * .80
+        col = col * (1 - tip[:, None]) + lin('#5a3a28')[None, :] * tip[:, None]
         emit = lin('#ff6a1a')[None, :] * (smoothstep(.25, .0, tt) * .35 * valnoise(V, .03, 9))[:, None]
         if p.get('part') == 'horn_small':
             # Gốc màu da chìm vào sọ, chuyển dần sang sừng sẫm.
@@ -1060,7 +1125,10 @@ def paint_piece(p, V):
         return (valnoise(V, .012, 6) - .5) * .004, col, emit
     if kind == 'claw':
         base = lin(S['colors']['claw'])
-        col = base[None, :] * (.7 + .9 * valnoise(V, .02, 5))[:, None]
+        col = base[None, :] * (.95 + .10 * valnoise(V, .02, 5))[:, None]
+        # Vệt bắt sáng mảnh trên vuốt đen bóng, dùng chung ảnh màu/vật liệu hiện có.
+        sheen = np.maximum(0, np.cos(p['ang'] - .45)) ** 32 * np.sin(math.pi * tt) ** .6
+        col = col * (1 - .30 * sheen[:, None]) + lin('#62545b')[None, :] * (.30 * sheen)[:, None]
         return np.zeros(len(V)), col, emit
     if kind == 'fang':
         base = lin(S['colors']['fang'])
@@ -1201,6 +1269,14 @@ def body_weights(V):
         W *= (1 - a)[:, None]
         for k, nm in enumerate(names):
             W[:, BI[nm]] += a * aw[:, k]
+        # Lòng bàn tay dẹt theo đúng hand_*, chỉ chuyển tiếp ở đáy nối cổ tay.
+        palm = V * np.array((sign, 1., 1.)) - PALM_P
+        palm_mask = (smoothstep(.085, .055, np.abs(palm[:, 1]))
+                     * smoothstep(.16, .13, np.abs(palm[:, 0]))
+                     * smoothstep(-.115, -.060, palm[:, 2])
+                     * smoothstep(.15, .12, palm[:, 2]))
+        W *= (1 - palm_mask)[:, None]
+        W[:, BI['hand_' + side]] += palm_mask
     return W
 
 
@@ -1262,27 +1338,82 @@ def body_labels(v, tris):
     return labels
 
 
+def trim_body(v, tris, remove):
+    """Bù ngân sách phần phụ ở thân; khóa đầu, bàn tay và một vành tam giác."""
+    target = len(tris) - remove
+    h = head_space(v, inverse=True)
+    locked = ((h[:, 2] > .74) & (np.abs(h[:, 0]) < .43)) | (v[:, 1] < -.70)
+    c = head_space(v[tris].mean(axis=1), inverse=True)
+    head = ((c[:, 2] > .90) & (np.abs(c[:, 0]) < .39)) | ((c[:, 2] > .77) & (np.abs(c[:, 0]) < .27) & (c[:, 1] < -.18))
+    locked[np.unique(tris[head])] = True
+    # Giữ cả mặt kề để pháp tuyến tại đầu/bàn tay không đổi khi tính lại sau UV.
+    frozen = np.any(locked[tris], axis=1)
+    locked[np.unique(tris[frozen])] = True
+
+    def setup(ob):
+        mod = ob.modifiers.new('BodyBudget', 'DECIMATE')
+        mod.decimate_type = 'COLLAPSE'
+        mod.ratio = target / len(tris)
+        mod.use_symmetry = True
+        mod.symmetry_axis = 'X'
+        mod.use_collapse_triangulate = True
+        group = ob.vertex_groups.new(name='body_only')
+        group.add(np.flatnonzero(~locked).tolist(), 1., 'REPLACE')
+        group.add(np.flatnonzero(locked).tolist(), 0., 'REPLACE')
+        mod.vertex_group = group.name
+        mod.vertex_group_factor = 1000.
+
+    bv, bt = evaluate_np(v, tris, setup)
+    # Modifier có thể dừng sớm hoặc đụng vùng khóa: không chấp nhận âm thầm.
+    # So tọa độ float32 như lưới Blender, không phụ thuộc thứ tự/chỉ số đỉnh.
+    def face_keys(verts, faces):
+        coords = np.asarray(verts, dtype=np.float32)
+        keys = set()
+        for face in faces:
+            points = tuple(tuple(p) for p in coords[face])
+            keys.add(min(points, points[1:] + points[:1], points[2:] + points[:2]))
+        return keys
+
+    if not face_keys(v, tris[frozen]) <= face_keys(bv, bt):
+        raise RuntimeError('Bù ngân sách thân làm đổi đầu/bàn tay đã khóa')
+    if len(bt) > target:
+        raise RuntimeError('Thân chưa bù đủ %d tam giác cho phần phụ' % remove)
+    return bv, bt, len(tris) - len(bt)
+
+
 def build_low(body_v, body_t, parts_lo):
     # Chặn ngân sách trước bake; phần phụ giữ bóng dáng, thân hấp thụ sai số decimate.
     part_count = sum(len(tri_array(p['f'])) for p in parts_lo)
     flame_count = len(build_flame()[1])
-    target = min(S['body_tris'], S['tri_limit'] - part_count - flame_count)
+    # Phần phụ: 1.922 -> 2.522; lửa giữ 576. Dựng mặt như vòng 2 trước,
+    # rồi thân bù 600: 2.000 thân + 902 chia mặt + 2.522 phần phụ + 576 = 6.000.
+    reallocate = S['body_reallocate']
+    body_budget = S['tri_limit'] - part_count - flame_count
+    target = min(S['body_tris'], body_budget + reallocate)
     if target < 1400:
         raise RuntimeError('Phần phụ chiếm quá nhiều tam giác, không còn đủ cho mặt/thân')
     bv, bt = decimate_np(body_v, body_t, target)
-    budget = min(S['head_refine'], S['tri_limit'] - part_count - flame_count - len(bt))
+    budget = min(S['head_refine'], body_budget + reallocate - len(bt))
     before = len(bt)
-    bv, bt = refine_head(bv, bt, body_v, body_t, budget)
+    # Hai lượt: lượt sau chọn lại mặt còn lớn nhất sau khi lượt đầu đã chiếu lên lưới cao.
+    first_budget = 2 * int(max(0, budget) * .65 // 2)
+    bv, bt = refine_head(bv, bt, body_v, body_t, first_budget)
+    bv, bt = refine_head(bv, bt, body_v, body_t, budget - (len(bt) - before))
     RES['head_extra_tris'] = int(len(bt) - before)
     bv = smooth_low_head(bv, bt, body_v, body_t)
+    bv, bt, removed = trim_body(bv, bt, reallocate)
+    before -= removed
+    RES['body_reallocated_tris'] = int(removed)
+    RES['body_decimated_tris'] = int(before)
     if len(bt) + part_count + flame_count > S['tri_limit']:
-        raise RuntimeError('Lưới thấp vượt 4.000 tam giác trước bake')
+        raise RuntimeError('Lưới thấp vượt %d tam giác trước bake' % S['tri_limit'])
     c = head_space(bv[bt].mean(axis=1), inverse=True)
     face = ((c[:, 2] > .90) & (np.abs(c[:, 0]) < .39)) | ((c[:, 2] > .77) & (np.abs(c[:, 0]) < .27) & (c[:, 1] < -.18))
     RES['head_tris'] = int(face.sum())
     RES['front_head_tris'] = int((face & (c[:, 1] < .02)).sum())
-    if RES['front_head_tris'] < 900:
-        RES['over_budget'].append('mặt trước đầu chưa đạt 900 tam giác')
+    if RES['front_head_tris'] < S['front_head_min']:
+        RES['over_budget'].append('mặt trước đầu chưa đạt %d tam giác' % S['front_head_min'])
+        raise RuntimeError('Mặt trước đầu chưa đạt %d tam giác trước bake' % S['front_head_min'])
     log('thân thấp %d tam giác, đầu %d' % (len(bt), RES['head_tris']))
     Vs, Ts, Ws, counts, uvs = [bv], [bt], [body_weights(bv)], {'body': len(bt)}, []
     off = len(bv)
@@ -1303,32 +1434,43 @@ def build_low(body_v, body_t, parts_lo):
     V = np.vstack(Vs)
     T = np.vstack(Ts)
     W = np.vstack(Ws)
+    if len(T) != len(bt) + part_count:
+        raise RuntimeError('Số tam giác phần phụ sau ghép lệch dự toán trước decimate')
+    RES['triangle_allocation'] = dict({k: v for k, v in counts.items() if k != 'body'}, body_base=int(before),
+                                      head_refine=RES['head_extra_tris'], flame=int(flame_count),
+                                      total=int(len(T) + flame_count))
     return V, T, W, counts, body_labels(bv, bt), len(bt), np.vstack(uvs)
 
 
 def flame_tube(points, radii, phase, rings):
-    """Ống lửa kín sáu cạnh, ba/bốn vòng và một chóp: 36/48 tam giác."""
-    pts = np.array(points, float)
-    t = np.linspace(0, 1, len(pts))
-    pts[:, 1] += .045 * np.sin(2 * math.pi * t + phase) * np.sin(math.pi * t)
-    return tube(pts, radii, seg=6, rings=rings, pointed=True, twist=1.1 + phase,
-                ref=(0, 1, 0), kind='flame')
+    """Bézier chữ S nhẹ, tám cạnh × sáu vòng thật + chóp và đáy kín: 96 tam giác."""
+    t = np.linspace(0, 1, rings) ** .8
+    p = np.array(points, float)
+    pts = ((1 - t[:, None]) ** 3 * p[0]
+           + 3 * (1 - t[:, None]) ** 2 * t[:, None] * p[1]
+           + 3 * (1 - t[:, None]) * t[:, None] ** 2 * p[2] + t[:, None] ** 3 * p[3])
+    # Bụng cực đại ≈80% vòng 1 (1,30×r0); nửa trên kéo dài, thon tới chóp móc.
+    belly = (.80 + .20 * smoothstep(0, .30, t)) * (1 - .22 * smoothstep(.30, .50, t))
+    taper = (1 - smoothstep(.50, 1., t)) ** .85
+    rad = radii[0] * (.80 * 1.30) * belly * taper
+    piece = tube(pts, rad, seg=8, rings=rings, pointed=True, twist=.30 + phase,
+                 ref=(0, 1, 0), kind='flame')
+    # tube lấy mẫu đúng các điểm trên; đổi UV dọc theo t thật thay vì chỉ số vòng.
+    piece['tt'] = t[np.rint(piece['tt'] * (rings - 1)).astype(int)]
+    piece['uvl'] = [[(u, float(t[int(round(v * (rings - 1)))])) for u, v in face]
+                    for face in piece['uvl']]
+    return piece
 
 
 def build_flame():
-    # Bốn lưỡi mỗi cụm: gốc phình, eo thắt, thân chữ S, ngọn móc vào trong.
-    # Ba lưỡi dài có thêm một vòng để đọc được hai khúc cong; lưỡi ngoài thấp.
-    specs = [([(.40, .43, .97), (.37, .49, 1.13), (.49, .45, 1.31),
-               (.50, .40, 1.49), (.36, .47, 1.62)],
-              [.085, .075, .038, .043, .0], 1.2, 5),
-             ([(.51, .38, .93), (.48, .44, 1.16), (.66, .50, 1.40),
-               (.71, .40, 1.66), (.57, .46, 1.84)],
-              [.105, .090, .045, .049, .0], .0, 5),
-             ([(.62, .38, .87), (.60, .46, 1.03), (.83, .49, 1.23),
-               (.96, .40, 1.44), (.82, .45, 1.63)],
-              [.100, .085, .042, .047, .0], .4, 5),
-             ([(.67, .39, .79), (.77, .48, .91), (1.08, .41, 1.08), (.99, .46, 1.29)],
-              [.110, .047, .052, .0], .8, 4)]
+    # Ba lưỡi chung gốc nhưng tỏa thoáng: thân lượn chữ S, ngọn móc nhẹ vào trong.
+    # Mỗi bộ bốn điểm là điều khiển Bézier, không phải các khúc ống nối gãy.
+    specs = [([(.45, .43, .93), (.36, .46, 1.18), (.61, .55, 1.45), (.39, .59, 1.55)],
+              [.145], -.15, 7),
+             ([(.56, .44, .91), (.47, .48, 1.24), (1.03, .56, 1.62), (.80, .62, 1.80)],
+              [.160], .0, 7),
+             ([(.68, .43, .88), (.60, .47, 1.02), (1.20, .54, 1.22), (1.08, .59, 1.35)],
+              [.150], .15, 7)]
     Vs, Ts, UVs, off = [], [], [], 0
     for pts, radii, phase, rings in specs:
         for piece in both(flame_tube(pts, radii, phase, rings)):
@@ -1465,7 +1607,7 @@ def unwrap_all(ob, v, tris, labels, n_body, part_uv):
     bpy.ops.mesh.select_all(action='SELECT')
     bpy.ops.uv.select_all(action='SELECT')
     bpy.ops.uv.average_islands_scale()
-    bpy.ops.uv.pack_islands(rotate=True, margin_method='FRACTION', margin=.016)
+    bpy.ops.uv.pack_islands(rotate=True, margin_method='FRACTION', margin=S['uv_margin_px'] / S['img'])
     bpy.ops.object.mode_set(mode='OBJECT')
     RES['uv_islands'] = uv_islands(ob)
 
@@ -1519,7 +1661,7 @@ def save_jpeg(path, rgb_lin, scene, quality=90):
 
 
 def save_normal_jpeg(path, normal, scene, quality=97):
-    """JPEG pháp tuyến 512 px, ghi dữ liệu thô, chất lượng cao.
+    """JPEG pháp tuyến giữ kích thước ảnh bake, ghi dữ liệu thô, chất lượng cao.
 
     Blender 5.3 luôn ghi JPEG lấy mẫu màu 4:2:0 (không có tùy chọn 4:4:4); `check` chỉ cảnh báo.
     """
@@ -1624,8 +1766,10 @@ def raster_attributes(low_v, low_t, uv, hi_v, hi_t, hi_attrs, size, n_body, low_
     return out, mask, smoke
 
 
-def dilate(img, mask, steps=5):
+def dilate(img, mask, steps=None):
     """Lan màu ra viền đảo UV để mẫu song tuyến không lẫn nền đen."""
+    if steps is None:
+        steps = S['uv_margin_px']
     img, mask = img.copy(), mask.copy()
     for _ in range(steps):
         acc = np.zeros_like(img)
@@ -1662,7 +1806,7 @@ def bake_textures(scene, hi, lo, raster):
         bpy.context.view_layer.objects.active = lo
         scene.cycles.samples = samples
         kwargs = dict(type=bake_type, use_selected_to_active=True, cage_extrusion=.065, max_ray_distance=.13,
-                      margin=8, margin_type='EXTEND', use_clear=True, target='IMAGE_TEXTURES')
+                      margin=S['uv_margin_px'], margin_type='EXTEND', use_clear=True, target='IMAGE_TEXTURES')
         if filt:
             kwargs['pass_filter'] = filt
         if bake_type == 'NORMAL':
@@ -1683,17 +1827,17 @@ def bake_textures(scene, hi, lo, raster):
 
 
 def finish_textures(scene, maps):
-    """Nhân AO vào màu; ba JPEG 512 px, pháp tuyến giữ dữ liệu thô và viền bake."""
+    """Nhân AO nhẹ vào màu; ba JPEG giữ kích thước bake, pháp tuyến giữ dữ liệu thô."""
     os.makedirs(TMP, exist_ok=True)
     ao = maps['ao'][:, :, :1]
-    color = maps['color'] * (.50 + .50 * np.clip(ao, 0, 1))
+    color = maps['color'] * (.55 + .45 * np.clip(ao, 0, 1))
     smoke = maps['smoke']
     # Khói vẫn có AO nhẹ, nhưng không chìm xuống đen khiến phản xạ trắng lấn sắc đỏ.
     color[smoke] = np.clip(maps['color'][smoke] * (.88 + .12 * np.clip(ao[smoke], 0, 1)),
                            lin('#3a0e0c'), lin('#5a1814'))
     paths = {}
     paths['color'] = os.path.join(TMP, 'demon_color.jpg')
-    save_jpeg(paths['color'], color, scene, 88)
+    save_jpeg(paths['color'], color, scene, 90)
     # Đọc ngược JPEG dạng dữ liệu: phát hiện bộ đệm byte/pack ghi giá trị tuyến tính
     # trực tiếp thành sRGB. Chỉ bù vùng khói, giữ màu thân vòng 3.
     def jpeg_pixels(path):
@@ -1717,7 +1861,7 @@ def finish_textures(scene, maps):
     # Lan lại viền đảo sau chỉnh màu để tránh đường khói đen khi lọc ảnh trong game.
     color = dilate(color, maps['mask'])
     emit = dilate(emit, maps['mask'])
-    save_jpeg(paths['color'], color, scene, 88)
+    save_jpeg(paths['color'], color, scene, 90)
     observed = jpeg_pixels(paths['color'])[smoke]
     RES['smoke_jpeg_compensated'] = compensate
     if len(observed):
@@ -1725,13 +1869,13 @@ def finish_textures(scene, maps):
         if np.max(np.abs(np.median(observed, axis=0) - np.median(expected, axis=0))) > .04:
             warn('Màu khói trong JPEG lệch quá 10 mức sRGB; cần xem demon_color.jpg')
     paths['emit'] = os.path.join(TMP, 'demon_emit.jpg')
-    save_jpeg(paths['emit'], emit, scene, 88)
+    save_jpeg(paths['emit'], emit, scene, 90)
     normal = np.clip(maps['normal'][:, :, :3], 0, 1)
     paths['normal'] = os.path.join(TMP, 'demon_normal.jpg')
     save_normal_jpeg(paths['normal'], normal, scene, 97)
     # Giữ nguồn trước nén để mỗi lần giảm chất lượng không nén chồng JPEG.
     TEXTURE_SOURCE.update(color=color, emit=emit, normal=normal)
-    RES['texture_quality'] = {'color': 88, 'emit': 88, 'normal': 97}
+    RES['texture_quality'] = {'color': 90, 'emit': 90, 'normal': 97}
     RES['normal_jpeg_rmse'] = round(float(np.sqrt(np.mean((jpeg_pixels(paths['normal']) - normal) ** 2))), 5)
     return paths
 
@@ -2231,7 +2375,7 @@ def export(path, objects):
     result = bpy.ops.export_scene.gltf(**kwargs)
     if 'FINISHED' not in result:
         raise RuntimeError('Xuất GLB không hoàn tất: ' + str(result))
-    # Giữ 512 px; giảm màu/phát sáng trước, pháp tuyến sau cùng tới mức 94.
+    # Giữ S['img'] px; giảm màu/phát sáng trước, pháp tuyến sau cùng tới mức 94.
     # Chừa 2 KB cho bước chuẩn hóa thời gian clip sau xuất.
     ceiling = (S['kb_limit'] - 2) * 1024
     images = {}
@@ -2444,8 +2588,8 @@ def inspect_glb(path):
         if images[-1]['size'] and max(images[-1]['size']) > S['img']:
             RES['over_budget'].append('ảnh ' + img.get('name', '') + ' vượt ' + str(S['img']) + ' px')
         if index == normal_source:
-            if size != [512, 512]:
-                RES['over_budget'].append('ảnh pháp tuyến phải giữ 512×512 px')
+            if size != [S['img'], S['img']]:
+                RES['over_budget'].append('ảnh pháp tuyến phải giữ %d×%d px' % (S['img'], S['img']))
             if jpeg and jpeg['sampling'] != [[1, 1]] * 3:
                 warn('JPEG pháp tuyến lấy mẫu màu 4:2:0 (Blender không có tùy chọn 4:4:4)')
     RES['glb_images'] = images
@@ -2496,9 +2640,9 @@ def inspect_glb(path):
     if {clip['name'] for clip in clips} != set(S['clips']):
         RES['over_budget'].append('tên clip GLB không khớp A4')
     if RES['glb_triangles'] > S['tri_limit']:
-        RES['over_budget'].append('tam giác GLB vượt 4.000')
+        RES['over_budget'].append('tam giác GLB vượt %d' % S['tri_limit'])
     if RES['glb_kb'] > S['kb_limit']:
-        RES['over_budget'].append('GLB vượt 600 KB')
+        RES['over_budget'].append('GLB vượt %d KB' % S['kb_limit'])
 
 
 def set_preview_engine(scene):
@@ -2661,12 +2805,12 @@ def main():
                     for name, (duration, loop) in S['clips'].items()]
     RES['blender_version'] = bpy.app.version_string
     RES['glb_kb'] = None
-    if len(T) > 3860:
-        RES['over_budget'].append('demon_body vượt 3.860 tam giác')
-    if len(ft) > 360:
-        RES['over_budget'].append('demon_flame vượt 360 tam giác')
+    if len(T) > S['tri_limit'] - len(ft):
+        RES['over_budget'].append('demon_body vượt %d tam giác' % (S['tri_limit'] - len(ft)))
+    if len(ft) > S['flame_tris']:
+        RES['over_budget'].append('demon_flame vượt %d tam giác' % S['flame_tris'])
     if RES['total_triangles'] > S['tri_limit']:
-        RES['over_budget'].append('tổng tam giác vượt 4.000')
+        RES['over_budget'].append('tổng tam giác vượt %d' % S['tri_limit'])
     if {'glb', 'check'} & OUT:
         if 'glb' in OUT:
             path = GLB_PATH

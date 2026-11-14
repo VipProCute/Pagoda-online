@@ -1,6 +1,6 @@
 'use strict';
 
-import { makeAvatar } from '../avatar-glb.mjs?v=6';
+import { makeAvatar } from '../avatar-glb.mjs?v=7';
 
 // Cảnh khu đi lại, không phải sàn PK. ctx: { THREE, kit, size: ViewMath.SCENE_SIZE.arena,
 // quality: 'low'|'medium'|'high', reduceMotion }. Không đọc socket, không đổi trạng thái game.
@@ -242,7 +242,7 @@ export function build(ctx) {
       return [player.id, cam ? Math.hypot(personPosition.x - cam.x, personPosition.z - cam.z) : Infinity];
     }));
     const slots = SM ? SM.fxSlots(list.map(player => ({ id: player.id, distance: distances.get(player.id),
-      demon: !!player.demon, aura: !!player.aura })), state.me, quality) : null;
+      demon: !!player.demon, aura: !!player.aura, merit: Number(player.meritRank) > 0 })), state.me, quality) : null;
     const seen = new Set();
     for (const player of list) {
       if (seen.has(player.id)) continue;
@@ -261,7 +261,7 @@ export function build(ctx) {
       entry.avatar.group.position.set(wx, y, wz); entry.hit.position.set(wx, y + 0.825, wz);
       entry.hit.userData.enabled = !self;
       const s = slots?.get(player.id);
-      const fx = { distance: distances.get(player.id), slot: s ? s.slot : true, ...(s ? { slots: { demon: s.demon, aura: s.aura } } : {}) };
+      const fx = { distance: distances.get(player.id), slot: s ? s.slot : true, ...(s ? { slots: { demon: s.demon, aura: s.aura, merit: s.merit } } : {}) };
       entry.avatar.group.userData.fx = fx;
       entry.avatar.update({ ...player, isSelf: self, view: state.view || 'third', reducedMotion: reduced, quality,
         ...(state.now === undefined ? {} : { now: state.now }), fx }, step);

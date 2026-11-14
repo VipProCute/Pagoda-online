@@ -136,7 +136,7 @@ if (spiritCut < uThreshold || uAlpha < uMinAlpha) discard;`);
   return material;
 }
 
-export function flameShellMaterial({ ribbon = false, color = ribbon ? '#ff6a1a' : '#8fd3ff', height = 2.1, displace = true, opacity = 1, seed = 0, side = THREE.FrontSide } = {}) {
+export function flameShellMaterial({ tongue = false, ribbon = false, color = ribbon ? '#ff6a1a' : '#8fd3ff', height = 2.1, displace = true, opacity = 1, seed = 0, side = THREE.FrontSide } = {}) {
   const uniforms = {
     uColor: { value: new THREE.Color(color) },
     uHeight: { value: height },
@@ -162,14 +162,21 @@ void main() {
   #include <begin_vertex>
   #include <morphtarget_vertex>
   #include <skinning_vertex>
-  #ifdef FLAME_RIBBON
+  #ifdef FLAME_TONGUE
+  vH = uv.y;
+  #elif defined(FLAME_RIBBON)
   vH = uv.y;
   #else
   vH = clamp(position.y / uHeight, 0.0, 1.0);
   #endif
   vUv = uv;
   vec3 p = transformed;
-  #ifdef FLAME_RIBBON
+  #ifdef FLAME_TONGUE
+  float n = texture2D(uNoise, vec2(uv.x * 2.0 + uSeed, uv.y * 1.4 - uTime * 0.8)).r;
+  p += objectNormal * (n - 0.4) * 0.05 * smoothstep(0.3, 1.0, vH) * uDisplace;
+  p.y += (n - 0.3) * 0.06 * smoothstep(0.6, 1.0, vH) * uDisplace;
+  p.x += sin(uTime * 2.3 + p.y * 4.0 + uSeed * 6.0) * 0.02 * vH * uDisplace;
+  #elif defined(FLAME_RIBBON)
   float n = texture2D(uNoise, vec2(uv.x * 2.0, uv.y * 1.5 - uTime * 0.7)).r;
   p += objectNormal * (n - 0.3) * 0.22 * smoothstep(0.4, 1.0, vH) * uDisplace;
   p.y += n * 0.45 * smoothstep(0.55, 1.0, vH) * uDisplace;
@@ -189,7 +196,27 @@ void main() {
 uniform vec3 uColor; uniform float uTime; uniform float uOpacity; uniform float uSeed; uniform sampler2D uNoise;
 varying float vH; varying float vDist; varying vec3 vN; varying vec3 vV; varying vec2 vUv;
 void main() {
-  #ifdef FLAME_RIBBON
+  #ifdef FLAME_TONGUE
+  float n1 = texture2D(uNoise, vec2(vUv.x * 2.0 + uSeed, vUv.y * 1.1 - uTime * 0.8)).r;
+  float n2 = texture2D(uNoise, vec2(vUv.x * 5.0 - uSeed, vUv.y * 2.3 - uTime * 1.5)).r;
+  float n = n1 * 0.6 + n2 * 0.4;
+  // Lõi đặc, mép mềm và ngọn tan theo nhiễu; gốc hòa vào đài sen.
+  float core = pow(abs(dot(normalize(vN), normalize(vV))), 1.2);
+  float base = smoothstep(0.0, 0.12, vH);
+  float tip = 1.0 - smoothstep(0.45 + n * 0.3, 0.9 + n * 0.1, vH);
+  // Điều phối chỉnh khi xem trong trình duyệt (T-204): khe lửa chạy dọc theo nhiễu để đọc ra lưỡi lửa, không ra mảnh băng.
+  float lick = smoothstep(0.25, 0.6, n2 + (1.0 - vH) * 0.35);
+  float a = core * base * tip * mix(0.45, 1.0, lick) * uOpacity;
+  a *= smoothstep(0.6, 1.8, vDist);
+  a = min(a, 0.85);
+  // Màu bậc thường nhạt (bậc 5 xanh #8fd3ff): bão hòa ở gốc và mép, chỉ lõi dưới sáng lên, pha trắng tối đa 8%.
+  // Ba lớp chồng ở chân nên lõi chỉ sáng tới màu bậc (không pha trắng ở gốc), tránh cháy trắng trên sàn sáng.
+  vec3 deep = pow(uColor, vec3(2.2)) * 0.85;
+  vec3 hot = mix(uColor, vec3(1.0), 0.08) * 0.9;
+  float heat = clamp(core * (0.85 - vH) * 1.1 + (n1 - 0.5) * 0.3, 0.0, 0.8);
+  vec3 col = mix(deep, hot, heat);
+  gl_FragColor = vec4(col, a);
+  #elif defined(FLAME_RIBBON)
   float n1 = texture2D(uNoise, vec2(vUv.x * 3.0, vUv.y * 1.2 - uTime * 0.9)).r;
   float n2 = texture2D(uNoise, vec2(vUv.x * 7.0 + 0.3, vUv.y * 2.4 - uTime * 1.6)).r;
   float n = n1 * 0.65 + n2 * 0.35;
@@ -197,10 +224,13 @@ void main() {
   float streak = pow(texture2D(uNoise, vec2(vUv.x * 9.0, vUv.y * 0.35 - uTime * 0.8)).r, 4.0);
   float edge = pow(abs(dot(normalize(vN), normalize(vV))), 1.3);
   // T-203: trộn thường nên tăng độ đục để lửa giữ màu cam đỏ trên nền sáng.
-  float a = min(0.9, edge * tongue * (0.6 + streak) * uOpacity);
-  vec3 col = mix(uColor, vec3(1.0, 0.62, 0.18), clamp(streak * 0.6 + (1.0 - vH) * 0.3, 0.0, 0.6));
+  // T-204: lưỡi lửa vai béo hơn, nâng độ đục để không nhạt thành màu hồng đào trên nền sáng.
+  float a = min(0.92, (0.25 + edge) * tongue * (0.75 + streak) * uOpacity);
+  // T-204: hằng màu trong shader là tuyến tính; (1, 0.3, 0.03) là cam rực, (1, 0.62, 0.18) cũ ra màu kem.
+  vec3 col = mix(uColor, vec3(1.0, 0.3, 0.03), clamp(streak * 0.6 + (1.0 - vH) * 0.3, 0.0, 0.55));
   col = mix(col, uColor * vec3(0.8, 0.35, 0.2), smoothstep(0.7, 1.0, vH));
-  gl_FragColor = vec4(col * (0.9 + n * 0.5), a);
+  // T-204: hạ hệ số sáng để ánh xạ tông không bạc màu cam thành màu kem.
+  gl_FragColor = vec4(col * (0.68 + n * 0.32), a);
   #else
   float around = vUv.x;
   // Điều phối chỉnh khi xem trong trình duyệt: viền đứt thành sợi lửa, giữa thân gần trong suốt, màu đậm theo bậc.
@@ -222,7 +252,7 @@ void main() {
   #include <tonemapping_fragment>
   #include <colorspace_fragment>
 }`;
-  return new THREE.ShaderMaterial({ defines: ribbon ? { FLAME_RIBBON: '' } : {}, uniforms, vertexShader, fragmentShader, transparent: true, depthWrite: false, blending: THREE.NormalBlending, side, toneMapped: true });
+  return new THREE.ShaderMaterial({ defines: tongue ? { FLAME_TONGUE: '' } : ribbon ? { FLAME_RIBBON: '' } : {}, uniforms, vertexShader, fragmentShader, transparent: true, depthWrite: false, blending: THREE.NormalBlending, side, toneMapped: true });
 }
 
 export function glowMaterial(color = '#ffd36b') {

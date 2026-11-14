@@ -105,6 +105,8 @@ HÌNH ẢNH TRONG THƯ MỤC NÀY — NGUỒN GỐC VÀ GIẤY PHÉP
    T-203 dựng lại bằng chính các script này (Ma Vương tay/đầu/lửa ống, đài sen cánh giọt nước, vỏ khí
    hình ngọn lửa; demon-4.glb thêm thuộc tính TANGENT). Ảnh đốm hạt trong game sinh bằng mã
    (fx3d/materials.mjs, dotTexture), không có tệp ảnh.
+   T-204 dựng lại bằng chính các script này: demon-4.glb 6.000 tam giác, ba ảnh bake nâng lên 1024 px;
+   aura-kit.glb đổi từ vỏ khí sang lưới lửa hộ thân (nút flames); vẫn không dùng tài nguyên bên thứ ba.
    Ảnh chụp docs/phap-tuong/anh/fx3d-*.jpg, game-*.jpg là ảnh chụp màn hình trang thử và game của dự án.
    Ảnh ý tưởng docs/phap-tuong/anh/y-tuong-*.jpg do mô hình tạo ảnh AI sinh ra từ hình 2D của dự án
    (public/img/fx/demon-*.webp), chỉ dùng làm tham chiếu nội bộ cho người dựng, không đưa vào game.

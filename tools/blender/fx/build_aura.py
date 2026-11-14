@@ -1,4 +1,4 @@
-"""Dựng vỏ khí bằng Blender: blender -b --python-expr "import runpy; runpy.run_path(r'<repo>/tools/blender/fx/build_aura.py', init_globals={'REPO': r'<repo>', 'OUT': ['glb','views','check']})".
+"""Dựng lửa hộ thân bằng Blender: blender -b --python-expr "import runpy; runpy.run_path(r'<repo>/tools/blender/fx/build_aura.py', init_globals={'REPO': r'<repo>', 'OUT': ['glb','views','check']})".
 
 REPO bắt buộc; OUT mặc định chỉ kiểm, PREVIEW mặc định bật, TMP là thư mục ảnh tạm.
 Đầu ra là aura-kit.glb và ảnh bốn góc; Z hướng lên, mặt hướng −Y, đơn vị mét.
@@ -23,10 +23,10 @@ TMP = globals().get('TMP', os.path.join(tempfile.gettempdir(), 'phap_tuong'))
 SCENE = 'PhapTuongAura'
 ASSET = 'aura-kit.glb'
 IMAGE = 'vo-khi-4-goc.jpg'
-BUDGET = 400
+BUDGET = 1500
 SIZE_BUDGET = 90
 TEXCOORDS = True
-PARTS = ['shell']
+PARTS = ['flames']
 res = {'warnings': []}
 
 
@@ -84,7 +84,8 @@ def make_mesh(name, vertices, faces, colors=None, uvs=None, normals=None):
 
 
 def material(name, color, metallic=0.0, roughness=0.35, vertex_color=False, alpha=1.0, emission=False):
-    mat = bpy.data.materials.new(name)
+    # Dùng lại tên vật liệu khi chạy kịch bản lần nữa trong cùng phiên Blender.
+    mat = bpy.data.materials.get(name) or bpy.data.materials.new(name)
     mat.use_nodes = True
     mat.diffuse_color = rgb(color)[:3] + (alpha,)
     mat.use_backface_culling = False
@@ -206,6 +207,13 @@ def finish(objects):
                 'glb_kb': None, 'attributes': {}, 'over_budget': []})
     if res['total_triangles'] > BUDGET:
         res['over_budget'].append('Tam giác vượt ' + str(BUDGET))
+    if counts.get('flames', 0) > 1200:
+        res['over_budget'].append('Lửa hộ thân vượt 1.200 tam giác')
+    points = [vertex.co for obj in objects for vertex in obj.data.vertices]
+    res['max_z'] = round(max(point.z for point in points), 5)
+    res['max_radius'] = round(max(math.hypot(point.x, point.y) for point in points), 5)
+    if res['max_z'] > 1.22:
+        res['warnings'].append('Lửa hộ thân cao quá 1,22 m, có thể che vai và đầu')
     if 'glb' in OUT or 'check' in OUT:
         if 'glb' in OUT:
             path = os.path.join(REPO, 'public', 'models', 'fx', ASSET)
@@ -225,61 +233,117 @@ def finish(objects):
 
 
 # Ranh giới phần dùng chung của hai kịch bản độc lập.
-def build_shell():
-    """Giọt lửa 11 vòng × 20 cột: bụng nở, chân thu, sáu thùy rộng liền thân."""
-    columns = 20
-    # Ít vòng dưới bụng; nửa trên dành năm vòng để thùy vuốt cong, không mọc gai rời.
-    profile = [(0.0, 0.30, 0.0), (0.10, 0.37, 0.0), (0.55, 0.52, 0.0),
-               (0.90, 0.51, 0.0), (1.25, 0.41, 0.0), (1.45, 0.33, 0.0),
-               (1.45, 0.33, 0.15), (1.45, 0.33, 0.33), (1.45, 0.33, 0.55),
-               (1.45, 0.33, 0.78), (1.45, 0.33, 1.0)]
-    # Đặt cột đúng cả chóp lẫn khe của sáu thùy, tránh lệch pha khi 20 không chia hết 6.
-    # Hai thùy trước/sau có bốn cột; bốn thùy bên có ba cột, đối xứng qua mặt trước.
-    angles = []
-    for lobe in range(6):
-        fractions = (0.0, 0.25, 0.5, 0.75) if lobe in (0, 3) else (
-            (0.0, 0.25, 0.5) if lobe in (1, 4) else (0.0, 0.5, 0.75))
-        for fraction in fractions:
-            angles.append(-math.pi / 2 + (lobe - 0.5 + fraction) * math.pi / 3)
+def build_flames():
+    """Chín lưỡi chính và năm lưỡi phụ dẹt, cong chữ S, cuộn cùng chiều."""
+    segments = 6
+    heights = (1.20, 0.80, 1.05, 0.70, 1.15, 0.85, 1.00, 0.65, 0.95)
+    secondary_heights = (0.45, 0.35, 0.55, 0.40, 0.50)
+    secondary_gaps = (0, 2, 4, 5, 7)
+    main_levels = (0.0, 0.23, 0.35, 0.58, 0.70, 0.86, 0.95)
+    secondary_levels = (0.0, 0.25, 0.35, 0.70, 0.92)
+    rng = random.Random(142)
+    vertices, normals, faces, uvs = [], [], [], []
+    tongue_triangles = []
+    stride = segments + 1
+    main_angles = [-math.pi / 2 + math.radians(40 * tongue + rng.uniform(-0.5, 0.5))
+                   for tongue in range(len(heights))]
+    tongues = [(angle, top_z, False) for angle, top_z in zip(main_angles, heights)]
+    for gap, top_z in zip(secondary_gaps, secondary_heights):
+        angle = (main_angles[gap] + main_angles[gap + 1]) / 2
+        tongues.append((angle, top_z, True))
 
-    def surface(row, angle):
-        height, radius, split = profile[row]
-        direction = angle + math.pi / 2
-        # Cả cung 60° là gốc chung của thùy; vai bầu vẫn rộng sát hai mép chữ V.
-        crest = (0.5 + 0.5 * math.cos(6 * direction)) ** 0.65
-        valley = 1.84 + 0.04 * math.cos(2 * direction)
-        if split > 0:
-            # Khe chỉ sâu 0,28–0,34 m; chóp cao 2,14–2,20 m, không còn gai dài rời.
-            height = 1.45 + split * (valley + 0.32 * crest - 1.45)
-            # Giữ bụng thùy rộng rồi mới vuốt ngọn, không kéo chóp sát trục thành kim.
-            radius -= 0.10 * split + 0.065 * crest * split ** 2
-        twist = 0.08 * min(1.0, height / 1.45) ** 2 + 0.20 * split + 0.10 * crest * split ** 2
-        angle += twist
-        return Vector((radius * math.cos(angle), radius * math.sin(angle), height))
+    def profile(t, knots):
+        # Nội suy mềm, không gãy trục tại hai bụng chữ S và đoạn ngọn móc.
+        for (left_t, left_value), (right_t, right_value) in zip(knots, knots[1:]):
+            if t <= right_t:
+                blend = max(0.0, min(1.0, (t - left_t) / (right_t - left_t)))
+                blend = blend * blend * (3 - 2 * blend)
+                return left_value + (right_value - left_value) * blend
+        return knots[-1][1]
 
-    vertices, normals, vertex_uvs = [], [], []
-    stride = columns + 1
-    for row in range(len(profile)):
-        for index in range(stride):
-            # Dùng cùng tọa độ/pháp tuyến ở hai mép, chỉ U khác nhau (0 và 1).
-            angle = angles[index % columns]
-            point = surface(row, angle)
-            around = surface(row, angle + 0.0001) - surface(row, angle - 0.0001)
-            upward = surface(min(row + 1, len(profile) - 1), angle) - surface(max(0, row - 1), angle)
-            vertices.append(tuple(point))
-            normals.append(tuple(around.cross(upward).normalized()))
-            u = (angle - angles[0]) / (2 * math.pi) if index < columns else 1.0
-            vertex_uvs.append((u, point.z / 2.2))
-    faces, uvs = [], []
-    for row in range(len(profile) - 1):
-        for index in range(columns):
-            lower, upper = row * stride + index, (row + 1) * stride + index
-            for face in ((lower, lower + 1, upper + 1), (lower, upper + 1, upper)):
-                faces.append(face)
-                uvs.extend(vertex_uvs[vertex] for vertex in face)
-    # Không bịt nắp hay chụm cực: sáu thùy cùng một mặt liên tục, 10×20×2 = 400 tam giác.
-    obj = make_mesh('shell', vertices, faces, uvs=uvs, normals=normals)
-    obj.data.materials.append(material('shell', '#399de8', alpha=0.22, emission=True))
+    for tongue, (angle, top_z, secondary) in enumerate(tongues):
+        levels = secondary_levels if secondary else main_levels
+        rings = len(levels)
+        # Gốc chính gần chung một vòng, chồng mép dù tiết diện chỉ có sáu cạnh.
+        # Cùng cao độ giúp chân lửa không hở sàn giữa các lưỡi cao thấp khác nhau.
+        base_radius = (0.300, 0.302, 0.301)[tongue % 3]
+        base_z = 0.02
+        thickness = (0.100, 0.105, 0.110)[tongue % 3] if secondary else (0.130, 0.128, 0.130)[tongue % 3]
+        tip_radius = (0.20, 0.24, 0.22)[tongue % 3]
+        twist = math.radians(rng.uniform(25, 40))
+        sway = rng.uniform(0.060, 0.075) if secondary else rng.uniform(0.065, 0.095)
+
+        def center(t):
+            # Hai bụng lệch tiếp tuyến trái dấu, lần lượt ở 35% và 70% chiều dài.
+            # Đoạn cuối trở về trục xoắn theo chiều dương, tạo ngọn móc mềm.
+            eased = t * t * (3 - 2 * t)
+            hook = max(0.0, (t - 0.72) / 0.28) ** 2
+            radius = base_radius + (tip_radius - 0.035 - base_radius) * eased + 0.035 * hook
+            direction = angle + twist * eased
+            offset = profile(t, ((0.0, 0.0), (0.35, sway), (0.70, -sway), (1.0, 0.0)))
+            return Vector((radius * math.cos(direction) - offset * math.sin(direction),
+                           radius * math.sin(direction) + offset * math.cos(direction),
+                           base_z + (top_z - base_z) * t))
+
+        def surface(t, around):
+            # Bản rộng nhất ở 23%; 40% cuối rất mảnh, không còn dáng nón băng.
+            width = thickness * profile(t, ((0.0, 1.0), (0.23, 1.16), (0.35, 0.85),
+                                             (0.58, 0.26), (0.70, 0.13), (0.86, 0.045),
+                                             (0.95, 0.012), (1.0, 0.0)))
+            direction = angle + twist * t * t * (3 - 2 * t)
+            tangent = Vector((-math.sin(direction), math.cos(direction), 0))
+            inward = Vector((-math.cos(direction), -math.sin(direction), 0))
+            # Elip 1 : 0,55; bản dài theo tiếp tuyến, chiều quấn mặt hướng ra ngoài.
+            # Tiết diện ngang giữ mọi đỉnh dưới đúng cao độ chóp 1,20 m.
+            return center(t) + width * (math.cos(around) * tangent + 0.55 * math.sin(around) * inward)
+
+        start = len(vertices)
+        for t in levels:
+            for column in range(stride):
+                # Tách cột nối U nhưng dùng cùng vị trí và pháp tuyến ở hai mép ống.
+                around = 2 * math.pi * (column % segments) / segments
+                point = surface(t, around)
+                step = 0.0001
+                along = surface(min(1.0, t + step), around) - surface(max(0.0, t - step), around)
+                across = surface(t, around + step) - surface(t, around - step)
+                vertices.append(tuple(point))
+                normals.append(tuple(across.cross(along).normalized()))
+        for row in range(rings - 1):
+            for column in range(segments):
+                lower = start + row * stride + column
+                upper = lower + stride
+                faces.extend(((lower, lower + 1, upper + 1), (lower, upper + 1, upper)))
+                u0, u1 = column / segments, (column + 1) / segments
+                v0, v1 = 1 - levels[row], 1 - levels[row + 1]
+                # Blender lật V khi xuất: glTF v = 0 ở gốc, 1 ở ngọn.
+                uvs.extend(((u0, v0), (u1, v0), (u1, v1), (u0, v0), (u1, v1), (u0, v1)))
+        tip = len(vertices)
+        vertices.append(tuple(center(1.0)))
+        # Dùng hướng đoạn chóp thật, tránh pháp tuyến ngoặt quá mạnh theo đầu móc.
+        normals.append(tuple((center(1.0) - center(levels[-1])).normalized()))
+        last = start + (rings - 1) * stride
+        for column in range(segments):
+            faces.append((last + column, last + column + 1, tip))
+            uvs.extend(((column / segments, 1 - levels[-1]),
+                        ((column + 1) / segments, 1 - levels[-1]), ((column + 0.5) / segments, 0.0)))
+        # Đáy có vòng đỉnh riêng để pháp tuyến hướng xuống, không làm gãy thân lửa.
+        cap = len(vertices)
+        for column in range(segments):
+            vertices.append(vertices[start + column])
+            normals.append((0, 0, -1))
+        cap_center = len(vertices)
+        vertices.append(tuple(center(0.0)))
+        normals.append((0, 0, -1))
+        for column in range(segments):
+            faces.append((cap_center, cap + (column + 1) % segments, cap + column))
+            uvs.extend(((0.5, 1.0), ((column + 1) / segments, 1.0), (column / segments, 1.0)))
+        tongue_triangles.append(2 * segments * rings)
+    # Chính: 9 × 84 = 756; phụ: 5 × 60 = 300; tổng 1.056, kể cả chóp và đáy.
+    res['tongue_heights'] = list(heights + secondary_heights)
+    res['tongue_triangles'] = tongue_triangles
+    obj = make_mesh('flames', vertices, faces, uvs=uvs, normals=normals)
+    obj.data.materials.append(material('flames', '#399de8', alpha=0.45, emission=True))
+    obj.data.materials[0].use_backface_culling = True
     return obj
 
 
@@ -294,7 +358,7 @@ def preview_person():
 
 def main():
     scene = new_scene()
-    objects = [build_shell()]
+    objects = [build_flames()]
     if 'views' in OUT:
         preview_person()
         camera, lights = stage(scene)
@@ -304,7 +368,7 @@ def main():
             paths = []
             for angle in (0, 45, 90, 180):
                 path = os.path.join(temp, str(angle) + '.png')
-                shoot(scene, camera, lights, path, angle, 1.0, 4.0, 0.18, 320, 720, 2.5)
+                shoot(scene, camera, lights, path, angle, 0.80, 4.0, 0.18, 320, 720, 2.5)
                 paths.append(path)
             montage(paths, os.path.join(directory, IMAGE), 1280, 720)
     finish(objects)
