@@ -189,9 +189,28 @@ async function main() {
       for (const id of ['#b-xq', '#b-jieqi', '#b-caro', '#b-go']) {
         await openGame(page, id);
         assert.ok((await page.locator('.kd-canvas').boundingBox()).width > 150, `${id}: bàn cờ quá hẹp`);
-        if (id === '#b-caro' || id === '#b-go') assert.ok(!(await button(page, 'Lãnh địa').isVisible()), `${id}: nút lãnh địa chưa ẩn`);
+        if (id === '#b-caro' || id === '#b-go') {
+          assert.ok(!(await button(page, 'Lãnh địa').isVisible()), `${id}: vẫn còn chữ Lãnh địa`);
+          assert.ok(await button(page, 'Bộ đá').isVisible(), `${id}: nút Bộ đá chưa hiện`);
+          await button(page, 'Bộ đá').click();
+          assert.ok(!(await button(page, 'Khai mở').isVisible()) && !(await button(page, 'Về sân mặc định').isVisible()), `${id}: bộ chọn đá không được có nút Khai mở`);
+        }
       }
       await shot(page, 'nam-mon-mo-duoc', kind);
+    });
+    for (const kind of sizes) await t('da-skin-caro-co-vay', kind, async page => {
+      for (const [id, name] of [['#b-caro', 'caro'], ['#b-go', 'co-vay']]) {
+        await openGame(page, id);
+        await button(page, 'Bộ đá').click();
+        await page.locator('.kd-skin[data-kind="pieces"][data-id="cosmos"]').click();
+        await page.locator('.kd-skin-stone').first().waitFor({ state: 'visible' });
+        const tile = await page.locator('.kd-skin[data-kind="pieces"][data-id="cosmos"] .kd-skin-stone').evaluate(el => getComputedStyle(el).backgroundImage);
+        assert.ok(tile.includes('/img/kydao/stones/cosmos.webp'), `${name}: ô chọn chưa dùng ảnh đá`);
+        await tapCell(page, kind, 3, 3); await tapCell(page, kind, 5, 5);
+        await harnessClick(page, '#b-foe'); await harnessClick(page, '#b-opp');
+        await page.waitForTimeout(400);
+        await shot(page, `da-skin-${name}`, kind);
+      }
     });
     await t('ban-3d', 'desktop', async page => {
       await openGame(page, '#b-chess');
