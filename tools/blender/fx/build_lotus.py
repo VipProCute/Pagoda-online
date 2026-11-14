@@ -12,6 +12,7 @@ import tempfile
 
 import bpy
 from mathutils import Vector
+from mathutils.geometry import delaunay_2d_cdt
 
 random.seed(142)
 REPO = globals().get('REPO')
@@ -19,13 +20,15 @@ if not REPO:
     raise SystemExit('Thiếu REPO')
 OUT = set(globals().get('OUT', ['check']))
 PREVIEW = globals().get('PREVIEW', True)
+ZOOM = int(globals().get('ZOOM', 1))
 TMP = globals().get('TMP', os.path.join(tempfile.gettempdir(), 'phap_tuong'))
 SCENE = 'PhapTuongLotus'
 ASSET = 'lotus.glb'
-IMAGE = 'dai-sen-4-goc.jpg'
-BUDGET = 900
+IMAGE = 'ban-mau-dai-sen-4-goc.jpg'
+BUDGET = 1200
 SIZE_BUDGET = 60
 TEXCOORDS = False
+POD_TOP = 0.05
 PARTS = ['petals0', 'petals1', 'petals2', 'pod']
 res = {'warnings': []}
 
@@ -54,11 +57,11 @@ def new_scene():
     world.use_nodes = True
     background = world.node_tree.nodes.get('Background')
     background.inputs['Color'].default_value = rgb('#1b1a20')
-    background.inputs['Strength'].default_value = 1.0
+    background.inputs['Strength'].default_value = 2.2
     return scene
 
 
-def make_mesh(name, vertices, faces, colors=None, uvs=None):
+def make_mesh(name, vertices, faces, colors=None, uvs=None, normals=None):
     mesh = bpy.data.meshes.new(SCENE + '_' + name + 'Mesh')
     mesh.from_pydata(vertices, [], faces)
     mesh.update()
@@ -66,6 +69,9 @@ def make_mesh(name, vertices, faces, colors=None, uvs=None):
     bpy.context.scene.collection.objects.link(obj)
     for polygon in mesh.polygons:
         polygon.use_smooth = True
+    if normals is not None:
+        # Blender 5.x nhận pháp tuyến theo góc mặt, không còn dùng use_auto_smooth.
+        mesh.normals_split_custom_set([normals[loop.vertex_index] for loop in mesh.loops])
     if colors is not None:
         layer = mesh.color_attributes.new(name='Col', type='FLOAT_COLOR', domain='CORNER')
         for loop in mesh.loops:
@@ -80,7 +86,7 @@ def make_mesh(name, vertices, faces, colors=None, uvs=None):
     return obj
 
 
-def material(name, color, metallic=0.0, roughness=0.35, vertex_color=False, alpha=1.0, emission=False):
+def material(name, color, metallic=0.0, roughness=0.35, vertex_color=False, alpha=1.0, emission=False, glow=None):
     mat = bpy.data.materials.new(name)
     mat.use_nodes = True
     mat.diffuse_color = rgb(color)[:3] + (alpha,)
@@ -99,6 +105,12 @@ def material(name, color, metallic=0.0, roughness=0.35, vertex_color=False, alph
         try:
             shader.inputs['Emission Color'].default_value = rgb(color)
             shader.inputs['Emission Strength'].default_value = 2.0
+        except (KeyError, AttributeError) as error:
+            res['warnings'].append('Không đặt được phát sáng: ' + str(error))
+    if glow:
+        try:
+            shader.inputs['Emission Color'].default_value = rgb(glow)
+            shader.inputs['Emission Strength'].default_value = 0.38
         except (KeyError, AttributeError) as error:
             res['warnings'].append('Không đặt được phát sáng: ' + str(error))
     if alpha < 1:
@@ -173,7 +185,7 @@ def export(path, objects):
     bpy.context.view_layer.objects.active = objects[0]
     options = dict(filepath=path, export_format='GLB', use_selection=True, export_yup=True,
                    export_cameras=False, export_lights=False, use_active_scene=True,
-                   export_texcoords=TEXCOORDS, export_animations=False, export_skins=False,
+                   export_texcoords=TEXCOORDS, export_normals=True, export_animations=False, export_skins=False,
                    export_materials='EXPORT', export_vertex_color='ACTIVE')
     try:
         bpy.ops.export_scene.gltf(**options)
@@ -195,6 +207,33 @@ def glb_attributes(path):
     return {mesh.get('name', ''): [sorted(primitive.get('attributes', {}).keys()) for primitive in mesh.get('primitives', [])] for mesh in data.get('meshes', [])}
 
 
+def glb_color_stats(path):
+    """Đọc lại COLOR_0 từ glb: trả về trung bình RGB (tuyến tính) và sRGB tương ứng theo từng lưới."""
+    with open(path, 'rb') as stream:
+        stream.read(12)
+        length, _ = struct.unpack('<I4s', stream.read(8))
+        data = json.loads(stream.read(length).decode('utf-8'))
+        blen, _ = struct.unpack('<I4s', stream.read(8))
+        blob = stream.read(blen)
+    stats = {}
+    for mesh in data['meshes']:
+        index = mesh['primitives'][0]['attributes'].get('COLOR_0')
+        if index is None:
+            continue
+        acc = data['accessors'][index]
+        view = data['bufferViews'][acc['bufferViewId'] if 'bufferViewId' in acc else acc['bufferView']]
+        width = {'VEC3': 3, 'VEC4': 4}[acc['type']]
+        kind, size, scale = {5126: ('f', 4, 1.0), 5121: ('B', 1, 255.0), 5123: ('H', 2, 65535.0)}[acc['componentType']]
+        stride = view.get('byteStride', size * width)
+        offset = view.get('byteOffset', 0) + acc.get('byteOffset', 0)
+        rows = [tuple(v / scale for v in struct.unpack_from('<' + kind * width, blob, offset + i * stride)[:3]) for i in range(acc['count'])]
+        mean = [sum(row[c] for row in rows) / len(rows) for c in range(3)]
+        srgb = [round(255 * (12.92 * v if v <= 0.0031308 else 1.055 * v ** (1 / 2.4) - 0.055)) for v in mean]
+        stats[mesh.get('name', '')] = {'component': acc['componentType'], 'linear_mean': [round(v, 3) for v in mean], 'srgb_mean': srgb,
+                                       'max': [round(max(row[c] for row in rows), 3) for c in range(3)]}
+    return stats
+
+
 def finish(objects):
     counts = {obj.name: sum(len(poly.vertices) - 2 for poly in obj.data.polygons) for obj in objects}
     res.update({'triangles': counts, 'total_triangles': sum(counts.values()), 'bones': [], 'clips': [],
@@ -209,6 +248,7 @@ def finish(objects):
             export(path, objects)
             res['glb_kb'] = round(os.path.getsize(path) / 1024, 2)
             res['attributes'] = glb_attributes(path)
+            res['colors'] = glb_color_stats(path)
         else:
             with tempfile.TemporaryDirectory(prefix='phap_tuong_check_') as directory:
                 path = os.path.join(directory, ASSET)
@@ -221,101 +261,186 @@ def finish(objects):
         print('RESULT ' + json.dumps(res, ensure_ascii=False))
 
 
-def build_petals(name, count, radius, length, tilt, phase, base_z=0.0, curl=8.0, cup=0.045, width_cap=0.6):
-    """Dựng cánh hình giọt nước, lòng khum như thìa, đầu nhọn mềm; chồng mép ít."""
-    vertices, faces, colors = [], [], []
-    dark, middle, light = rgb('#c8962e'), rgb('#e8bd55'), rgb('#fff0b8')
-    rows = (0.04, 0.28, 0.52, 0.76, 1.0)
-    cols = 3
-    spacing_mid = 2 * math.pi * (radius + 0.45 * length * math.cos(math.radians(tilt))) / count
-    wmax = min(width_cap * length, spacing_mid * 1.5)
+def lerp3(first, second, amount):
+    return tuple(first[c] * (1 - amount) + second[c] * amount for c in range(3))
 
-    def half_width(u):
-        # Biên giọt nước: tròn ở gốc, rộng nhất ~45%, thu về đầu nhọn mềm.
-        if u <= 0.45:
-            t = (0.45 - u) / 0.45
-            return 0.5 * wmax * math.sqrt(max(0.0, 1 - t * t))
-        t = (u - 0.45) / 0.55
-        return 0.5 * wmax * max(0.0, 1 - t ** 2.4) ** 0.7
+
+def build_petals(name, count, radius, length, tilt, phase, base_z, curl, cup, overlap, cols, stagger=0.0):
+    """Ba hàng cong lòng máng, bụng ở 40% chiều dài, chóp nhọn hơi vểnh ra ngoài.
+
+    Chân rộng 78% bụng để che khe; viền ngọn có nhiều đoạn cong nhưng chỉ một chóp.
+    Pháp tuyến lấy từ mặt khum liên tục theo chiều dài/ngang, không theo đường chéo lưới.
+    """
+    vertices, faces, colors, normals = [], [], [], []
+    reference_sum = [0.0, 0.0, 0.0]
+    dark, middle, light = rgb('#bb7412'), rgb('#f0a62a'), rgb('#ffdc64')
+    rows = (0.0, 0.5, 1.0)
+    slope, bend = math.radians(tilt), math.radians(curl)
+    spacing = 2 * math.pi * (radius + 0.5 * length * math.cos(slope)) / count
+    width = spacing * overlap
+
+    def surface(u, across_width):
+        # Mặt khum độc lập với cách chia viền: pháp tuyến không gãy ở đường giữa hay chóp.
+        lateral = 0.5 * width * across_width
+        local = slope - bend * u
+        # Tích phân cung tròn: dáng cánh không đổi khi đổi số cột/hàng.
+        if abs(bend) > 1e-8:
+            dist = radius + length * (math.sin(slope) - math.sin(local)) / bend
+            height = base_z + length * (math.cos(local) - math.cos(slope)) / bend
+        else:
+            dist = radius + length * u * math.cos(slope)
+            height = base_z + length * u * math.sin(slope)
+        # Hai mép cuộn lên; sống ngoài chỉ nhô vài mm, hòa dần vào gốc và chóp.
+        envelope = math.sin(math.pi * u)
+        ridge = 0.004 * math.exp(-12 * across_width ** 2) * envelope
+        lift = cup * across_width ** 2 * envelope - ridge
+        tip = max(0.0, (u - 0.78) / 0.22)
+        reflex = 0.008 * tip ** 2
+        return Vector((dist - lift * math.sin(local) + reflex, lateral, height + lift * math.cos(local)))
 
     for petal in range(count):
+        # Tầng trong cao thấp xen kẽ nhẹ, tránh đọc thành một thành vương miện liền.
+        slope = math.radians(tilt + (stagger if petal % 2 else -stagger))
         angle = 2 * math.pi * (petal + phase) / count
-        radial = (math.cos(angle), math.sin(angle))
-        tangent = (-radial[1], radial[0])
+        radial = Vector((math.cos(angle), math.sin(angle), 0))
+        tangent = Vector((-radial.y, radial.x, 0))
         start = len(vertices)
-        dist, height, prev = radius, base_z, 0.0
-        for u in rows:
-            local = math.radians(tilt - curl * u * u)
-            seg = (u - prev) * length
-            dist += seg * math.cos(local)
-            height += seg * math.sin(local)
-            prev = u
-            span = max(0.004, half_width(u))
+        for row, along in enumerate(rows):
             for column in range(cols):
-                across = column - 1
-                lift = cup * abs(across) * math.sin(math.pi * min(1.0, u * 0.95 + 0.05)) * (span / (0.5 * wmax))
-                d = dist - lift * math.sin(local)
-                z = height + lift * math.cos(local)
-                if z >= 0.06:
-                    d = max(0.285, d)
-                vertices.append((radial[0] * d + tangent[0] * span * across,
-                                 radial[1] * d + tangent[1] * span * across, z))
-                blend = min(1.0, u / 0.6)
-                base = tuple(dark[c] * (1 - blend) + middle[c] * blend for c in range(3))
-                edge = max(abs(across) * 0.45 * min(1.0, u / 0.5), max(0.0, (u - 0.6) / 0.4) ** 1.5)
-                colors.append(tuple(base[c] * (1 - edge) + light[c] * edge for c in range(3)) + (1.0,))
+                across = -1 + 2 * column / (cols - 1)
+                # abs tạo góc nhọn thật ở giữa viền; mỗi nửa vẫn cong lồi tới vai rộng u=0,4.
+                side = abs(across)
+                cap = 1 - 0.6 * side
+                u = along * cap
+                # Đa thức lẻ có độ cong một dấu trên mỗi nửa: mép lồi, vai tiếp tuyến dọc,
+                # chóp có hai tiếp tuyến khác nhau; không bo đỉnh bằng cos như vòng trước.
+                outline = across * (1.25 - 0.25 * across ** 4)
+                across_width = outline * (0.78 + 0.22 * math.sin(along * math.pi / 2))
+                point = surface(u, across_width)
+                vertices.append(tuple(radial * point.x + tangent * point.y + Vector((0, 0, point.z))))
+                # Sai phân trên mặt khum thật, kể cả ở biên; không cần lưng ảo để giấu mặt phẳng.
+                step = 0.0001
+                left = surface(u, across_width - step)
+                right = surface(u, across_width + step)
+                before = surface(u - step, across_width)
+                after = surface(u + step, across_width)
+                normal = (after - before).cross(right - left).normalized()
+                normals.append(tuple(radial * normal.x + tangent * normal.y + Vector((0, 0, normal.z))))
+                # Lưu trung bình vòng 3 trước khi dồn sáng sang mép, tối vào lòng gần gốc.
+                base = lerp3(dark, middle, min(1.0, u / 0.4) ** 0.65)
+                edge = max(0.0, (abs(across_width) - 0.86) / 0.14)
+                edge *= min(1.0, u / 0.3) * 0.4
+                crown = max(0.0, (u - 0.82) / 0.18) ** 1.6 * 0.7
+                rim = 0.32 if row == len(rows) - 1 else 0.0
+                reference = lerp3(base, light, min(1.0, max(edge, crown, rim)))
+                for channel in range(3):
+                    reference_sum[channel] += reference[channel]
+                # Dải viền chạy qua 2–3 đỉnh mỗi bên; không tẩy sáng cả hàng chóp.
+                edge_span = min(2.5, (cols - 1) / 2)
+                edge = max(0.0, 1 - min(column, cols - 1 - column) / edge_span)
+                edge *= min(1.0, u / 0.22) * 0.64
+                trough = max(0.0, 1 - u / 0.5) * (1 - across_width ** 2) * 0.18
+                base = lerp3(base, dark, trough)
+                rim = 0.12 if row == len(rows) - 1 else 0.0
+                colors.append(lerp3(base, light, max(edge, crown, rim)) + (1.0,))
         for row in range(len(rows) - 1):
             for column in range(cols - 1):
                 first = start + row * cols + column
-                faces.extend(((first, first + cols + 1, first + 1), (first, first + cols, first + cols + 1)))
-    return make_mesh(name, vertices, faces, colors=colors)
+                faces.extend(((first, first + cols, first + cols + 1),
+                              (first, first + cols + 1, first + 1)))
+    # Giữ đúng trung bình tuyến tính của vòng 3 từng tầng (COLOR_0), vẫn nằm trong [0,1].
+    means = [sum(color[c] for color in colors) / len(colors) for c in range(3)]
+    targets = [value / len(colors) for value in reference_sum]
+    colors = [tuple(color[c] * targets[c] / means[c] if means[c] >= targets[c]
+                    else 1 - (1 - color[c]) * (1 - targets[c]) / (1 - means[c])
+                    for c in range(3)) + (1.0,) for color in colors]
+    return make_mesh(name, vertices, faces, colors=colors, normals=normals)
 
 
 def build_pod():
-    """Gộp đế, gương và hai vòng dấu hạt vào một lưới."""
-    vertices, faces, colors = [], [], []
-    gold, seed = rgb('#d9a640'), rgb('#7a5214')
-    for bottom_radius, top_radius, bottom, top, segments in ((0.51, 0.502, -0.03, 0.0, 16), (0.2828, 0.27, 0.0, 0.06, 24)):
+    """Đế khuất sau cánh, đĩa phẳng có gờ và 13 hốc hạt lõm thật, không chồng mặt."""
+    vertices, faces, colors, normals = [], [], [], []
+    base_color, side_color = rgb('#a56510'), rgb('#b87a18')
+    top_color, rim_color = rgb('#cb8b1d'), rgb('#e5ac35')
+    seed_rim, seed_center = rgb('#b47716'), rgb('#95540c')
+
+    def ring(radius, height, segments, color, outward, upward):
         start = len(vertices)
-        for height, radius in ((bottom, bottom_radius), (top, top_radius)):
-            for index in range(segments):
-                angle = 2 * math.pi * index / segments
-                vertices.append((radius * math.cos(angle), radius * math.sin(angle), height))
-                colors.append(gold)
-        vertices.extend(((0, 0, bottom), (0, 0, top)))
-        colors.extend((gold, gold))
+        for index in range(segments):
+            angle = 2 * math.pi * index / segments
+            vertices.append((radius * math.cos(angle), radius * math.sin(angle), height))
+            colors.append(color)
+            normals.append(tuple(Vector((outward * math.cos(angle), outward * math.sin(angle), upward)).normalized()))
+        return start
+
+    def connect(lower, upper, segments):
         for index in range(segments):
             nxt = (index + 1) % segments
-            faces.extend(((start + index, start + nxt, start + segments + nxt),
-                          (start + index, start + segments + nxt, start + segments + index),
-                          (start + 2 * segments, start + nxt, start + index),
-                          (start + 2 * segments + 1, start + segments + index, start + segments + nxt)))
-    centers = [(radius * math.cos(2 * math.pi * (index + phase) / count),
-                radius * math.sin(2 * math.pi * (index + phase) / count))
-               for radius, count, phase in ((0.09, 4, 0), (0.18, 8, 0.5)) for index in range(count)]
+            faces.extend(((lower + index, lower + nxt, upper + nxt),
+                          (lower + index, upper + nxt, upper + index)))
+
+    # Chỉ giữ thành đế; mặt trên bị gương che, mặt đáy không nhìn thấy trong game.
+    lower = ring(0.235, -0.012, 12, base_color, 1, 0)
+    upper = ring(0.24, 0.004, 12, base_color, 1, 0)
+    connect(lower, upper, 12)
+    segments = 18
+    # Thành gương cao 28 mm, mặt chỉ cao hơn chân cánh trong 26 mm; gờ rộng 6 mm, cao 2 mm.
+    lower = ring(0.282, 0.024, segments, side_color, 1, 0)
+    outer = ring(0.285, POD_TOP + 0.002, segments, rim_color, 0.5, 1)
+    inner = ring(0.279, POD_TOP, segments, top_color, 0, 1)
+    connect(lower, outer, segments)
+    connect(outer, inner, segments)
+
+    # Chia đĩa có ràng buộc quanh hốc: nền vẫn đồng phẳng, tâm hạt thấp hơn 2,5 mm.
+    # CDT của mathutils có sẵn trong Blender 5.x; không cần thư viện ngoài hoặc toán tử sửa lưới.
+    points = [(0.279 * math.cos(2 * math.pi * index / segments),
+               0.279 * math.sin(2 * math.pi * index / segments)) for index in range(segments)]
+    heights, shades = [POD_TOP] * segments, [top_color] * segments
+    edges = [(index, (index + 1) % segments) for index in range(segments)]
+    centers = [(0, 0)] + [(radius * math.cos(2 * math.pi * (index + phase) / count),
+                           radius * math.sin(2 * math.pi * (index + phase) / count))
+                          for radius, count, phase in ((0.085, 4, 0), (0.175, 8, 0.5)) for index in range(count)]
     for center_x, center_y in centers:
-        start = len(vertices)
-        vertices.append((center_x, center_y, 0.0601))
-        colors.append(seed)
-        for index in range(6):
-            angle = 2 * math.pi * index / 6
-            vertices.append((center_x + 0.018 * math.cos(angle), center_y + 0.018 * math.sin(angle), 0.0601))
-            colors.append(seed)
-        for index in range(6):
-            faces.append((start, start + 1 + index, start + 1 + (index + 1) % 6))
-    obj = make_mesh('pod', vertices, faces, colors=colors)
-    for polygon in obj.data.polygons:
-        polygon.use_smooth = False
-    return obj
+        start = len(points)
+        for index in range(5):
+            angle = 2 * math.pi * index / 5
+            points.append((center_x + 0.016 * math.cos(angle), center_y + 0.016 * math.sin(angle)))
+            heights.append(POD_TOP)
+            shades.append(seed_rim)
+            edges.append((start + index, start + (index + 1) % 5))
+            edges.append((start + index, start + 5))
+        points.append((center_x, center_y))
+        heights.append(POD_TOP - 0.0025)
+        shades.append(seed_center)
+    coords, _, triangles, origins, _, _ = delaunay_2d_cdt([Vector(point) for point in points], edges, [], 0, 1e-8, True)
+    start = len(vertices)
+    for coord, source in zip(coords, origins):
+        # Các cạnh không giao nhau: mỗi đỉnh kết quả phải ứng đúng một đỉnh đầu vào.
+        if len(source) != 1:
+            raise ValueError('Chia gương sen sinh đỉnh ngoài dự kiến')
+        index = source[0]
+        vertices.append((coord.x, coord.y, heights[index]))
+        colors.append(shades[index])
+        normals.append((0, 0, 1))
+    for triangle in triangles:
+        first, second, third = triangle
+        a, b, c = coords[first], coords[second], coords[third]
+        if (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x) < 0:
+            second, third = third, second
+        faces.append((start + first, start + second, start + third))
+    return make_mesh('pod', vertices, faces, colors=colors, normals=normals)
 
 
 def main():
     scene = new_scene()
-    petal_material = material('petal', '#ffffff', metallic=0.6, vertex_color=True)
-    pod_material = material('pod', '#ffffff', metallic=0.6, vertex_color=True)
-    objects = [build_petals('petals0', 16, 0.27, 0.40, 30, 0, 0.0, 6, 0.05, 0.72),
-               build_petals('petals1', 12, 0.27, 0.34, 50, 0.5, 0.02, 6, 0.045, 0.72),
-               build_petals('petals2', 8, 0.285, 0.27, 65, 0, 0.03, 6, 0.04, 0.72), build_pod()]
+    # Vật liệu gần với vật liệu trong game: vàng kim loại 0,45, nhám 0,32, phát sáng hổ phách nhẹ.
+    petal_material = material('petal', '#ffffff', metallic=0.45, roughness=0.32, vertex_color=True, glow='#9a6414')
+    pod_material = material('pod', '#ffffff', metallic=0.45, roughness=0.32, vertex_color=True, glow='#9a6414')
+    # Cánh: 512 + 288 + 128 tam giác; gương và đế dự kiến 268, tổng 1.196.
+    # Tầng trong lệch tầng giữa 15° (nửa bước 12 cánh), nghiêng ±3°, khum chóp thêm 7°.
+    objects = [build_petals('petals0', 16, 0.246, 0.4, 20, 0, 0.0, -6, 0.050, 1.7, 9),
+               build_petals('petals1', 12, 0.268, 0.30, 46, 0.5, 0.012, -12, 0.060, 1.5, 7),
+               build_petals('petals2', 8, 0.294, 0.32, 70, 2 / 3, 0.024, -47, 0.064, 1.12, 5, stagger=3), build_pod()]
     for obj in objects:
         obj.data.materials.append(pod_material if obj.name == 'pod' else petal_material)
     if 'views' in OUT:
@@ -324,13 +449,14 @@ def main():
         os.makedirs(directory, exist_ok=True)
         with tempfile.TemporaryDirectory(prefix='phap_tuong_views_') as temp:
             paths = []
-            for angle in (0, 45, 90, 180):
-                path = os.path.join(temp, str(angle) + '.png')
-                distance = 0.0 if angle == 180 else 3.0
-                height = 3.0 if angle == 180 else 3.0 * math.tan(math.radians(30))
-                shoot(scene, camera, lights, path, angle, 0.05, distance, height, 320, 360, 1.45)
+            # Hai góc nghiêng 30° (lệch nhẹ để thấy khác tầng), một góc ngang thấp 8°, một góc từ trên.
+            for index, (angle, elevation) in enumerate(((0, 30), (11, 30), (0, 8), (180, 90))):
+                path = os.path.join(temp, str(index) + '.png')
+                distance = 0.0 if elevation >= 90 else 3.0
+                height = 3.0 if elevation >= 90 else 3.0 * math.tan(math.radians(elevation))
+                shoot(scene, camera, lights, path, angle, 0.05, distance, height, 320 * ZOOM, 360 * ZOOM, 1.45)
                 paths.append(path)
-            montage(paths, os.path.join(directory, IMAGE), 1280, 360)
+            montage(paths, os.path.join(directory, IMAGE), 1280 * ZOOM, 360 * ZOOM)
     finish(objects)
 
 

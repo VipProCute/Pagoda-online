@@ -1,7 +1,7 @@
 'use strict';
 
 import * as THREE from 'three';
-import { register } from './index.mjs?v=1';
+import { register } from './index.mjs?v=3';
 
 export const LOTUS_URL = '/models/fx/lotus.glb';
 const active = tier => tier >= 2 && tier <= 7;
@@ -24,7 +24,7 @@ export function lotusPart(env) {
       if (!asset) { failed = true; return; }
       model = asset.scene.clone(true);
       holder = env.group('lotus'); holder.visible = false; holder.add(model);
-      const material = side => env.track(new THREE.MeshStandardMaterial({ color: '#ffffff', vertexColors: true, metalness: 0.6, roughness: 0.35, emissive: new THREE.Color('#7a4a10'), emissiveIntensity: 0.55, side, transparent: true }));
+      const material = side => env.track(new THREE.MeshStandardMaterial({ color: '#ffffff', vertexColors: true, metalness: 0.45, roughness: 0.32, emissive: new THREE.Color('#9a6414'), emissiveIntensity: 0.38, side, transparent: true }));
       petal = material(THREE.DoubleSide); pod = material(THREE.FrontSide);
       model.traverse(node => {
         if (!node.isMesh) return;
@@ -64,7 +64,7 @@ export function lotusPart(env) {
     if (outer) outer.rotation.y = env.reducedMotion ? 0 : t * 0.05;
     if (middle) middle.rotation.y = env.reducedMotion ? 0 : -t * 0.07;
     for (const mat of [petal, pod]) {
-      mat.emissiveIntensity = env.reducedMotion ? 0.55 : 0.5 + 0.15 * Math.sin(t * 2.2);
+      mat.emissiveIntensity = env.reducedMotion ? 0.38 : 0.37 + 0.05 * Math.sin(t * 2.2);
       mat.opacity = state.fade ?? 1;
     }
     holder.visible = true; syncParticles();

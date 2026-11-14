@@ -1,6 +1,6 @@
 'use strict';
 
-import { makeAvatar } from '../avatar-glb.mjs?v=3';
+import { makeAvatar } from '../avatar-glb.mjs?v=5';
 
 // Cảnh khu đi lại, không phải sàn PK. ctx: { THREE, kit, size: ViewMath.SCENE_SIZE.arena,
 // quality: 'low'|'medium'|'high', reduceMotion }. Không đọc socket, không đổi trạng thái game.
@@ -217,6 +217,7 @@ export function build(ctx) {
   }
   const hitGeometry = keep(new THREE.CylinderGeometry(0.32, 0.32, 1.65, 8));
   const hitMaterial = keep(new THREE.MeshBasicMaterial({ visible: false }));
+  const personPosition = new THREE.Vector3();
   function update(state = {}, dt = 0) {
     if (disposed) return;
     const reduced = !!(ctx.reduceMotion ?? ctx.reducedMotion);
@@ -231,9 +232,21 @@ export function build(ctx) {
       attribute.needsUpdate = true;
     }
     for (const lamp of lamps) lamp.light.intensity = lamp.power * (reduced ? 1 : 1 + Math.sin(elapsed * 3.2) * 0.025);
+    const list = (Array.isArray(state.players) ? state.players : []).filter(player => player &&
+      ['number', 'string'].includes(typeof player.id) && Number.isFinite(player.x) && Number.isFinite(player.z));
+    const cam = ctx.camera?.position, SM = globalThis.StandMath;
+    group.updateWorldMatrix(true, false);
+    const distances = new Map(list.map(player => {
+      const [wx, wz] = world(clamp(player.x, 0, 1), clamp(player.z, 0, 1));
+      personPosition.set(wx, 0, wz); group.localToWorld(personPosition);
+      return [player.id, cam ? Math.hypot(personPosition.x - cam.x, personPosition.z - cam.z) : Infinity];
+    }));
+    const pickSlots = (key, kind) => SM ? SM.slots(list.filter(player => player[key])
+      .map(player => ({ id: player.id, distance: distances.get(player.id) })), state.me, quality, kind) : null;
+    const demonSlots = pickSlots('demon', 'demon'), auraSlots = pickSlots('aura', 'aura');
     const seen = new Set();
-    for (const player of Array.isArray(state.players) ? state.players : []) {
-      if (!player || !['number', 'string'].includes(typeof player.id) || !Number.isFinite(player.x) || !Number.isFinite(player.z) || seen.has(player.id)) continue;
+    for (const player of list) {
+      if (seen.has(player.id)) continue;
       seen.add(player.id);
       let entry = people.get(player.id);
       if (!entry) {
@@ -248,7 +261,9 @@ export function build(ctx) {
       const y = surfaceHeight(x, z), self = player.id === state.me;
       entry.avatar.group.position.set(wx, y, wz); entry.hit.position.set(wx, y + 0.825, wz);
       entry.hit.userData.enabled = !self;
-      entry.avatar.update({ ...player, isSelf: self, view: state.view || 'third', reducedMotion: reduced }, step);
+      const slot = !SM || demonSlots.has(player.id) || auraSlots.has(player.id) || (!player.demon && !player.aura);
+      entry.avatar.update({ ...player, isSelf: self, view: state.view || 'third', reducedMotion: reduced, quality,
+        ...(state.now === undefined ? {} : { now: state.now }), fx: { distance: distances.get(player.id), slot } }, step);
     }
     for (const [id, entry] of people) if (!seen.has(id)) {
       entry.avatar.dispose(); entry.hit.removeFromParent(); people.delete(id);

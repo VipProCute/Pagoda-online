@@ -1,7 +1,7 @@
 'use strict';
 
 import * as THREE from 'three';
-import { createAvatar, AVATAR_COLORS } from './avatar.mjs?v=4';
+import { createAvatar, AVATAR_COLORS } from './avatar.mjs?v=6';
 
 // Nhân vật dựng bằng Blender (T-120/T-130), bật bằng localStorage['ta-avatar'] = 'blender'.
 // createGlbAvatar trả CÙNG giao diện với createAvatar: { group, update(state, dt), setLook(look), dispose() }.

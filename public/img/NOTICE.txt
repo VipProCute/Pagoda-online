@@ -99,6 +99,10 @@ HÌNH ẢNH TRONG THƯ MỤC NÀY — NGUỒN GỐC VÀ GIẤY PHÉP
 8) Mô hình Pháp Tướng 3D: public/models/fx/{demon-4,lotus,aura-kit}.glb và ảnh docs/phap-tuong/anh/ban-mau-*.jpg
    Tự dựng bằng Blender từ script tools/blender/fx/build_*.py (hình khối, xương, hoạt ảnh sinh bằng mã, không dùng
    mô hình của bên thứ ba), là tác phẩm gốc của dự án. Không sửa tay: sửa script rồi chạy lại.
+   Từ T-154, demon-4.glb nhúng ba ảnh bake 512 px (màu nền, pháp tuyến, phát sáng). Ba ảnh này do
+   build_demon.py tự bake từ lưới cao "điêu khắc bằng mã" xuống lưới thấp, vân da/vết nứt sinh bằng texture
+   thủ tục của Blender (Voronoi, nhiễu); không dùng ảnh hay texture bên thứ ba.
+   Ảnh chụp docs/phap-tuong/anh/fx3d-*.jpg, game-*.jpg là ảnh chụp màn hình trang thử và game của dự án.
    Ảnh ý tưởng docs/phap-tuong/anh/y-tuong-*.jpg do mô hình tạo ảnh AI sinh ra từ hình 2D của dự án
    (public/img/fx/demon-*.webp), chỉ dùng làm tham chiếu nội bộ cho người dựng, không đưa vào game.
    Giấy phép: CC0 1.0 như mục 1.
