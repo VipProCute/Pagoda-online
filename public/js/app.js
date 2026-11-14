@@ -560,11 +560,22 @@
     renderPrayers(r.prayers); renderBoard(r.board); renderDonations(r.donations, r.funds);
     setStats(r.today, r.online); setMerit(r.merit);
     setChant(r.chant);
-    $('#incKinds').innerHTML = cfg.kinds.map((k, i) => `<label class="chipr"><input type="radio" name="kind" value="${k}"${i === 0 ? ' checked' : ''}><span>${k}</span></label>`).join('');
-    $('#trackList').innerHTML = Object.entries(cfg.tracks).map(([id, t]) => {
+    // T-180: dựng bằng DOM + textContent (tên loại nhang, tên bài kinh do máy chủ gửi, không chèn qua innerHTML)
+    $('#incKinds').replaceChildren(...cfg.kinds.map((k, i) => {
+      const lb = document.createElement('label'); lb.className = 'chipr';
+      const inp = document.createElement('input'); inp.type = 'radio'; inp.name = 'kind'; inp.value = k; if (i === 0) inp.checked = true;
+      const sp = document.createElement('span'); sp.textContent = k;
+      lb.append(inp, sp);
+      return lb;
+    }));
+    $('#trackList').replaceChildren(...Object.entries(cfg.tracks).map(([id, t]) => {
       const m = Math.max(1, Math.round(t.duration / 60));
-      return `<button type="button" class="track" data-track="${id}"><b>${t.title}</b><small>khoảng ${m} phút</small></button>`;
-    }).join('');
+      const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'track'; btn.dataset.track = id;
+      const b = document.createElement('b'); b.textContent = t.title;
+      const sm = document.createElement('small'); sm.textContent = `khoảng ${m} phút`;
+      btn.append(b, sm);
+      return btn;
+    }));
     $('#donCard').hidden = !cfg.donation && !r.donations.length;
     $('#actVoice').hidden = !cfg.voice;
     closeDlg('join');
