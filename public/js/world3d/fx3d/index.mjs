@@ -2,7 +2,7 @@
 
 import * as THREE from 'three';
 import { sharedAssets } from './assets.mjs?v=1';
-import * as materials from './materials.mjs?v=3';
+import * as materials from './materials.mjs?v=4';
 
 export const PARTS = Object.freeze(['demon', 'lotus', 'aura', 'merit']);
 // Trong mỗi người, ghi chiều sâu của quỷ trước lượt màu và dải lửa.
@@ -76,7 +76,14 @@ export function createFx3d(host, opts = {}) {
     }
     root.visible = true;
     for (const [name, instance] of instances) {
-      try { covers[name] = !!instance.update(state, dt, ctx); } catch (error) { covers[name] = false; }
+      try {
+        if (ctx.slots && typeof ctx.slots === 'object' && ctx.slots[name === 'demon' ? 'demon' : 'aura'] === false) {
+          covers[name] = false;
+          instance.hide?.();
+          continue;
+        }
+        covers[name] = !!instance.update(state, dt, ctx);
+      } catch (error) { covers[name] = false; }
     }
     // Three.js lấy groupOrder từ Group gần nhất, kể cả nhóm trong glTF.
     const order = Number.isFinite(ctx.distance) ? -1 - Math.min(9998, Math.round(ctx.distance * 10)) : -9999;

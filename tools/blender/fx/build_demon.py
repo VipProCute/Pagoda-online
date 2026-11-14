@@ -59,17 +59,19 @@ T0 = time.time()
 GLB_PATH = os.path.join(REPO, 'public', 'models', 'fx', 'demon-4.glb')
 IMG_DIR = TMP if PREVIEW else os.path.join(REPO, 'docs', 'phap-tuong', 'anh')
 RES = {'level': LEVEL, 'warnings': [], 'over_budget': []}
+TEXTURE_SOURCE = {}
 
 # Mọi số đo giữ ở đây; phần hình học điêu khắc nằm trong các hàm dựng bên dưới.
 SPEC = {4: {
-    'tri_limit': 4000, 'kb_limit': 600, 'body_tris': 1730, 'img': 512,
+    'tri_limit': 4000, 'kb_limit': 600, 'body_tris': 1500, 'img': 512,
+    'head_scale': 1.2, 'head_pivot': (0, 0, .80), 'head_refine': 518,
     'colors': {'skin': '#922326', 'horn': '#3a241a', 'claw': '#1c1011',
                'fang': '#ece0c4', 'armor': '#68291b', 'gold': '#995721',
                'mouth': '#3a0806', 'eye': '#ffc23a', 'crack': '#ff7a1a'},
     # đường tay: vai, khuỷu, cổ tay (bên trái +X); trục bàn tay
-    'arm': {'path': [((.55, 0, .82), .16), ((.675, -.20, .74), .17),
-                     ((.84, -.38, .66), .12), ((.82, -.58, .63), .13),
-                     ((.80, -.78, .60), .09)]},
+    'arm': {'path': [((.55, 0, .82), .20), ((.675, -.20, .74), .221),
+                     ((.84, -.38, .66), .156), ((.82, -.58, .63), .182),
+                     ((.80, -.78, .60), .189)]},
     'hand': {'axis': (-.15, -.99, 0)},
     'bones': [
         ('root', None, (0, 0, -.05), (0, 0, .10)),
@@ -419,6 +421,20 @@ HAND_L = np.array((-HAND_A[1], HAND_A[0], 0.))      # hướng ngang, ra ngoài 
 HAND_P = ARM_W + HAND_A * .075                          # tâm lòng bàn tay
 
 
+def head_space(v, inverse=False):
+    """Đổi kích thước đầu quanh một tâm chung; màu mắt/miệng dùng phép đổi ngược."""
+    pivot = np.array(S['head_pivot'])
+    factor = 1 / S['head_scale'] if inverse else S['head_scale']
+    return (np.asarray(v) - pivot) * factor + pivot
+
+
+def scale_head_piece(piece):
+    piece['v'] = head_space(piece['v'])
+    if 'uvsize' in piece:
+        piece['uvsize'] = tuple(a * S['head_scale'] for a in piece['uvsize'])
+    return piece
+
+
 def body_base():
     """Khối nền để hợp: thân, cổ, hộp sọ, tay, lòng bàn tay, vai."""
     P = [ellipsoid((0, .01, .04), (.18, .16, .15)),
@@ -426,27 +442,28 @@ def body_base():
          ellipsoid((0, -.02, .58), (.34, .24, .25)),
          ellipsoid((0, -.03, .78), (.43, .225, .15)),
          ellipsoid((0, .075, .65), (.36, .12, .27)),
-         tube([(0, .0, .78), (0, -.03, 1.02)], [.19, .165], seg=20, rings=6),
-         ellipsoid((0, .005, 1.22), (.285, .245, .285), seg=32, rings=20)]
+         tube([(0, .0, .78), (0, -.03, 1.02)], [.225, .205], seg=20, rings=6),
+         scale_head_piece(ellipsoid((0, .005, 1.235), (.278, .25, .30), seg=40, rings=28))]
     up_dir = ARM_E - ARM_S
     fo_dir = ARM_W - ARM_E
-    arm = [tube([ARM_S, (.70, -.18, .745), ARM_E], [.16, .177, .108], seg=20, rings=14),
-           tube([ARM_E, (.83, -.49, .65), (.82, -.63, .62), ARM_W],
-                [.11, .148, .113, .076], seg=20, rings=14),
-           ellipsoid((.58, -.015, .855), (.185, .17, .18)),
-           blob_axis(ARM_S + up_dir * .15 + (0, -.03, .045), ARM_S + up_dir * .88 + (0, -.03, .045),
-                     .12, .135, extend=1.15),
+    path = S['arm']['path']
+    arm = [tube([p for p, r in path], [r for p, r in path], seg=24, rings=24),
+           ellipsoid((.58, -.015, .855), (.23125, .2125, .225)),
+           blob_axis(ARM_S + up_dir * .15 + (0, -.055, .065), ARM_S + up_dir * .88 + (0, -.055, .065),
+                     .156, .1755, extend=1.15),
            blob_axis(ARM_S + up_dir * .15 + (0, .05, -.02), ARM_S + up_dir * .80 + (0, .05, -.02),
-                     .09, .10, extend=1.10),
-           blob_axis(ARM_E + fo_dir * .05 + (0, 0, .03), ARM_E + fo_dir * .68 + (0, 0, .025),
-                     .12, .13, extend=1.12),
-           ellipsoid(tuple(HAND_P), (.10, .09, .042), (0, 0, math.degrees(math.atan2(-HAND_A[0], HAND_A[1]))))]
+                     .117, .13, extend=1.10),
+           blob_axis(ARM_E + fo_dir * .12 + (0, 0, .04), ARM_E + fo_dir * .93 + (0, 0, .045),
+                     .168, .182, extend=1.12),
+           blob_axis(ARM_E + fo_dir * .22 + (.04, 0, -.055), ARM_E + fo_dir * .90 + (.04, 0, -.035),
+                     .13, .14, extend=1.10),
+           ellipsoid(tuple(HAND_P), (.15, .135, .063), (0, 0, math.degrees(math.atan2(-HAND_A[0], HAND_A[1]))))]
     for piece in arm:
         P += both(piece)
     # hàm dưới: tách khỏi hộp sọ bằng khe miệng mở
-    P.append(ellipsoid((0, -.25, .80), (.125, .125, .062)))                    # cằm
-    P.append(ellipsoid((0, -.17, .84), (.095, .10, .028)))                     # sàn miệng/lưỡi
-    P += both(ellipsoid((.21, -.13, .90), (.075, .14, .105)))                 # má dưới/góc hàm
+    P.append(scale_head_piece(ellipsoid((0, -.255, .793), (.155, .12, .062))))  # cằm rộng
+    P.append(scale_head_piece(ellipsoid((0, -.17, .827), (.12, .11, .028))))    # sàn miệng/lưỡi
+    P += both(scale_head_piece(ellipsoid((.195, -.14, .895), (.082, .14, .11)))) # góc hàm
     return P
 
 
@@ -461,22 +478,28 @@ def body_detail():
             ellipsoid((.075, -.185, .385), (.073, .06, .055)),
             ellipsoid((.07, -.18, .27), (.067, .055, .052)),
             ellipsoid((.11, -.14, .17), (.085, .045, .055), (0, 25, 0)),                           # đường chữ V hông
-            ellipsoid((.065, .145, .51), (.052, .035, .255)),                                    # cơ dựng sống lưng dẹt
-            ellipsoid((.125, -.255, 1.285), (.15, .075, .055), (0, -24, 0), seg=24, rings=14),     # gờ mày
-            ellipsoid((.20, -.17, 1.12), (.10, .10, .065), (0, 0, -15)),                           # gò má
-            ellipsoid((.12, -.29, 1.045), (.075, .105, .042), (0, -16, 0)),                         # môi trên nhe nanh
-            ellipsoid((.105, -.345, 1.082), (.055, .033, .022), (0, -22, 0)),                       # nếp nhăn mõm
-            ellipsoid((.17, -.30, 1.068), (.052, .028, .022), (0, -32, 0)),
-            ellipsoid((0, -.12, 1.30), (.23, .14, .12)),                                           # trán
-            ellipsoid((.20, -.07, .955), (.045, .12, .085), (0, 0, -10))]                          # góc hàm vuông
+            ellipsoid((.065, .145, .51), (.052, .035, .255))]                                    # cơ dựng sống lưng dẹt
     for piece in side:
         P += both(piece)
-    P += [ellipsoid((0, -.30, 1.16), (.036, .08, .085)),
-          ellipsoid((.04, -.325, 1.095), (.032, .032, .03)), ellipsoid((-.04, -.325, 1.095), (.032, .032, .03)),                                       # sống mũi
-          ellipsoid((0, -.275, 1.07), (.145, .125, .06)),                                        # mõm trên
-          ellipsoid((0, -.27, .865), (.135, .105, .04)),                                         # bờ môi dưới ôm đáy hốc
-          ellipsoid((0, -.04, 1.43), (.20, .17, .075)),                                           # đỉnh sọ nổi
-          ellipsoid((0, .0, .93), (.20, .16, .09))]
+    face = [tube([(.025, -.275, 1.265), (.085, -.31, 1.285), (.17, -.275, 1.33),
+                  (.25, -.19, 1.355)], [.038, .059, .052, .025], seg=16, rings=24),              # mày dày chữ V, đuôi ôm về thái dương
+            ellipsoid((.205, -.205, 1.115), (.09, .105, .075), (0, -18, -15)),                    # má gồ dưới hốc mắt
+            ellipsoid((.13, -.30, 1.05), (.085, .108, .046), (0, -16, 0)),                        # mõm rộng nhe nanh
+            ellipsoid((.10, -.36, 1.09), (.065, .035, .022), (0, -22, 0)),                        # nếp nhăn mõm
+            ellipsoid((.18, -.32, 1.075), (.054, .03, .025), (0, -32, 0)),
+            ellipsoid((.20, -.07, .955), (.045, .12, .085), (0, 0, -10))]                          # góc hàm vuông
+    for piece in face:
+        P += both(scale_head_piece(piece))
+    P += [scale_head_piece(piece) for piece in [ellipsoid((0, -.305, 1.17), (.052, .095, .10)),
+          ellipsoid((.049, -.345, 1.105), (.042, .04, .033)), ellipsoid((-.049, -.345, 1.105), (.042, .04, .033)),                                       # mũi to bè
+          ellipsoid((0, -.29, 1.07), (.16, .125, .06)),                                         # mõm trên
+          ellipsoid((0, -.27, .837), (.157, .105, .035)),                                        # bờ hàm dưới
+          ellipsoid((0, -.045, 1.425), (.195, .19, .12), seg=32, rings=22),                        # vòm sọ tròn, không gờ ngang
+          ellipsoid((0, .0, .93), (.20, .16, .09))]]
+    # Gờ hạt dọc ôm mắt thứ ba, hòa vào trán trước khi khoét lòng mắt.
+    angles = np.linspace(0, 2 * math.pi, 25)
+    rim = [(.041 * math.cos(a), -.238, 1.39 + .070 * math.sin(a)) for a in angles]
+    P.append(scale_head_piece(tube(rim, [.015] * len(rim), seg=10, rings=48)))
     return P
 
 
@@ -486,11 +509,12 @@ def make_fingers(hi):
     z = np.array((0., 0., 1.))
     seg, rings = (10, 20) if hi else (5, 3)
     # (lệch ngang, góc xòe, hệ số dài, bán kính) từ ngón cái ra ngón út
-    table = [(.088, 58, .86, .029), (.052, 14, 1.0, .026), (.012, 2, 1.1, .026),
-             (-.028, -11, 1.0, .0245), (-.066, -24, .82, .022)]
+    table = [(.088, 65, .86, .029), (.052, 20, 1.0, .026), (.012, 2, 1.1, .026),
+             (-.028, -18, 1.0, .0245), (-.066, -35, .82, .022)]
     for idx, (off, fan, scale, rad) in enumerate(table):
+        off, scale, rad = off * 1.5, scale * 1.3, rad * 1.5
         thumb = idx == 0
-        base = HAND_P + HAND_L * off + HAND_A * (-.01 if thumb else .075)
+        base = HAND_P + HAND_L * off + HAND_A * (-.015 if thumb else .1125)
         th = math.radians(fan)
         flat_dir = HAND_A * math.cos(th) + HAND_L * math.sin(th)
         lengths = [.06 * scale, .055 * scale] + ([] if thumb else [.045 * scale])
@@ -503,7 +527,7 @@ def make_fingers(hi):
         radii = [rad, rad * .95, rad * .82, rad * .7][:len(pts)]
         finger = tube(pts, radii, seg=seg, rings=rings, kind='skin', ref=(0, 0, 1), bone='hand', part='finger')
         # vuốt: tiếp từ đầu ngón, cong lên dần
-        c_len = [.05, .045, .04]
+        c_len = [.065, .0585, .052]
         c_pit = [(64, 82, 100) if not thumb else (62, 82, 98)][0]
         cpts, cur = [pts[-1]], pts[-1].copy()
         for length, pit in zip(c_len, c_pit):
@@ -511,7 +535,8 @@ def make_fingers(hi):
             cur = cur + length * (math.cos(p) * flat_dir + math.sin(p) * z)
             cpts.append(cur.copy())
         claw = tube(cpts, [radii[-1] * .95, radii[-1] * .6, radii[-1] * .3, .0015],
-                    seg=seg, rings=max(3, rings // 2) if hi else 3, kind='claw', bone='hand', part='claw')
+                    seg=seg, rings=max(4, rings // 2) if hi else 4, pointed=True,
+                    kind='claw', bone='hand', part='claw')
         out += both(finger) + both(claw)
     return out
 
@@ -526,88 +551,94 @@ def make_parts(hi):
     # sừng lớn cong xoắn, có vòng gờ
     horn = tube([(.24, .0, 1.27), (.45, .065, 1.34), (.63, .12, 1.48), (.68, .10, 1.65),
                  (.62, .015, 1.78), (.53, -.06, 1.835), (.45, -.09, 1.85)],
-                [.132, .122, .097, .073, .045, .022, .0], seg=20 if hi else 8, rings=72 if hi else 11,
+                [.132, .122, .097, .073, .045, .022, .0], seg=20 if hi else 6, rings=72 if hi else 11,
                 ridge=horn_ridge if hi else None, twist=1.8, flat=.88,
-                kind='horn', bone='head', part='horn_big')
+                pointed=True, kind='horn', bone='head', part='horn_big')
+    # Gốc sừng đi cùng sọ lớn hơn, ngọn vẫn ở 1,85 m theo hợp đồng.
+    grow = 1 - smoothstep(.0, .65, horn['tt'])
+    horn['v'] += (head_space(horn['v']) - horn['v']) * grow[:, None]
     out += both(horn)
     # Bảy gai xếp thành mào từ đỉnh tới gáy; gốc chìm trong sọ, ngọn vuốt ra sau (+Y).
-    small = [([(0, -.025, 1.43), (0, .045, 1.595), (0, .17, 1.68)], .052),
+    # Neo ở cằm để miệng lớn không khoét xuống ngực; mào giữa vẫn thấp hơn sừng lớn.
+    small = [([(0, -.025, 1.43), (0, .045, 1.565), (0, .17, 1.63)], .052),
              ([(.09, -.015, 1.425), (.11, .075, 1.545), (.135, .21, 1.61)], .045),
              ([(.17, .0, 1.40), (.20, .11, 1.49), (.215, .26, 1.52)], .043),
              ([(0, .15, 1.42), (0, .27, 1.525), (0, .395, 1.49)], .049),
              ([(0, .235, 1.28), (0, .345, 1.355), (0, .44, 1.31)], .046)]
     for pts, r in small:
-        # Bốn vòng thấp diễn tả độ cong, cả mào chỉ tăng tám tam giác so với vòng 2.
-        piece = tube(pts, [r, r * .55, .0], seg=8 if hi else 4, rings=14 if hi else 4,
-                     kind='horn', bone='head', part='horn_small', twist=.0)
+        # Chóp thật giúp dành ngân sách cho mặt, bảy sừng nhỏ còn 112 tam giác.
+        piece = scale_head_piece(tube(pts, [r, r * .55, .0], seg=8 if hi else 4, rings=14 if hi else 3,
+                                     pointed=True, kind='horn', bone='head', part='horn_small', twist=.0))
         out += [piece] if pts[0][0] == 0 else both(piece)
     # tai nhọn
-    ear = tube([(.26, .0, 1.22), (.37, .025, 1.31), (.47, .05, 1.44)], [.06, .045, .0],
-               seg=10 if hi else 5, rings=14 if hi else 3, flat=.45, kind='skin', bone='head', part='ear')
+    ear = scale_head_piece(tube([(.26, .0, 1.22), (.37, .025, 1.31), (.47, .05, 1.44)], [.06, .045, .0],
+                               seg=10 if hi else 5, rings=14 if hi else 3, flat=.45, pointed=True,
+                               kind='skin', bone='head', part='ear'))
     out += both(ear)
     # nanh trên và dưới
     for pts, radii, bone, seg, rings in (
-            ([(.105, -.36, 1.04), (.106, -.405, .997), (.095, -.421, .94), (.078, -.40, .904)],
+            ([(.128, -.37, 1.045), (.132, -.417, .99), (.12, -.435, .93), (.10, -.41, .89)],
              [.029, .025, .014, .0], 'head', 5, 4),
-            ([(.108, -.31, .869), (.120, -.37, .906), (.117, -.404, .945), (.108, -.397, .967)],
+            ([(.133, -.32, .842), (.145, -.38, .885), (.14, -.416, .93), (.126, -.405, .956)],
              [.024, .019, .010, .0], 'jaw', 4, 3)):
         fang = tube(pts, radii, seg=10 if hi else seg, rings=22 if hi else rings,
                     pointed=True, kind='fang', bone=bone, part='fang')
-        out += both(fang)
+        out += both(scale_head_piece(fang))
     # Hai răng cửa trên và bốn răng dưới, chừa giữa miệng để thấy chiều sâu.
-    for x, z, direction, bone in ((.038, 1.065, -1, 'head'), (.036, .844, 1, 'jaw'), (.075, .854, 1, 'jaw')):
+    for x, z, direction, bone in ((.038, 1.065, -1, 'head'), (.036, .823, 1, 'jaw'), (.082, .833, 1, 'jaw')):
         tooth = tube([(x, -.37 if bone == 'head' else -.35, z), (x, -.39, z + direction * .024),
                       (x * .9, -.385, z + direction * .047)], [.013, .009, .0],
                      seg=8 if hi else 3, rings=12 if hi else 2, pointed=True,
                      kind='fang', bone=bone, part='fang')
-        out += both(tooth)
-    out.append(ellipsoid((0, -.245, .867), (.080, .135, .033), seg=24 if hi else 4,
-                         rings=12 if hi else 3, kind='tongue', bone='jaw', part='tongue'))
+        out += both(scale_head_piece(tooth))
+    out.append(scale_head_piece(ellipsoid((0, -.245, .838), (.10, .135, .033), seg=24 if hi else 4,
+                                          rings=12 if hi else 3, kind='tongue', bone='jaw', part='tongue')))
     out += make_fingers(hi)
     # giáp vai đồng có gai
     for layer, (center, radii, tilt) in enumerate((
-            ((.615, .025, .965), (.225, .225, .075), 22),
-            ((.68, -.008, .895), (.205, .21, .061), 31),
-            ((.725, -.04, .825), (.175, .185, .052), 39))):
+            ((.615, .025, 1.01), (.2925, .2925, .0975), 22),
+            ((.71, -.008, .91), (.2665, .273, .0793), 31),
+            ((.78, -.04, .81), (.2275, .2405, .0676), 39))):
         shell = ellipsoid(center, radii, (0, tilt, 0), seg=28 if hi else (7 if layer == 0 else 6),
                           rings=14 if hi else (4 if layer == 0 else 3), kind='armor',
                           bone='upper_arm', part='pauldron', shell_center=center, shell_radii=radii, tilt=tilt)
         out += both(shell)
     for base, mid, tip, r in (
-            ((.53, .07, 1.025), (.53, .14, 1.16), (.57, .24, 1.20), .05),
-            ((.665, .08, 1.01), (.73, .18, 1.13), (.82, .28, 1.15), .047),
-            ((.77, .07, .935), (.87, .16, 1.025), (.98, .25, 1.035), .043)):
+            ((.53, .07, 1.075), (.53, .17, 1.25), (.59, .31, 1.31), .065),
+            ((.70, .08, 1.06), (.79, .21, 1.22), (.91, .35, 1.25), .0611),
+            ((.83, .07, .975), (.96, .19, 1.095), (1.10, .32, 1.11), .0559)):
         spike = tube([base, mid, tip], [r, r * .65, .0],
-                     seg=10 if hi else 4, rings=10 if hi else 3, kind='armor', bone='upper_arm', part='spike')
+                     seg=10 if hi else 4, rings=10 if hi else 3, pointed=True,
+                     kind='armor', bone='upper_arm', part='spike')
         out += both(spike)
     # vòng giáp cổ tay
     fo = ARM_W - ARM_E
     for a, b in ((.62, .84),):
-        cuff = tube([ARM_E + fo * a, ARM_E + fo * b], [.118, .112], seg=20 if hi else 8, rings=4 if hi else 2,
+        cuff = tube([ARM_E + fo * a, ARM_E + fo * b], [.191, .198], seg=20 if hi else 6, rings=4 if hi else 2,
                     ridge=(lambda t: 1 + .04 * np.sin(math.pi * 2 * t * 2)) if hi else None,
                     kind='armor', bone='forearm', part='cuff')
         out += both(cuff)
     # Ngực để trần: khe cơ và nứt dọc thay cho chuỗi đốt kim loại.
     # Gai lưng lớn dần về vai, cong ra sau thay vì dính sát cột sống.
     for z, y, size in ((.30, .155, .75), (.46, .19, .95), (.62, .21, 1.15),
-                       (.78, .225, 1.25), (.93, .15, 1.15), (1.075, .155, .85)):
+                       (.78, .225, 1.25), (.93, .15, 1.15)):
         out.append(tube([(0, y, z), (0, y + .10 * size, z + .055 * size),
                          (0, y + .21 * size, z + .11 * size)],
                         [.043 * size, .027 * size, .0], seg=10 if hi else 3, rings=12 if hi else 3,
-                        kind='armor', bone='chest' if z > .45 else 'spine', part='spine'))
+                        pointed=True, kind='armor', bone='chest' if z > .45 else 'spine', part='spine'))
     # đuôi khói xoắn và dải khói
     s = np.linspace(0, 1, 13)
     tail_pts = [(.115 * math.sin(2 * math.pi * 1.25 * u) * math.sin(math.pi * u),
                  .10 * (math.cos(2 * math.pi * 1.25 * u) - 1) * math.sin(math.pi * u),
                  .075 - 1.195 * u) for u in s]
-    out.append(tube(tail_pts, [.195 * (1 - u) ** .85 + .003 for u in s], seg=28 if hi else 6,
-                    rings=84 if hi else 10, flat=.83, twist=2 * math.pi * 1.25,
+    out.append(tube(tail_pts, [.195 * (1 - u) ** .85 + .003 for u in s], seg=28 if hi else 5,
+                    rings=84 if hi else 8, flat=.83, twist=2 * math.pi * 1.25, pointed=True,
                     kind='smoke', bone='tail', part='tail'))
     wisps = [[(.10, .02, -.10), (.245, .06, -.19), (.265, .10, -.29), (.19, .13, -.35)],
              [(-.10, .03, -.38), (-.225, .06, -.44), (-.23, .12, -.55), (-.15, .15, -.61)]]
     for pts in wisps:
-        out.append(tube(pts, [.072, .067, .040, .003], seg=12 if hi else 5, rings=26 if hi else 3,
-                        twist=2.0, kind='smoke', bone='tail', part='tail'))
+        out.append(tube(pts, [.072, .067, .040, .003], seg=12 if hi else 4, rings=26 if hi else 3,
+                        twist=2.0, pointed=True, kind='smoke', bone='tail', part='tail'))
     return out
 
 
@@ -662,7 +693,7 @@ def remesh_np(v, faces, voxel):
 
 
 DEC_FACTOR = float(globals().get('DEC_FACTOR', 1.0))
-DEC_HEAD = float(globals().get('DEC_HEAD', .010))
+DEC_HEAD = float(globals().get('DEC_HEAD', .003))
 
 
 def decimate_np(v, tris, target):
@@ -676,10 +707,11 @@ def decimate_np(v, tris, target):
         group = ob.vertex_groups.new(name='keep')
         for i, vert in enumerate(ob.data.vertices):
             x, y, z = vert.co
+            hx, hy, hz = head_space((x, y, z), inverse=True)
             # Trọng số thấp giữ cạnh lâu hơn: ưu tiên mặt, rồi đến bàn tay và cánh tay.
-            face = (z > .90 and abs(x) < .39) or (z > .77 and abs(x) < .27 and y < -.18)
-            # Mặt trước được giữ hơn gáy; phần tăng 180 tam giác dành chủ yếu cho trán/má/mõm.
-            importance = (DEC_HEAD if y < .02 else DEC_HEAD * 4) if face else (
+            face = (hz > .90 and abs(hx) < .39) or (hz > .77 and abs(hx) < .27 and hy < -.18)
+            # Mặt trước được giữ hơn gáy, phần ngân sách mới dành cho trán/má/mõm.
+            importance = (DEC_HEAD if hy < .02 else DEC_HEAD * 4) if face else (
                 .08 if y < -.78 else (.40 if abs(x) > .45 else 1.0))
             group.add([i], importance, 'REPLACE')
         m.vertex_group = 'keep'
@@ -688,13 +720,15 @@ def decimate_np(v, tris, target):
 
 
 def refine_head(v, tris, hi_v, hi_t, budget):
-    """Chia tối đa 36 mặt lớn ở trán/má; chỉ chiếu đỉnh mới lên khối đầu đã đạt."""
+    """Chia mặt trước còn lớn, chiếu tâm mới lên lưới cao; không thay cạnh chung."""
     from mathutils.bvhtree import BVHTree
     c = v[tris].mean(axis=1)
-    face = (c[:, 2] > 1.08) & (c[:, 1] < -.10) & (np.abs(c[:, 0]) < .28)
+    h = head_space(c, inverse=True)
+    face = (((h[:, 2] > .90) & (np.abs(h[:, 0]) < .39))
+            | ((h[:, 2] > .77) & (np.abs(h[:, 0]) < .27) & (h[:, 1] < -.18))) & (h[:, 1] < .02)
     area = np.linalg.norm(np.cross(v[tris[:, 1]] - v[tris[:, 0]], v[tris[:, 2]] - v[tris[:, 0]]), axis=1)
     candidates = np.flatnonzero(face)
-    count = min(36, max(0, budget // 2), len(candidates))
+    count = min(S['head_refine'] // 2, max(0, budget // 2), len(candidates))
     if not count:
         return v, tris
     chosen = set(candidates[np.argsort(area[candidates])[-count:]].tolist())
@@ -708,23 +742,71 @@ def refine_head(v, tris, hi_v, hi_t, budget):
         hit = bvh.find_nearest(Vector(center))
         if hit[0] is not None:
             delta = np.array(hit[0]) - center
-            center = center + delta * min(1., .02 / (np.linalg.norm(delta) + 1e-12))
+            center = center + delta * min(1., .035 / (np.linalg.norm(delta) + 1e-12))
         k = len(v) + len(extra)
         extra.append(center)
         faces.extend(((a, b, k), (b, d, k), (d, a, k)))
     return np.vstack([v, extra]), np.array(faces, dtype=np.int64)
 
 
+def smooth_low_head(v, tris, hi_v, hi_t):
+    """Dàn đều đỉnh mặt rồi chiếu về khối cao; không thêm/bớt tam giác."""
+    from mathutils.bvhtree import BVHTree
+    h = head_space(v, inverse=True)
+    normals = vertex_normals(v, tris)
+    bone = next(b for b in BONES if b[0] == 'head')
+    distance = seg_dist(v, bone[2], bone[3])
+    # Chỉ mặt trước, giảm dần ở viền sọ/hàm và mặt bên để giữ bóng dáng.
+    # Sừng, nanh, tai chưa ghép vào thân ở bước này nên không bị kéo.
+    mask = ((1 - smoothstep(.48, .66, distance)) * smoothstep(.77, .85, h[:, 2])
+            * (1 - smoothstep(.26, .35, np.abs(h[:, 0])))
+            * (1 - smoothstep(-.10, .02, h[:, 1]))
+            * smoothstep(.05, .45, -normals[:, 1]))
+    relaxed = taubin(v, tris, 4, lam=.4, mu=-.42, mask=mask)
+    delta = relaxed - v
+    relaxed = v + delta * np.minimum(1., .012 / (np.linalg.norm(delta, axis=1) + 1e-12))[:, None]
+    bvh = BVHTree.FromPolygons(hi_v.tolist(), hi_t.tolist())
+    out = v.copy()
+    for i in np.flatnonzero(mask > 1e-4):
+        point, normal, _, distance = bvh.find_nearest(Vector(relaxed[i]))
+        if point is None or distance > .025:
+            continue
+        point = np.array(point)
+        # Tránh nhảy từ môi/mày sang mặt đối diện của miệng hay hốc mắt.
+        if np.linalg.norm(point - v[i]) > .025 or np.dot(np.array(normal), normals[i]) < .25:
+            continue
+        out[i] = relaxed[i] + (point - relaxed[i]) * mask[i]
+    # Lùi bước nếu đỉnh dịch làm tam giác nhỏ quanh mắt/môi bị lật hoặc xẹp.
+    old_fn = np.cross(v[tris[:, 1]] - v[tris[:, 0]], v[tris[:, 2]] - v[tris[:, 0]])
+    old_area2 = np.sum(old_fn * old_fn, axis=1)
+    delta = out - v
+    for step in range(6):
+        out = v + delta * (.5 ** step)
+        new_fn = np.cross(out[tris[:, 1]] - out[tris[:, 0]], out[tris[:, 2]] - out[tris[:, 0]])
+        if np.all(np.sum(old_fn * new_fn, axis=1) >= .1 * old_area2):
+            break
+    else:
+        out = v.copy()
+    moved = np.linalg.norm(out - v, axis=1)
+    RES['head_smooth_vertices'] = int((moved > 1e-6).sum())
+    RES['head_smooth_max_mm'] = round(float(moved.max()) * 1000, 2)
+    return out
+
+
 # ---------------------------------------------------------------------------
 # Lưới cao: hợp, làm mượt, khắc, tô màu theo đỉnh
 # ---------------------------------------------------------------------------
 def carve_mouth(v, tris):
-    """Khoét hốc elip thật vào sọ/hàm; thành cong và đáy kín ở sâu phía sau môi.
+    """Khoét miệng cùng ba hốc mắt thật; giữ đáy cong sâu sau gờ mày/môi.
 
     Chỉ một phép trừ trước remesh cuối, tránh miệng là mặt phẳng tô đỏ trên sọ.
     """
-    cutter = ellipsoid((0, -.325, .955), (.153, .265, .112), seg=40, rings=28)
-    data = np_mesh('T154_mouth_cut', cutter['v'], cutter['f'], smooth=False)
+    cutters = [scale_head_piece(ellipsoid((0, -.325, .948), (.175, .265, .123), seg=40, rings=28))]
+    cutters += both(scale_head_piece(ellipsoid((.114, -.252, 1.234), (.095, .105, .055),
+                                              (0, -27, 0), seg=32, rings=24)))
+    cutters.append(scale_head_piece(ellipsoid((0, -.258, 1.39), (.029, .055, .055), seg=28, rings=24)))
+    cut_v, cut_f = merge(cutters)
+    data = np_mesh('T154_mouth_cut', cut_v, cut_f, smooth=False)
     obj = own(bpy.data.objects.new('T154_mouth_cut', data))
     link(obj)
 
@@ -761,12 +843,12 @@ def build_body_smooth():
     return v, t
 
 
-def eye_mask(ax, z, cx, cz, a, b, slant):
-    """Elip mắt xoay theo góc xếp (đuôi mắt hướng lên với ax=|x|); trả e>0 trong mắt."""
+def eye_mask(ax, z, cx, cz, a, b, slant, almond=False):
+    """Mắt elip/hạnh nhân xếch lên theo |x|; trả e>0 trong lòng mắt."""
     dx, dz = ax - cx, z - cz
     c, s = math.cos(math.radians(slant)), math.sin(math.radians(slant))
     u, w = dx * c + dz * s, -dx * s + dz * c
-    return 1 - (u / a) ** 2 - (w / b) ** 2, dx
+    return 1 - (u / a) ** 2 - (np.abs(w / b) if almond else (w / b) ** 2), dx
 
 
 
@@ -826,23 +908,24 @@ def crease_field(V, N):
 def apply_face(V, col, emit):
     """Ba mắt phát sáng, hốc mắt, lòng miệng và mày tối. Chỉ phụ thuộc vị trí nên đặt thẳng
     lên điểm ảnh của lưới thấp cũng khớp lưới cao."""
-    x, y, z = V[:, 0], V[:, 1], V[:, 2]
+    local = head_space(V, inverse=True)
+    x, y, z = local[:, 0], local[:, 1], local[:, 2]
     ax = np.abs(x)
     face = (y < -.10)
-    e, dx = eye_mask(ax, z, .108, 1.232, .071, .032, 26)
-    lid = smoothstep(.003, -.003, (z - 1.232) - (.010 + .55 * (ax - .108)))
-    e = e - (1 - lid) * 1.2
-    eyes = smoothstep(0, .30, e) * face
-    socket = smoothstep(-.35, .2, e) * face
+    e, dx = eye_mask(ax, z, .114, 1.234, .075, .029, 27, almond=True)
+    inset = smoothstep(-.255, -.18, y) * face
+    eyes = smoothstep(0, .24, e) * inset
+    socket = smoothstep(-.8, .15, e) * face
     pupil = smoothstep(.0085, .0035, np.abs(dx)) * (e > .0) * face
-    e3, _ = eye_mask(ax, z, 0, 1.385, .032, .058, 0)
-    eyes = np.maximum(eyes, smoothstep(0, .30, e3) * face)
+    e3, _ = eye_mask(ax, z, 0, 1.39, .025, .05, 0)
+    eyes = np.maximum(eyes, smoothstep(0, .30, e3) * inset)
     socket = np.maximum(socket, smoothstep(-.35, .2, e3) * face)
     eye_col = lin(S['colors']['eye'])
+    col *= 1 - .6 * socket[:, None]
     col = col * (1 - eyes[:, None]) + eye_col[None, :] * (.18 * eyes)[:, None]
     emit = emit * (1 - eyes[:, None]) + eye_col[None, :] * (eyes * (1 - .7 * pupil))[:, None]
     # Hốc elip: thành trước đỏ sẫm, đáy đỏ đen. Họng chỉ có một quầng sáng nhỏ.
-    oval = 1 - (x / .154) ** 2 - ((z - .955) / .113) ** 2
+    oval = 1 - (x / .176) ** 2 - ((z - .948) / .124) ** 2
     mouth = smoothstep(-.10, .12, oval) * smoothstep(-.39, -.245, y) * smoothstep(.015, -.035, y)
     deep = smoothstep(-.28, -.065, y)
     m_col = lin('#29080c')[None, :] * (1 - deep[:, None]) + lin('#080204')[None, :] * deep[:, None]
@@ -850,7 +933,8 @@ def apply_face(V, col, emit):
     throat = np.exp(-((x / .067) ** 2 + ((z - .946) / .055) ** 2)) * smoothstep(-.22, -.075, y)
     m_emit = lin('#ff5318')[None, :] * (mouth * throat * .075)[:, None]
     emit = emit * (1 - mouth[:, None]) + m_emit
-    brow = smoothstep(1.34, 1.30, z) * smoothstep(1.22, 1.27, z) * face * smoothstep(.2, .1, ax - .06)
+    brow_z = 1.255 + .43 * ax
+    brow = np.exp(-((z - brow_z) / .035) ** 2) * face * smoothstep(.28, .22, ax)
     col = col * (1 - .35 * brow[:, None])
     return col, emit, socket
 
@@ -864,7 +948,9 @@ def skin_fields(V, head=True, strength=1.0, N=None):
     f1b, _, cid2 = voronoi(V, .0075, 23)
     disp = (plate - .45) * .0034 + (.5 - np.minimum(f1b, 1)) * .0007
     # Vi vảy ở mặt nhẹ hơn thân để không che độ cong trán/má trên ảnh pháp tuyến 512.
-    face_relief = smoothstep(.90, 1.08, z) * smoothstep(.05, -.15, y) * smoothstep(.35, .25, ax)
+    local = head_space(V, inverse=True)
+    face_relief = (smoothstep(.90, 1.08, local[:, 2]) * smoothstep(.05, -.15, local[:, 1])
+                   * smoothstep(.35, .25, np.abs(local[:, 0])))
     disp *= 1 - .40 * face_relief
     # Ô lớn kéo dài theo chiều đứng, chỉ giữ vài nhánh nền; tránh mạng nứt đất khô.
     warp = .045 * np.stack([np.sin(y * 15 + z * 11), np.sin(z * 14 + x * 13), np.sin(x * 16 + y * 12)], 1)
@@ -916,13 +1002,13 @@ def skin_fields(V, head=True, strength=1.0, N=None):
     col = base[None, :] * shade[:, None]
     col[:, 1] *= .55 + .45 * cid2
     col[:, 2] *= .8 + .4 * cid2
-    # Giảm bão hòa 18% trong sRGB, rồi trả về màu tuyến tính để bake.
+    # Giảm bão hòa 8% trong sRGB, giữ sắc đỏ rượu ấm của ảnh đích.
     srgb = np.where(col <= .0031308, col * 12.92, 1.055 * np.maximum(col, 0) ** (1 / 2.4) - .055)
     grey = srgb @ np.array((.2126, .7152, .0722))
-    srgb = grey[:, None] + .82 * (srgb - grey[:, None])
+    srgb = grey[:, None] + .92 * (srgb - grey[:, None])
     col = np.where(srgb <= .04045, srgb / 12.92, ((srgb + .055) / 1.055) ** 2.4)
     ridge = .18 * plate * (1 - cavity)
-    col = col * (1 - ridge[:, None]) + lin('#6b3928')[None, :] * (ridge * shade)[:, None]
+    col = col * (1 - ridge[:, None]) + lin('#a43b29')[None, :] * (ridge * shade)[:, None]
     col *= (1 - .32 * cavity[:, None])
     col = col * (1 - .75 * cm[:, None])
     core = smoothstep(.55, 1.0, cm)
@@ -930,7 +1016,8 @@ def skin_fields(V, head=True, strength=1.0, N=None):
     emit = hot * (np.sqrt(cm) * 1.05)[:, None]
     if head:
         col, emit, socket = apply_face(V, col, emit)
-        disp = disp - socket * .017
+        # Các hốc đã khoét thật: chỉ thêm nhăn nhỏ để không ép bẹp sàn mắt khi bake.
+        disp = disp - socket * .005
     return disp, col, emit
 
 
@@ -991,10 +1078,10 @@ def paint_piece(p, V):
         local[:, 0] = np.abs(local[:, 0])
         local = (local - np.array(p['shell_center'])) @ euler_matrix((0, p['tilt'], 0))
         q = local / np.array(p['shell_radii'])
-        rim = smoothstep(.83, .97, np.hypot(q[:, 0], q[:, 1])) * .85
+        rim = smoothstep(.73, .93, np.hypot(q[:, 0], q[:, 1])) * .95
         engraving = poly_dist2(q[:, 0], q[:, 1], [(-.60, -.15), (-.32, -.55),
                                (.05, -.66), (.36, -.44), (.16, -.25), (-.02, -.42)])
-        carving = np.exp(-(engraving / .065) ** 2) * smoothstep(.15, .50, q[:, 2])
+        carving = np.exp(-(engraving / .085) ** 2) * smoothstep(.15, .50, q[:, 2])
         groove = np.maximum(groove * .30, carving)
     elif part == 'cuff':
         rim = np.maximum(smoothstep(.22, .0, tt), smoothstep(.78, 1.0, tt))
@@ -1004,7 +1091,8 @@ def paint_piece(p, V):
         rim = np.zeros(len(V))
     col = base[None, :] * (.7 + .6 * cid)[:, None] * (1 - .6 * groove[:, None])
     col = col * (1 - rim[:, None]) + gold[None, :] * (rim * (.8 + .4 * cid))[:, None]
-    return (-groove * .004 + (cid - .5) * .003), col, emit
+    relief = (-groove * .009 + rim * .007) if part == 'pauldron' else -groove * .004
+    return (relief + (cid - .5) * .003), col, emit
 
 
 def sculpt_hi(body_v, body_t, parts_hi):
@@ -1085,18 +1173,24 @@ def body_weights(V):
     n = len(V)
     W = torso_w(z)
     # cổ và đầu
-    neck = smoothstep(.80, .90, z) * (1 - smoothstep(.98, 1.08, z))
-    head = smoothstep(.98, 1.08, z)
+    local = head_space(V, inverse=True)
+    hz, hy = local[:, 2], local[:, 1]
+    neck = smoothstep(.80, .90, hz) * (1 - smoothstep(.98, 1.08, hz))
+    head = smoothstep(.98, 1.08, hz)
+    central = smoothstep(.46, .34, np.abs(x))
+    neck *= central
+    head *= central
     chest_part = 1 - np.clip(neck + head, 0, 1)
     W *= chest_part[:, None]
     W[:, BI['neck']] = neck
-    jaw = smoothstep(.985, .94, z) * smoothstep(-.09, -.15, y) * (z > .70)
+    jaw = smoothstep(.985, .94, hz) * smoothstep(-.09, -.15, hy) * (hz > .70)
     W[:, BI['head']] = head * (1 - jaw)
     W[:, BI['jaw']] = jaw * np.clip(head + neck * .6, 0, 1)
     W[:, BI['neck']] *= (1 - jaw * .6)
     # tay: theo khoảng cách tới từng đoạn xương
     for side, sign in (('L', 1), ('R', -1)):
-        a = smoothstep(.30, .56, x * sign)
+        # Hộp sọ rộng tới 34,2 cm: giữ má ngoài khỏi trọng số tay khi giơ vuốt.
+        a = smoothstep(.36, .60, x * sign)
         names = ['shoulder_' + side, 'upper_arm_' + side, 'forearm_' + side, 'hand_' + side]
         dist = np.stack([seg_dist(V, *[b[2:4] for b in BONES if b[0] == nm][0]) for nm in names], 1)
         aw = 1.0 / (dist + .02) ** 3
@@ -1176,16 +1270,19 @@ def build_low(body_v, body_t, parts_lo):
     if target < 1400:
         raise RuntimeError('Phần phụ chiếm quá nhiều tam giác, không còn đủ cho mặt/thân')
     bv, bt = decimate_np(body_v, body_t, target)
-    budget = min(72, 3860 - part_count - len(bt), S['tri_limit'] - part_count - flame_count - len(bt))
+    budget = min(S['head_refine'], S['tri_limit'] - part_count - flame_count - len(bt))
     before = len(bt)
     bv, bt = refine_head(bv, bt, body_v, body_t, budget)
     RES['head_extra_tris'] = int(len(bt) - before)
+    bv = smooth_low_head(bv, bt, body_v, body_t)
     if len(bt) + part_count + flame_count > S['tri_limit']:
         raise RuntimeError('Lưới thấp vượt 4.000 tam giác trước bake')
-    c = bv[bt].mean(axis=1)
+    c = head_space(bv[bt].mean(axis=1), inverse=True)
     face = ((c[:, 2] > .90) & (np.abs(c[:, 0]) < .39)) | ((c[:, 2] > .77) & (np.abs(c[:, 0]) < .27) & (c[:, 1] < -.18))
     RES['head_tris'] = int(face.sum())
     RES['front_head_tris'] = int((face & (c[:, 1] < .02)).sum())
+    if RES['front_head_tris'] < 900:
+        RES['over_budget'].append('mặt trước đầu chưa đạt 900 tam giác')
     log('thân thấp %d tam giác, đầu %d' % (len(bt), RES['head_tris']))
     Vs, Ts, Ws, counts, uvs = [bv], [bt], [body_weights(bv)], {'body': len(bt)}, []
     off = len(bv)
@@ -1209,54 +1306,42 @@ def build_low(body_v, body_t, parts_lo):
     return V, T, W, counts, body_labels(bv, bt), len(bt), np.vstack(uvs)
 
 
-def ribbon(points, widths, rings=12, side=1, phase=0.0):
-    """Dải lửa phẳng hướng ra trước/sau; u 0..1 ngang dải. Trong Blender v = 1 ở gốc, 0 ở ngọn;
-    bộ xuất glTF đảo v nên file GLB có v = 0 ở gốc, 1 ở ngọn."""
-    pts = catmull(points, rings)
-    wid = catmull(np.asarray(widths, float)[:, None], rings)[:, 0]
-    t = np.linspace(0, 1, rings)
-    # Gốc rộng thêm 30%, trở về bề rộng cũ từ giữa dải; giữ nguyên UV và ngọn.
-    wid *= 1 + .30 * (1 - smoothstep(0., .55, t))
-    envelope = np.sin(math.pi * t)
-    pts[:, 0] += side * .05 * np.sin(2 * math.pi * (t * 1.3 + phase)) * envelope
-    pts[:, 1] += .065 * np.sin(2 * math.pi * (t * 1.1 + phase)) * envelope
-    tan = np.gradient(pts, axis=0)
-    tan /= np.linalg.norm(tan, axis=1)[:, None]
-    view = np.array((0., 1., 0.))
-    sdir = np.cross(tan, view)
-    sdir /= np.linalg.norm(sdir, axis=1)[:, None]
-    angle = .7 * np.sin(2 * math.pi * (t * .8 + phase)) * envelope
-    sdir = sdir * np.cos(angle)[:, None] + np.cross(tan, sdir) * np.sin(angle)[:, None]
-    verts, uvs = [], []
-    for i in range(rings):
-        for u in (0., 1.):
-            verts.append(pts[i] + sdir[i] * wid[i] * (u - .5))
-            uvs.append((u, 1 - t[i]))          # glTF đảo v: xuất ra v = 0 ở gốc, 1 ở ngọn
-    faces = []
-    for i in range(rings - 1):
-        a = 2 * i
-        faces += [(a, a + 1, a + 3), (a, a + 3, a + 2)]
-    return np.array(verts), np.array(faces), np.array(uvs)
+def flame_tube(points, radii, phase, rings):
+    """Ống lửa kín sáu cạnh, ba/bốn vòng và một chóp: 36/48 tam giác."""
+    pts = np.array(points, float)
+    t = np.linspace(0, 1, len(pts))
+    pts[:, 1] += .045 * np.sin(2 * math.pi * t + phase) * np.sin(math.pi * t)
+    return tube(pts, radii, seg=6, rings=rings, pointed=True, twist=1.1 + phase,
+                ref=(0, 1, 0), kind='flame')
 
 
 def build_flame():
-    specs = [([(.40, .36, .90), (.52, .39, 1.10), (.60, .42, 1.30), (.76, .37, 1.50), (.80, .40, 1.74)],
-              [.15, .19, .16, .10, .0], 13, 0.0),
-             ([(.43, .38, .80), (.60, .42, .94), (.84, .43, 1.10), (.97, .38, 1.26), (1.02, .40, 1.46)],
-              [.13, .20, .18, .12, .0], 13, .3),
-             ([(.52, .36, .72), (.72, .39, .62), (.92, .43, .56), (1.02, .39, .40)],
-              [.10, .15, .11, .0], 11, .6)]
+    # Bốn lưỡi mỗi cụm: gốc phình, eo thắt, thân chữ S, ngọn móc vào trong.
+    # Ba lưỡi dài có thêm một vòng để đọc được hai khúc cong; lưỡi ngoài thấp.
+    specs = [([(.40, .43, .97), (.37, .49, 1.13), (.49, .45, 1.31),
+               (.50, .40, 1.49), (.36, .47, 1.62)],
+              [.085, .075, .038, .043, .0], 1.2, 5),
+             ([(.51, .38, .93), (.48, .44, 1.16), (.66, .50, 1.40),
+               (.71, .40, 1.66), (.57, .46, 1.84)],
+              [.105, .090, .045, .049, .0], .0, 5),
+             ([(.62, .38, .87), (.60, .46, 1.03), (.83, .49, 1.23),
+               (.96, .40, 1.44), (.82, .45, 1.63)],
+              [.100, .085, .042, .047, .0], .4, 5),
+             ([(.67, .39, .79), (.77, .48, .91), (1.08, .41, 1.08), (.99, .46, 1.29)],
+              [.110, .047, .052, .0], .8, 4)]
     Vs, Ts, UVs, off = [], [], [], 0
-    for side in (1, -1):
-        for pts, wid, rings, ph in specs:
-            p2 = [(side * a, b, c) for a, b, c in pts]
-            v, f, uv = ribbon(p2, wid, rings, side, ph)
-            if side < 0:
-                f = f[:, ::-1]
-            Vs.append(v)
-            Ts.append(f + off)
-            UVs.append(uv)
-            off += len(v)
+    for pts, radii, phase, rings in specs:
+        for piece in both(flame_tube(pts, radii, phase, rings)):
+            faces, uvs = [], []
+            for face, uv in zip(piece['f'], piece['uvl']):
+                for k in range(1, len(face) - 1):
+                    faces.append((face[0], face[k], face[k + 1]))
+                    # UV từng góc giữ đường nối u=0/1, pháp tuyến mượt và ống kín.
+                    uvs.append([(u, 1 - v) for u, v in (uv[0], uv[k], uv[k + 1])])
+            Vs.append(piece['v'])
+            Ts.append(np.array(faces, dtype=np.int64) + off)
+            UVs.append(np.array(uvs))
+            off += len(piece['v'])
     return np.vstack(Vs), np.vstack(Ts), np.vstack(UVs)
 
 
@@ -1281,7 +1366,8 @@ def make_object(name, v, tris, weights, uv=None, mat=None):
         layer = me.uv_layers.new(name='UVMap')
         loops = np.empty(len(me.loops), dtype=np.int32)
         me.loops.foreach_get('vertex_index', loops)
-        layer.data.foreach_set('uv', uv[loops].reshape(-1))
+        values = uv.reshape(-1, 2) if uv.ndim == 3 else uv[loops]
+        layer.data.foreach_set('uv', values.reshape(-1))
     if mat:
         me.materials.append(mat)
     return ob
@@ -1379,7 +1465,7 @@ def unwrap_all(ob, v, tris, labels, n_body, part_uv):
     bpy.ops.mesh.select_all(action='SELECT')
     bpy.ops.uv.select_all(action='SELECT')
     bpy.ops.uv.average_islands_scale()
-    bpy.ops.uv.pack_islands(rotate=True, margin_method='FRACTION', margin=.008)
+    bpy.ops.uv.pack_islands(rotate=True, margin_method='FRACTION', margin=.016)
     bpy.ops.object.mode_set(mode='OBJECT')
     RES['uv_islands'] = uv_islands(ob)
 
@@ -1430,6 +1516,30 @@ def save_jpeg(path, rgb_lin, scene, quality=90):
     scene.render.image_settings.file_format, scene.render.image_settings.quality = prev[0], prev[1]
     scene.render.image_settings.color_mode = prev[2]
     bpy.data.images.remove(img)
+
+
+def save_normal_jpeg(path, normal, scene, quality=97):
+    """JPEG pháp tuyến 512 px, ghi dữ liệu thô, chất lượng cao.
+
+    Blender 5.3 luôn ghi JPEG lấy mẫu màu 4:2:0 (không có tùy chọn 4:4:4); `check` chỉ cảnh báo.
+    """
+    h, w = normal.shape[:2]
+    img = bpy.data.images.new('T203_normal_save', w, h, alpha=False, float_buffer=True)
+    settings, view = scene.render.image_settings, scene.view_settings
+    previous = (settings.file_format, settings.quality, settings.color_mode,
+                view.view_transform, view.exposure, view.gamma)
+    try:
+        img.colorspace_settings.name = 'Non-Color'
+        rgba = np.ones((h, w, 4), dtype=np.float32)
+        rgba[:, :, :3] = np.clip(normal, 0, 1)
+        img.pixels.foreach_set(rgba.reshape(-1))
+        settings.file_format, settings.quality, settings.color_mode = 'JPEG', quality, 'RGB'
+        view.view_transform, view.exposure, view.gamma = 'Raw', 0, 1
+        img.save_render(path, scene=scene)
+    finally:
+        settings.file_format, settings.quality, settings.color_mode = previous[:3]
+        view.view_transform, view.exposure, view.gamma = previous[3:]
+        bpy.data.images.remove(img)
 
 
 def read_float(img):
@@ -1551,8 +1661,8 @@ def bake_textures(scene, hi, lo, raster):
         lo.select_set(True)
         bpy.context.view_layer.objects.active = lo
         scene.cycles.samples = samples
-        kwargs = dict(type=bake_type, use_selected_to_active=True, cage_extrusion=.05, max_ray_distance=.10,
-                      margin=4, margin_type='EXTEND', use_clear=True, target='IMAGE_TEXTURES')
+        kwargs = dict(type=bake_type, use_selected_to_active=True, cage_extrusion=.065, max_ray_distance=.13,
+                      margin=8, margin_type='EXTEND', use_clear=True, target='IMAGE_TEXTURES')
         if filt:
             kwargs['pass_filter'] = filt
         if bake_type == 'NORMAL':
@@ -1573,7 +1683,7 @@ def bake_textures(scene, hi, lo, raster):
 
 
 def finish_textures(scene, maps):
-    """Nhân AO vào màu, lưu JPEG; trả về đường dẫn."""
+    """Nhân AO vào màu; ba JPEG 512 px, pháp tuyến giữ dữ liệu thô và viền bake."""
     os.makedirs(TMP, exist_ok=True)
     ao = maps['ao'][:, :, :1]
     color = maps['color'] * (.50 + .50 * np.clip(ao, 0, 1))
@@ -1615,11 +1725,14 @@ def finish_textures(scene, maps):
         if np.max(np.abs(np.median(observed, axis=0) - np.median(expected, axis=0))) > .04:
             warn('Màu khói trong JPEG lệch quá 10 mức sRGB; cần xem demon_color.jpg')
     paths['emit'] = os.path.join(TMP, 'demon_emit.jpg')
-    save_jpeg(paths['emit'], emit, scene, 90)
-    normal = np.clip(maps['normal'], 0, 1)
+    save_jpeg(paths['emit'], emit, scene, 88)
+    normal = np.clip(maps['normal'][:, :, :3], 0, 1)
     paths['normal'] = os.path.join(TMP, 'demon_normal.jpg')
-    # normal là dữ liệu: giải mã trước để mã hóa sRGB của save_render trả đúng giá trị
-    save_jpeg(paths['normal'], srgb_decode(normal), scene, 92)
+    save_normal_jpeg(paths['normal'], normal, scene, 97)
+    # Giữ nguồn trước nén để mỗi lần giảm chất lượng không nén chồng JPEG.
+    TEXTURE_SOURCE.update(color=color, emit=emit, normal=normal)
+    RES['texture_quality'] = {'color': 88, 'emit': 88, 'normal': 97}
+    RES['normal_jpeg_rmse'] = round(float(np.sqrt(np.mean((jpeg_pixels(paths['normal']) - normal) ** 2))), 5)
     return paths
 
 
@@ -1655,7 +1768,7 @@ def flame_material():
     bsdf.inputs['Emission Color'].default_value = rgb('#ff6a1a')
     bsdf.inputs['Emission Strength'].default_value = 1.0
     bsdf.inputs['Alpha'].default_value = .38
-    mat.use_backface_culling = False
+    mat.use_backface_culling = True
     try:
         mat.surface_render_method = 'BLENDED'
     except Exception as exc:
@@ -2091,9 +2204,10 @@ def export(path, objects):
     bpy.context.view_layer.objects.active = objects[0]
     kwargs = dict(filepath=path, export_format='GLB', use_selection=True,
                   use_active_scene=True, export_yup=True, export_cameras=False,
-                  export_lights=False, export_texcoords=True, export_normals=True, export_apply=False,
+                  export_lights=False, export_texcoords=True, export_normals=True, export_tangents=True,
+                  export_apply=False,
                   export_materials='EXPORT', export_vertex_color='NONE',
-                  export_image_format='JPEG', export_jpeg_quality=90, export_skins=True,
+                  export_image_format='AUTO', export_jpeg_quality=97, export_skins=True,
                   export_animations=True, export_animation_mode='NLA_TRACKS',
                   export_optimize_animation_size=True, export_frame_range=False,
                   export_force_sampling=False)
@@ -2106,7 +2220,7 @@ def export(path, objects):
                 warn('API glTF không có tham số ' + name + '; đã bỏ khi gọi toán tử')
                 del kwargs[name]
         # Ghi enum để Điều phối thấy ngay thay đổi API ở Blender 5.3.
-        for name in ('export_vertex_color', 'export_animation_mode'):
+        for name in ('export_vertex_color', 'export_animation_mode', 'export_image_format'):
             if name in kwargs:
                 enum = {item.identifier for item in properties[name].enum_items}
                 if kwargs[name] not in enum:
@@ -2117,6 +2231,39 @@ def export(path, objects):
     result = bpy.ops.export_scene.gltf(**kwargs)
     if 'FINISHED' not in result:
         raise RuntimeError('Xuất GLB không hoàn tất: ' + str(result))
+    # Giữ 512 px; giảm màu/phát sáng trước, pháp tuyến sau cùng tới mức 94.
+    # Chừa 2 KB cho bước chuẩn hóa thời gian clip sau xuất.
+    ceiling = (S['kb_limit'] - 2) * 1024
+    images = {}
+    for ob in objects:
+        if ob.type != 'MESH':
+            continue
+        for mat in ob.data.materials:
+            if mat and mat.name.startswith('demon_body') and mat.use_nodes:
+                for node in mat.node_tree.nodes:
+                    if node.type == 'TEX_IMAGE' and node.image:
+                        for kind in ('color', 'emit', 'normal'):
+                            if node.image.name.startswith('demon_' + kind):
+                                images[kind] = node.image
+    for changes in ({'color': 85, 'emit': 85}, {'normal': 96}, {'normal': 95}, {'normal': 94}):
+        if os.path.getsize(path) <= ceiling:
+            break
+        for kind, quality in changes.items():
+            image = images.get(kind)
+            if image is None or kind not in TEXTURE_SOURCE:
+                raise RuntimeError('Thiếu ảnh nguồn để giảm chất lượng: ' + kind)
+            filename = bpy.path.abspath(image.filepath)
+            if kind == 'normal':
+                save_normal_jpeg(filename, TEXTURE_SOURCE[kind], bpy.context.scene, quality)
+            else:
+                save_jpeg(filename, TEXTURE_SOURCE[kind], bpy.context.scene, quality)
+            image.reload()
+            RES['texture_quality'][kind] = quality
+        result = bpy.ops.export_scene.gltf(**kwargs)
+        if 'FINISHED' not in result:
+            raise RuntimeError('Xuất lại GLB sau giảm chất lượng JPEG không hoàn tất: ' + str(result))
+    if 'normal' in images:
+        RES['normal_size'] = list(images['normal'].size)
 
 
 def read_glb(path):
@@ -2210,8 +2357,8 @@ def exact_clip_times(path):
 
 
 
-def jpeg_size(data):
-    """Đọc rộng x cao từ khối SOF của JPEG; None nếu không phải JPEG."""
+def jpeg_info(data):
+    """Đọc kích thước và hệ số lấy mẫu từng kênh từ SOF; None nếu không phải JPEG."""
     if data[:2] != b'\xff\xd8':
         return None
     i = 2
@@ -2222,7 +2369,19 @@ def jpeg_size(data):
         marker = data[i + 1]
         if marker in (0xC0, 0xC1, 0xC2):
             h, w = struct.unpack_from('>HH', data, i + 5)
-            return [w, h]
+            count = data[i + 9]
+            if i + 10 + 3 * count > len(data):
+                return None
+            sampling = [data[i + 11 + 3 * k] for k in range(count)]
+            return {'size': [w, h], 'sampling': [[s >> 4, s & 15] for s in sampling]}
+        if marker == 0xDA:
+            return None
+        if marker in (0x01, 0xD8) or 0xD0 <= marker <= 0xD7:
+            i += 2
+            continue
+        if marker == 0xFF:
+            i += 1
+            continue
         i += 2 + struct.unpack_from('>H', data, i + 2)[0]
     return None
 
@@ -2250,10 +2409,11 @@ def inspect_glb(path):
     RES['glb_bounds'] = bounds
     RES['glb_mesh_triangles'] = per_mesh
     RES['glb_triangles'] = sum(per_mesh.values())
-    need = {'POSITION', 'NORMAL', 'TEXCOORD_0', 'JOINTS_0', 'WEIGHTS_0'}
+    need = {'POSITION', 'NORMAL', 'TANGENT', 'TEXCOORD_0', 'JOINTS_0', 'WEIGHTS_0'}
     for part in attributes:
-        if not need <= set(part['attributes']):
-            RES['over_budget'].append('lưới ' + part['mesh'] + ' thiếu thuộc tính ' + str(sorted(need - set(part['attributes']))))
+        required = need
+        if not required <= set(part['attributes']):
+            RES['over_budget'].append('lưới ' + part['mesh'] + ' thiếu thuộc tính ' + str(sorted(required - set(part['attributes']))))
     if not any(p['mesh'].startswith('demon_body') for p in attributes):
         RES['over_budget'].append('thiếu lưới demon_body')
     RES['glb_bones'] = [document['nodes'][index].get('name', '')
@@ -2262,19 +2422,37 @@ def inspect_glb(path):
         RES['over_budget'].append('bộ xương GLB không khớp A3')
     # ảnh nhúng: số lượng, kích thước điểm ảnh, số byte
     images = []
-    for img in document.get('images', []):
+    normal_texture = next((m.get('normalTexture', {}).get('index') for m in document.get('materials', [])
+                           if m.get('name') == 'demon_body'), None)
+    normal_source = document['textures'][normal_texture].get('source') if normal_texture is not None else None
+    for index, img in enumerate(document.get('images', [])):
         view = document['bufferViews'][img['bufferView']]
         off = view.get('byteOffset', 0)
         data = bytes(binary[off:off + view['byteLength']])
-        images.append({'name': img.get('name', ''), 'mime': img.get('mimeType', ''),
-                       'size': jpeg_size(data), 'bytes': view['byteLength']})
+        png = len(data) >= 24 and data[:8] == b'\x89PNG\r\n\x1a\n'
+        jpeg = jpeg_info(data)
+        size = list(struct.unpack_from('>II', data, 16)) if png else (jpeg['size'] if jpeg else None)
+        mime = img.get('mimeType', '')
+        images.append({'name': img.get('name', ''), 'mime': mime,
+                       'format': 'PNG' if png else ('JPEG' if size else 'unknown'),
+                       'size': size, 'bytes': view['byteLength'],
+                       'sampling': jpeg['sampling'] if jpeg else None})
+        allowed = {'image/jpeg', 'image/png'} if index == normal_source else {'image/jpeg'}
+        actual_mime = 'image/png' if png else ('image/jpeg' if size else None)
+        if mime not in allowed or mime != actual_mime:
+            RES['over_budget'].append('ảnh ' + img.get('name', '') + ' sai định dạng (chỉ pháp tuyến được dùng PNG)')
         if images[-1]['size'] and max(images[-1]['size']) > S['img']:
             RES['over_budget'].append('ảnh ' + img.get('name', '') + ' vượt ' + str(S['img']) + ' px')
+        if index == normal_source:
+            if size != [512, 512]:
+                RES['over_budget'].append('ảnh pháp tuyến phải giữ 512×512 px')
+            if jpeg and jpeg['sampling'] != [[1, 1]] * 3:
+                warn('JPEG pháp tuyến lấy mẫu màu 4:2:0 (Blender không có tùy chọn 4:4:4)')
     RES['glb_images'] = images
     if len(images) != 3:
         RES['over_budget'].append('cần đúng ba ảnh bake nhúng trong GLB')
-    if any(img['mime'] != 'image/jpeg' or img['size'] is None for img in images):
-        RES['over_budget'].append('ảnh bake phải là JPEG nhúng đọc được kích thước')
+    if any(img['size'] is None for img in images):
+        RES['over_budget'].append('không đọc được kích thước ảnh bake PNG/JPEG nhúng')
     for mesh in document.get('meshes', []):
         if mesh.get('name') != 'demon_flame':
             continue
@@ -2485,8 +2663,8 @@ def main():
     RES['glb_kb'] = None
     if len(T) > 3860:
         RES['over_budget'].append('demon_body vượt 3.860 tam giác')
-    if len(ft) > 400:
-        RES['over_budget'].append('demon_flame vượt 400 tam giác')
+    if len(ft) > 360:
+        RES['over_budget'].append('demon_flame vượt 360 tam giác')
     if RES['total_triangles'] > S['tri_limit']:
         RES['over_budget'].append('tổng tam giác vượt 4.000')
     if {'glb', 'check'} & OUT:

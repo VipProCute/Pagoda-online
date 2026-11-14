@@ -1,6 +1,6 @@
 'use strict';
 
-import { makeAvatar } from '../avatar-glb.mjs?v=5';
+import { makeAvatar } from '../avatar-glb.mjs?v=6';
 
 // Cảnh khu đi lại, không phải sàn PK. ctx: { THREE, kit, size: ViewMath.SCENE_SIZE.arena,
 // quality: 'low'|'medium'|'high', reduceMotion }. Không đọc socket, không đổi trạng thái game.
@@ -241,9 +241,8 @@ export function build(ctx) {
       personPosition.set(wx, 0, wz); group.localToWorld(personPosition);
       return [player.id, cam ? Math.hypot(personPosition.x - cam.x, personPosition.z - cam.z) : Infinity];
     }));
-    const pickSlots = (key, kind) => SM ? SM.slots(list.filter(player => player[key])
-      .map(player => ({ id: player.id, distance: distances.get(player.id) })), state.me, quality, kind) : null;
-    const demonSlots = pickSlots('demon', 'demon'), auraSlots = pickSlots('aura', 'aura');
+    const slots = SM ? SM.fxSlots(list.map(player => ({ id: player.id, distance: distances.get(player.id),
+      demon: !!player.demon, aura: !!player.aura })), state.me, quality) : null;
     const seen = new Set();
     for (const player of list) {
       if (seen.has(player.id)) continue;
@@ -261,9 +260,11 @@ export function build(ctx) {
       const y = surfaceHeight(x, z), self = player.id === state.me;
       entry.avatar.group.position.set(wx, y, wz); entry.hit.position.set(wx, y + 0.825, wz);
       entry.hit.userData.enabled = !self;
-      const slot = !SM || demonSlots.has(player.id) || auraSlots.has(player.id) || (!player.demon && !player.aura);
+      const s = slots?.get(player.id);
+      const fx = { distance: distances.get(player.id), slot: s ? s.slot : true, ...(s ? { slots: { demon: s.demon, aura: s.aura } } : {}) };
+      entry.avatar.group.userData.fx = fx;
       entry.avatar.update({ ...player, isSelf: self, view: state.view || 'third', reducedMotion: reduced, quality,
-        ...(state.now === undefined ? {} : { now: state.now }), fx: { distance: distances.get(player.id), slot } }, step);
+        ...(state.now === undefined ? {} : { now: state.now }), fx }, step);
     }
     for (const [id, entry] of people) if (!seen.has(id)) {
       entry.avatar.dispose(); entry.hit.removeFromParent(); people.delete(id);

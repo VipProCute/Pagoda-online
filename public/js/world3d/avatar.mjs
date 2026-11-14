@@ -1,10 +1,10 @@
 'use strict';
 
 import * as THREE from 'three';
-import { createFx3d } from './fx3d/index.mjs?v=3';
-import './fx3d/demon.mjs?v=3';
-import './fx3d/lotus.mjs?v=2';
-import './fx3d/aura.mjs?v=3';
+import { createFx3d } from './fx3d/index.mjs?v=4';
+import './fx3d/demon.mjs?v=4';
+import './fx3d/lotus.mjs?v=3';
+import './fx3d/aura.mjs?v=4';
 
 // Đơn vị mét, chân ở y=0, mặt hướng +Z; yaw tính bằng radian.
 // opts: role (beggar/wanderer/obito/sweeper/fortune), isSelf, view,
@@ -752,8 +752,9 @@ export function createAvatar(initialLook = {}, opts = {}) {
         talk: !!state.talk, bubble: state.bubble, id: state.id ?? state.name ?? '', now
       }, dt, {
         distance: finite(state.fx?.distance, Infinity), isSelf: !!(state.isSelf ?? opts.isSelf),
-        slot: state.fx?.slot !== false, hidden: !!first
+        slot: state.fx?.slot !== false, hidden: !!first, slots: state.fx?.slots
       }) || noCover;
+      nameplate.sprite.material.depthTest = bubble.sprite.material.depthTest = !(covers.demon || covers.aura || covers.lotus);
     }
     const nextKey = `${tier}/${rank}/${demon}/${color}/${tint}/${+!!covers.demon}${+!!covers.lotus}${+!!covers.aura}`;
     if (effectKey !== nextKey) { [...effectParts.keys()].forEach(removeEffect); effectKey = nextKey; }

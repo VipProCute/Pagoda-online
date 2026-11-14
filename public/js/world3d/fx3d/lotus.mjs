@@ -1,9 +1,9 @@
 'use strict';
 
 import * as THREE from 'three';
-import { register } from './index.mjs?v=3';
+import { register } from './index.mjs?v=4';
 
-export const LOTUS_URL = '/models/fx/lotus.glb';
+export const LOTUS_URL = '/models/fx/lotus.glb?v=2';
 const active = tier => tier >= 2 && tier <= 7;
 const clamp = value => Math.max(0, Math.min(1, value));
 
@@ -24,7 +24,7 @@ export function lotusPart(env) {
       if (!asset) { failed = true; return; }
       model = asset.scene.clone(true);
       holder = env.group('lotus'); holder.visible = false; holder.add(model);
-      const material = side => env.track(new THREE.MeshStandardMaterial({ color: '#ffffff', vertexColors: true, metalness: 0.45, roughness: 0.32, emissive: new THREE.Color('#9a6414'), emissiveIntensity: 0.38, side, transparent: true }));
+      const material = side => env.track(new THREE.MeshStandardMaterial({ color: '#ffffff', vertexColors: true, metalness: 0.45, roughness: 0.3, emissive: new THREE.Color('#b07818'), emissiveIntensity: 0.46, side, transparent: true }));
       petal = material(THREE.DoubleSide); pod = material(THREE.FrontSide);
       model.traverse(node => {
         if (!node.isMesh) return;
@@ -40,7 +40,7 @@ export function lotusPart(env) {
   }
   function syncParticles() {
     const enabled = env.quality === 'high' && !env.reducedMotion;
-    if (enabled && !points) points = env.particles(24, env.track(new THREE.PointsMaterial({ color: '#ffd36b', size: 0.05, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })));
+    if (enabled && !points) points = env.particles(24, env.track(env.materials.sparkMaterial('#ffd36b')));
     if (points) points.visible = enabled && !!holder?.visible;
   }
   function hide() { if (holder) holder.visible = false; if (points) points.visible = false; }
@@ -64,7 +64,7 @@ export function lotusPart(env) {
     if (outer) outer.rotation.y = env.reducedMotion ? 0 : t * 0.05;
     if (middle) middle.rotation.y = env.reducedMotion ? 0 : -t * 0.07;
     for (const mat of [petal, pod]) {
-      mat.emissiveIntensity = env.reducedMotion ? 0.38 : 0.37 + 0.05 * Math.sin(t * 2.2);
+      mat.emissiveIntensity = env.reducedMotion ? 0.46 : 0.46 + 0.04 * Math.sin(t * 2.2);
       mat.opacity = state.fade ?? 1;
     }
     holder.visible = true; syncParticles();

@@ -12,7 +12,6 @@ import tempfile
 
 import bpy
 from mathutils import Vector
-from mathutils.geometry import delaunay_2d_cdt
 
 random.seed(142)
 REPO = globals().get('REPO')
@@ -57,7 +56,7 @@ def new_scene():
     world.use_nodes = True
     background = world.node_tree.nodes.get('Background')
     background.inputs['Color'].default_value = rgb('#1b1a20')
-    background.inputs['Strength'].default_value = 2.2
+    background.inputs['Strength'].default_value = 0.9
     return scene
 
 
@@ -136,7 +135,7 @@ def stage(scene):
     scene.camera = camera
     camera_data.type = 'ORTHO'
     lights = []
-    for name, energy, size in (('Key', 400, 5), ('Fill', 320, 5), ('Rim', 450, 4)):
+    for name, energy, size in (('Key', 320, 5), ('Fill', 160, 5), ('Rim', 400, 4)):
         data = bpy.data.lights.new(SCENE + name, 'AREA')
         data.energy, data.shape, data.size = energy, 'DISK', size
         obj = bpy.data.objects.new(SCENE + name, data)
@@ -265,19 +264,22 @@ def lerp3(first, second, amount):
     return tuple(first[c] * (1 - amount) + second[c] * amount for c in range(3))
 
 
-def build_petals(name, count, radius, length, tilt, phase, base_z, curl, cup, overlap, cols, stagger=0.0):
-    """Ba hàng cong lòng máng, bụng ở 40% chiều dài, chóp nhọn hơi vểnh ra ngoài.
+def build_petals(name, count, radius, length, tilt, phase, base_z, curl, cup, overlap, stagger=0.0):
+    """Viền giọt nước 16 đỉnh, vòng bụng 8 đỉnh và tâm: 32 tam giác mỗi cánh.
 
-    Chân rộng 78% bụng để che khe; viền ngọn có nhiều đoạn cong nhưng chỉ một chóp.
+    Chín mức dọc viền thay cho năm hàng gãy; bụng rộng nhất gần 52% chiều dài.
     Pháp tuyến lấy từ mặt khum liên tục theo chiều dài/ngang, không theo đường chéo lưới.
     """
     vertices, faces, colors, normals = [], [], [], []
-    reference_sum = [0.0, 0.0, 0.0]
-    dark, middle, light = rgb('#bb7412'), rgb('#f0a62a'), rgb('#ffdc64')
-    rows = (0.0, 0.5, 1.0)
+    dark, middle, light = rgb('#c27a14'), rgb('#f2b02e'), rgb('#ffe7a0')
+    edge_gold = rgb('#ffca37')
+    layer_light = {'petals0': 0.0, 'petals1': 0.035, 'petals2': 0.07}[name]
     slope, bend = math.radians(tilt), math.radians(curl)
     spacing = 2 * math.pi * (radius + 0.5 * length * math.cos(slope)) / count
-    width = spacing * overlap
+    width = min(spacing * overlap, length / 1.7)
+    cup = min(cup, 0.16 * width)
+    belly = 1.1 / 2.1
+    outline_gain = 1 / (2 * belly ** 1.1 * (1 - belly))
 
     def surface(u, across_width):
         # Mặt khum độc lập với cách chia viền: pháp tuyến không gãy ở đường giữa hay chóp.
@@ -290,13 +292,10 @@ def build_petals(name, count, radius, length, tilt, phase, base_z, curl, cup, ov
         else:
             dist = radius + length * u * math.cos(slope)
             height = base_z + length * u * math.sin(slope)
-        # Hai mép cuộn lên; sống ngoài chỉ nhô vài mm, hòa dần vào gốc và chóp.
+        # Máng cong trơn qua đường giữa; gân chỉ tô màu, không tạo sống gấp hình học.
         envelope = math.sin(math.pi * u)
-        ridge = 0.004 * math.exp(-12 * across_width ** 2) * envelope
-        lift = cup * across_width ** 2 * envelope - ridge
-        tip = max(0.0, (u - 0.78) / 0.22)
-        reflex = 0.008 * tip ** 2
-        return Vector((dist - lift * math.sin(local) + reflex, lateral, height + lift * math.cos(local)))
+        lift = cup * across_width ** 2 * envelope
+        return Vector((dist - lift * math.sin(local), lateral, height + lift * math.cos(local)))
 
     for petal in range(count):
         # Tầng trong cao thấp xen kẽ nhẹ, tránh đọc thành một thành vương miện liền.
@@ -305,64 +304,53 @@ def build_petals(name, count, radius, length, tilt, phase, base_z, curl, cup, ov
         radial = Vector((math.cos(angle), math.sin(angle), 0))
         tangent = Vector((-radial.y, radial.x, 0))
         start = len(vertices)
-        for row, along in enumerate(rows):
-            for column in range(cols):
-                across = -1 + 2 * column / (cols - 1)
-                # abs tạo góc nhọn thật ở giữa viền; mỗi nửa vẫn cong lồi tới vai rộng u=0,4.
-                side = abs(across)
-                cap = 1 - 0.6 * side
-                u = along * cap
-                # Đa thức lẻ có độ cong một dấu trên mỗi nửa: mép lồi, vai tiếp tuyến dọc,
-                # chóp có hai tiếp tuyến khác nhau; không bo đỉnh bằng cos như vòng trước.
-                outline = across * (1.25 - 0.25 * across ** 4)
-                across_width = outline * (0.78 + 0.22 * math.sin(along * math.pi / 2))
-                point = surface(u, across_width)
-                vertices.append(tuple(radial * point.x + tangent * point.y + Vector((0, 0, point.z))))
-                # Sai phân trên mặt khum thật, kể cả ở biên; không cần lưng ảo để giấu mặt phẳng.
-                step = 0.0001
-                left = surface(u, across_width - step)
-                right = surface(u, across_width + step)
-                before = surface(u - step, across_width)
-                after = surface(u + step, across_width)
-                normal = (after - before).cross(right - left).normalized()
-                normals.append(tuple(radial * normal.x + tangent * normal.y + Vector((0, 0, normal.z))))
-                # Lưu trung bình vòng 3 trước khi dồn sáng sang mép, tối vào lòng gần gốc.
-                base = lerp3(dark, middle, min(1.0, u / 0.4) ** 0.65)
-                edge = max(0.0, (abs(across_width) - 0.86) / 0.14)
-                edge *= min(1.0, u / 0.3) * 0.4
-                crown = max(0.0, (u - 0.82) / 0.18) ** 1.6 * 0.7
-                rim = 0.32 if row == len(rows) - 1 else 0.0
-                reference = lerp3(base, light, min(1.0, max(edge, crown, rim)))
-                for channel in range(3):
-                    reference_sum[channel] += reference[channel]
-                # Dải viền chạy qua 2–3 đỉnh mỗi bên; không tẩy sáng cả hàng chóp.
-                edge_span = min(2.5, (cols - 1) / 2)
-                edge = max(0.0, 1 - min(column, cols - 1 - column) / edge_span)
-                edge *= min(1.0, u / 0.22) * 0.64
-                trough = max(0.0, 1 - u / 0.5) * (1 - across_width ** 2) * 0.18
-                base = lerp3(base, dark, trough)
-                rim = 0.12 if row == len(rows) - 1 else 0.0
-                colors.append(lerp3(base, light, max(edge, crown, rim)) + (1.0,))
-        for row in range(len(rows) - 1):
-            for column in range(cols - 1):
-                first = start + row * cols + column
-                faces.extend(((first, first + cols, first + cols + 1),
-                              (first, first + cols + 1, first + 1)))
-    # Giữ đúng trung bình tuyến tính của vòng 3 từng tầng (COLOR_0), vẫn nằm trong [0,1].
-    means = [sum(color[c] for color in colors) / len(colors) for c in range(3)]
-    targets = [value / len(colors) for value in reference_sum]
-    colors = [tuple(color[c] * targets[c] / means[c] if means[c] >= targets[c]
-                    else 1 - (1 - color[c]) * (1 - targets[c]) / (1 - means[c])
-                    for c in range(3)) + (1.0,) for color in colors]
+        # Hai vòng đồng tâm phủ mặt giọt nước; bụng bầu, hai cạnh cong lồi tới mũi.
+        # Vòng trong giữ bụng phồng, không để một quạt lớn biến cánh thành phiến phẳng.
+        samples = [(0.5, 0.0, 0.0)]
+        for scale, segments in ((0.55, 8), (1.0, 16)):
+            for index in range(segments):
+                theta = 2 * math.pi * index / segments
+                u = 0.5 + 0.5 * scale * math.cos(theta)
+                # Viền ngoài tỷ lệ với u^1,1 × (1−u): bụng ở 52%, chóp nhọn mềm.
+                across_width = scale * math.sin(theta) * outline_gain * u ** 0.6 * math.sqrt(max(0.0, 1 - u))
+                samples.append((u, across_width, scale))
+        for u, across_width, edge in samples:
+            point = surface(u, across_width)
+            vertices.append(tuple(radial * point.x + tangent * point.y + Vector((0, 0, point.z))))
+            # Sai phân trên mặt khum thật, kể cả ở biên; không cần lưng ảo để giấu mặt phẳng.
+            step = 0.0001
+            left = surface(u, across_width - step)
+            right = surface(u, across_width + step)
+            before = surface(u - step, across_width)
+            after = surface(u + step, across_width)
+            normal = (after - before).cross(right - left).normalized()
+            normals.append(tuple(radial * normal.x + tangent * normal.y + Vector((0, 0, normal.z))))
+            base = lerp3(dark, middle, min(1.0, u / 0.6) ** 0.9)
+            # Hai rãnh cạnh sống tối hơn; chỉ một dải mép hẹp nhận màu sáng ấm.
+            vein = math.exp(-90 * (across_width ** 2 - 0.32) ** 2) * math.sin(math.pi * u)
+            base = lerp3(base, dark, 0.17 * vein)
+            spine = 0.13 * math.exp(-16 * across_width ** 2) * math.sin(math.pi * u)
+            rim = edge ** 8 * min(1.0, u / 0.35)
+            base = lerp3(base, edge_gold, min(1.0, 0.48 * rim + spine + layer_light))
+            crown = max(0.0, (u - 0.92) / 0.08)
+            colors.append(lerp3(base, light, min(0.24, 0.10 * rim + 0.14 * crown)) + (1.0,))
+        inner, outer = start + 1, start + 9
+        for index in range(8):
+            nxt = (index + 1) % 8
+            first, mid, last = outer + 2 * index, outer + 2 * index + 1, outer + (2 * index + 2) % 16
+            faces.extend(((start, inner + index, inner + nxt),
+                          (inner + index, first, mid),
+                          (inner + index, mid, inner + nxt),
+                          (inner + nxt, mid, last)))
     return make_mesh(name, vertices, faces, colors=colors, normals=normals)
 
 
 def build_pod():
-    """Đế khuất sau cánh, đĩa phẳng có gờ và 13 hốc hạt lõm thật, không chồng mặt."""
+    """Gương sen 12 cạnh: thành 24 tam giác, mặt 24, sáu hạt chỉ tô màu đỉnh."""
     vertices, faces, colors, normals = [], [], [], []
-    base_color, side_color = rgb('#a56510'), rgb('#b87a18')
-    top_color, rim_color = rgb('#cb8b1d'), rgb('#e5ac35')
-    seed_rim, seed_center = rgb('#b47716'), rgb('#95540c')
+    base_color, top_color = rgb('#c27a14'), rgb('#f2b02e')
+    rim_color = rgb('#ffca37')
+    seed_color = lerp3(top_color, base_color, 0.35) + (1.0,)
 
     def ring(radius, height, segments, color, outward, upward):
         start = len(vertices)
@@ -373,74 +361,38 @@ def build_pod():
             normals.append(tuple(Vector((outward * math.cos(angle), outward * math.sin(angle), upward)).normalized()))
         return start
 
-    def connect(lower, upper, segments):
-        for index in range(segments):
-            nxt = (index + 1) % segments
-            faces.extend(((lower + index, lower + nxt, upper + nxt),
-                          (lower + index, upper + nxt, upper + index)))
-
-    # Chỉ giữ thành đế; mặt trên bị gương che, mặt đáy không nhìn thấy trong game.
-    lower = ring(0.235, -0.012, 12, base_color, 1, 0)
-    upper = ring(0.24, 0.004, 12, base_color, 1, 0)
-    connect(lower, upper, 12)
-    segments = 18
-    # Thành gương cao 28 mm, mặt chỉ cao hơn chân cánh trong 26 mm; gờ rộng 6 mm, cao 2 mm.
-    lower = ring(0.282, 0.024, segments, side_color, 1, 0)
-    outer = ring(0.285, POD_TOP + 0.002, segments, rim_color, 0.5, 1)
-    inner = ring(0.279, POD_TOP, segments, top_color, 0, 1)
-    connect(lower, outer, segments)
-    connect(outer, inner, segments)
-
-    # Chia đĩa có ràng buộc quanh hốc: nền vẫn đồng phẳng, tâm hạt thấp hơn 2,5 mm.
-    # CDT của mathutils có sẵn trong Blender 5.x; không cần thư viện ngoài hoặc toán tử sửa lưới.
-    points = [(0.279 * math.cos(2 * math.pi * index / segments),
-               0.279 * math.sin(2 * math.pi * index / segments)) for index in range(segments)]
-    heights, shades = [POD_TOP] * segments, [top_color] * segments
-    edges = [(index, (index + 1) % segments) for index in range(segments)]
-    centers = [(0, 0)] + [(radius * math.cos(2 * math.pi * (index + phase) / count),
-                           radius * math.sin(2 * math.pi * (index + phase) / count))
-                          for radius, count, phase in ((0.085, 4, 0), (0.175, 8, 0.5)) for index in range(count)]
-    for center_x, center_y in centers:
-        start = len(points)
-        for index in range(5):
-            angle = 2 * math.pi * index / 5
-            points.append((center_x + 0.016 * math.cos(angle), center_y + 0.016 * math.sin(angle)))
-            heights.append(POD_TOP)
-            shades.append(seed_rim)
-            edges.append((start + index, start + (index + 1) % 5))
-            edges.append((start + index, start + 5))
-        points.append((center_x, center_y))
-        heights.append(POD_TOP - 0.0025)
-        shades.append(seed_center)
-    coords, _, triangles, origins, _, _ = delaunay_2d_cdt([Vector(point) for point in points], edges, [], 0, 1e-8, True)
-    start = len(vertices)
-    for coord, source in zip(coords, origins):
-        # Các cạnh không giao nhau: mỗi đỉnh kết quả phải ứng đúng một đỉnh đầu vào.
-        if len(source) != 1:
-            raise ValueError('Chia gương sen sinh đỉnh ngoài dự kiến')
-        index = source[0]
-        vertices.append((coord.x, coord.y, heights[index]))
-        colors.append(shades[index])
-        normals.append((0, 0, 1))
-    for triangle in triangles:
-        first, second, third = triangle
-        a, b, c = coords[first], coords[second], coords[third]
-        if (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x) < 0:
-            second, third = third, second
-        faces.append((start + first, start + second, start + third))
+    # Bỏ mặt đáy khuất; tách đỉnh mép để pháp tuyến mặt gương luôn hướng lên.
+    lower = ring(0.248, 0.004, 12, base_color, 1, 0)
+    upper = ring(0.264, POD_TOP, 12, rim_color, 1, 0)
+    for index in range(12):
+        nxt = (index + 1) % 12
+        faces.extend(((lower + index, lower + nxt, upper + nxt),
+                      (lower + index, upper + nxt, upper + index)))
+    outer = ring(0.264, POD_TOP, 12, rim_color, 0, 1)
+    inner = ring(0.13, POD_TOP, 6, seed_color, 0, 1)
+    center = len(vertices)
+    vertices.append((0, 0, POD_TOP))
+    colors.append(top_color)
+    normals.append((0, 0, 1))
+    for index in range(6):
+        nxt = (index + 1) % 6
+        first, mid, last = outer + 2 * index, outer + 2 * index + 1, outer + (2 * index + 2) % 12
+        faces.extend(((first, mid, inner + index), (mid, last, inner + nxt),
+                      (mid, inner + nxt, inner + index), (center, inner + index, inner + nxt)))
     return make_mesh('pod', vertices, faces, colors=colors, normals=normals)
 
 
 def main():
     scene = new_scene()
-    # Vật liệu gần với vật liệu trong game: vàng kim loại 0,45, nhám 0,32, phát sáng hổ phách nhẹ.
-    petal_material = material('petal', '#ffffff', metallic=0.45, roughness=0.32, vertex_color=True, glow='#9a6414')
-    pod_material = material('pod', '#ffffff', metallic=0.45, roughness=0.32, vertex_color=True, glow='#9a6414')
-    # Cánh: 512 + 288 + 128 tam giác; gương và đế dự kiến 268, tổng 1.196.
-    # Tầng trong lệch tầng giữa 15° (nửa bước 12 cánh), nghiêng ±3°, khum chóp thêm 7°.
-    objects = [build_petals('petals0', 16, 0.246, 0.4, 20, 0, 0.0, -6, 0.050, 1.7, 9),
-               build_petals('petals1', 12, 0.268, 0.30, 46, 0.5, 0.012, -12, 0.060, 1.5, 7),
-               build_petals('petals2', 8, 0.294, 0.32, 70, 2 / 3, 0.024, -47, 0.064, 1.12, 5, stagger=3), build_pod()]
+    # Vàng ấm gần vật liệu trong game; màu đỉnh giữ hổ phách ở gốc, sáng ở mép.
+    petal_material = material('petal', '#ffffff', metallic=0.55, roughness=0.32, vertex_color=True, glow='#b07818')
+    pod_material = material('pod', '#ffffff', metallic=0.55, roughness=0.32, vertex_color=True, glow='#b07818')
+    # Mỗi cánh 25 đỉnh, 32 tam giác: 512 + 384 + 256 + gương 48 = 1.200.
+    # Gốc cánh lùi vào dưới gương sen và hạ sát đế để che kín khe tam giác tầng ngoài.
+    # Cánh dài hơn, tầng trong dựng 68° rồi khép tới 98°; vẫn cao khoảng 0,30 m.
+    objects = [build_petals('petals0', 16, 0.190, 0.49, 23, 0, -0.008, -14, 0.075, 1.75),
+               build_petals('petals1', 12, 0.205, 0.36, 45, 0.5, 0.004, -12, 0.080, 1.65),
+               build_petals('petals2', 8, 0.220, 0.29, 68, 2 / 3, 0.010, -30, 0.075, 1.55, stagger=2), build_pod()]
     for obj in objects:
         obj.data.materials.append(pod_material if obj.name == 'pod' else petal_material)
     if 'views' in OUT:
