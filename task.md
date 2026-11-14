@@ -138,6 +138,7 @@
 | T-176 | Bổ sung test cửa hàng skin: ghi sổ hỏng, duyệt tay bằng trình duyệt thật, gộp quyền khi khách đăng nhập | ✅ Xong · PR #65 | P2 | CORE + KYDAO + OPS | Claude Sonnet 5.5 |
 | T-177 | Nhân vật Blender làm mặc định trong giao diện 3D, nút "Người cũ" đổi về dáng cũ | ✅ Xong · PR #66 | P1 | CORE + HALL | Claude Sonnet 5.5 |
 | T-178 | Test tự động cho nút "Người cũ" (`view3d-ui.js`), dọn sổ việc đợt Kỳ Đài | ✅ Xong · PR #67 | P2 | CORE + HALL | Claude Sonnet 5.5 |
+| T-179 | Ba ca test còn thiếu cho `kd:skin` (hết giờ chưa nổ hẹn giờ, gọi từ Chánh điện, giữ sân đổi quân trong hạn), chốt sổ việc đợt Kỳ Đài | ✅ Xong · PR #68 | P2 | CORE + KYDAO + KYDAI | Claude Sonnet 5.5 |
 
 Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạm `package.json`). **T-005**, **T-007**, **T-002** làm song song được với nhóm trên.
 Đợt 2026-11: làm **T-003, T-004, T-006** trước (T-004 gỡ nút thắt `package.json` cho mọi thẻ thêm file JS; T-006 là cổng "CI xanh"). Sau đó theo lịch 6 đợt ở [docs/KE-HOACH-DOT-2026-11.md §10.3](docs/KE-HOACH-DOT-2026-11.md#103-lịch-theo-đợt-và-khóa-vùng-nóng).
@@ -1746,9 +1747,9 @@ Thiết kế, hợp đồng mã, ngân sách và định tuyến mô hình: [doc
 
 Lấy từ README "Việc nên làm tiếp" và lúc rà repo. Điều phối viết lại thành thẻ đủ trường khi muốn làm.
 
-- ⚪ Dùng huy hiệu chủ đề `public/img/kydao/ui/crest-<id>.webp` trong bộ chọn "Lãnh địa" (cạnh tên sân) và cạnh khẩu hiệu khai mở (`.kdfx-banner`). Gói: KYDAI. Thợ gợi ý: gpt-6-luna.
+- ✅ (đã làm ở T-127, PR #61: huy hiệu hiện trong bộ chọn và cạnh khẩu hiệu) Dùng huy hiệu chủ đề `public/img/kydao/ui/crest-<id>.webp` trong bộ chọn "Lãnh địa" (cạnh tên sân) và cạnh khẩu hiệu khai mở (`.kdfx-banner`). Gói: KYDAI. Thợ gợi ý: gpt-6-luna.
 - ⚪ `public/js/app.js:561–562` ghép `cfg.kinds`, `cfg.tracks` từ máy chủ vào `innerHTML` (mã có từ trước đợt Kỳ Đài; GPT Sol phát hiện 2026-11-13). Dựng phần tử và gán chữ bằng `textContent`. Gói: CORE. Trái bất biến AGENTS.md §3.5.
-- ⚪ Thêm 3 ca test cho `kd:skin` (soát T-110, Gemini 4 Argon, 2026-11-13): (1) gọi `skin` khi đồng hồ vừa quá hạn mà hẹn giờ chưa nổ (nhánh `expired` trong `lib/kydao/manager.js`); (2) e2e gọi `kd:skin` khi đang ở Chánh điện để ghim `where: 'any'`; (3) gửi `field` giữ nguyên + `pieces` mới khi `field` còn trong hạn 20 giây. Gói: KYDAO + KYDAI. Thợ gợi ý: gpt-6-luna.
+- ✅ (đã làm ở T-179, PR #68) Thêm 3 ca test cho `kd:skin` (soát T-110, Gemini 4 Argon, 2026-11-13): (1) gọi `skin` khi đồng hồ vừa quá hạn mà hẹn giờ chưa nổ (nhánh `expired` trong `lib/kydao/manager.js`); (2) e2e gọi `kd:skin` khi đang ở Chánh điện để ghim `where: 'any'`; (3) gửi `field` giữ nguyên + `pieces` mới khi `field` còn trong hạn 20 giây. Gói: KYDAO + KYDAI. Thợ gợi ý: gpt-6-luna.
 - ⚪ Cờ vua: nhận diện thế cờ chết tổng quát (hàng rào Tốt khóa có Tốt phụ, ví dụ FEN `4k3/8/8/p1p1p1p1/P1P1P1P1/P7/8/4K3 w - - 0 1`); hiện chỉ có 4 ca thiếu quân + một mẫu hàng rào đúng khớp. Đổi tên biến tiếng Việt (`ten`, `ca`, `ds`) trong test sang tiếng Anh. Gói: KYDAO. (Soát T-021, 2026-11-11.)
 - ⚪ Chưa có test nào cho `lib/moderation.js` (`checkMessage`, `checkName`, `clean`), trong khi đây là bất biến AGENTS.md §3.6 (chặn link, dãy số chống lừa đảo). Thêm test cả ca dương và ca âm ("chim cút", "đi ngủ" không bị bắt). Gói: SOCIAL. (Soát T-003 phát hiện 2026-11-11.)
 - 👤 Thu âm bài tụng thật của chư tăng chùa đối tác (có sự đồng ý), thay giọng tổng hợp. Gói: CHANT.
