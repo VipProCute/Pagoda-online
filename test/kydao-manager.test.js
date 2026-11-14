@@ -919,3 +919,70 @@ test('kd:skin: ván đã kết thúc bị từ chối; đấu lại bắt đầu
   assert.deepEqual(f.sent.filter(x => x.ev === 'kd:skin').map(x => x.uid), [c.uid, d.uid]);
   n.shutdown();
 });
+
+/* ----- T-151: khóa skin (skinAllowed / skinPrice) và revalidateSkins ----- */
+
+test('kd:skin: skin chưa mở bị từ chối code locked kèm giá; kiểm quyền đứng trước kiểm tần suất; về mặc định luôn được', () => {
+  const owned = new Set(['field:river', 'pieces:wood']);
+  let on = true;
+  const calls = [];
+  const e = managerEnv();
+  e.deps.skinAllowed = (uid, kind, id) => { calls.push([uid, kind, id]); return !on || owned.has(kind + ':' + id); };
+  e.deps.skinPrice = (kind, id) => (kind === 'field' ? 50000 : 20000);
+  const m = createKydaoManager(e.deps);
+  const { a, gameId } = startGame({ ...e, manager: m });
+  const r = m.skin(a, { gameId, field: 'volcano', pieces: 'magma' });
+  assert.deepEqual(r, { ok: false, reason: 'Skin này cần cúng dường để mở.', code: 'locked', kind: 'field', id: 'volcano', price: 50000 });
+  assert.equal(e.sent.some(x => x.ev === 'kd:skin'), false, 'không phát gì khi bị khóa');
+  assert.deepEqual(m.skin(a, { gameId, pieces: 'magma' }), { ok: false, reason: 'Skin này cần cúng dường để mở.', code: 'locked', kind: 'pieces', id: 'magma', price: 20000 });
+  // skin đã mở thì được
+  assert.equal(m.skin(a, { gameId, field: 'river', pieces: 'wood' }).ok, true);
+  // đổi liền (đang trong thời gian chờ) sang skin chưa mở: trả locked chứ không phải rate
+  assert.equal(m.skin(a, { gameId, pieces: 'magma' }).code, 'locked');
+  assert.equal(m.move(a, { gameId, ply: 0, move: 'e2e4' }).ok, true);   // qua mốc 30 giây "không đi nước đầu"
+  // về mặc định (null) không bị khóa; còn trong thời gian chờ thì là 'rate', không phải 'locked'
+  assert.equal(m.skin(a, { gameId, field: null }).code, 'rate');
+  e.clock.advance(20000);
+  assert.equal(m.skin(a, { gameId, field: null, pieces: null }).ok, true);
+  assert.ok(calls.every(c => c[0] === a.uid), 'tra quyền theo đúng uid của người đổi');
+  // cửa hàng tắt: tự do
+  on = false;
+  e.clock.advance(20000);
+  assert.equal(m.skin(a, { gameId, field: 'volcano' }).ok, true);
+  m.shutdown();
+});
+
+test('kd:skin: cờ vây/caro tra loại stones, cờ vua tra loại pieces', () => {
+  for (const [game, kind] of [['gomoku', 'stones'], ['go', 'stones'], ['chess', 'pieces']]) {
+    const e = managerEnv();
+    e.deps.skinAllowed = () => false;
+    const m = createKydaoManager(e.deps);
+    const { a, gameId } = startGame({ ...e, manager: m }, game, false, game === 'go' ? 9 : undefined);
+    const r = m.skin(a, { gameId, pieces: game === 'chess' ? 'magma' : 'cosmos' });
+    assert.equal(r.code, 'locked'); assert.equal(r.kind, kind);
+    assert.equal(r.price, null, 'không có skinPrice thì giá null');
+    m.shutdown();
+  }
+});
+
+test('revalidateSkins: gỡ skin không còn được phép ở mọi ván, chỉ bên bị ảnh hưởng, phát kd:skin opened:false', () => {
+  const owned = new Set();
+  let on = false;
+  const e = managerEnv();
+  e.deps.skinAllowed = (uid, kind, id) => !on || (uid === 'uid-secret-b' && owned.has(kind + ':' + id));
+  const m = createKydaoManager(e.deps);
+  const { a, b, gameId } = startGame({ ...e, manager: m });
+  owned.add('field:ocean'); owned.add('pieces:coral');
+  assert.equal(m.skin(a, { gameId, field: 'volcano', pieces: 'magma' }).ok, true);
+  assert.equal(m.skin(b, { gameId, field: 'ocean', pieces: 'coral' }).ok, true);
+  assert.equal(m.revalidateSkins(), 0, 'cửa hàng tắt: không gỡ gì');
+  on = true;
+  e.sent.length = e.rooms.length = 0;
+  assert.equal(m.revalidateSkins(), 1, 'chỉ bên a bị gỡ');
+  const ev = e.sent.filter(x => x.ev === 'kd:skin');
+  assert.equal(ev.length, 2, 'cả hai người chơi nhận');
+  assert.deepEqual(ev[0].payload, { gameId, side: 'a', field: null, pieces: null, opened: false });
+  assert.deepEqual(m.resume(a).start.skins, { a: { field: null, pieces: null }, b: { field: 'ocean', pieces: 'coral' } });
+  assert.equal(m.revalidateSkins(), 0, 'chạy lại không gỡ thêm');
+  m.shutdown();
+});
