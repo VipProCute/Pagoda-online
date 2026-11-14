@@ -27,6 +27,17 @@
     .av-note { font-size: 12px; color: #806b52; }
     .av-status { border-bottom: 1px solid #d4c5ac; padding: 10px 0 16px; min-height: 66px; font-size: 13px; }
     a { color: #80532e; }
+    .bm-sec { margin-top: 34px; }
+    .bm-sec h2 { font: 26px/1.2 Georgia, 'Times New Roman', serif; margin: 6px 0 8px; }
+    .bm-layout { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 20px; }
+    .bm-stage { position: relative; border: 1px solid #ad9169; border-radius: 18px; overflow: hidden; background: #8c847a; }
+    .bm-stage canvas { height: 56vh; min-height: 380px; }
+    .bm-fps { position: absolute; left: 14px; top: 12px; padding: 4px 10px; border-radius: 8px; background: rgba(40, 30, 20, .62); color: #fff1d7; font: 13px/1.4 ui-monospace, monospace; pointer-events: none; }
+    .bm-clips { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 12px; }
+    .bm-clips button { margin: 0; }
+    .bm-clips button[aria-pressed="true"] { background: #b8873f; color: #2b1d0e; }
+    input[type="color"] { width: 100%; height: 44px; padding: 2px; }
+    @media (max-width: 800px) { .bm-layout { grid-template-columns: 1fr; } }
     @media (max-width: 800px) {
       main { padding: 20px 14px; } h1 { font-size: 32px; }
       .av-layout { grid-template-columns: 1fr; } canvas { height: 60vh; min-height: 360px; }
@@ -73,13 +84,41 @@
         <p class="av-note av-wide">Bộ hiệu ứng có cả mẫu 666 và mẫu hào quang kết hợp pháp tướng. Các lựa chọn riêng áp dụng nhân vật đầu trong bộ Khách. Bộ đo khởi động 2 giây, lấy mẫu 10 giây ở mức Vừa.</p>
       </aside>
     </div>
+    <section class="bm-sec" aria-labelledby="bm-title">
+      <div class="av-kicker">T-120 · BẢN MẪU DỰNG BẰNG BLENDER</div>
+      <h2 id="bm-title">Bản mẫu Blender (T-120)</h2>
+      <p class="av-intro">Hai nhân vật áo lam (nam, nữ) dựng bằng Blender, có xương và bốn hoạt ảnh. Đặt cạnh nhân vật dựng bằng mã ở trên để so; chưa thay vào game.</p>
+      <div class="bm-layout">
+        <div class="bm-stage">
+          <canvas id="bm-canvas" aria-label="Bản mẫu nhân vật Blender; kéo để xoay, cuộn để thu phóng" tabindex="0"></canvas>
+          <div class="bm-fps" id="bm-fps" role="status">FPS: đang nạp…</div>
+        </div>
+        <aside>
+          <div class="bm-clips" role="group" aria-label="Hoạt ảnh">
+            <button type="button" data-clip="idle" aria-pressed="true">idle · đứng</button>
+            <button type="button" data-clip="walk" aria-pressed="false">walk · đi</button>
+            <button type="button" data-clip="sit" aria-pressed="false">sit · ngồi</button>
+            <button type="button" data-clip="bow" aria-pressed="false">bow · lạy</button>
+          </div>
+          <label>Màu áo (vật liệu robe) <input type="color" id="bm-robe" value="#6f8fa8"></label>
+          <label class="av-check"><input type="checkbox" id="bm-halo"> Bật hào quang</label>
+          <button type="button" id="bm-crowd">Nhân 60</button>
+          <button type="button" id="bm-pair" style="margin-top:8px">Về hai nhân vật</button>
+          <button type="button" id="bm-use" style="margin-top:8px" aria-pressed="false">Dùng nhân vật Blender cho dàn nhân vật phía trên</button>
+          <button type="button" id="bm-stopcode" style="margin-top:8px">Dừng cảnh dựng bằng mã (để đo)</button>
+          <p class="av-status" id="bm-status" role="status">Đang nạp mô hình…</p>
+          <p class="av-note">Số FPS là trung bình 3 giây gần nhất. Cảnh dựng bằng mã ở trên cũng đang chạy; bấm "Dừng cảnh dựng bằng mã" trước khi đo.</p>
+        </aside>
+      </div>
+    </section>
     <p class="av-note">Trang thử độc lập · <a href="/world3d-test.html">Thử nền 3D</a> · <a href="/">Về chùa</a></p>
   </main>
   <script src="/js/aura.js"></script>
   <script src="/js/merit.js?v=npc2"></script>
   <script type="module">
     import * as THREE from 'three';
-    import { createAvatar, AVATAR_COLORS } from '/js/world3d/avatar.mjs?v=3';
+    import { AVATAR_COLORS } from '/js/world3d/avatar.mjs?v=3';
+    import { makeAvatar as createAvatar } from '/js/world3d/avatar-glb.mjs?v=2';
 
     const byId = id => document.getElementById(id);
     const canvas = byId('world'), status = byId('status');
@@ -253,6 +292,146 @@
       renderer.setClearColor('#303a32'); renderer.toneMapping = THREE.ACESFilmicToneMapping;
       buildCollection(); resize(); observer.observe(canvas); cancelMeasurement(); frame = requestAnimationFrame(draw);
     } catch (error) { stop(); status.textContent = 'Chưa mở được WebGL2. Xin thử bằng trình duyệt có hỗ trợ đồ họa 3D.'; }
+  </script>
+  <script type="module">
+    import * as THREE from 'three';
+    import { GLTFLoader } from '/vendor/three-addons/loaders/GLTFLoader.js';
+    import { clone as cloneSkinned } from '/vendor/three-addons/utils/SkeletonUtils.js';
+
+    const $ = id => document.getElementById(id);
+    const canvas = $('bm-canvas'), fpsBox = $('bm-fps'), statusBox = $('bm-status');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color('#8c847a');
+    scene.fog = new THREE.Fog('#8c847a', 18, 46);
+    const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 80);
+    const target = new THREE.Vector3(0, 0.8, 0);
+    let yaw = 0, pitch = 1.38, distance = 4.2;
+    const orbit = () => {
+      camera.position.set(target.x + Math.sin(yaw) * Math.sin(pitch) * distance, target.y + Math.cos(pitch) * distance,
+        target.z + Math.cos(yaw) * Math.sin(pitch) * distance);
+      camera.lookAt(target);
+    };
+    scene.add(new THREE.HemisphereLight('#fff1dc', '#6d655b', 2.2));
+    const sun = new THREE.DirectionalLight('#fff0dc', 2.6); sun.position.set(-4, 8, 6); scene.add(sun);
+    const floor = new THREE.Mesh(new THREE.CircleGeometry(40, 48), new THREE.MeshStandardMaterial({ color: '#9b9288', roughness: 1 }));
+    floor.rotation.x = -Math.PI / 2; scene.add(floor);
+
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    renderer.setClearColor('#8c847a');
+    const resize = () => {
+      const r = canvas.getBoundingClientRect();
+      camera.aspect = r.width / Math.max(1, r.height); camera.updateProjectionMatrix();
+      renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.5)); renderer.setSize(r.width, r.height, false);
+    };
+    new ResizeObserver(resize).observe(canvas);
+
+    const loader = new GLTFLoader();
+    const load = url => new Promise((ok, fail) => loader.load(url, ok, undefined, fail));
+    const SRC = {};
+    let clipName = 'idle', haloOn = false, entries = [], crowd = false;
+    const robeColor = new THREE.Color('#6f8fa8');
+
+    // Vật liệu dùng chung giữa các bản sao: đổi một nơi là đổi hết.
+    function eachMaterial(root, fn) { root.traverse(o => { if (o.isMesh) [].concat(o.material).forEach(fn); }); }
+    function haloFor(entry) {
+      if (!SRC.halo) return;
+      if (haloOn && !entry.halo) {
+        const head = entry.root.getObjectByName('head');
+        if (!head) return;
+        entry.root.updateMatrixWorld(true);
+        const halo = SRC.halo.scene.clone(true);
+        // Đặt theo tư thế gốc: sau đầu 0,17 m, tâm đầu cao 1,31 m, rồi gắn vào xương đầu để đi theo đầu.
+        const want = new THREE.Matrix4().multiplyMatrices(entry.root.matrixWorld, new THREE.Matrix4().makeTranslation(0, 1.31, -0.17));
+        halo.matrix.copy(head.matrixWorld).invert().multiply(want);
+        halo.matrix.decompose(halo.position, halo.quaternion, halo.scale);
+        halo.matrixAutoUpdate = true;
+        head.add(halo); entry.halo = halo;
+      } else if (!haloOn && entry.halo) { entry.halo.removeFromParent(); entry.halo = null; }
+    }
+    function play(entry, fresh) {
+      const clip = entry.clips[clipName];
+      if (!clip) return;
+      const next = entry.mixer.clipAction(clip);
+      if (clipName === 'bow') { next.setLoop(THREE.LoopOnce, 1); next.clampWhenFinished = true; }
+      if (entry.action && entry.action !== next) next.reset().crossFadeFrom(entry.action, 0.25, false);
+      else next.reset();
+      next.play(); entry.action = next; entry.since = 0;
+      if (fresh) next.time = Math.random() * clip.duration * (clipName === 'bow' ? 0.3 : 1);
+    }
+    function spawn(kind, x, z, fresh) {
+      const src = SRC[kind];
+      const root = cloneSkinned(src.scene);
+      root.traverse(o => { if (o.isSkinnedMesh) o.frustumCulled = false; });
+      root.position.set(x, 0, z); root.rotation.y = crowd ? (Math.random() - 0.5) * 0.9 : 0;
+      scene.add(root);
+      const entry = { root, mixer: new THREE.AnimationMixer(root), clips: Object.fromEntries(src.animations.map(a => [a.name, a])), halo: null, action: null, since: 0 };
+      entries.push(entry); play(entry, fresh); haloFor(entry);
+      return entry;
+    }
+    function clearAll() { for (const e of entries) { e.mixer.stopAllAction(); e.halo?.removeFromParent(); scene.remove(e.root); } entries = []; }
+    function pair() {
+      clearAll(); crowd = false; spawn('nam', -0.7, 0); spawn('nu', 0.7, 0);
+      distance = 4.2; target.set(0, 0.8, 0); pitch = 1.38; orbit();
+      statusBox.textContent = 'Hai nhân vật: nam (trái), nữ (phải).';
+    }
+    function crowd60() {
+      clearAll(); crowd = true;
+      for (let i = 0; i < 60; i++) spawn(i % 2 ? 'nam' : 'nu', (i % 10 - 4.5) * 1.5, ((2.5 - Math.floor(i / 10))) * 1.7, true);
+      distance = 17; target.set(0, 0.5, 0); pitch = 1.0; orbit();
+      statusBox.textContent = '60 nhân vật (SkeletonUtils.clone, chung vật liệu). Mỗi nhân vật 1 AnimationMixer.';
+    }
+    function setClip(name) {
+      clipName = name;
+      document.querySelectorAll('[data-clip]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.clip === name)));
+      entries.forEach(e => play(e, crowd));
+    }
+    document.querySelectorAll('[data-clip]').forEach(b => b.addEventListener('click', () => setClip(b.dataset.clip)));
+    $('bm-robe').addEventListener('input', e => { robeColor.set(e.target.value); for (const k of ['nam', 'nu']) if (SRC[k]) eachMaterial(SRC[k].scene, m => { if (m.name === 'robe') m.color.copy(robeColor); }); });
+    $('bm-halo').addEventListener('change', e => { haloOn = e.target.checked; entries.forEach(haloFor); });
+    $('bm-crowd').addEventListener('click', crowd60);
+    const useBlender = () => { try { return localStorage.getItem('ta-avatar') === 'blender'; } catch (error) { return false; } };
+    $('bm-use').setAttribute('aria-pressed', String(useBlender()));
+    $('bm-use').textContent = (useBlender() ? 'Đang dùng' : 'Dùng') + ' nhân vật Blender cho dàn nhân vật phía trên' + (useBlender() ? ' · bấm để tắt' : '');
+    $('bm-use').addEventListener('click', () => {
+      try { if (useBlender()) localStorage.removeItem('ta-avatar'); else localStorage.setItem('ta-avatar', 'blender'); } catch (error) { /* không lưu được */ }
+      location.reload();
+    });
+    $('bm-pair').addEventListener('click', pair);
+    $('bm-stopcode').addEventListener('click', () => { window.dispatchEvent(new Event('pagehide')); statusBox.textContent = 'Đã dừng cảnh dựng bằng mã ở trên. Tải lại trang để bật lại.'; });
+
+    let drag = null;
+    canvas.addEventListener('pointerdown', e => { drag = { x: e.clientX, y: e.clientY }; canvas.setPointerCapture(e.pointerId); });
+    canvas.addEventListener('pointermove', e => {
+      if (!drag) return; yaw -= (e.clientX - drag.x) * 0.006; pitch = THREE.MathUtils.clamp(pitch + (e.clientY - drag.y) * 0.006, 0.25, 1.5);
+      drag = { x: e.clientX, y: e.clientY }; orbit();
+    });
+    for (const t of ['pointerup', 'pointercancel', 'lostpointercapture']) canvas.addEventListener(t, () => { drag = null; });
+    canvas.addEventListener('wheel', e => { e.preventDefault(); distance = THREE.MathUtils.clamp(distance * Math.exp(e.deltaY * 0.001), 2, 40); orbit(); }, { passive: false });
+
+    const stamps = []; let last = 0;
+    function frame(now) {
+      const dt = last ? Math.min(0.1, (now - last) / 1000) : 0; last = now;
+      for (const e of entries) {
+        e.since += dt; e.mixer.update(dt);
+        if (clipName === 'bow' && e.since > 3.2) play(e, false);   // bow không lặp: tự phát lại sau mỗi 3,2 giây để xem
+      }
+      renderer.render(scene, camera);
+      stamps.push(now); while (stamps.length && now - stamps[0] > 3000) stamps.shift();
+      const span = (now - stamps[0]) / 1000;
+      const fps = span > 0.5 ? (stamps.length - 1) / span : 0;
+      fpsBox.textContent = `FPS TB 3 giây: ${fps.toFixed(1)} · ${entries.length} nhân vật · ${renderer.info.render.triangles} tam giác · ${renderer.info.render.calls} lượt vẽ`;
+      window.blenderBenchmark = { fps: Number(fps.toFixed(1)), avatars: entries.length, triangles: renderer.info.render.triangles, calls: renderer.info.render.calls };
+      requestAnimationFrame(frame);
+    }
+    (async () => {
+      try {
+        const [nam, nu, halo] = await Promise.all(['nam', 'nu', 'hao-quang'].map(n => load(`/models/avatar/${n}.glb`)));
+        Object.assign(SRC, { nam, nu, halo });
+        eachMaterial(nam.scene, m => { if (m.name === 'robe') m.color.copy(robeColor); });
+        eachMaterial(nu.scene, m => { if (m.name === 'robe') m.color.copy(robeColor); });
+        resize(); orbit(); pair(); requestAnimationFrame(frame);
+      } catch (error) { statusBox.textContent = 'Chưa nạp được mô hình .glb: ' + (error?.message || error); }
+    })();
   </script>
 </body>
 </html>

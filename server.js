@@ -316,6 +316,14 @@ app.use(express.json({ limit: '64kb' }));
 app.use('/vendor/three', express.static(path.join(__dirname, 'node_modules', 'three', 'build'), {
   maxAge: '10m', dotfiles: 'deny', index: false, redirect: false, fallthrough: false
 }));
+// Bộ nạp mô hình .glb (bàn cờ, quân cờ dựng bằng Blender): chỉ phục vụ đúng ba file cần, không mở cả thư mục examples.
+const THREE_ADDONS = new Set(['loaders/GLTFLoader.js', 'utils/BufferGeometryUtils.js', 'utils/SkeletonUtils.js']);
+app.get('/vendor/three-addons/:dir/:file', (req, res) => {
+  const rel = req.params.dir + '/' + req.params.file;
+  if (!THREE_ADDONS.has(rel)) return res.status(404).end();
+  // root + đường dẫn tương đối: sendFile với đường dẫn tuyệt đối sẽ từ chối khi thư mục cha có dấu chấm đầu tên (ví dụ .claude).
+  res.sendFile(rel, { root: path.join(__dirname, 'node_modules', 'three', 'examples', 'jsm'), maxAge: '10m' });
+});
 app.use(express.static(path.join(__dirname, 'public'), {
   maxAge: '10m',
   setHeaders: (res, file) => { if (file.endsWith('.html')) res.set('Cache-Control', 'no-cache'); }
@@ -1406,7 +1414,8 @@ io.on('connection', socket => {
     { event: 'setup', where: 'yard', fn: 'setup' }, { event: 'ready', where: 'yard', fn: 'ready' },
     { event: 'stand', where: 'yard', fn: 'stand' }, { event: 'invite:cancel', where: 'hall', fn: 'cancelInvite' }, { event: 'respond', where: 'hall', fn: 'respond' },
     { event: 'draw', where: 'any', fn: 'draw' }, { event: 'resign', where: 'any', fn: 'resign' }, { event: 'mark', where: 'any', fn: 'mark' },
-    { event: 'agree', where: 'any', fn: 'agree' }, { event: 'resume-play', where: 'any', fn: 'resumePlay' }, { event: 'resume', where: 'any', fn: 'resume' }
+    { event: 'agree', where: 'any', fn: 'agree' }, { event: 'resume-play', where: 'any', fn: 'resumePlay' }, { event: 'resume', where: 'any', fn: 'resume' },
+    { event: 'skin', where: 'any', fn: 'skin' }      // skin sân/quân của chính mình; manager kiểm mã bằng KydaoSkins.normalize
   ].forEach(kdPass);
   socket.on('kd:tables', kydaoOnly('hall', d => {
     const r = kydao.tables(kdUser(p), d);

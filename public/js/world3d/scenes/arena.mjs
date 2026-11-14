@@ -1,6 +1,6 @@
 'use strict';
 
-import { createAvatar } from '../avatar.mjs?v=3';
+import { makeAvatar } from '../avatar-glb.mjs?v=2';
 
 // Cảnh khu đi lại, không phải sàn PK. ctx: { THREE, kit, size: ViewMath.SCENE_SIZE.arena,
 // quality: 'low'|'medium'|'high', reduceMotion }. Không đọc socket, không đổi trạng thái game.
@@ -237,7 +237,7 @@ export function build(ctx) {
       seen.add(player.id);
       let entry = people.get(player.id);
       if (!entry) {
-        const avatar = createAvatar(player.look, { reducedMotion: reduced });
+        const avatar = makeAvatar(player.look, { reducedMotion: reduced });
         const hit = new THREE.Mesh(hitGeometry, hitMaterial); hit.userData.person = player.id;
         group.add(avatar.group, hit); entry = { avatar, hit, look: '' }; people.set(player.id, entry);
         avatar.group.traverse(object => { if (object.isMesh) { object.castShadow = shadows; object.receiveShadow = shadows; } });

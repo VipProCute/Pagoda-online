@@ -76,3 +76,23 @@ HÌNH ẢNH TRONG THƯ MỤC NÀY — NGUỒN GỐC VÀ GIẤY PHÉP
    dáng ngồi thiền và linh khí khi tu luyện
    Không phải tệp ảnh: vẽ trực tiếp bằng mã lệnh Canvas 2D trong public/js/hall.js, là tác phẩm gốc của dự án.
    Giấy phép: CC0 1.0 như mục 1.
+
+5) Skin sân và skin quân cờ Kỳ Đài: public/img/kydao/** (nền nửa sân, ảnh xem trước) và public/models/kydao/** (.glb)
+   Tự dựng bằng Blender từ mã lệnh tools/blender/kydao/build.py (hình khối và vật liệu sinh bằng script, không dùng
+   mô hình hay ảnh của bên thứ ba), là tác phẩm gốc của dự án. Không sửa tay: sửa script rồi chạy lại.
+   Giấy phép: CC0 1.0 như mục 1.
+
+6) Huy hiệu chủ đề 8 sân Kỳ Đài: public/img/kydao/ui/crest-<id>.webp
+   Tạo bằng công cụ tạo ảnh của Canva theo mô tả của dự án ngày 2026-11-13, dùng theo điều khoản nội dung của Canva;
+   không dùng nhân vật hay phong cách của thương hiệu nào. Ảnh gốc 200 px được chuyển WebP 256 px.
+   Câu khung prompt: "Round emblem badge, gold-bronze rim, stylized East Asian lacquer-painting and woodblock style
+   illustration, no text, plain dark background, centered main symbol: <chủ đề>, palette of <màu>".
+   Hiện có: volcano, river, forest, glacier: tạo bằng công cụ AI của Canva (glacier ảnh gốc 512 px).
+   ocean, lotus, thunder, desert: ghép từ thành phần miễn phí trong thư viện Canva (khung tròn viền vàng cùng một
+   hình minh họa đồ họa trên nền #0b0b10), xuất dưới dạng thiết kế đã ghép 512 px rồi chuyển WebP 256 px, ngày 2026-11-13.
+   Thiết kế Canva chứa glacier và 4 huy hiệu ghép: ID DAHa0B1oAPc. Dùng theo điều khoản nội dung của Canva.
+
+7) Mô hình nhân vật mẫu: public/models/avatar/{nam,nu,hao-quang}.glb và ảnh docs/ky-dai/anh/nhan-vat-*.jpg
+   Tự dựng bằng Blender từ script tools/blender/avatar/build.py (hình khối, xương, hoạt ảnh sinh bằng mã, không dùng
+   mô hình hay ảnh của bên thứ ba), là tác phẩm gốc của dự án. Không sửa tay: sửa script rồi chạy lại.
+   Giấy phép: CC0 1.0 như mục 1.

@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Thử hiệu ứng Kỳ Đài</title>
+<link rel="stylesheet" href="/css/kydao-fx.css?v=2">
+<style>
+  body { margin: 0; padding: 12px 16px; background: #14100c; color: #f3e6cf; font: 14px/1.4 system-ui, sans-serif; }
+  h1 { font-size: 17px; margin: 0 0 8px; }
+  .kd-boardwrap { position: relative; width: min(100%, 420px); aspect-ratio: 1; margin: 0 auto 10px; background: #0f0906; border-radius: 10px; padding: 4px; box-sizing: border-box; }
+  #board { width: 100%; height: 100%; display: block; }
+  .row { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; align-items: center; }
+  .row b { min-width: 64px; }
+  button { min-height: 44px; padding: 0 12px; border-radius: 8px; border: 1px solid #6b4f2a; background: #2a1d10; color: #f3e6cf; font: inherit; }
+  button:active { background: #4a3218; }
+  label { display: inline-flex; gap: 6px; align-items: center; min-height: 44px; }
+</style>
+</head>
+<body>
+<h1>Thử hiệu ứng Kỳ Đài (cờ vua giả)</h1>
+<div class="kd-boardwrap" id="wrap"><canvas id="board"></canvas></div>
+<div class="row"><b>Sân</b><span id="fields"></span></div>
+<div class="row"><b>Phong cấp</b><button id="promo">Tốt phong cấp ở e5</button><button id="promo2">Phong cấp ở a8 (góc)</button></div>
+<div class="row"><b>Thắng</b><span id="wins"></span></div>
+<div class="row"><b>Bên thua</b><span id="loses"></span></div>
+<div class="row"><label><input type="checkbox" id="red"> Giả lập giảm chuyển động</label><button id="stop">Dừng</button></div>
+<script src="/js/kydao-skins.js?v=4"></script>
+<script src="/js/kydao-fx.js?v=5"></script>
+<script>
+(function () {
+  'use strict';
+  const wrap = document.getElementById('wrap'), cv = document.getElementById('board');
+  const ctx = cv.getContext('2d');
+  let jolt = null, cell = 48, fieldId = 'volcano';
+  const PIECES = []; // quân giả
+  const back = ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R'];
+  for (let c = 0; c < 8; c++) { PIECES.push({ c, r: 0, t: back[c], s: 'a' }, { c, r: 1, t: 'P', s: 'a' }, { c, r: 6, t: 'P', s: 'b' }, { c, r: 7, t: back[c], s: 'b' }); }
+
+  function size() {
+    const w = wrap.clientWidth - 8;
+    const d = Math.min(2, window.devicePixelRatio || 1);
+    cv.width = cv.height = Math.round(w * d);
+    cv.style.width = cv.style.height = w + 'px';
+    cell = w / 8;
+  }
+  const xy = (c, r) => ({ x: 4 + (c + 0.5) * cell, y: 4 + (7 - r + 0.5) * cell });
+  function draw() {
+    const d = cv.width / (wrap.clientWidth - 8);
+    ctx.setTransform(d, 0, 0, d, 0, 0);
+    const f = KydaoSkins.field(fieldId).palette;
+    for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
+      ctx.fillStyle = (r + c) % 2 ? f.light : f.dark; ctx.fillRect(c * cell, (7 - r) * cell, cell, cell);
+    }
+    PIECES.forEach(p => {
+      const o = xy(p.c, p.r); p.x = o.x - 4; p.y = o.y - 4;
+      const j = jolt ? jolt(o.x, o.y) : { dx: 0, dy: 0 };
+      ctx.fillStyle = p.s === 'a' ? '#f4ead2' : '#2a2420'; ctx.strokeStyle = '#000';
+      ctx.beginPath(); ctx.arc(p.x + j.dx, p.y + j.dy, cell * 0.36, 0, 6.283); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = p.s === 'a' ? '#222' : '#eee'; ctx.font = (cell * 0.34) + 'px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(p.t, p.x + j.dx, p.y + j.dy);
+    });
+  }
+  (function tick() { draw(); requestAnimationFrame(tick); })();
+  size(); window.addEventListener('resize', size);
+
+  function opts(extra) { return Object.assign({}, extra); }
+  const mk = (host, label, fn) => { const b = document.createElement('button'); b.textContent = label; b.onclick = fn; document.getElementById(host).appendChild(b); };
+  const rect = () => { const w = wrap.clientWidth, h = wrap.clientHeight; return { x: 0, y: h / 2, w, h: h / 2 }; };
+
+  function mount() { KydaoFx.mount(wrap, { reduced: document.getElementById('red').checked }); }
+  document.getElementById('red').onchange = () => { KydaoFx.stop(); mount(); };
+  mount();
+
+  Object.keys(KydaoSkins.FIELDS).forEach(id => mk('fields', KydaoSkins.FIELDS[id].name, () => { fieldId = id; KydaoFx.stop(); KydaoFx.play('domain', { side: 'a', fieldId: id, rect: rect(), fromBottom: true }); }));
+  const prom = at => () => { KydaoFx.stop(); KydaoFx.play('promote', { at, piece: 'Q', cell, onJolt: f => { jolt = f; } }); };
+  document.getElementById('promo').onclick = () => prom(xy(4, 4))();
+  document.getElementById('promo2').onclick = () => prom(xy(0, 7))();
+
+  const WINS = [['Chiếu hết', 'chess', 'checkmate'], ['Bắt Tướng', 'xiangqi', 'checkmate'], ['Năm quân', 'gomoku', 'five'], ['Thắng điểm', 'go', 'score'], ['Hết giờ', 'chess', 'timeout'], ['Xin thua', 'chess', 'resign'], ['Hòa', 'chess', 'agreed']];
+  function win(game, reason, mine) {
+    const k = xy(4, 7);
+    const line = [0, 1, 2, 3, 4].map(i => xy(1 + i, 1 + i));
+    KydaoFx.stop();
+    KydaoFx.play('win', { game, reason, result: reason === 'agreed' ? 'draw' : (mine ? 'a' : 'b'), mine, king: k, line });
+  }
+  WINS.forEach(w => { mk('wins', w[0], () => win(w[1], w[2], true)); mk('loses', w[0], () => win(w[1], w[2], false)); });
+  document.getElementById('stop').onclick = () => KydaoFx.stop();
+})();
+</script>
+</body>
+</html>

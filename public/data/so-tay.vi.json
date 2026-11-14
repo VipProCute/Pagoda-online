@@ -139,7 +139,22 @@
           "Mỗi ván có đồng hồ cho từng bên. Hết giờ thì thua.",
           "Ván xếp hạng kết thúc quá sớm thì bị hủy và không tính Elo."
         ] },
-        { "type": "p", "text": "Ván cờ không cộng công đức." }
+        { "type": "p", "text": "Ván cờ không cộng công đức." },
+        { "type": "h", "text": "Lãnh địa và skin quân" },
+        { "type": "p", "text": "Dùng được ở cờ vua, cờ tướng và cờ úp. Mọi skin hiện đều miễn phí; lựa chọn được lưu trên máy bạn." },
+        { "type": "steps", "items": [
+          "Trong bảng cờ, bấm nút \"Lãnh địa\".",
+          "Chọn \"Sân của bạn\" và \"Quân của bạn\".",
+          "Bấm \"Khai mở\": nửa sân của bạn đổi cảnh, cả bàn thấy khẩu hiệu. Mỗi 20 giây khai mở được một lần."
+        ] },
+        { "type": "ul", "items": [
+          "Skin quân tự áp khi vào ván.",
+          "Bấm \"Ẩn skin đối thủ\" nếu muốn nhìn bên kia theo kiểu mặc định.",
+          "Cờ vua: Tốt phong cấp thì cả bàn chấn động, các quân khác nảy lên.",
+          "Hết ván có hiệu ứng chiến thắng rồi mới hiện bảng kết quả.",
+          "Giữa bàn cờ tướng và cờ úp luôn là một dòng sông.",
+          "Muốn bàn đứng yên: bật \"Giảm chuyển động\" của máy hoặc tắt hiệu ứng ở Chánh điện."
+        ] }
       ]
     },
     {

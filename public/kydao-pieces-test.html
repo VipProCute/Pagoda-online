@@ -49,9 +49,18 @@
       <button id="kd-test-measure" type="button">Đo lại</button>
       <output id="kd-test-status" role="status">Đang chuẩn bị mẫu…</output>
     </section>
+    <section class="kd-test-panel" aria-labelledby="kd-test-skin-title">
+      <h2 id="kd-test-skin-title">Skin sân và skin quân</h2>
+      <p>Chọn sân và bộ quân cho từng bên. Ảnh nửa sân nạp lười từ <code>/img/kydao/fields/</code>; chưa tải xong thì tô theo màu sân.</p>
+      <div class="kd-test-row" id="kd-test-skin-controls"></div>
+      <div class="kd-test-boards" id="kd-test-skin-boards"></div>
+      <h3>Lưới 8 sân × 8 bộ quân (hai bên dùng cùng một skin)</h3>
+      <div id="kd-test-skin-grids"></div>
+    </section>
     <div id="kd-test-sizes"></div>
   </main>
-  <script src="/js/kydao-draw.js"></script>
+  <script src="/js/kydao-skins.js?v=4"></script>
+  <script src="/js/kydao-draw.js?v=skins7"></script>
   <script src="/js/kydao/chess.js"></script>
   <script src="/js/kydao/xiangqi.js"></script>
   <script>
@@ -163,6 +172,74 @@
           button.disabled = false;
         }
       }
+      /* ---------- Skin sân + skin quân ---------- */
+      function skinSection() {
+        const F = Object.keys(KydaoSkins.FIELDS), P = Object.keys(KydaoSkins.PIECES);
+        const state = { fa: F[0], pa: P[0], fb: F[1], pb: P[1], flip: false, hideB: false };
+        const controls = document.getElementById('kd-test-skin-controls');
+        const boards = document.getElementById('kd-test-skin-boards');
+        const mkSelect = (label, key, ids, names) => {
+          const wrap = element('label', label + ' ');
+          const sel = element('select');
+          const none = element('option', 'Mặc định'); none.value = ''; sel.append(none);
+          ids.forEach(id => { const o = element('option', names[id].name); o.value = id; sel.append(o); });
+          sel.value = state[key];
+          sel.addEventListener('change', () => { state[key] = sel.value; redraw(); });
+          wrap.append(sel); return wrap;
+        };
+        const mkCheck = (label, key) => {
+          const wrap = element('label', ' ' + label), box = element('input');
+          box.type = 'checkbox';
+          box.addEventListener('change', () => { state[key] = box.checked; redraw(); });
+          wrap.prepend(box); return wrap;
+        };
+        controls.append(mkSelect('Sân bên a', 'fa', F, KydaoSkins.FIELDS), mkSelect('Quân bên a', 'pa', P, KydaoSkins.PIECES),
+          mkSelect('Sân bên b', 'fb', F, KydaoSkins.FIELDS), mkSelect('Quân bên b', 'pb', P, KydaoSkins.PIECES),
+          mkCheck('Lật bàn', 'flip'), mkCheck('Ẩn skin bên b', 'hideB'));
+        const views = [];
+        // view.draw(skins, extra) vẽ lại, và tự vẽ lại khi ảnh nửa sân tải xong.
+        function addBoard(parent, game, w, h, board) {
+          const node = canvas(w, h, game);
+          parent.append(node);
+          const view = { game, draw(skins, extra) {
+            KydaoDraw.draw(node.getContext('2d'), Object.assign({ game, w, h, dpr, board, flip: state.flip, skins, onAsset: () => view.draw(skins, extra) }, extra));
+          } };
+          return view;
+        }
+        function redraw() {
+          const skins = { a: { field: state.fa || null, pieces: state.pa || null }, b: { field: state.fb || null, pieces: state.pb || null } };
+          views.forEach(v => v.draw(skins, { hideSkins: { a: false, b: state.hideB },
+            selected: v.game === 'chess' ? 'e2' : 'e3', targets: v.game === 'chess' ? ['e3', 'e4'] : ['e4'],
+            last: v.game === 'chess' ? ['d2', 'd4'] : ['a3', 'a4'] }));
+        }
+        for (const game of ['chess', 'xiangqi']) {
+          const size = dimensions(game, 72), board = (game === 'chess' ? KyChess : KyXiangqi).create({}).board;
+          const panel = element('div', '', 'kd-test-scroll');
+          views.push(addBoard(panel, game, size.w, size.h, board)); boards.append(panel);
+        }
+        redraw();
+        const grids = document.getElementById('kd-test-skin-grids');
+        for (const game of ['chess', 'xiangqi']) {
+          const size = dimensions(game, 22), board = (game === 'chess' ? KyChess : KyXiangqi).create({}).board;
+          const panel = element('section', '', 'kd-test-panel');
+          panel.append(element('h3', game === 'chess' ? 'Cờ vua' : 'Cờ tướng'));
+          const scroller = element('div', '', 'kd-test-scroll');
+          const table = element('table'), head = element('tr');
+          head.append(element('th', 'Quân / Sân'));
+          F.forEach(f => head.append(element('th', KydaoSkins.FIELDS[f].name)));
+          table.append(head);
+          for (const pid of P) {
+            const tr = element('tr'); tr.append(element('th', KydaoSkins.PIECES[pid].name));
+            for (const fid of F) {
+              const td = element('td'), view = addBoard(td, game, size.w, size.h, board);
+              view.draw({ a: { field: fid, pieces: pid }, b: { field: fid, pieces: pid } }, {});
+              tr.append(td);
+            }
+            table.append(tr);
+          }
+          scroller.append(table); panel.append(scroller); grids.append(panel);
+        }
+      }
       // Đợi phông sẵn sàng trước khi chữ được lưu vào canvas đệm.
       await document.fonts.ready;
       for (const cell of [36, 72]) {
@@ -176,6 +253,7 @@
         section.append(boards);
         document.getElementById('kd-test-sizes').append(section);
       }
+      skinSection();
       button.addEventListener('click', measure);
       await measure();
     })();

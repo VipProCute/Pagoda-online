@@ -8,7 +8,7 @@ const vm = require('node:vm');
 const Draw = require('../public/js/kydao-draw');
 const { createKydaoManager } = require('../lib/kydao/manager');
 
-function surface(reduced = false) {
+function surface(reduced = false, extra = {}) {
   const elements = [], frames = [], timers = [], texts = [];
   const context = new Proxy({
     createLinearGradient: () => ({ addColorStop() {} }), createRadialGradient: () => ({ addColorStop() {} }),
@@ -33,6 +33,7 @@ function surface(reduced = false) {
     addEventListener() {}, removeEventListener() {}, getComputedStyle: () => ({ paddingLeft: '4', paddingRight: '4' }),
     setTimeout: fn => timers.push(fn), clearTimeout() {}, setInterval() {}, clearInterval() {}, requestAnimationFrame: fn => frames.push(fn)
   };
+  Object.assign(root, extra);
   vm.createContext(root);
   vm.runInContext(fs.readFileSync(require.resolve('../public/js/kydao-ui'), 'utf8'), root);
   const content = el => (el.textContent || '') + (el.children || []).map(content).join('');
@@ -48,13 +49,14 @@ function surface(reduced = false) {
       el.listeners.pointerup({ clientX: p.x + (drag ? 20 : 0), clientY: p.y, preventDefault() {} });
     },
     get canvas() { return elements.find(el => el.tag === 'canvas' && el._w); },
-    get message() { return elements.find(el => el.className === 'kd-msg').textContent; }
+    get message() { return elements.find(el => el.className === 'kd-msg').textContent; },
+    get result() { return elements.find(el => el.className === 'kd-result'); }
   };
 }
 
-function gameEnv(game, size, reduced) {
+function gameEnv(game, size, reduced, extra) {
   const users = [{ uid: 'ua', pid: 'pa', name: 'An' }, { uid: 'ub', pid: 'pb', name: 'Bình' }, { uid: 'uv', pid: 'pv', name: 'Khách' }];
-  const views = users.map(() => surface(reduced)), sent = [], errors = [];
+  const views = users.map(() => surface(reduced, extra)), sent = [], errors = [];
   let seq = 0;
   const deliver = (i, ev, payload) => {
     if (ev === 'kd:start') views[i].api.open(payload, { now: () => 1000, send: (name, data, cb) => {
@@ -114,4 +116,33 @@ test('UI thật: caro chơi tới thắng; cờ úp chờ reveal, hiệu ứng t
     assert.equal(view.frames.length > 0, !reduced);
     assert.equal(f.sent.filter(x => x.name === 'kd:move').length, 1); f.manager.shutdown();
   }
+});
+
+test('khai mở sân: gửi kd:skin và hai bên thấy skin', () => {
+  const store = { 'kydao.skin': JSON.stringify({ field: 'volcano', pieces: 'magma' }) };
+  const extra = { KydaoSkins: require('../public/js/kydao-skins.js'), localStorage: { getItem: k => store[k] ?? null, setItem: (k, v) => { store[k] = String(v); } } };
+  const e = gameEnv('chess', undefined, false, extra), [a, b] = e.views;
+  const skinCalls = e.sent.filter(x => x.name === 'kd:skin');
+  assert.ok(skinCalls.length >= 1, 'skin quân tự gửi khi vào ván');
+  for (const c of skinCalls) { assert.equal(c.data.pieces, 'magma'); assert.equal(c.data.field, null, 'sân chưa gửi'); }
+  const gid = e.state().gameId;
+  assert.doesNotThrow(() => a.api.apply({ type: 'kd:skin', gameId: gid, side: 'a', field: 'volcano', pieces: 'magma', opened: true }));
+  assert.doesNotThrow(() => b.api.apply({ type: 'kd:skin', gameId: gid, side: 'a', field: 'volcano', pieces: 'magma', opened: true }));
+  e.manager.shutdown();
+  const c = gameEnv('gomoku', undefined, false, extra);
+  assert.equal(c.sent.filter(x => x.name === 'kd:skin').length, 0, 'caro không có skin');
+  c.manager.shutdown();
+});
+
+test('hiệu ứng thắng ném lỗi thì bảng kết quả vẫn hiện', () => {
+  const e = gameEnv('chess', undefined, false, {
+    KydaoFx: { mount() {}, stop() {}, unmount() {}, play() { throw new Error('x'); } }
+  });
+  const [a] = e.views;
+  const gid = e.state().gameId;
+  assert.equal(a.result.hidden, true);
+  a.api.apply({ type: 'kd:end', gameId: gid, result: 'a', reason: 'checkmate' });
+  while (a.timers.length) a.timers.shift()();
+  assert.equal(a.result.hidden, false);
+  e.manager.shutdown();
 });

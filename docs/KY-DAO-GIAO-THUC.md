@@ -214,7 +214,7 @@ Biểu tượng bàn cờ nhỏ trên đầu người chơi ở bàn trong lấy
 Mặc định mọi sự kiện cần đang ở Sân chùa (`p.scene==='yard'`, `p.place` rỗng hoặc `hall`, khớp `server.js`). **Ngoại lệ vị trí** (không nới quyền người ngoài, vì mọi kiểm tra sở hữu vẫn theo `uid`):
 - Sự kiện ghi "mọi nơi".
 - `kd:invite`, `kd:invite:cancel`, `kd:respond`: người mời/nhận ở chánh điện hoặc sân; chỉ người mời mới hủy được lời mời của mình, chỉ người được mời mới trả lời được (nhận lời từ chánh điện là hợp lệ, máy chủ chuyển hai người ra sân, mục 4.3).
-- `kd:mark`, `kd:agree`, `kd:resume-play`, `kd:move`, `kd:draw`, `kd:resign`: bất kể nơi, miễn `uid` là người chơi của `gameId` (kể cả bàn trong, nơi hai người đứng tại chỗ ở chánh điện).
+- `kd:mark`, `kd:agree`, `kd:resume-play`, `kd:move`, `kd:draw`, `kd:resign`, `kd:skin`: bất kể nơi, miễn `uid` là người chơi của `gameId` (kể cả bàn trong, nơi hai người đứng tại chỗ ở chánh điện).
 
 Sự kiện xếp hạng cần `accountReady(p)`, không thì `{ ok:false, code:'login', reason }`.
 
@@ -238,11 +238,12 @@ Sự kiện xếp hạng cần `accountReady(p)`, không thì `{ ok:false, code:
 | `kd:mark` | `{ gameId, point }` | cờ vây, đang `phase:'scoring'`; người chơi | `{ ok:true }` | "Chưa tới lúc đánh dấu quân." · "Điểm này không có quân." |
 | `kd:agree` | `{ gameId }` | như `kd:mark` | `{ ok:true }` | như trên |
 | `kd:resume-play` | `{ gameId }` | như `kd:mark` | `{ ok:true }` | như trên |
+| `kd:skin` | `{ gameId, field?, pieces? }` (mã skin, mục 5.4) | mọi nơi; người chơi của ván; ván chưa kết thúc; môn thuộc `KydaoSkins.GAMES` | `{ ok:true, field, pieces }` (skin hiện tại của mình sau khi đổi) | "Môn này chưa có skin." · "Chưa chọn skin." · "Đợi N giây nữa mới đổi được sân." / "… quân." (`code:'rate'`, kèm `retryAt`) · `stale` |
 | `kd:watch` | `{ table }` | ở sân; bàn đang đấu thật (không phải bàn trong); chưa đủ 50 người xem (**người đang xem đúng bàn này gọi lại thì luôn được nhận**, không tính thêm, để dựng lại ván) | `{ ok:true, table }` rồi máy chủ gửi `kd:start` (không có `you`) | "Bàn này không có ván." · "Bàn này đã đủ người xem." |
 | `kd:unwatch` | `{ table }` | đang xem | `{ ok:true }` | — |
 | `kd:resume` | `{}` | mọi nơi | `{ ok:true, start:null\|StartPayload, message? }` (mục 6.2) | — |
 
-- **Lỗi chung** (mọi sự kiện, `reason` thống nhất, không ném lỗi): không ở nơi cho phép → "Hãy ra Sân chùa để chơi cờ." · `table`/`gameId`/`seat` sai kiểu hoặc không có → "Không có bàn này." / "Không có ván này." · người xem hoặc người ngoài gọi lệnh của người chơi (`kd:move`, `kd:draw`, `kd:resign`, `kd:mark`, `kd:agree`, `kd:resume-play`) → "Bạn không phải người chơi của ván này." · `kd:ready`/`kd:respond`/`kd:invite` khi đã đủ `KYDAO_MAX_GAMES` → "Chùa đang có quá nhiều ván cờ, thử lại sau." · vượt `bucket('kd', 5, 15)` → `{ ok:false, code:'rate', reason:'Bạn thao tác quá nhanh.' }`. **`code:'rate'` là mã mới** (bucket của PK không trả `code`); giao diện chỉ cần coi như lỗi thường và hiện `reason`.
+- **Lỗi chung** (mọi sự kiện, `reason` thống nhất, không ném lỗi): không ở nơi cho phép → "Hãy ra Sân chùa để chơi cờ." · `table`/`gameId`/`seat` sai kiểu hoặc không có → "Không có bàn này." / "Không có ván này." · người xem hoặc người ngoài gọi lệnh của người chơi (`kd:move`, `kd:draw`, `kd:resign`, `kd:mark`, `kd:agree`, `kd:resume-play`, `kd:skin`) → "Bạn không phải người chơi của ván này." · `kd:ready`/`kd:respond`/`kd:invite` khi đã đủ `KYDAO_MAX_GAMES` → "Chùa đang có quá nhiều ván cờ, thử lại sau." · vượt `bucket('kd', 5, 15)` → `{ ok:false, code:'rate', reason:'Bạn thao tác quá nhanh.' }`. **`code:'rate'` là mã mới** (bucket của PK không trả `code`); giao diện chỉ cần coi như lỗi thường và hiện `reason`.
 - **Lời mời xếp hạng** **(chốt ở T-020)**: người được mời chưa `accountReady` → vẫn nhận lời mời; khi `kd:respond accept` mà họ chưa đăng nhập thì ack `{ ok:false, code:'login', reason }`, lời mời **giữ nguyên** tới hết hạn để họ đăng nhập rồi nhận lại. Cờ vây 13/19 không xếp hạng được (`kd:invite` báo lỗi). Quá 3 ván/ngày/môn cho cặp: ván hạ xuống giao hữu; vì ván ghép từ lời mời bắt đầu ngay, nên câu hạ bậc được báo **trước** qua `downgraded` trong `kd:invited` (người nhận thấy trước khi bấm nhận) và trong ack của `kd:invite` (người mời thấy ngay); máy chủ tính bộ đếm cặp lúc mời, **tính lại lúc nhận lời** và vẫn ghi cùng câu vào `kd:start.downgraded` (mục 8.3). Không dựa vào `kd:table.note`, vì `kd:table` luôn đến sau `kd:start` (mục 6.1.5).
 - Giai đoạn đánh dấu cờ vây kết thúc khi: cả hai `kd:agree` (tính theo dấu đang có) **hoặc** hết 3 phút (`deadlineAt`) → máy chủ tính theo dấu đang có, gửi `kd:end` `reason:'score'`; hoặc một bên `kd:resume-play` (đánh tiếp, mục 6.1.7); hoặc đầu hàng.
 - `kd:setup` hợp lệ (đổi môn, nhịp, `rated` hoặc `size`) **luôn xóa `ready` của cả hai ghế** rồi phát `kd:table` mới. Người kia phải bấm sẵn sàng lại với bộ luật mới; không bao giờ có ván bắt đầu với luật mà đối thủ chưa xác nhận. Người ngồi vào ghế sau cũng bắt đầu với `ready:false`.
@@ -263,6 +264,7 @@ Sự kiện xếp hạng cần `accountReady(p)`, không thì `{ ok:false, code:
 | `kd:moved` | hai người chơi + người xem | `{ gameId, ply, move, text, side, capture?, check?, reveal?, clock, status? }` |
 | `kd:offer` | cả hai người chơi | `{ gameId, kind:'draw', state:'open'\|'declined'\|'expired', from?:'a'\|'b' }` |
 | `kd:marks` | hai người chơi + người xem | `{ gameId, dead:[point], agreed:{a:boolean,b:boolean}, deadlineAt:serverMs\|null, clock }` |
+| `kd:skin` | hai người chơi + người xem | `{ gameId, side:'a'\|'b', field:id\|null, pieces:id\|null, opened:boolean }` (mục 5.4) |
 | `kd:end` | hai người chơi + người xem | `{ gameId, result, reason, text, elo?, score?, final? }` |
 | `legend:vs` | hai người chơi + người xem | Epic DH, KH §6.5 (không thuộc tài liệu này) |
 
@@ -294,7 +296,8 @@ Sự kiện xếp hạng cần `accountReady(p)`, không thì `{ ok:false, code:
   marks?:{ dead:[point], agreed:{a,b}, deadlineAt },   // cờ vây đang ở giai đoạn đánh dấu
   offer?:'a'|'b'|null,                   // bên đang có lời xin hòa mở
   resumed?:true,                         // gói gửi lại khi vào lại / người xem vào giữa ván
-  downgraded?:string }                   // lý do ván xếp hạng thành giao hữu (mục 8.3)
+  downgraded?:string,                    // lý do ván xếp hạng thành giao hữu (mục 8.3)
+  skins:{ a:{ field, pieces }, b:{ field, pieces } } }   // skin hiện tại của hai bên (mục 5.4); ván mới: mọi giá trị null
 ```
 - `elo` là `null` khi ván giao hữu hoặc người đó chưa có hạng. `prov:true` khi hạng ở môn này chưa đủ 10 ván (giao diện thêm dấu "?").
 - `clock.a`, `clock.b` là số mili giây **còn lại tại thời điểm `turnStartedAt`** (giờ máy chủ; trình duyệt tự đếm theo `Hall.serverNow()` / `Hall.setOffset`). Khi đồng hồ chưa chạy hoặc ván tạm dừng (cờ vây đang đánh dấu) thì `turn:null`.
@@ -339,6 +342,19 @@ Sự kiện xếp hạng cần `accountReady(p)`, không thì `{ ok:false, code:
 - Người xem ở lại bàn qua nhiều ván: ván mới bắt đầu thì họ nhận `kd:start` mới.
 - Người đang đấu hoặc ngồi bàn không xem bàn khác.
 - `kd:table` của bàn thật gửi tới mọi người ở cảnh `yard`; của bàn trong gửi tới mọi người trong `hall` (mục 4.3). Người vừa vào sân (hoặc vào lại chánh điện) gọi `kd:tables` để có trạng thái đầy đủ.
+
+### 5.4 Skin sân và skin quân (`kd:skin`, T-110)
+
+Thiết kế ở `docs/KE-HOACH-KY-DAI.md` §3–4. Danh mục mã là `public/js/kydao-skins.js` (`KydaoSkins`, UMD); máy chủ nạp đúng file này để kiểm mã.
+
+- **Chỉ môn có hai nửa sân**: `KydaoSkins.GAMES` = `chess`, `xiangqi`, `jieqi`. Cờ vây, caro trả "Môn này chưa có skin." (vẫn có `skins` toàn `null` trong `StartPayload`).
+- **Client chỉ gửi mã.** `field` là id trong `KydaoSkins.FIELDS`, `pieces` là id trong `KydaoSkins.PIECES`. Máy chủ chỉ đọc hai khóa riêng (`hasOwn`) rồi đưa qua `KydaoSkins.normalize`: mã lạ, kiểu lạ (số, object, mảng), `'__proto__'`, `'toString'`… đều thành `null` (= về mặc định). Gửi `null` là bỏ skin. Khóa không gửi thì giữ nguyên. Không gửi khóa nào → "Chưa chọn skin.". Khẩu hiệu, tên sân lấy từ danh mục ở trình duyệt; không có chữ tự do nên không qua `lib/moderation.js`.
+- **Ai đổi được**: chỉ người chơi của ván, cho **bên của chính mình** (`side` do máy chủ suy từ `uid`, client không gửi `side`). Người xem, người ngoài → "Bạn không phải người chơi của ván này.". Ván đã kết thúc hoặc không còn → "Không có ván này." (`stale`). Hết giờ thì máy chủ xử `timeout` trước, trả "Ván đã kết thúc." (`stale`).
+- **Giới hạn** (K7, tính riêng từng người trong một ván, nhân `KYDAO_TIME_SCALE`): đổi `field` tối đa 1 lần / 20 giây; đổi `pieces` tối đa 1 lần / 3 giây. Chỉ **thay đổi thật** mới tính (gửi lại đúng mã đang dùng thì ack `ok:true`, không phát gói, không tính lượt). Vượt giới hạn: cả yêu cầu bị từ chối (không đổi phần nào), ack `{ ok:false, code:'rate', reason:'Đợi N giây nữa mới đổi được sân.', retryAt:serverMs }`. Vẫn qua `bucket('kd', 5, 15)` chung.
+- **Phát**: khi có thay đổi, máy chủ gửi `kd:skin { gameId, side, field, pieces, opened }` cho hai người chơi và phòng người xem `kd:<bàn>` (bàn trong: chỉ hai người chơi), **trước** ack. `field`, `pieces` là skin hiện tại **đầy đủ** của bên `side` sau khi đổi. `opened:true` khi `field` vừa đổi sang một skin (từ `null` hoặc từ skin khác): giao diện chạy màn "Khai mở lãnh địa!"; đổi `pieces` hoặc bỏ sân (`field:null`) thì `opened:false`.
+- **Ảnh chụp ván**: `kd:start`, `start` của ack `kd:resume`, và `kd:start` gửi người xem (`kd:watch`) đều có `skins:{ a:{field,pieces}, b:{field,pieces} }`. Ván mới (kể cả "Đấu lại") bắt đầu bằng `null` hết.
+- **Không lưu bền** (K3): skin là trạng thái của ván trong RAM, mất khi hết ván hoặc máy chủ khởi động lại; không có trong `db.kydao`, biên bản ván hay `store-sections`. Lựa chọn ưa thích của người chơi lưu ở `localStorage` trình duyệt; muốn dùng lại ở ván mới thì giao diện (T-115) gửi lại `kd:skin`.
+- **Cờ tướng úp** (K6): gói `kd:skin` chỉ chứa mã skin của một bên, không có `state`, không có thông tin quân; skin quân áp cho mọi quân úp một bên như nhau. Gói không có `uid`.
 
 ## 6. Thứ tự gói tin (giao diện phải chịu được)
 

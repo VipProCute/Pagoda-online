@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trang thử · tài nguyên skin Kỳ Đài</title>
+<style>
+  body { margin: 0; padding: 12px; background: #1b1512; color: #f3e6cf; font: 14px/1.4 system-ui, sans-serif; }
+  h1 { font-size: 18px; margin: 4px 0 10px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px; }
+  figure { margin: 0; background: #2a211c; border-radius: 8px; overflow: hidden; }
+  figure img { display: block; width: 100%; height: auto; }
+  figcaption { padding: 6px 8px; }
+  .row { display: flex; gap: 6px; padding: 0 8px 8px; }
+  .row img { width: 50%; border-radius: 4px; }
+  small { opacity: .7; }
+</style>
+</head>
+<body>
+<h1>Bàn 2D có skin <select id="pa"></select> <select id="pb"></select></h1>
+<div style="display:flex;gap:10px;flex-wrap:wrap"><canvas id="bc" style="width:484px;height:484px"></canvas><canvas id="bx" style="width:484px;height:528px"></canvas></div>
+<h1>Sân (ảnh nửa sân 2D và ảnh xem trước)</h1>
+<div class="grid" id="fields"></div>
+<h1>Bộ quân (ảnh xem trước)</h1>
+<div class="grid" id="pieces"></div>
+<script src="/js/kydao-skins.js?v=4"></script>
+<script src="/js/kydao/chess.js?v=1"></script>
+<script src="/js/kydao/xiangqi.js?v=1"></script>
+<script src="/js/kydao-draw.js?v=skins7"></script>
+<script>
+'use strict';
+(function () {
+  // Hai bàn mẫu: bên a và bên b mỗi bên một cặp sân + quân, chọn bằng hai ô ở tiêu đề ("sân/quân").
+  const S = window.KydaoSkins, D = window.KydaoDraw;
+  const F = Object.keys(S.FIELDS), P = Object.keys(S.PIECES);
+  const fill = (sel, start) => {
+    F.forEach((f, i) => { const o = document.createElement('option'); o.value = f + '/' + P[i]; o.textContent = S.FIELDS[f].name + ' + ' + S.PIECES[P[i]].name; sel.appendChild(o); });
+    sel.selectedIndex = start; sel.onchange = paint;
+  };
+  const skin = sel => { const v = sel.value.split('/'); return { field: v[0], pieces: v[1] }; };
+  function board(id, game, state, w, h) {
+    const c = document.getElementById(id), dpr = Math.min(2, window.devicePixelRatio || 1);
+    c.width = w * dpr; c.height = h * dpr;
+    D.draw(c.getContext('2d'), { game, w, h, dpr, board: state.board, flip: false, last: [], targets: [], vi: true, margin: 1.5,
+      skins: { a: skin(document.getElementById('pa')), b: skin(document.getElementById('pb')) }, onAsset: paint });
+  }
+  function paint() {
+    board('bc', 'chess', window.KyChess.create(), 484, 484);
+    board('bx', 'xiangqi', window.KyXiangqi.create(), 484, 528);
+  }
+  fill(document.getElementById('pa'), 0); fill(document.getElementById('pb'), 3);
+  paint();
+  window.__paint = (a, b) => { document.getElementById('pa').selectedIndex = a; document.getElementById('pb').selectedIndex = b; paint(); };
+})();
+</script>
+<script>
+'use strict';
+(function () {
+  const S = window.KydaoSkins;
+  const el = (tag, props, kids) => { const n = Object.assign(document.createElement(tag), props || {}); (kids || []).forEach(k => n.appendChild(k)); return n; };
+  const cap = (a, b) => { const c = el('figcaption'); c.appendChild(el('b', { textContent: a })); c.appendChild(el('small', { textContent: ' · ' + b })); return c; };
+  Object.keys(S.FIELDS).forEach(id => {
+    const f = S.FIELDS[id];
+    document.getElementById('fields').appendChild(el('figure', null, [
+      el('img', { src: S.fieldImage(id), alt: f.name }), cap(f.name, f.cry + ' ' + f.sub),
+      el('div', { className: 'row' }, [el('img', { src: S.thumb('field', id), alt: '' })])
+    ]));
+  });
+  Object.keys(S.PIECES).forEach(id => {
+    document.getElementById('pieces').appendChild(el('figure', null, [
+      el('img', { src: S.thumb('pieces', id), alt: S.PIECES[id].name }), cap(S.PIECES[id].name, id)
+    ]));
+  });
+})();
+</script>
+</body>
+</html>

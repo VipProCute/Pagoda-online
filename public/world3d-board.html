@@ -31,6 +31,12 @@
     .kd-foot { margin: 24px 0 0; border-top: 1px solid #d8d0bc; padding-top: 18px; color: #8b816b; font-size: 12px; line-height: 1.7; }
     details { margin-top: 24px; } summary { min-height: 44px; padding: 12px 0; cursor: pointer; color: #6c7056; }
     a { color: #586b4d; }
+    .kd-skins { padding: 4px 20px 8px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 12px; }
+    .kd-skins label, .kd-global label { display: grid; gap: 4px; font-size: 11px; letter-spacing: .06em; color: #8c7755; }
+    select { min-height: 44px; padding: 8px 10px; border: 1px solid #d4c7aa; border-radius: 7px; background: #fffdf6; color: #4d5743; font: 13px system-ui, sans-serif; }
+    .kd-global { display: flex; flex-wrap: wrap; gap: 12px 18px; align-items: end; margin: 0 0 22px; }
+    .kd-global .kd-check { display: flex; align-items: center; gap: 8px; min-height: 44px; font-size: 13px; letter-spacing: 0; color: #6c7056; }
+    .kd-check input { width: 20px; height: 20px; }
     @media (max-width: 800px) {
       main { padding: 24px 14px; } h1 { font-size: 36px; }
       .kd-gallery { grid-template-columns: 1fr; gap: 18px; } canvas { height: 88vw; min-height: 300px; max-height: 620px; }
@@ -43,20 +49,42 @@
   <main>
     <div class="kd-kicker">CHÙA TÂM AN · KỲ ĐẠO</div>
     <h1>Một nước cờ, một khoảng lặng.</h1>
-    <p class="kd-intro">Gỗ ngà, gỗ mun và những nét chữ trên mặt cờ. Kéo nhẹ để ngắm bàn, chạm một ô để đọc tọa độ.</p>
+    <p class="kd-intro">Gỗ ngà, gỗ mun và những nét chữ trên mặt cờ. Kéo nhẹ để ngắm bàn, chạm một ô để đọc tọa độ. Mỗi bên chọn sân và bộ quân riêng; đổi sân là khai mở lãnh địa.</p>
+    <div class="kd-global">
+      <label>MỨC ĐỒ HỌA
+        <select id="quality"><option value="low">Thấp · không hạt, không bóng</option><option value="medium" selected>Vừa</option><option value="high">Cao</option></select>
+      </label>
+      <label class="kd-check"><input type="checkbox" id="opening" checked> Khai mở khi đổi sân</label>
+    </div>
     <div class="kd-gallery" id="boards"></div>
     <details id="stones"><summary>Xem thêm bàn cờ vây và caro</summary><div class="kd-gallery" id="stone-boards"></div></details>
-    <p class="kd-foot">Kéo / phím mũi tên: xoay bàn · Cuộn / chụm hai ngón / phím + −: gần xa.<br>Chế độ giảm chuyển động theo thiết lập của máy. Đây là trang thử hình ảnh; nước thử dùng luật có sẵn. <a href="/">Về chùa</a></p>
+    <p class="kd-foot">Kéo / phím mũi tên: xoay bàn · Cuộn / chụm hai ngón / phím + −: gần xa.<br>Chế độ giảm chuyển động theo thiết lập của máy (đổi tức thì, không rung). Chưa có mô hình .glb thì sân và quân vẽ bằng màu của danh mục. Đây là trang thử hình ảnh; nước thử dùng luật có sẵn. <a href="/">Về chùa</a></p>
   </main>
   <script src="/js/kydao/chess.js?v=1"></script>
   <script src="/js/kydao/xiangqi.js?v=1"></script>
   <script src="/js/kydao/go.js?v=1"></script>
   <script src="/js/kydao/gomoku.js?v=1"></script>
+  <script src="/js/kydao-skins.js?v=4"></script>
   <script type="module">
-    import { createBoard3D } from '/js/world3d/board3d.mjs?v=1';
+    import { createBoard3D } from '/js/world3d/board3d.mjs?v=6';
 
+    const SKINS = window.KydaoSkins;
+    const SIDES = { chess: { a: 'Trắng', b: 'Đen' }, xiangqi: { a: 'Đỏ', b: 'Đen' }, jieqi: { a: 'Đỏ', b: 'Đen' } };
+    const qualityEl = document.getElementById('quality'), openingEl = document.getElementById('opening');
     const views = [];
-    function addBoard(game, title, number, mod, moves, parent) {
+    qualityEl.addEventListener('change', () => views.forEach(view => view.setQuality(qualityEl.value)));
+    const frames = n => new Promise(resolve => { const tick = () => (--n <= 0 ? resolve() : requestAnimationFrame(tick)); requestAnimationFrame(tick); });
+    function picker(label, kind, onPick) {
+      const wrap = document.createElement('label'); wrap.textContent = label;
+      const select = document.createElement('select');
+      const none = document.createElement('option'); none.value = ''; none.textContent = 'Mặc định (gỗ)'; select.append(none);
+      for (const [id, def] of Object.entries(kind === 'field' ? SKINS.FIELDS : SKINS.PIECES)) {
+        const o = document.createElement('option'); o.value = id; o.textContent = def.name; select.append(o);
+      }
+      select.addEventListener('change', () => onPick(select.value || null));
+      wrap.append(select); return { wrap, select };
+    }
+    function addBoard(game, title, number, mod, moves, parent, createOptions) {
       const article = document.createElement('article');
       const heading = document.createElement('div'); heading.className = 'kd-heading';
       const h2 = document.createElement('h2'); h2.textContent = title;
@@ -66,41 +94,88 @@
       const canvas = document.createElement('canvas'); canvas.tabIndex = 0; canvas.setAttribute('aria-label', title + ' 3D. Kéo để xoay; chạm để đọc tên ô.');
       const hint = document.createElement('span'); hint.className = 'kd-hint'; hint.textContent = 'KÉO ĐỂ XOAY · CHẠM ĐỂ CHỌN Ô'; stage.append(canvas, hint);
       const toolbar = document.createElement('div'); toolbar.className = 'kd-toolbar';
+      const fxbar = document.createElement('div'); fxbar.className = 'kd-toolbar';
+      const skinbar = document.createElement('div'); skinbar.className = 'kd-skins';
       const status = document.createElement('p'); status.className = 'kd-status'; status.setAttribute('role', 'status'); status.textContent = 'Đang mở bàn cờ…';
-      article.append(heading, stage, toolbar, status); parent.append(article);
-      const button = (text, fn) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = text; b.addEventListener('click', fn); toolbar.append(b); return b; };
-      let view, state = mod.create(game === 'go' ? { size: 9 } : {}), step = 0, last = [], flip = false, vi = false, selected = null;
-      const draw = () => view.setState({ game, ...state, last, flip, vi, selected });
+      const skinnable = SKINS && SKINS.supports(game);
+      article.append(heading, stage, toolbar, ...(skinnable ? [skinbar] : []), fxbar, status); parent.append(article);
+      const button = (text, fn, bar = toolbar) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = text; b.addEventListener('click', fn); bar.append(b); return b; };
+      const fresh = () => mod.create(createOptions || (game === 'go' ? { size: 9 } : {}));
+      const pairMove = game === 'chess' || game === 'xiangqi' || game === 'jieqi';
+      let view, state = fresh(), step = 0, last = [], flip = false, vi = false, selected = null;
+      let skins = { a: { field: null, pieces: null }, b: { field: null, pieces: null } };
+      // Cờ úp: chỉ vẽ thế công khai, như máy chủ gửi.
+      const draw = () => view.setState({ game, ...(game === 'jieqi' ? mod.view(state) : state), last, flip, vi, selected, skins });
+      const memory = () => { const s = view.stats(); return s.geometries + ' hình, ' + s.textures + ' texture'; };
       try {
-        view = createBoard3D({ canvas, game }); views.push(view);
+        view = createBoard3D({ canvas, game, skins: SKINS, quality: qualityEl.value }); views.push(view);
         view.onPick(name => { selected = name; status.textContent = 'Ô vừa chạm: ' + name; draw(); });
         button('Đi thử một nước', () => {
           if (step === moves.length) { status.textContent = 'Đã hết chuỗi nước thử. Xin bấm Khai cuộc.'; return; }
           const m = moves[step], result = mod.play(state, m);
           if (!result.ok) { status.textContent = 'Nước thử không hợp lệ.'; return; }
           state = result.state; selected = null; step++;
-          last = game === 'chess' || game === 'xiangqi' ? [m.slice(0, 2), m.slice(2, 4)] : [m];
-          status.textContent = 'Nước ' + step + ': ' + m + (result.info && result.info.capture ? ' · ăn quân' : ''); draw();
+          last = pairMove ? [m.slice(0, 2), m.slice(2, 4)] : [m];
+          status.textContent = 'Nước ' + step + ': ' + m + (result.info && result.info.capture ? ' · ăn quân' : '') + (result.info && result.info.promotion ? ' · phong cấp!' : ''); draw();
+          if (result.info && result.info.promotion) view.playFx('promote', { at: m.slice(2, 4) });
         });
         button('Đổi bên nhìn', () => { flip = !flip; draw(); });
-        if (game === 'xiangqi') {
+        if (game === 'xiangqi' || game === 'jieqi') {
           const b = button('Chữ Việt', () => { vi = !vi; b.textContent = vi ? 'Chữ Hán' : 'Chữ Việt'; draw(); });
         }
-        button('Khai cuộc', () => { state = mod.create(game === 'go' ? { size: 9 } : {}); step = 0; last = []; selected = null; status.textContent = 'Thế khai cuộc · mời chạm một ô.'; draw(); });
+        button('Khai cuộc', () => { state = fresh(); step = 0; last = []; selected = null; status.textContent = 'Thế khai cuộc · mời chạm một ô.'; draw(); });
+        if (skinnable) {
+          for (const side of ['a', 'b']) for (const kind of ['field', 'pieces']) {
+            const p = picker((kind === 'field' ? 'SÂN ' : 'QUÂN ') + SIDES[game][side].toUpperCase(), kind, id => {
+              const opened = kind === 'field' && id && id !== skins[side].field;
+              skins = { ...skins, [side]: { ...skins[side], [kind]: id } }; draw();
+              if (opened && openingEl.checked) { view.playFx('domain', { side }); status.textContent = SKINS.FIELDS[id].cry + ' ' + SKINS.FIELDS[id].sub; }
+              else status.textContent = 'Bộ nhớ GPU: ' + memory() + '.';
+            });
+            skinbar.append(p.wrap);
+          }
+          for (const side of ['a', 'b']) {
+            button('Khai mở · ' + SIDES[game][side], () => {
+              if (!skins[side].field) { status.textContent = 'Xin chọn sân cho bên ' + SIDES[game][side] + ' trước.'; return; }
+              view.playFx('domain', { side });
+            }, fxbar);
+          }
+        }
+        if (game === 'chess') button('Chấn động', () => view.playFx('promote', { at: last[1] || 'd4' }), fxbar);
+        button('Chiến thắng', () => {
+          // Bên vừa đi là bên thắng (trang thử); caro thì cột sáng trên các quân của bên đen.
+          const winner = game === 'go' || game === 'gomoku' ? 'a' : state.turn === 'a' ? 'b' : 'a';
+          const line = game === 'gomoku' ? moves.slice(0, step).filter((_, i) => i % 2 === 0) : undefined;
+          view.playFx('win', { result: winner, line }).then(() => { status.textContent = 'Xong hiệu ứng chiến thắng. Bấm Khai cuộc để dựng lại quân.'; });
+        }, fxbar);
+        if (skinnable) {
+          const churn = button('Đổi skin 20 lần', async () => {
+            churn.disabled = true;
+            const keep = skins, before = memory(), fields = Object.keys(SKINS.FIELDS), sets = Object.keys(SKINS.PIECES);
+            for (let i = 0; i < 20; i++) {
+              skins = { a: { field: fields[i % 8], pieces: sets[(i + 2) % 8] }, b: { field: fields[(i + 5) % 8], pieces: sets[(i + 7) % 8] } };
+              draw(); await frames(2);
+            }
+            skins = keep; draw(); await frames(2);
+            status.textContent = 'Bộ nhớ GPU trước: ' + before + ' · sau 20 lần đổi: ' + memory() + '.';
+            churn.disabled = false;
+          }, fxbar);
+        }
         draw(); status.textContent = 'Thế khai cuộc · mời chạm một ô.';
         canvas.addEventListener('webglcontextlost', event => { event.preventDefault(); view.dispose(); status.textContent = 'Bàn 3D tạm nghỉ. Xin tải lại trang.'; toolbar.querySelectorAll('button').forEach(b => { b.disabled = true; }); });
       } catch (error) {
         if (view) view.dispose(); status.textContent = 'Chưa mở được bàn 3D. Trình duyệt cần hỗ trợ WebGL2.';
       }
     }
-    addBoard('chess', 'Cờ vua', '01 / GỖ NGÀ & GỖ MUN', window.KyChess, ['e2e4', 'd7d5', 'e4d5', 'd8d5', 'b1c3'], document.getElementById('boards'));
+    addBoard('chess', 'Cờ vua', '01 / GỖ NGÀ & GỖ MUN', window.KyChess, ['e2e4', 'd7d5', 'e4d5', 'c7c6', 'd5c6', 'g8f6', 'c6b7', 'b8d7', 'b7a8q'], document.getElementById('boards'));
     addBoard('xiangqi', 'Cờ tướng', '02 / GỖ MỘC KHẮC CHỮ', window.KyXiangqi, ['b2b9', 'h9g7', 'b9b8'], document.getElementById('boards'));
+    addBoard('jieqi', 'Cờ úp', '03 / LƯNG QUÂN MỘT MẪU', window.KyXiangqi, ['b2b9', 'h9g7'], document.getElementById('boards'), { variant: 'jieqi', seed: 7 });
     let stonesOpened = false;
     document.getElementById('stones').addEventListener('toggle', event => {
       if (!event.target.open || stonesOpened) return; stonesOpened = true;
       const parent = document.getElementById('stone-boards');
-      addBoard('go', 'Cờ vây', '03 / ĐÁ ĐEN & TRẮNG', window.KyGo, ['C3', 'G7', 'C7', 'G3', 'E5'], parent);
-      addBoard('gomoku', 'Caro', '04 / QUÂN X & O', window.KyGomoku, ['h8', 'i8', 'h9', 'i9', 'h10'], parent);
+      addBoard('go', 'Cờ vây', '04 / ĐÁ ĐEN & TRẮNG', window.KyGo, ['C3', 'G7', 'C7', 'G3', 'E5'], parent);
+      addBoard('gomoku', 'Caro', '05 / QUÂN X & O', window.KyGomoku, ['h8', 'i8', 'h9', 'i9', 'h10'], parent);
     });
     window.addEventListener('pagehide', () => views.forEach(view => view.dispose()), { once: true });
   </script>

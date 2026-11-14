@@ -11,12 +11,35 @@ const KyGomoku = require('../public/js/kydao/gomoku');
 global.KyChess = KyChess;
 global.KyXiangqi = KyXiangqi;
 global.KydaoDraw = KydaoDraw;
+globalThis.KydaoSkins = require('../public/js/kydao-skins.js');
 const { core } = require('../public/js/kydao-ui.js');
 
 function session(game, mod, you, extra) {
   return core.makeSession(Object.assign({ gameId: 'g1', table: 1, game, you, state: mod.create({}), ply: 0, moves: [],
     clock: { a: 60000, b: 60000, turn: 'a', turnStartedAt: 1000, incMs: 0 }, a: {}, b: {} }, extra || {}), mod);
 }
+
+test('makeSession đọc skins từ StartPayload, mã lạ thành null', () => {
+  const S = session('chess', KyChess, 'a', { skins: { a: { field: 'volcano', pieces: 'xyz' }, b: null } });
+  assert.deepStrictEqual(S.skins, { a: { field: 'volcano', pieces: null }, b: { field: null, pieces: null } });
+});
+
+test('applySkin chỉ nhận gói đúng ván và đúng bên', () => {
+  const S = session('chess', KyChess, 'a');
+  const before = structuredClone(S.skins);
+  assert.strictEqual(core.applySkin(S, { gameId: 'g2', side: 'b', field: 'ocean' }), false);
+  assert.deepStrictEqual(S.skins, before);
+  assert.strictEqual(core.applySkin(S, { gameId: 'g1', side: 'c', field: 'ocean' }), false);
+  assert.deepStrictEqual(S.skins, before);
+  assert.strictEqual(core.applySkin(S, { gameId: 'g1', side: 'b', field: 'ocean' }), true);
+  assert.strictEqual(S.skins.b.field, 'ocean');
+});
+
+test('applySkin không nhận khóa nguy hiểm', () => {
+  const S = session('chess', KyChess, 'a');
+  assert.strictEqual(core.applySkin(S, { gameId: 'g1', side: 'a', field: '__proto__' }), true);
+  assert.strictEqual(S.skins.a.field, null);
+});
 
 test('Bàn vây 9/13/19 và caro: mọi giao điểm chạm đúng ở 375px, hai hướng và khi phóng to', () => {
   for (const [game, size] of [['go', 9], ['go', 13], ['go', 19], ['gomoku', 15]]) {
@@ -201,6 +224,14 @@ test('tapSquare: chọn quân, chấm ô đi được, đi nước', () => {
   assert.strictEqual(core.tapSquare(session('chess', KyChess, 'b'), 'e7').kind, 'none'); // chưa tới lượt
 });
 
+test('nước phong cấp có 5 ký tự và pushMove giữ info.promotion', () => {
+  const state = KyChess.fromFen('8/4P2k/8/8/8/8/8/K7 w - - 0 1');
+  const S = session('chess', KyChess, 'a', { state });
+  const result = core.pushMove(S, 'e7e8q', 'e8=Q');
+  assert.strictEqual(result.ok, true);
+  assert.strictEqual(result.info.promotion, 'q');
+});
+
 test('tapSquare: phong cấp hỏi chọn quân', () => {
   const state = KyChess.fromFen('8/4P2k/8/8/8/8/8/K7 w - - 0 1');
   const S = session('chess', KyChess, 'a', { state });
@@ -269,4 +300,15 @@ test('settleClock: hết giờ thì bên thua về 0', () => {
   assert.strictEqual(e.a, 0);
   assert.strictEqual(e.b, 40000);
   assert.strictEqual(core.settleClock(null, 1, 'a', 'timeout'), null);
+});
+
+test('nextSkinIndex: mũi tên đi vòng tròn, Home/End về đầu/cuối, phím lạ trả -1', () => {
+  assert.strictEqual(core.nextSkinIndex(9, 0, 'ArrowRight'), 1);
+  assert.strictEqual(core.nextSkinIndex(9, 8, 'ArrowDown'), 0);
+  assert.strictEqual(core.nextSkinIndex(9, 0, 'ArrowLeft'), 8);
+  assert.strictEqual(core.nextSkinIndex(9, 3, 'ArrowUp'), 2);
+  assert.strictEqual(core.nextSkinIndex(9, 4, 'Home'), 0);
+  assert.strictEqual(core.nextSkinIndex(9, 4, 'End'), 8);
+  assert.strictEqual(core.nextSkinIndex(9, 4, 'a'), -1);
+  assert.strictEqual(core.nextSkinIndex(0, 0, 'ArrowRight'), -1);
 });
