@@ -124,7 +124,7 @@
 | T-151 | Bật mặc định, ảnh chụp, Sổ tay, README, NOTICE | ⏳ T-150 | P2 | CORE + DOCS + OPS | — (gợi ý: gemini-3.8-flash-high + gpt-6-luna) |
 | T-154 | Nâng chất bản mẫu: Ma Vương điêu khắc, thân đặc, vỏ khí ra lửa 👤 duyệt (chặn T-145 → T-149) | ✅ Xong (bản nháp) · PR #68 | P0 | CORE + HALL + KYDAI | Điều phối Claude Opus 5.5 · Claude Sonnet 5.5 (vòng 1 Blender) · gpt-6.1-sol (các vòng sau, shader, JS) · soát hình gemini-4-argon-high |
 | T-203 | Vòng hình 2 Pháp Tướng 3D: quỷ ngoái mặt, mặt và tay Ma Vương, lưới lửa, cánh sen, nhãn tên 👤 duyệt (chặn T-145 → T-149) | ✅ Xong (bản nháp, hình chưa đạt) | P0 | CORE + HALL + KYDAI | Claude Opus 5.5 điều phối, gpt-6.1-sol thực thi |
-| T-204 | Vòng hình 3 Pháp Tướng 3D: nới ngân sách Ma Vương (6.000 tam giác, ảnh 1024 px), lửa hộ thân thay vỏ khí, sửa lỗi máy quay sát 👤 duyệt (chặn T-145 → T-149) | 🟣 Chờ soát | P0 | CORE + HALL + KYDAI | Claude Opus 5.5 điều phối, gpt-6.1-sol thực thi |
+| T-204 | Vòng hình 3 Pháp Tướng 3D: nới ngân sách Ma Vương (6.000 tam giác, ảnh 1024 px), lửa hộ thân thay vỏ khí, sửa lỗi máy quay sát 👤 duyệt (chặn T-145 → T-149) | ✅ Xong (bản nháp, hình chưa đạt) | P0 | CORE + HALL + KYDAI | Claude Opus 5.5 điều phối, gpt-6.1-sol thực thi |
 | T-152 | (Tùy chọn) Chụp lại ảnh 2D từ mô hình 3D | ⚪ Hộp thư đến 👤 | P3 | CORE + HALL | — |
 | T-153 | Nghiệm thu chéo đợt Pháp Tướng 3D | ⏳ T-151 | P1 | CORE + HALL | — (gợi ý: gemini-4-argon-high soát hình, gpt-6.1-sol soát mã) |
 | T-160 | Danh mục 8 bộ đá cho cờ vây và caro (`STONES`), `kd:skin` nhận theo môn | ✅ Xong · PR #64 | P1 | CORE + KYDAO + KYDAI | gpt-6.1-terra |
@@ -1761,7 +1761,7 @@ Thiết kế, hợp đồng mã, ngân sách và định tuyến mô hình: [doc
   - [ ] Ghi rõ phần chưa thử được (điện thoại thật, PostgreSQL)
 
 ### T-204 · Vòng hình 3 Pháp Tướng 3D: nới ngân sách Ma Vương, lửa hộ thân thay vỏ khí, sửa lỗi máy quay sát
-- **Trạng thái**: 🟣 Chờ soát (terra chấm CHƯA ĐẠT, trong game còn kém 2D; xem phiếu) · 👤 chủ dự án duyệt hình · **chặn T-145 → T-149** · **Ưu tiên**: P0 · **Gói ngữ cảnh**: CORE + HALL + KYDAI
+- **Trạng thái**: ✅ Xong ở mức bản nháp, chủ dự án bảo merge 14/11 để giữ mã (sau công tắc `ta-fx3d` tắt). Nghiệm thu độc lập Claude Opus 14/11: mã đạt, không lỗi chặn, `npm test` 1093 test, 1090 đạt, 0 trượt, 3 bỏ qua (PostgreSQL); hình Ma Vương 3/5, đài sen 3/5, lửa hộ thân 2,5/5; trong game Tàng Kinh Các còn kém 2D, Sân đấu ngang 2D. Ghi nhận: khoá suất `merit` mới có ở toán và test, chưa phần fx3d nào `register('merit')` (việc của T-148); `demon-4.glb` 1,13 MB và ba ảnh 1024 px cần đo trên điện thoại trước khi bật mặc định (terra chấm CHƯA ĐẠT; xem phiếu) · 👤 chủ dự án chọn hướng hình tiếp (lai 2D và 3D, hoặc mô hình điêu khắc tay) · **chặn T-145 → T-149** · **Ưu tiên**: P0 · **Gói ngữ cảnh**: CORE + HALL + KYDAI
 - **Khu vực chạm**: tools/blender/fx/build_demon.py, build_aura.py, build_lotus.py (chỉ dáng nhìn ngang), public/models/fx/*.glb, public/js/world3d/fx3d/*.mjs, public/js/stand-math.js, public/js/world3d/scenes/arena.mjs (chỉ phần Pháp Tướng), test/world3d-fx.test.js, test/stand-math.test.js, docs/phap-tuong/, docs/KE-HOACH-PHAP-TUONG-3D.md §2.4
 - **Người làm**: Claude Opus 5.5 (điều phối), gpt-6.1-sol (thực thi), gpt-6.1-terra (chấm hình) · **Nhánh**: claude/T-204-vong-hinh-3-noi-ngan-sach
 - **Nguồn**: chủ dự án chọn "nới ngân sách 3D" ngày 14/11 sau nghiệm thu T-203 (Ma Vương 2,5/5, đài sen 3/5, vỏ khí 2/5; trong game còn kém 2D). Công tắc `ta-fx3d` vẫn mặc định tắt.
