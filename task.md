@@ -1545,16 +1545,17 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
 Thiết kế, hợp đồng mã, ngân sách và định tuyến mô hình: [docs/KE-HOACH-PHAP-TUONG-3D.md](docs/KE-HOACH-PHAP-TUONG-3D.md) (đọc §0, §1, §2 trước khi làm bất kỳ thẻ nào dưới đây). Trước khi giao mỗi thẻ, Điều phối viết đặc tả chi tiết vào `docs/phap-tuong/T-xxx-DAC-TA.md` theo mẫu `docs/ky-dai/T-115-DAC-TA.md` (file, chuỗi để tìm chỗ sửa, mã mẫu, lệnh kiểm). Quy tắc chung của đợt: **chỉ T-144 được chạm `public/js/world3d/avatar.mjs`**; không đổi máy chủ, giao thức, `hall.js`, bản 2D.
 
 ### T-140 · Bảng ý tưởng hình: 4 quỷ hộ thân, đài sen, hào quang
-- **Trạng thái**: 🔵 Sẵn sàng · **Ưu tiên**: P0 · **Gói ngữ cảnh**: CORE + HALL
+- **Trạng thái**: 🟣 Chờ soát (Điều phối đã xem tận mắt 6 ảnh, 14/11)
+- **Ưu tiên**: P0 · **Gói ngữ cảnh**: CORE + HALL
 - **Khu vực chạm**: docs/phap-tuong/anh/* (mới), docs/phap-tuong/BANG-Y-TUONG.md (mới)
-- **Người làm**: — (gợi ý: Điều phối gọi `gpt-image-2.6`, dự phòng `gemini-3.1-flash-image`; `gemini-4-hydrogen-xhigh` viết phiếu chấm) · **Nhánh**: —
+- **Người làm**: Điều phối gọi `gpt-image-2.6` (`/v1/images/edits`, có ảnh tham chiếu; không cần dự phòng); `gemini-4-hydrogen-xhigh` soạn phiếu chấm · **Nhánh**: claude/game-graphics-3d-redesign-9b309a
 - **Mục tiêu**: có hình chuẩn ba mặt cho người dựng mô hình, bám sát ảnh 2D đang có.
 - **Tiêu chí xong**:
-  - [ ] Mỗi cấp quỷ (1 đến 4) một tấm ba mặt trước / nghiêng / sau, nửa thân trên, dưới tan thành khói; lấy `public/img/fx/demon-N.webp` làm ảnh tham chiếu; đúng bảng màu ở KE-HOACH-PHAP-TUONG-3D §1.1
-  - [ ] Đài sen: một tấm nhìn nghiêng 30° + nhìn từ trên, ba tầng cánh 16/12/8; ba biến thể vàng, hồng, pha lê
-  - [ ] Hào quang: một tấm vỏ khí ôm người (bậc 1, bậc 5), một tấm quang bối bậc 6
-  - [ ] `BANG-Y-TUONG.md` ghi lời nhắc đã dùng, mô hình, ngày; kèm **phiếu chấm hình** (6 mục, thang 1 đến 5) để soát ảnh render ở T-142, T-145
-  - [ ] Lời nhắc không nêu tên nhân vật hay tác phẩm nào khác; thử một lượt ngắn `gemini-4-hydrogen-xhigh` qua Codex CLI và ghi kết quả (dùng được làm thợ soát hay không)
+  - [x] Mỗi cấp quỷ (1 đến 4) một tấm ba mặt trước / nghiêng / sau, nửa thân trên, dưới tan thành khói; lấy `public/img/fx/demon-N.webp` làm ảnh tham chiếu; đúng bảng màu ở KE-HOACH-PHAP-TUONG-3D §1.1
+  - [x] Đài sen: một tấm nhìn nghiêng 30° + nhìn từ trên, ba tầng cánh 16/12/8; ba biến thể vàng, hồng, pha lê (số cánh trong ảnh AI không đếm được chính xác 16/12/8; kịch bản Blender dựng đúng số)
+  - [x] Hào quang: vỏ khí ôm người bậc 1, bậc 5 và quang bối bậc 6 gộp trong một tấm ba ô
+  - [x] `BANG-Y-TUONG.md` ghi lời nhắc đã dùng, mô hình, ngày; kèm **phiếu chấm hình** (6 mục, thang 1 đến 5) để soát ảnh render ở T-142, T-145
+  - [x] Lời nhắc không nêu tên nhân vật hay tác phẩm nào khác; đã thử `gemini-4-hydrogen-xhigh` qua Codex CLI (`--sandbox read-only`, có ảnh đính kèm): **dùng được**, tự đọc file, nhìn được ảnh (BANG-Y-TUONG §5)
 - **Ngoài phạm vi**: đưa ảnh vào `public/`.
 
 ### T-141 · Khung hiệu ứng 3D `fx3d` và ba vật liệu
