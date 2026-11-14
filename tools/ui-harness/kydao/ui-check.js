@@ -212,6 +212,43 @@ async function main() {
         await shot(page, `da-skin-${name}`, kind);
       }
     });
+    for (const kind of ['mobile', 'desktop']) await t('khoa-skin', kind, async page => {
+      await openGame(page, '#b-chess');
+      await harnessClick(page, '#b-shop');
+      await button(page, 'Lãnh địa').click();
+      await page.locator('.kd-skins').waitFor({ state: 'visible' });
+      const pieces = page.getByRole('radiogroup', { name: 'Quân của bạn' });
+      const locked = pieces.locator('.kd-skin.is-locked');
+      await locked.first().waitFor({ state: 'visible' });
+      assert.ok(await locked.count() > 0, 'Không có mục nào bị khóa');
+      assert.match(await locked.first().textContent(), /20\.000\s*đ/, 'Mục khóa chưa có giá');
+      assert.match(await locked.first().getAttribute('aria-label'), /đang khóa, cúng dường 20\.000\s*đ để mở/, 'aria-label mục khóa sai');
+      assert.ok(await page.locator('.kd-skin').evaluateAll(items => items.every(item => item.getBoundingClientRect().height >= 44)), 'Mục skin quá thấp');
+      await shot(page, 'khoa-skin-bo-chon', kind);
+      // Bấm mục sân khóa rồi Esc: khung xác nhận hiện rồi đóng, chưa gửi gì.
+      await page.getByRole('radiogroup', { name: 'Sân của bạn' }).locator('.kd-skin.is-locked').first().click();
+      await page.locator('.kd-buy').waitFor({ state: 'visible' });
+      await page.keyboard.press('Escape');
+      await page.locator('.kd-buy').waitFor({ state: 'detached' });
+      // Bấm mục quân khóa: khung xác nhận, chưa gửi kd:skin.
+      const id = await locked.first().getAttribute('data-id');
+      await locked.first().click();
+      const dialog = page.locator('.kd-buy');
+      await dialog.waitFor({ state: 'visible' });
+      assert.match(await dialog.textContent(), /Cúng dường 20\.000\s*đ để mở skin này\. Mở rồi dùng mãi\./);
+      assert.ok(!/gửi kd:skin/.test(await page.locator('#log').textContent()), 'Bấm mục khóa mà vẫn gửi kd:skin');
+      await button(page, 'Cúng dường để mở').click();
+      await dialog.locator('img.kd-buy-qr').waitFor({ state: 'visible' });
+      assert.ok(await dialog.locator('img.kd-buy-qr').evaluate(img => img.getAttribute('src') === '/img/kydao/ui/crest-lotus.webp'), 'Ảnh QR chưa gán');
+      assert.match(await dialog.textContent(), /CDTEST01/);
+      await shot(page, 'khoa-skin-qr', kind);
+      // Máy chủ giả phát owned sau 1,5 giây: khung đóng, mục hết khóa, gửi kd:skin.
+      await page.waitForFunction(() => !document.querySelector('.kd-buy'), null, { timeout: 5000 });
+      assert.equal(await pieces.locator(`.kd-skin[data-id="${id}"]`).evaluate(el => el.classList.contains('is-locked')), false, 'Mục vẫn khóa sau khi được mở');
+      await page.waitForFunction(() => /gửi kd:skin/.test(document.getElementById('log').textContent), null, { timeout: 2000 });
+      assert.equal(await pieces.locator(`.kd-skin[data-id="${id}"]`).getAttribute('aria-checked'), 'true', 'Skin vừa mở chưa được chọn');
+      await shot(page, 'khoa-skin-da-mo', kind);
+    });
     await t('ban-3d', 'desktop', async page => {
       await openGame(page, '#b-chess');
       if (!(await button(page, 'Bàn 3D').isVisible())) return 'Không có WebGL2';
