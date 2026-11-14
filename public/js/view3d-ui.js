@@ -28,7 +28,7 @@
     figure.hidden = !active || pk;
     figure.textContent = 'Người cũ';
     figure.setAttribute('aria-pressed', String(!figureOn()));
-    figure.title = 'Đổi về dáng nhân vật cũ (dựng bằng mã); bấm lần nữa để dùng dáng mới. Cảnh sẽ dựng lại.';
+    figure.title = figureOn() ? 'Đổi về dáng nhân vật cũ (dựng bằng mã). Cảnh sẽ dựng lại.' : 'Đang dùng dáng nhân vật cũ; bấm để dùng dáng mới. Cảnh sẽ dựng lại.';
   }
   function changeFigure() {
     try {

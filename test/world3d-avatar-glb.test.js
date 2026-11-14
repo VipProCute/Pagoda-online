@@ -35,15 +35,21 @@ async function fakeAssets(log = []) {
     return cache.get(file);
   } };
 }
-function withSwitch(t, value) {
+// Mỗi test chỉ nhớ và trả lại localStorage gốc một lần, dù đổi giá trị nhiều lần (after chạy theo thứ tự đăng ký).
+const restoring = new WeakSet();
+function keepStorage(t) {
+  if (restoring.has(t)) return;
+  restoring.add(t);
   const old = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
-  Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: { getItem: key => key === 'ta-avatar' ? value : null } });
   t.after(() => { if (old) Object.defineProperty(globalThis, 'localStorage', old); else delete globalThis.localStorage; });
 }
+function withSwitch(t, value) {
+  keepStorage(t);
+  Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: { getItem: key => key === 'ta-avatar' ? value : null } });
+}
 function withThrowingStorage(t) {
-  const old = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+  keepStorage(t);
   Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: { getItem() { throw new Error('bị chặn'); } } });
-  t.after(() => { if (old) Object.defineProperty(globalThis, 'localStorage', old); else delete globalThis.localStorage; });
 }
 const stand = avatar => avatar.group.getObjectByName('body').children.find(node => node.name === 'hips');
 const glb = avatar => avatar.group.getObjectByName('avatar-glb');
