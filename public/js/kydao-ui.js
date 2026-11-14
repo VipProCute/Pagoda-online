@@ -361,7 +361,7 @@
     const panel = ui, session = S, token = {};
     panel.boardLoad = token; panel.boardBtn.disabled = true; panel.boardBtn.textContent = 'Đang mở…';
     try {
-      const { createBoard3D } = await import('/js/world3d/board3d.mjs?v=6');
+      const { createBoard3D } = await import('/js/world3d/board3d.mjs?v=7');
       if (ui !== panel || S !== session || panel.boardLoad !== token) return;
       panel.canvas3d = h('canvas', { class: 'kd-canvas', tabindex: '0', 'aria-label': 'Bàn cờ 3D. Kéo hoặc dùng phím mũi tên để xoay; cuộn để thu phóng.' });
       panel.canvas3d.style.width = panel.canvas._w + 'px'; panel.canvas3d.style.height = panel.canvas._h + 'px';
