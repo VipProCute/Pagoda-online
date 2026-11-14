@@ -125,6 +125,16 @@
 | T-154 | Nâng chất bản mẫu: Ma Vương điêu khắc, thân đặc, vỏ khí ra lửa 👤 duyệt (chặn T-145 → T-149) | 🔵 Sẵn sàng | P0 | CORE + HALL + KYDAI | — (gợi ý: Claude Sonnet 5.5 dùng Blender MCP + gpt-6.1-sol sửa shader) |
 | T-152 | (Tùy chọn) Chụp lại ảnh 2D từ mô hình 3D | ⚪ Hộp thư đến 👤 | P3 | CORE + HALL | — |
 | T-153 | Nghiệm thu chéo đợt Pháp Tướng 3D | ⏳ T-151 | P1 | CORE + HALL | — (gợi ý: gemini-4-argon-high soát hình, gpt-6.1-sol soát mã) |
+| T-160 | Danh mục 8 bộ đá cho cờ vây và caro (`STONES`), `kd:skin` nhận theo môn | ✅ Xong · PR #64 | P1 | CORE + KYDAO + KYDAI | gpt-6.1-terra |
+| T-161 | Ảnh 8 bộ đá dựng bằng Blender (`stones.py`, atlas 256×128) | ✅ Xong · PR #64 | P1 | CORE + KYDAO + KYDAI | Claude Sonnet 5.5 (Blender) |
+| T-162 | Bộ chọn "Bộ đá" và vẽ đá có skin trên bàn 2D | ✅ Xong · PR #64 | P1 | CORE + KYDAO + KYDAI | Claude Sonnet 5.5 |
+| T-163 | Đá có skin trên bàn 3D | ✅ Xong · PR #64 | P1 | CORE + KYDAO + KYDAI | gemini-3.8-flash |
+| T-170 | Lõi cửa hàng skin (`lib/kydao/shop.js`), lưu bền `kydao.shop` và `kydao.unlocks` | ✅ Xong · PR #64 | P1 | CORE + KYDAO + KYDAI | gpt-6.1-terra |
+| T-171 | Giao thức khóa và mua skin trên máy chủ (`kd:shop:state`, `kd:shop:buy`, `purpose:'skin'`) | ✅ Xong · PR #64 | P1 | CORE + KYDAO + KYDAI | Claude Sonnet 5.5 |
+| T-172 | Khối "Cửa hàng skin bàn cờ" ở trang quản trị | ✅ Xong · PR #64 | P1 | CORE + KYDAO + KYDAI | gpt-6-luna |
+| T-173 | Bộ chọn có khóa skin: giá, khung xác nhận, QR, tự mở khi duyệt | ✅ Xong · PR #64 | P1 | CORE + KYDAO + KYDAI | Claude Sonnet 5.5 |
+| T-174 | Tài liệu người chơi và thử đầu-cuối bộ đá, mua skin bằng hai trình duyệt | ✅ Xong · PR #64 | P1 | CORE + KYDAO + KYDAI | Claude Sonnet 5.5 |
+| T-175 | Sửa lệnh mua skin theo kết quả soát của Gemini 4 Argon | ✅ Xong · PR #64 | P1 | CORE + KYDAO + KYDAI | gpt-6.1-terra |
 
 Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạm `package.json`). **T-005**, **T-007**, **T-002** làm song song được với nhóm trên.
 Đợt 2026-11: làm **T-003, T-004, T-006** trước (T-004 gỡ nút thắt `package.json` cho mọi thẻ thêm file JS; T-006 là cổng "CI xanh"). Sau đó theo lịch 6 đợt ở [docs/KE-HOACH-DOT-2026-11.md §10.3](docs/KE-HOACH-DOT-2026-11.md#103-lịch-theo-đợt-và-khóa-vùng-nóng).
@@ -1326,6 +1336,11 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
 - **PR #61** (14/11): chủ dự án bấm "Create PR" rồi chọn "Merge ngay"; CI "check + test (Node 22)" xanh (có PostgreSQL thật); điều phối merge theo lời chủ dự án.
 - **T-133** (14/11): `tools/ui-harness/kydao/e2e-real.js` chạy `server.js` thật, hai trình duyệt Chrome thật (A, B) và một bot xem (C): ngồi bàn đá, chọn luật, khai mở lãnh địa hai chiều, ẩn skin đối thủ, khóa 20 giây do máy chủ từ chối, người xem nhận `skins`, đi quân, đầu hàng, bảng kết quả, cờ tướng có sông chảy. **9/9 bước đạt** (thợ chạy, điều phối chạy lại). Không phát hiện lỗi game. Giới hạn: chạy ở cỡ điện thoại, hai trình duyệt trên cùng một máy. Chủ dự án chọn "Push, mở PR và merge" (14/11).
 - **Huy hiệu** (14/11): Canva vẫn hết credit khi thử lại; chủ dự án chọn **giữ 4 bản ghép tay**, coi như xong. Khi có credit thì vẽ lại 4 cái (Long Cung, Liên Hoa Đài, Lôi Vân Đỉnh, Sa Mạc) theo câu mô tả ghi ở `public/img/NOTICE.txt`.
+- **Đợt 2 (14/11), nhánh tích hợp `claude/ky-dai-dot-2`, PR #64 (chủ dự án cho phép push, mở PR và merge). Mã thẻ đổi sang T-160…T-163, T-170…T-175 vì trùng mã đợt Pháp Tướng 3D.** Chủ dự án chốt: (a) cờ vây và caro có skin quân, bàn giữ nguyên; (b) mọi skin miễn phí, khi cần thu thì khóa ngay từ trang quản trị, người chơi cúng dường để mở **từng skin, vĩnh viễn**, mức do chủ dự án đặt ở trang quản trị, duyệt xong tự mở đúng skin đã chọn; (c) thử hai máy qua mạng chủ dự án tự làm. Đặc tả: `docs/ky-dai/T-160-DAC-TA-DA-VAY-CARO.md`, `docs/ky-dai/T-170-DAC-TA-KHOA-SKIN.md`.
+- **T-160 → T-163**: 8 bộ đá (Tinh Hà, Lâm Tuyền, Bích Hải, Dung Nham, Băng Phách, Liên Tử, Lôi Châu, Kim Sa), ảnh dựng bằng Blender, dùng cho bàn 2D và 3D; cờ vây và caro không có skin sân nên không có nút Khai mở.
+- **T-170 → T-173**: cửa hàng skin. Tắt thì mọi thứ như cũ. Bật (phải có mức chung) thì skin chưa mở bị khóa, skin đang dùng mà chưa mở bị gỡ ngay giữa ván; client chỉ gửi `{kind, id}`, giá do máy chủ; mã ghi bền rồi mới trả QR; webhook SePay chỉ tự xác nhận khi đủ tiền; quyền mở theo tài khoản, gộp khi khách đăng nhập.
+- **Soát máy chủ cửa hàng** (Gemini 4 Argon): FAIL, 1 lỗi chặn (ghi bền hỏng ở chế độ thật để lại khoản chờ chưa có trong sổ) → **T-175** sửa. **Nghiệm thu lần cuối cả đợt** (Gemini 4 Argon, agent riêng, chỉ đọc): **PASS**, xác nhận T-175 đúng, phần giao diện đạt các quy tắc §3; 2 điểm nên sửa ở tình huống cạnh, điều phối đã sửa luôn: mã đã phát chỉ hạ theo mức mới chứ không tăng; kiểm lại trạng thái khoản sau khi ghi bền (hai lần bấm sát nhau).
+- **Kết quả điều phối tự chạy**: `npm run check` sạch 177 file; `npm test` **1009 đạt, 0 trượt, 3 bỏ qua** trên 1012 (PostgreSQL và perft sâu); `ui-check.js` **29/29**; `e2e-real.js` **16/16** bằng Chrome thật; trang quản trị kiểm bằng Chrome thật với `server.js` thật. Chưa có test cho trường hợp ghi bền hỏng (không có cách gây lỗi trong bộ test) và chưa có e2e cho gộp quyền mở skin khi khách đăng nhập (có test đơn vị `mergeGuest`).
 - **Còn để chủ dự án quyết 👤**: (1) có bật nhân vật Blender làm mặc định không; (2) cách mở khóa skin (hiện miễn phí); (3) có cho chọn khẩu hiệu không; (4) skin cho cờ vây, caro; (6) thử một ván thật giữa hai máy qua mạng.
 - `npm test` trên nhánh tích hợp trước T-121: 906 đạt, 0 trượt, 3 bỏ qua (2 PostgreSQL, 1 perft sâu).
 

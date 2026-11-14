@@ -39,7 +39,7 @@ function surface(reduced = false, extra = {}) {
   const content = el => (el.textContent || '') + (el.children || []).map(content).join('');
   const button = label => elements.find(el => el.tag === 'button' && content(el) === label);
   return {
-    api: root.KydaoUI, frames, timers, texts, button,
+    api: root.KydaoUI, frames, timers, texts, button, elements,
     click(label) { const el = button(label); assert.ok(el, label); assert.equal(el.hidden, false, label); assert.ok(!el.disabled, label); el.listeners.click(); },
     tap(game, size, square, drag = false) {
       const el = elements.find(el => el.tag === 'canvas' && el._w);
@@ -130,8 +130,129 @@ test('khai mở sân: gửi kd:skin và hai bên thấy skin', () => {
   assert.doesNotThrow(() => b.api.apply({ type: 'kd:skin', gameId: gid, side: 'a', field: 'volcano', pieces: 'magma', opened: true }));
   e.manager.shutdown();
   const c = gameEnv('gomoku', undefined, false, extra);
-  assert.equal(c.sent.filter(x => x.name === 'kd:skin').length, 0, 'caro không có skin');
+  assert.equal(c.sent.filter(x => x.name === 'kd:skin').length, 0, 'caro không đọc khóa kydao.skin của môn khác');
   c.manager.shutdown();
+});
+
+test('caro và cờ vây: bộ đá lưu ở kydao.stone, gửi kd:skin chỉ có pieces, nút "Bộ đá" và bộ chọn không có "Khai mở"', () => {
+  const store = { 'kydao.stone': JSON.stringify({ pieces: 'cosmos' }), 'kydao.skin': JSON.stringify({ field: 'volcano', pieces: 'magma' }) };
+  const extra = { KydaoSkins: require('../public/js/kydao-skins.js'), localStorage: { getItem: k => store[k] ?? null, setItem: (k, v) => { store[k] = String(v); } } };
+  for (const [game, size] of [['gomoku', undefined], ['go', 9]]) {
+    const e = gameEnv(game, size, false, extra), [a] = e.views;
+    const calls = e.sent.filter(x => x.name === 'kd:skin');
+    assert.ok(calls.length >= 1, game + ': tự gửi bộ đá khi vào ván');
+    for (const c of calls) assert.deepEqual(JSON.parse(JSON.stringify(c.data)), { gameId: e.state().gameId, pieces: 'cosmos' });
+    assert.equal(a.button('Lãnh địa'), undefined, 'không còn chữ Lãnh địa');
+    a.click('Bộ đá');
+    assert.equal(a.button('Khai mở'), undefined); assert.equal(a.button('Về sân mặc định'), undefined);
+    assert.ok(a.button('Ẩn skin đối thủ'));
+    e.manager.shutdown();
+  }
+});
+
+/** Mở lại bảng của người chơi đầu với máy chủ giả cho kd:shop:*; các sự kiện khác vẫn đi qua manager thật. */
+function shopEnv(game, size, store) {
+  const extra = { KydaoSkins: require('../public/js/kydao-skins.js'), localStorage: { getItem: k => store[k] ?? null, setItem: (k, v) => { store[k] = String(v); } } };
+  const e = gameEnv(game, size, false, extra), a = e.views[0];
+  const shopCalls = [], fake = { state: { ok: true, on: true, price: 20000, prices: {}, owned: [] }, buy: { ok: true, qr: '/img/kydao/ui/crest-lotus.webp', code: 'CDABC123', amount: 20000, test: true } };
+  a.api.open(e.state(), { now: () => 1000, send: (name, data, cb) => {
+    e.sent.push({ i: 0, name, data });
+    if (name === 'kd:shop:state') { shopCalls.push({ name, data }); cb(fake.state); }
+    else if (name === 'kd:shop:buy') { shopCalls.push({ name, data }); cb(fake.buy); }
+    else cb(e.manager[name.slice(3)](e.users[0], data));
+  } });
+  // Chỉ tìm trong cây bộ chọn hiện tại (danh sách elements còn giữ cả phần tử cũ đã bị dựng lại).
+  const walk = (el, out) => { out.push(el); (el.children || []).forEach(c => walk(c, out)); return out; };
+  const last = pred => { const root = a.elements.filter(el => el.className === 'kd-skins').pop(); return root ? walk(root, []).filter(pred).pop() : undefined; };
+  const lockedOf = kind => last(el => el.tag === 'button' && / is-locked/.test(' ' + el.className) && el.attrs['data-kind'] === kind);
+  const labelled = label => last(el => el.tag === 'button' && (function c(x) { return (x.textContent || '') + (x.children || []).map(c).join(''); })(el) === label);
+  const skinCalls = () => e.sent.filter(x => x.name === 'kd:skin');
+  return { e, a, shopCalls, fake, last, lockedOf, labelled, skinCalls, qrImg: () => last(el => el.tag === 'img' && el.className === 'kd-buy-qr') };
+}
+
+test('cửa hàng skin: mục khóa không gửi kd:skin, xác nhận rồi mới gửi kd:shop:buy, nhận owned thì dùng skin', () => {
+  const x = shopEnv('chess', undefined, {});
+  const id = Object.keys(require('../public/js/kydao-skins.js').PIECES)[0];
+  x.a.api.apply({ type: 'kd:shop:state', on: true, price: 20000, prices: {}, owned: [] });
+  x.a.click('Lãnh địa');
+  assert.equal(x.shopCalls.filter(c => c.name === 'kd:shop:state').length, 1, 'mở bộ chọn hỏi trạng thái cửa hàng một lần');
+  const locked = x.lockedOf('pieces');
+  assert.ok(locked, 'có mục quân bị khóa');
+  assert.match(locked.attrs['aria-label'], /đang khóa, cúng dường 20\.000\s*đ để mở/);
+  locked.listeners.click();
+  assert.equal(x.skinCalls().length, 0, 'bấm mục khóa không gửi kd:skin');
+  assert.equal(x.shopCalls.filter(c => c.name === 'kd:shop:buy').length, 0, 'chưa bấm xác nhận thì chưa mua');
+  assert.ok(x.labelled('Thôi'), 'khung xác nhận có nút Thôi');
+  x.labelled('Cúng dường để mở').listeners.click();
+  const buys = x.shopCalls.filter(c => c.name === 'kd:shop:buy');
+  assert.equal(buys.length, 1);
+  assert.equal(buys[0].data.kind, 'pieces');
+  assert.equal(buys[0].data.id, locked.attrs['data-id']);
+  assert.deepEqual(Object.keys(buys[0].data).sort(), ['id', 'kind'], 'không gửi số tiền');
+  assert.equal(x.qrImg().src, '/img/kydao/ui/crest-lotus.webp', 'QR cùng gốc được gán');
+  const key = 'pieces:' + locked.attrs['data-id'];
+  x.a.api.apply({ type: 'kd:shop:state', on: true, price: 20000, prices: {}, owned: [key] });
+  const calls = x.skinCalls();
+  assert.equal(calls.length >= 1, true, 'mở khóa xong gửi kd:skin');
+  assert.equal(calls[calls.length - 1].data.pieces, locked.attrs['data-id']);
+  assert.match(x.a.message, /^Đã mở .+\. Xin tùy hỷ công đức\.$/);
+  assert.equal(x.lockedOf('pieces') && x.lockedOf('pieces').attrs['data-id'] === locked.attrs['data-id'], false, 'mục vừa mở hết khóa');
+  assert.ok(id);
+  x.e.manager.shutdown();
+});
+
+test('cửa hàng skin: URL QR lạ không được gán, cửa hàng tắt thì không khóa, lỗi hiện lý do', () => {
+  const x = shopEnv('chess', undefined, {});
+  x.a.click('Lãnh địa');
+  x.fake.buy = { ok: true, qr: 'https://evil.example/qr.png', code: 'CDXYZ', amount: 20000 };
+  x.lockedOf('field').listeners.click();
+  x.labelled('Cúng dường để mở').listeners.click();
+  assert.equal(x.qrImg(), undefined, 'QR ngoài gốc cho phép không tạo ảnh');
+  x.labelled('Đóng').listeners.click();
+  x.fake.buy = { ok: false, reason: 'Cửa hàng skin chưa mở.', code: 'off' };
+  x.lockedOf('field').listeners.click();
+  x.labelled('Cúng dường để mở').listeners.click();
+  assert.equal(x.a.message, 'Cửa hàng skin chưa mở.');
+  x.a.api.apply({ type: 'kd:shop:state', on: false, price: null, prices: {}, owned: [] });
+  assert.equal(x.lockedOf('field'), undefined, 'cửa hàng tắt: không còn mục khóa');
+  x.e.manager.shutdown();
+});
+
+test('cửa hàng skin: cờ vây dùng loại stones; lựa chọn đã lưu mà đang khóa thì không tự gửi lúc vào ván', () => {
+  const store = { 'kydao.stone': JSON.stringify({ pieces: 'cosmos' }) };
+  const x = shopEnv('go', 9, store);
+  const state = { ok: true, on: true, price: 30000, prices: { 'stones:lotus': 45000 }, owned: [] };
+  x.a.api.apply({ type: 'kd:shop:state', ...state });
+  const before = x.skinCalls().length;
+  const sent = [];
+  x.a.api.open(x.e.state(), { now: () => 1000, send: (name, data, cb) => {
+    sent.push({ name, data });
+    cb(name === 'kd:shop:state' ? state : name === 'kd:shop:buy' ? { ok: true, qr: '/q.png', code: 'C1', amount: 45000 } : { ok: true });
+  } });
+  assert.equal(sent.filter(c => c.name === 'kd:skin').length, 0, 'đá đã lưu đang khóa: không gửi kd:skin lúc vào ván');
+  assert.equal(x.skinCalls().length, before);
+  x.a.click('Bộ đá');
+  const lotus = x.lockedOf('pieces');
+  assert.ok(lotus, 'có mục đá khóa');
+  assert.equal(x.a.elements.filter(el => el.className === 'kd-skins').pop().children.length > 0, true);
+  const lotusBtn = x.last(el => el.tag === 'button' && el.attrs['data-id'] === 'lotus');
+  assert.match(lotusBtn.attrs['aria-label'], /45\.000\s*đ/, 'mức riêng đè mức chung');
+  lotusBtn.listeners.click();
+  x.labelled('Cúng dường để mở').listeners.click();
+  const buy = sent.find(c => c.name === 'kd:shop:buy');
+  assert.deepEqual(JSON.parse(JSON.stringify(buy.data)), { kind: 'stones', id: 'lotus' });
+  x.e.manager.shutdown();
+});
+
+test('khi máy chủ từ chối kd:skin bằng code locked thì hiện lý do và mở khung mua', () => {
+  const x = shopEnv('chess', undefined, {});
+  x.a.click('Lãnh địa');
+  x.a.api.open(x.e.state(), { now: () => 1000, send: (name, data, cb) => cb(name === 'kd:skin' ? { ok: false, code: 'locked', reason: 'Skin này cần cúng dường để mở.', kind: 'pieces', id: 'magma', price: 20000 } : { ok: true }) });
+  x.a.click('Lãnh địa');
+  x.last(el => el.tag === 'button' && el.attrs['data-id'] === 'magma' && el.attrs['data-kind'] === 'pieces').listeners.click();
+  assert.equal(x.a.message, 'Skin này cần cúng dường để mở.');
+  assert.ok(x.labelled('Cúng dường để mở'), 'khung xác nhận mua hiện ra');
+  x.e.manager.shutdown();
 });
 
 test('hiệu ứng thắng ném lỗi thì bảng kết quả vẫn hiện', () => {

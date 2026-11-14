@@ -543,6 +543,8 @@
   ['moved', 'marks', 'offer', 'end', 'skin'].forEach(type => socket.on('kd:' + type, d => {
     KydaoUI.apply({ ...d, type: 'kd:' + type });
   }));
+  // Cửa hàng skin: máy chủ đẩy trạng thái riêng của mình (tên sự kiện có dấu hai chấm nên đăng ký riêng).
+  socket.on('kd:shop:state', d => KydaoUI.apply({ ...d, type: 'kd:shop:state' }));
 
   function welcome(r) {
     joined = true; editing = false; me = r.you; cfg = r.config;

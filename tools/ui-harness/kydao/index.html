@@ -6,7 +6,7 @@
 <title>Thử bảng bàn cờ Kỳ Đạo</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="/css/style.css">
-<link rel="stylesheet" href="/css/kydao.css?v=5">
+<link rel="stylesheet" href="/css/kydao.css?v=shop1">
 <link rel="stylesheet" href="/css/kydao-fx.css?v=2">
 </head>
 <body>
@@ -29,6 +29,7 @@
   <label style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">Kết quả
     <select id="s-result" class="kd-btn"></select>
   </label>
+  <button type="button" class="kd-btn" id="b-shop">Bật cửa hàng</button>
   <button type="button" class="kd-btn" id="b-end">Giả lập kết thúc</button>
   <pre id="log" style="width:100%;font-size:12px;color:var(--muted)"></pre>
 </main>
@@ -38,11 +39,12 @@
 <script src="/js/kydao/gomoku.js"></script>
 <script src="/js/kydao-skins.js?v=4"></script>
 <script src="/js/kydao-fx.js?v=5"></script>
-<script src="/js/kydao-draw.js?v=skins7"></script>
-<script src="/js/kydao-ui.js?v=kydai11"></script>
+<script src="/js/kydao-draw.js?v=stones1"></script>
+<script src="/js/kydao-ui.js?v=shop1"></script>
 <script>
 (function () {
   var log = document.getElementById('log'), cur = null;
+  var shop = { on: false, price: 20000, prices: {}, owned: [] };   // cửa hàng skin giả
   var fieldSel = document.getElementById('s-field');
   var reasonSel = document.getElementById('s-reason');
   var resultSel = document.getElementById('s-result');
@@ -86,10 +88,32 @@
           var r = step(cur.state, data.move);
           if (r.ok) { cur.state = r.state; cur.ply++; }
           cb({ ok: !!r.ok, reason: r.reason, ply: cur.ply });
+        } else if (name === 'kd:shop:state') {
+          cb({ ok: true, on: shop.on, price: shop.price, prices: shop.prices, owned: shop.owned.slice() });
+        } else if (name === 'kd:shop:buy') {
+          // Máy chủ giả: trả QR cùng gốc (ảnh có sẵn), rồi sau 1,5 giây phát trạng thái có skin vừa mua.
+          var key = data.kind + ':' + data.id;
+          if (!shop.on) { cb({ ok: false, reason: 'Cửa hàng skin chưa mở.', code: 'off' }); return; }
+          if (shop.owned.indexOf(key) >= 0) { cb({ ok: false, reason: 'Bạn đã mở skin này rồi.', code: 'owned' }); return; }
+          cb({ ok: true, kind: data.kind, id: data.id, code: 'CDTEST01', amount: shop.price, fund: 'Chung', qr: '/img/kydao/ui/crest-lotus.webp', test: true,
+            confirmAt: Date.now() + 1500, bank: 'Ngân hàng thử', account: '0123456789', accountName: 'CHUA TAM AN', auto: false });
+          setTimeout(function () {
+            shop.owned.push(key);
+            KydaoUI.apply({ type: 'kd:shop:state', on: shop.on, price: shop.price, prices: shop.prices, owned: shop.owned.slice() });
+          }, 1500);
         } else if (name === 'kd:skin') {
           // Máy chủ giả: chuẩn hóa rồi phát lại như máy chủ thật.
           var mine = cur.skins[cur.you];
-          var want = KydaoSkins.normalize({ field: 'field' in data ? data.field : mine.field, pieces: 'pieces' in data ? data.pieces : mine.pieces });
+          var want = KydaoSkins.normalize({ field: 'field' in data ? data.field : mine.field, pieces: 'pieces' in data ? data.pieces : mine.pieces }, cur.game);
+          if (shop.on) {
+            var checks = [['field', want.field, mine.field], [/^(go|gomoku)$/.test(cur.game) ? 'stones' : 'pieces', want.pieces, mine.pieces]];
+            for (var i = 0; i < checks.length; i++) {
+              if (checks[i][1] && checks[i][1] !== checks[i][2] && shop.owned.indexOf(checks[i][0] + ':' + checks[i][1]) < 0) {
+                cb({ ok: false, code: 'locked', reason: 'Skin này cần cúng dường để mở.', kind: checks[i][0], id: checks[i][1], price: shop.price });
+                return;
+              }
+            }
+          }
           var opened = want.field !== mine.field && want.field !== null;
           cur.skins[cur.you] = want;
           cb({ ok: true, field: want.field, pieces: want.pieces });
@@ -130,8 +154,15 @@
   document.getElementById('b-foe').onclick = function () {
     if (!cur) { say('chưa mở ván'); return; }
     var side = other(cur.you), f = fieldSel.value;
-    cur.skins[side] = { field: f, pieces: null };
-    KydaoUI.apply({ type: 'kd:skin', gameId: cur.gameId, side: side, field: f, pieces: null, opened: true });
+    var stone = cur.game === 'go' || cur.game === 'gomoku';
+    cur.skins[side] = stone ? { field: null, pieces: 'lotus' } : { field: f, pieces: null };
+    KydaoUI.apply({ type: 'kd:skin', gameId: cur.gameId, side: side, field: cur.skins[side].field, pieces: cur.skins[side].pieces, opened: !stone });
+  };
+  // Bật cửa hàng: máy chủ giả đẩy kd:shop:state như máy chủ thật.
+  document.getElementById('b-shop').onclick = function () {
+    shop = { on: true, price: 20000, prices: {}, owned: [] };
+    KydaoUI.apply({ type: 'kd:shop:state', on: true, price: 20000, prices: {}, owned: [] });
+    say('cửa hàng bật: 20.000 đ, chưa mở skin nào');
   };
   document.getElementById('b-end').onclick = function () {
     if (!cur) { say('chưa mở ván'); return; }

@@ -18,13 +18,32 @@ const SHOTS = process.env.SHOTS || path.join(os.tmpdir(), 'kydao-e2e-shots');
 fs.mkdirSync(SHOTS, { recursive: true });
 const UID = { a: 'kd-e2e-uid-an-00001', b: 'kd-e2e-uid-binh-0001', c: 'kd-e2e-uid-xem-00001' };
 const IGNORE = /Failed to load resource|favicon|fonts\.g|ERR_/;
+const ADMIN = 'e2e-' + require('crypto').randomBytes(9).toString('hex');   // khóa quản trị thử, sinh mới mỗi lần chạy
 const results = [];
 const ctxs = [];
+
+/** Nối socket của trang vào window.__sock và nhớ gameId mới nhất (để bước thử ép gửi kd:skin). */
+const SOCK_HOOK = () => {
+  let real;
+  Object.defineProperty(window, 'io', {
+    configurable: true,
+    set(v) { real = v; },
+    get() {
+      if (!real) return real;
+      const f = function (...a) { const s = real.apply(this, a); window.__sock = s; s.on('kd:start', p => { window.__gid = p && p.gameId; }); return s; };
+      Object.assign(f, real);
+      return f;
+    }
+  });
+};
+const PNG1 = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', 'base64');
 
 /* ---------- trang ---------- */
 async function newPlayer(browser, name) {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, hasTouch: true, isMobile: true });
   ctxs.push(ctx);
+  await ctx.addInitScript(SOCK_HOOK);
+  await ctx.route('https://img.vietqr.io/**', r => r.fulfill({ status: 200, contentType: 'image/png', body: PNG1 }));   // không gọi ra ngoài
   const page = await ctx.newPage();
   page.who = name; page.errs = []; page.http5xx = [];
   page.on('console', m => { if (m.type() === 'error' && !IGNORE.test(m.text())) page.errs.push('console.error: ' + m.text()); });
@@ -111,7 +130,7 @@ const ok = (c, m) => { if (!c) throw new Error(m); };
   const browser = await pw.chromium.launch({ channel: process.env.PW_CHANNEL || undefined, headless: true });
   let srv = null, C = null;
   try {
-    srv = await startServer({ DONATION_MODE: 'test' });
+    srv = await startServer({ DONATION_MODE: 'test', ADMIN_KEY: ADMIN, BANK_ID: '970436', BANK_ACCOUNT: '0123456789', BANK_ACCOUNT_NAME: 'CHUA THU', SEPAY_API_KEY: '' });
     const A = await newPlayer(browser, 'An'), B = await newPlayer(browser, 'Bình');
     let before;
     stepPages.push(A, B);
@@ -256,6 +275,170 @@ const ok = (c, m) => { if (!c) throw new Error(m); };
     });
 
     await step('9. Không pageerror, không console.error, không HTTP >= 500 (cả hai trang và máy chủ)', async () => {
+      const errs = [...A.errs.map(e => 'A ' + e), ...B.errs.map(e => 'B ' + e), ...A.http5xx.map(e => 'A ' + e), ...B.http5xx.map(e => 'B ' + e)];
+      ok(!errs.length, errs.slice(0, 4).join(' | '));
+      const serverErr = srv.logs.join('').split('\n').filter(l => /error|exception|unhandled/i.test(l) && !/EADDRINUSE/.test(l));
+      ok(!serverErr.length, 'nhật ký máy chủ có lỗi: ' + serverErr.slice(0, 2).join(' | '));
+    });
+
+    /* ===== Đợt 2: bộ đá cờ vây/caro và khóa skin ===== */
+    const shopApi = (method, body) => fetch(srv.url + '/api/admin/kydao-shop', { method, headers: { 'x-admin-key': ADMIN, 'content-type': 'application/json' }, body: body ? JSON.stringify(body) : undefined })
+      .then(async r => ({ status: r.status, json: await r.json().catch(() => null) }));
+    const money = /20\.000\s*đ/;
+    const panelOpen = async (p, label) => {
+      if (await p.locator('.kd-skins:not([hidden])').count() === 0) await p.click(`.kd-actions .kd-btn:has-text("${label}")`);
+      await p.waitForSelector('.kd-skins:not([hidden])');
+    };
+    const panelClose = async (p, label) => {
+      if (await p.locator('.kd-skins:not([hidden])').count()) await p.click(`.kd-actions .kd-btn:has-text("${label}")`);
+      await p.waitForSelector('.kd-skins', { state: 'hidden' });
+    };
+    /** Màu trung bình quanh tâm bàn (giao điểm giữa) của canvas caro. */
+    const centreAvg = pg => pg.evaluate(() => {
+      const c = document.querySelector('.kd-canvas'), g = c.getContext('2d'), cell = c.width / 16, r = Math.round(cell * 0.35);
+      const cx = Math.round(c.width / 2), cy = Math.round(c.height / 2), d = g.getImageData(cx - r, cy - r, 2 * r, 2 * r).data;
+      let R = 0, G = 0, Bl = 0, n = 0; for (let i = 0; i < d.length; i += 4) { R += d[i]; G += d[i + 1]; Bl += d[i + 2]; n++; }
+      return [R / n, G / n, Bl / n];
+    });
+    const leaveTable = async () => {
+      for (const p of [A, B]) await p.click('.kd-result .kd-btn:has-text("Rời bàn")');
+      for (const p of [A, B]) await p.waitForSelector('.kd-panel', { state: 'hidden', timeout: 5000 });
+      await sleep(600);
+    };
+
+    await step('10. Caro: A chọn bộ đá Tinh Hà (không có nút Khai mở), đặt quân: canvas B đổi khi hiện/ẩn skin của A', async () => {
+      await leaveTable();
+      await seatAndStart(A, B, 2, 'gomoku');
+      await sleep(500);
+      await panelOpen(A, 'Bộ đá');
+      await A.waitForSelector('.kd-skin[data-kind="pieces"][data-id="cosmos"]');
+      ok(await A.locator('.kd-skins .kd-btn.kd-gold').count() === 0, 'bộ chọn bộ đá không được có nút Khai mở');
+      ok(await A.locator('.kd-skin.is-locked').count() === 0, 'cửa hàng tắt: không được có mục khóa');
+      const ids = await A.$$eval('.kd-skin[data-kind="pieces"]', e => e.map(x => x.dataset.id).filter(Boolean));
+      ok(ids.length === 8, 'phải có 8 bộ đá, thấy ' + ids.length);
+      await A.click('.kd-skin[data-kind="pieces"][data-id="cosmos"]');
+      await sleep(500);
+      await shot(A, '12-caro-bo-da-A');
+      await panelClose(A, 'Bộ đá');
+      const h0 = (await sig(B)).hash;
+      await A.locator('.kd-canvas').click({ position: { x: (await A.$eval('.kd-canvas', e => e.getBoundingClientRect().width)) / 2, y: (await A.$eval('.kd-canvas', e => e.getBoundingClientRect().height)) / 2 } });
+      await B.waitForFunction(h => { const c = document.querySelector('.kd-canvas'), g = c.getContext('2d'), d = g.getImageData(0, 0, c.width, c.height).data; let x = 0; for (let i = 0; i < d.length; i += 13) x = (x * 31 + d[i]) | 0; return x !== h; }, h0, { timeout: 6000 });
+      await sleep(1200);
+      const withSkin = await centreAvg(B);
+      await panelOpen(B, 'Bộ đá');
+      await B.click('.kd-skins .kd-btn:has-text("Ẩn skin đối thủ")');
+      await panelClose(B, 'Bộ đá');
+      await sleep(600);
+      const noSkin = await centreAvg(B);
+      await shot(B, '13-caro-B-an-skin');
+      const d = dist(withSkin, noSkin);
+      ok(d > 12, `quân của A trên canvas B không đổi giữa lúc hiện và ẩn skin (độ lệch ${d.toFixed(1)}): ${withSkin.map(Math.round)} / ${noSkin.map(Math.round)}`);
+      await shot(B, 'caro-da');
+      await A.click('.kd-actions .kd-danger'); await A.click('.kd-confirm .kd-danger');
+      await Promise.all([A, B].map(p => p.waitForSelector('.kd-result:not([hidden])', { timeout: 8000 })));
+      return `màu quân A tại tâm bàn (nhìn từ B): có skin ${withSkin.map(Math.round)}, ẩn skin ${noSkin.map(Math.round)}, độ lệch ${d.toFixed(1)}`;
+    });
+
+    let withMagicB = null;
+    await step('11. Bật cửa hàng qua API quản trị giữa ván cờ vua: nửa sân của A trên cả hai trang về mặc định', async () => {
+      await leaveTable();
+      // B bật lại hiện skin đối thủ cho các bước sau (đã ẩn ở bước 10)
+      await seatAndStart(A, B, 1, 'chess');
+      await sleep(500);
+      await panelOpen(B, 'Lãnh địa');
+      await B.click('.kd-skins .kd-btn:has-text("Hiện skin đối thủ")');
+      await panelClose(B, 'Lãnh địa');
+      await panelOpen(A, 'Lãnh địa');
+      await A.click('.kd-skin[data-kind="field"][data-id="volcano"]');
+      await sleep(200);
+      const bannerB = banner(B);
+      await A.click('.kd-skins .kd-btn.kd-gold');
+      await bannerB;
+      await sleep(3500);
+      const skinned = { A: await sig(A), B: await sig(B) };
+      const r0 = await shopApi('GET');
+      ok(r0.status === 200 && r0.json.config.on === false, 'cửa hàng lẽ ra tắt lúc đầu: ' + JSON.stringify(r0.json && r0.json.config));
+      const r = await shopApi('POST', { price: 20000, on: true });
+      ok(r.status === 200 && r.json.ok && r.json.config.on === true && r.json.config.price === 20000, 'bật cửa hàng: ' + r.status + ' ' + JSON.stringify(r.json));
+      await sleep(2200);
+      const after = { A: await sig(A), B: await sig(B) };
+      const dB = dist(skinned.B.top, after.B.top), dA = dist(skinned.A.bot, after.A.bot);
+      const toDefB = dist(before.B.top, after.B.top);
+      ok(dB > 4, `canvas B không đổi sau khi bật cửa hàng (độ lệch ${dB.toFixed(1)})`);
+      ok(dA > 4, `canvas A không đổi sau khi bật cửa hàng (độ lệch ${dA.toFixed(1)})`);
+      ok(toDefB < dB, `nửa của A trên B chưa về mặc định (cách mặc định ${toDefB.toFixed(1)}, cách lúc có skin ${dB.toFixed(1)})`);
+      await shot(B, '14-cua-hang-bat-B');
+      return `độ lệch khi bật: B ${dB.toFixed(1)}, A ${dA.toFixed(1)}; nửa của A trên B cách mặc định ${toDefB.toFixed(1)}`;
+    });
+
+    await step('12. A mở Lãnh địa: mục khóa hiện "20.000 đ"; bấm quân Dung Nham: khung xác nhận, rồi khung QR đúng số tiền và mã CD…', async () => {
+      await panelOpen(A, 'Lãnh địa');
+      await A.waitForSelector('.kd-skin.is-locked', { timeout: 5000 });
+      const total = await A.locator('.kd-skin[data-id]:not([data-id=""])').count(), locked = await A.locator('.kd-skin.is-locked').count();
+      ok(locked === total && total > 0, `mọi skin phải khóa (khóa ${locked}/${total})`);
+      ok(await A.locator('.kd-skin[data-id=""].is-locked').count() === 0, 'mục Mặc định không được khóa');
+      const price = await A.textContent('.kd-skin.is-locked .kd-skin-price');
+      ok(money.test(price), 'giá hiện: ' + price);
+      withMagicB = await sig(B);
+      await A.click('.kd-skin[data-kind="pieces"][data-id="magma"]');
+      await A.waitForSelector('.kd-buy');
+      ok(/Cúng dường\s+20\.000\s*đ/.test(await A.textContent('.kd-buy')), 'khung xác nhận thiếu giá: ' + await A.textContent('.kd-buy'));
+      await A.click('.kd-buy .kd-gold');
+      await A.waitForSelector('.kd-buy-qr', { timeout: 6000 });
+      const src = await A.getAttribute('.kd-buy-qr', 'src');
+      ok(src.startsWith('https://img.vietqr.io/'), 'src QR: ' + src);
+      const txt = await A.textContent('.kd-buy');
+      ok(money.test(txt), 'khung QR thiếu số tiền: ' + txt);
+      const code = (txt.match(/CD[A-Z0-9]{6}/) || [])[0];
+      ok(code, 'khung QR thiếu mã CD…: ' + txt);
+      await shot(A, 'khoa-skin');
+      return `giá "${price.trim()}", mã ${code}`;
+    });
+
+    await step('13. Chế độ thử tự xác nhận: khung QR đóng, A hết khóa mục đó, quân A đổi trên canvas B; B vẫn khóa', async () => {
+      await A.waitForFunction(() => !document.querySelector('.kd-buy') && !document.querySelector('.kd-skin[data-kind="pieces"][data-id="magma"].is-locked'), null, { timeout: 20000 });
+      await sleep(1000);
+      ok(await A.locator('.kd-skin[data-kind="pieces"][data-id="magma"].is-locked').count() === 0, 'A vẫn thấy khóa');
+      ok(await A.locator('.kd-skin[data-kind="field"][data-id="river"].is-locked').count() === 1, 'skin sân khác của A phải vẫn khóa (mỗi skin mở riêng)');
+      await shot(A, 'mo-khoa-xong');
+      await panelClose(A, 'Lãnh địa');
+      const nowB = await sig(B);
+      ok(nowB.hash !== withMagicB.hash, 'canvas B không đổi khi A có quân Dung Nham');
+      await panelOpen(B, 'Lãnh địa');
+      ok(await B.locator('.kd-skin[data-kind="pieces"][data-id="magma"].is-locked').count() === 1, 'B phải vẫn thấy Dung Nham bị khóa');
+      await panelClose(B, 'Lãnh địa');
+      return `độ lệch canvas B (quân A): trên ${dist(withMagicB.top, nowB.top).toFixed(1)}, dưới ${dist(withMagicB.bot, nowB.bot).toFixed(1)}`;
+    });
+
+    await step('14. B ép gửi kd:skin chưa mở: máy chủ trả code:locked; bấm mục khóa thì giao diện B hiện khung mua', async () => {
+      const gid = await B.evaluate(() => window.__gid);
+      ok(gid, 'không nắm được gameId của B');
+      const ack = await B.evaluate(g => new Promise(res => window.__sock.emit('kd:skin', { gameId: g, pieces: 'magma' }, res)), gid);
+      ok(ack && ack.ok === false && ack.code === 'locked', 'ack: ' + JSON.stringify(ack));
+      ok(ack.kind === 'pieces' && ack.id === 'magma' && ack.price === 20000, 'ack thiếu kind/id/price: ' + JSON.stringify(ack));
+      await panelOpen(B, 'Lãnh địa');
+      await B.click('.kd-skin[data-kind="pieces"][data-id="magma"]');
+      await B.waitForSelector('.kd-buy');
+      ok(/Cúng dường\s+20\.000\s*đ/.test(await B.textContent('.kd-buy')), 'khung mua của B: ' + await B.textContent('.kd-buy'));
+      await B.click('.kd-buy .kd-ghost');
+      await panelClose(B, 'Lãnh địa');
+      return 'máy chủ: ' + ack.reason;
+    });
+
+    await step('15. Tắt cửa hàng: cả hai hết khóa; A vẫn sở hữu (stats.unlocks >= 1)', async () => {
+      const r = await shopApi('POST', { on: false });
+      ok(r.status === 200 && r.json.config.on === false, 'tắt cửa hàng: ' + r.status + ' ' + JSON.stringify(r.json));
+      for (const p of [A, B]) {
+        await panelOpen(p, 'Lãnh địa');
+        await p.waitForFunction(() => !document.querySelector('.kd-skin.is-locked'), null, { timeout: 5000 });
+        await panelClose(p, 'Lãnh địa');
+      }
+      const v = await shopApi('GET');
+      ok(v.status === 200 && v.json.stats.unlocks >= 1, 'thống kê: ' + JSON.stringify(v.json && v.json.stats));
+      return 'thống kê: ' + JSON.stringify(v.json.stats);
+    });
+
+    await step('16. Suốt các bước mới: không pageerror, không console.error, không HTTP >= 500, máy chủ không lỗi', async () => {
       const errs = [...A.errs.map(e => 'A ' + e), ...B.errs.map(e => 'B ' + e), ...A.http5xx.map(e => 'A ' + e), ...B.http5xx.map(e => 'B ' + e)];
       ok(!errs.length, errs.slice(0, 4).join(' | '));
       const serverErr = srv.logs.join('').split('\n').filter(l => /error|exception|unhandled/i.test(l) && !/EADDRINUSE/.test(l));

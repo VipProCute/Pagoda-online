@@ -71,6 +71,7 @@ Lưu ý: `players` và `io` khai báo sau các hàm dùng chúng; đừng gọi 
   - mảng: `prayers[]`, `chat[]`, `incense[]`, `donations[]` (khóa theo `code`)
   - `auras{}`
   - `martial{ profiles{}, sessions{}, ledger{}, matches[], audit[] }` (chi tiết: `docs/VO-HOC-GIAO-THUC.md` §5)
+  - `kydao{ ratings, games[], active, pairs, shop, unlocks }`: `shop` = cấu hình khóa/giá skin bàn cờ (mặc định tắt), `unlocks[uid tài khoản]` = skin đã mở vĩnh viễn (`lib/kydao/shop.js`, `docs/KY-DAO-GIAO-THUC.md` §5.5). Khoản cúng dường mở skin là bản ghi `donations[]` có `purpose:'skin'`, `item:{kind,id}`, `outcome:'granted'`.
 - PostgreSQL: bảng `docs(section, k, v jsonb)`; ghi theo chênh lệch với bản bóng (`shadow`) trong một transaction; khi nạp thì `seq += 100000` để hai bản Render chạy chồng không cấp trùng id.
 - Không có hệ thống migration: `VERSION` + chữa dữ liệu cũ lúc nạp (`adopt`, `norm`, `repairSeq`). Công cụ: `node --env-file=.env tools/db-migrate.js import|verify|export|stats`.
 - Trạng thái **mất khi khởi động lại** (chỉ trong RAM): vi phạm chat gần đây, trận PK đang đấu (vào lại nhận `RESTART_MSG` của `lib/pk/manager.js`), lời mời spar, cache clip TTS, hàng đợi xin xăm.
@@ -91,7 +92,7 @@ Ack chuẩn: `{ ok:true, … }` hoặc `{ ok:false, reason, code? }`. Sự kiệ
 | Võ học (bọc `martialOnly`) | `martial:state`, `sweeper:claim`, `tu:start`, `tu:cancel`, `tu:speedup`, `tu:speedup:cancel`, `tu:voucher`, `martial:seen`, `vo:learn`, `vo:loadout` |
 | Spar | `spar:invite`, `spar:respond` |
 | Sân đấu (bọc `inArena`) | `arena:dnd`, `arena:blocks`, `pk:block`, `pk:unblock`, `pk:invite`, `pk:invite:cancel`, `pk:respond`, `pk:loadout`, `pk:pick`, `pk:forfeit`, `pk:resume` |
-| Kỳ Đạo (bọc `kydaoOnly`) | `kd:tables`, `kd:sit`, `kd:setup`, `kd:ready`, `kd:stand`, `kd:invite`, `kd:invite:cancel`, `kd:respond`, `kd:move`, `kd:draw`, `kd:resign`, `kd:mark`, `kd:agree`, `kd:resume-play`, `kd:skin`, `kd:watch`, `kd:unwatch`, `kd:resume` |
+| Kỳ Đạo (bọc `kydaoOnly`) | `kd:tables`, `kd:sit`, `kd:setup`, `kd:ready`, `kd:stand`, `kd:invite`, `kd:invite:cancel`, `kd:respond`, `kd:move`, `kd:draw`, `kd:resign`, `kd:mark`, `kd:agree`, `kd:resume-play`, `kd:skin`, `kd:watch`, `kd:unwatch`, `kd:resume`, `kd:shop:state`, `kd:shop:buy` |
 
 **Máy chủ → trình duyệt**
 
@@ -106,7 +107,7 @@ Ack chuẩn: `{ ok:true, … }` hoặc `{ ok:false, reason, code? }`. Sự kiệ
 | Võ học | `tu:update`, `martial:inheritance` |
 | Spar | `spar:invited`, `spar:accepted`, `spar:declined`, `spar:ready` |
 | Sân đấu | `arena:add`, `arena:del`, `arena:upd`, `pk:invited`, `pk:invite:closed`, `pk:lobby`, `pk:lobby:status`, `pk:turn`, `pk:locked`, `pk:reveal`, `pk:end` |
-| Kỳ Đạo | `kd:table`, `kd:invited`, `kd:invite:closed`, `kd:start`, `kd:moved`, `kd:offer`, `kd:marks`, `kd:skin`, `kd:end` |
+| Kỳ Đạo | `kd:table`, `kd:invited`, `kd:invite:closed`, `kd:start`, `kd:moved`, `kd:offer`, `kd:marks`, `kd:skin`, `kd:end`, `kd:shop:state` (riêng từng người) |
 
 Hợp đồng chi tiết của võ học và PK (payload, thứ tự gói tin): **`docs/VO-HOC-GIAO-THUC.md`**. Của Kỳ Đạo: **`docs/KY-DAO-GIAO-THUC.md`**. Đổi giao thức thì sửa tài liệu đó cùng PR.
 
@@ -129,7 +130,8 @@ Hợp đồng chi tiết của võ học và PK (payload, thứ tự gói tin): 
   - **Bàn cờ 3D** (`board3d.mjs`, `board-assets.mjs`) & quân cờ Kỳ Đạo vẽ lại (`public/js/kydao-draw.js`): Module dựng bàn cờ và quân cờ 3D tiện tròn, xoay được (nạp `.glb` qua `GLTFLoader` ở `/vendor/three-addons/`), hỗ trợ `o.skins` và hiệu ứng `playFx` ('domain', 'promote', 'win'); tích hợp chính thức vào game với nút "Bàn 3D" trong bảng cờ.
   - **Trang thử nghiệm độc lập**: `/world3d-test.html`, `/world3d-kit.html`, `/world3d-avatar.html`, `/world3d-board.html` (bàn 3D có skin), `/world3d-scene-hall.html`, `/world3d-scene-yard.html`, `/world3d-scene-library.html`, `/world3d-scene-arena.html`, `/kydao-pieces-test.html`, `/kydao-kydai-test.html` (bảng cờ Kỳ Đài thật với máy chủ giả), `/kydao-fx-test.html` (hiệu ứng 2D), `/kydao-skins-test.html` (danh mục tài nguyên skin).
 - **Kỳ Đạo & Kỳ Đài**:
-  - `public/js/kydao-skins.js` (dùng chung Node + trình duyệt, global `KydaoSkins`): danh mục 8 sân, 8 bộ quân, khẩu hiệu khai mở.
+  - `public/js/kydao-skins.js` (dùng chung Node + trình duyệt, global `KydaoSkins`): danh mục 8 sân, 8 bộ quân, khẩu hiệu khai mở; `STONES` (8 bộ đá cờ vây/caro, ảnh `stonesAtlas(id)` ở `public/img/kydao/stones/`, nút "Bộ đá", không có sân).
+  - Cửa hàng skin: `kydao-ui.js` giữ trạng thái `shop` (nhận `kd:shop:state`), mục khóa có lớp `is-locked`, khung mua và khung QR nằm trong bộ chọn; máy chủ kiểm quyền bằng `lib/kydao/shop.js` (xem §3, §4).
   - `public/js/kydao-fx.js` (global `KydaoFx`, kèm `public/css/kydao-fx.css`): hiệu ứng 2D gồm khai mở lãnh địa (`domain`), chấn động phong cấp rung bàn cờ vua (`promote`, `onJolt`), hiệu ứng chiến thắng cả 5 môn cờ (`win`).
   - `public/js/kydao-draw.js` (global `KydaoDraw`): vẽ quân cờ chi tiết, áp skin nửa sân (`o.skins`), độ lệch rung bàn (`o.jolt`), và dòng sông nước chảy đôi bờ giữa bàn cờ tướng/cờ úp.
   - `public/js/kydao-ui.js` (global `KydaoUI`): giao diện bảng cờ, nút "Lãnh địa" (chọn sân, quân, khai mở nửa sân), nút "Bàn 3D", nút "Ẩn skin đối thủ", cooldown 20 giây mỗi lần khai mở.
@@ -152,6 +154,7 @@ Test `test/sync-constants.test.js` (T-005) tự kiểm: bồ đoàn, hằng số
 | Bảng điểm công đức | `MERITS.EARN` trong `merit.js` | README "Công đức", bảng luật trong giao diện |
 | Độ dài URL meme | `MAX_URL` (300) trong `server.js` | `safeUrl` trong `public/js/celebrate.js` |
 | Ảnh hào quang | `public/js/celebrate.js` | `public/css/celebrate.css` |
+| Danh mục skin | `STONES`, `FIELDS`, `PIECES` trong `public/js/kydao-skins.js` (máy chủ kiểm mã bằng chính file này qua `lib/kydao/shop.js`) | ảnh `public/img/kydao/stones/<id>.webp` (sinh bởi `tools/blender/kydao/stones.py`), bảng giá trong `/admin.html` |
 | Giao thức võ học | `server.js`, `lib/pk/manager.js`, `dojo.js`, `arena.js` | `docs/VO-HOC-GIAO-THUC.md`; giả lập `tools/ui-harness/dojo/sim.js` |
 | Bàn đá Sân chùa (Kỳ Đạo, sẽ có từ T-031) | `YARD_TABLES` trong `server.js` | `YARD_TABLES` trong `public/js/hall.js` (toạ độ bàn/ghế, id 1–4; xem `docs/KY-DAO-GIAO-THUC.md` §4); mở rộng `test/sync-constants.test.js` |
 | Giao thức Kỳ Đạo | `server.js`, `lib/kydao/manager.js`, `public/js/kydao-ui.js`, module luật `public/js/kydao/*` | `docs/KY-DAO-GIAO-THUC.md`; hằng số nhịp/Elo/regex nước đi ở `lib/kydao/registry.js`, `elo.js` |

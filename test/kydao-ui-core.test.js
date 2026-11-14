@@ -35,6 +35,17 @@ test('applySkin chỉ nhận gói đúng ván và đúng bên', () => {
   assert.strictEqual(S.skins.b.field, 'ocean');
 });
 
+test('readSkins theo môn: cờ vây nhận mã STONES và bỏ field; applySkin trên phiên caro', () => {
+  const raw = { a: { field: 'volcano', pieces: 'cosmos' }, b: { pieces: 'magma' } };
+  assert.deepStrictEqual(core.readSkins(raw, 'go'), { a: { field: null, pieces: 'cosmos' }, b: { field: null, pieces: 'magma' } });
+  assert.deepStrictEqual(core.readSkins({ a: { pieces: 'jade' } }, 'go').a, { field: null, pieces: null }, 'mã quân cờ vua không dùng cho đá');
+  const S = session('gomoku', KyGomoku, 'a');
+  assert.strictEqual(core.applySkin(S, { gameId: 'g1', side: 'b', field: 'volcano', pieces: 'lotus' }), true);
+  assert.deepStrictEqual(S.skins.b, { field: null, pieces: 'lotus' });
+  assert.strictEqual(core.applySkin(S, { gameId: 'g1', side: 'a', pieces: '__proto__' }), true);
+  assert.deepStrictEqual(S.skins.a, { field: null, pieces: null });
+});
+
 test('applySkin không nhận khóa nguy hiểm', () => {
   const S = session('chess', KyChess, 'a');
   assert.strictEqual(core.applySkin(S, { gameId: 'g1', side: 'a', field: '__proto__' }), true);
@@ -311,4 +322,52 @@ test('nextSkinIndex: mũi tên đi vòng tròn, Home/End về đầu/cuối, ph�
   assert.strictEqual(core.nextSkinIndex(9, 4, 'End'), 8);
   assert.strictEqual(core.nextSkinIndex(9, 4, 'a'), -1);
   assert.strictEqual(core.nextSkinIndex(0, 0, 'ArrowRight'), -1);
+});
+
+test('skinLocked: chỉ khóa khi cửa hàng bật, skin khác mặc định và chưa mở', () => {
+  const off = core.readShop({ on: false, price: 20000, owned: [] });
+  const on = core.readShop({ on: true, price: 20000, prices: { 'field:volcano': 50000 }, owned: ['field:river', 'pieces:magma'] });
+  assert.strictEqual(core.skinLocked(off, 'field', 'volcano'), false, 'cửa hàng tắt: không khóa');
+  assert.strictEqual(core.skinLocked(core.readShop(null), 'field', 'volcano'), false, 'chưa có trạng thái: không khóa');
+  assert.strictEqual(core.skinLocked(on, 'field', null), false, 'mặc định luôn miễn phí');
+  assert.strictEqual(core.skinLocked(on, 'field', 'volcano'), true);
+  assert.strictEqual(core.skinLocked(on, 'field', 'river'), false, 'đã mở');
+  assert.strictEqual(core.skinLocked(on, 'pieces', 'magma'), false);
+  assert.strictEqual(core.skinLocked(on, 'stones', 'magma'), true, 'khóa theo cặp loại:mã');
+});
+
+test('skinPrice: mức riêng, rồi mức chung, rồi null', () => {
+  const s = core.readShop({ on: true, price: 20000, prices: { 'field:volcano': 50000, 'field:x': 'abc' }, owned: [] });
+  assert.strictEqual(core.skinPrice(s, 'field', 'volcano'), 50000);
+  assert.strictEqual(core.skinPrice(s, 'field', 'river'), 20000);
+  assert.strictEqual(core.skinPrice(s, 'field', 'x'), 20000, 'mức riêng sai kiểu bị bỏ');
+  assert.strictEqual(core.skinPrice(core.readShop({ on: true, owned: [] }), 'field', 'river'), null);
+  assert.strictEqual(core.skinPrice(null, 'field', 'river'), null);
+  assert.strictEqual(core.skinPrice(core.readShop({ on: true, price: 'rất nhiều' }), 'field', 'river'), null);
+});
+
+test('readShop: gói hỏng không làm sập, owned chỉ nhận chuỗi, bỏ khóa nguy hiểm', () => {
+  assert.deepStrictEqual(core.readShop(undefined), { on: false, price: null, prices: {}, owned: [] });
+  assert.deepStrictEqual(core.readShop({ on: 'true', price: -5, owned: [1, 'field:river', null] }), { on: false, price: null, prices: {}, owned: ['field:river'] });
+  const evil = core.readShop(JSON.parse('{"on":true,"price":1,"prices":{"__proto__":5,"constructor":6,"field:a":7},"owned":[]}'));
+  assert.deepStrictEqual(Object.keys(evil.prices), ['field:a']);
+  assert.strictEqual(core.shopKindOf('chess', 'field'), 'field');
+  assert.strictEqual(core.shopKindOf('chess', 'pieces'), 'pieces');
+  assert.strictEqual(core.shopKindOf('xiangqi', 'pieces'), 'pieces');
+  assert.strictEqual(core.shopKindOf('go', 'pieces'), 'stones');
+  assert.strictEqual(core.shopKindOf('gomoku', 'pieces'), 'stones');
+});
+
+test('fmtMoney định dạng vi-VN kèm đ', () => {
+  assert.strictEqual(core.fmtMoney(20000).replace(/\s/g, ' '), '20.000 đ');
+  assert.strictEqual(core.fmtMoney(1500000).replace(/\s/g, ' '), '1.500.000 đ');
+});
+
+test('safeQr: chỉ nhận ảnh VietQR hoặc đường dẫn cùng gốc', () => {
+  assert.strictEqual(core.safeQr('https://img.vietqr.io/image/abc.png?amount=1'), 'https://img.vietqr.io/image/abc.png?amount=1');
+  assert.strictEqual(core.safeQr('/img/kydao/ui/crest-lotus.webp'), '/img/kydao/ui/crest-lotus.webp');
+  for (const bad of ['//evil.example/x.png', 'https://evil.example/x.png', 'http://img.vietqr.io/x', 'https://img.vietqr.io.evil.example/x', 'javascript:alert(1)',
+    'data:image/png;base64,AAAA', '/\\evil.example/x', 'img/x.png', '', '/a b', null, undefined, 42, {}, 'https://img.vietqr.io/x\n']) {
+    assert.strictEqual(core.safeQr(bad), null, String(bad));
+  }
 });

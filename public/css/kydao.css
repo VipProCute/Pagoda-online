@@ -70,3 +70,21 @@
 .kd-gold { background: var(--gold, #e7c45a); color: #2a1a05; font-weight: 700; }
 .kd-gold:disabled { opacity: .5; }
 .kd-skin-img.kd-skin-crest { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; background: #0b0b10; }
+/* Skin đang khóa (cửa hàng bật): mờ nhẹ, ổ khóa góc phải, dòng giá dưới tên */
+.kd-skin { position: relative; }
+.kd-skin.is-locked { border-color: var(--line); }
+.kd-skin.is-locked .kd-skin-img, .kd-skin.is-locked .kd-skin-stone { opacity: .55; filter: grayscale(.5); }
+.kd-skin-lock { position: absolute; top: 6px; right: 6px; font-size: 14px; line-height: 1; padding: 2px 3px; border-radius: 6px; background: rgba(0, 0, 0, .6); }
+.kd-skin-price { font-size: 11.5px; font-variant-numeric: tabular-nums; color: var(--gold-ink, #e7c45a); font-weight: 600; }
+/* Khung mở khóa ngay trong bộ chọn */
+.kd-skins { grid-template-columns: minmax(0, 1fr); }
+.kd-skins.kd-skins-buy { max-height: 72vh; }
+.kd-buy { min-width: 0; box-sizing: border-box; display: grid; gap: 8px; justify-items: center; text-align: center; padding: 10px; border-radius: 10px; border: 1px solid var(--gold, #e7c45a); background: var(--surface); }
+.kd-buy-head { display: flex; align-items: center; gap: 10px; justify-content: center; }
+.kd-buy-head .kd-skin-img { opacity: 1; }
+.kd-buy-name { font-weight: 700; font-size: 15px; color: var(--gold-ink); }
+.kd-buy-line { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+.kd-buy-line b { color: inherit; font-weight: 700; }
+.kd-buy-qr { width: min(180px, 50vw); height: auto; aspect-ratio: 1; border-radius: 8px; background: #fff; padding: 6px; object-fit: contain; }
+.kd-buy .kd-actions { width: 100%; }
+.kd-skin-stone { width: 60px; height: 60px; border-radius: 50%; background-color: #dcb35c; background-repeat: no-repeat; }
