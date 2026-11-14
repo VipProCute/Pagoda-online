@@ -1487,8 +1487,12 @@ io.on('connection', socket => {
     // đã có khoản chờ đúng người, đúng skin: trả lại khoản đó, không tạo trùng
     const have = db.donations.find(x => x.status === 'pending' && x.purpose === 'skin' && accountOf(x.uid) === accountOf(p.uid) && x.item && x.item.kind === kind && x.item.id === id);
     if (have) {
-      if (have.amount !== price && !have.bank) { have.amount = price; store.save(); }
-      if (!(await store.flush())) return { ok: false, reason: 'Chưa lưu được mã cúng dường. Bạn thử lại sau ít giây nhé.' };
+      // Mã đã phát thì chỉ hạ theo mức mới (có lợi cho người cúng dường); mức tăng không áp vào mã cũ, kẻo tiền đang chuyển bị coi là thiếu.
+      const old = have.amount;
+      if (price < old && !have.bank) { have.amount = price; store.save(); }
+      if (!(await store.flush())) { if (have.status === 'pending' && !have.bank) have.amount = old; return { ok: false, reason: 'Chưa lưu được mã cúng dường. Bạn thử lại sau ít giây nhé.' }; }
+      // trong lúc chờ ghi, khoản có thể đã bị hủy hoặc hết hạn (hai lần bấm sát nhau)
+      if (have.status !== 'pending') return { ok: false, reason: 'Mã cúng dường đã hết hạn. Bạn bấm mở lại nhé.' };
       scheduleTestDonation(have); return Object.assign({ ok: true, kind, id }, donationAck(have));
     }
     if (!allow('shopbuy', 8000)) return { ok: false, code: 'rate', reason: 'Đợi vài giây rồi tạo mã mới nhé.' };

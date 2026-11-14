@@ -37,7 +37,7 @@ async function startGame(A, B) {
 
 const ownedIncludes = key => st => Array.isArray(st.owned) && st.owned.includes(key);
 
-test('đổi giá khi đang có khoản chờ: bấm mua lại nhận mức mới, cùng mã', async t => {
+test('đổi giá khi đang có khoản chờ: mức hạ thì theo mức mới, mức tăng thì giữ mã cũ, cùng mã', async t => {
   const srv = await startServer({ DONATION_MODE: 'live', ...BANK, SEPAY_API_KEY: '' });
   t.after(() => srv.stop());
   assert.equal((await srv.admin('/api/admin/kydao-shop', 'POST', { on: true, price: 20000 })).status, 200);
@@ -46,7 +46,10 @@ test('đổi giá khi đang có khoản chờ: bấm mua lại nhận mức mớ
   assert.equal(first.ok, true); assert.equal(first.amount, 20000);
   assert.equal((await srv.admin('/api/admin/kydao-shop', 'POST', { price: 30000 })).status, 200);
   const again = await call(A.s, 'kd:shop:buy', { kind: 'field', id: 'forest' });
-  assert.equal(again.ok, true); assert.equal(again.amount, 30000); assert.equal(again.code, first.code);
+  assert.equal(again.ok, true); assert.equal(again.amount, 20000); assert.equal(again.code, first.code);
+  assert.equal((await srv.admin('/api/admin/kydao-shop', 'POST', { price: 15000 })).status, 200);
+  const lower = await call(A.s, 'kd:shop:buy', { kind: 'field', id: 'forest' });
+  assert.equal(lower.ok, true); assert.equal(lower.amount, 15000); assert.equal(lower.code, first.code);
 });
 
 test('khóa skin: tắt thì tự do; bật cần giá; gỡ skin đang dùng; mua, tự duyệt, mở đúng skin, người khác vẫn khóa, không lộ uid, còn sau khi khởi động lại', async t => {
