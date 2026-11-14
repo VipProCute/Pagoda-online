@@ -1,15 +1,26 @@
 'use strict';
 
 import * as THREE from 'three';
+import { createFx3d } from './fx3d/index.mjs?v=1';
+import './fx3d/demon.mjs?v=1';
+import './fx3d/lotus.mjs?v=1';
+import './fx3d/aura.mjs?v=1';
 
 // Đơn vị mét, chân ở y=0, mặt hướng +Z; yaw tính bằng radian.
 // opts: role (beggar/wanderer/obito/sweeper/fortune), isSelf, view,
 // reducedMotion, createCanvas (tùy chọn để kiểm thử không cần DOM).
+// opts.fx3d: true/false (mặc định theo công tắc ta-fx3d), đối tượng fx giả, hoặc hàm host → fx (trang thử).
 // state.reducedMotion/view có thể ghi đè lựa chọn của opts khi đổi cài đặt.
 // update nhận ảnh chụp trạng thái đầy đủ, dt tính bằng giây; không tự đổi vị trí.
 // sit: false/-1 = đứng, true/0..n/'cushion' = bồ đoàn, 'bench' = ghế đá.
 // aura: { t, until, color }, meritRank, demon: { n, alpha }, obito, now (giờ máy chủ).
 // Texture hiệu ứng dùng chung có đếm tham chiếu; không tải ảnh khi không có DOM.
+// Pháp Tướng 3D (T-144): bật bằng localStorage['ta-fx3d'] = '1'. Tắt thì y như cũ (ảnh 2D dán tấm phẳng).
+export const FX3D_SWITCH_KEY = 'ta-fx3d';
+export function fx3dEnabled() {
+  try { return globalThis.localStorage?.getItem(FX3D_SWITCH_KEY) === '1'; } catch (error) { return false; }
+}
+
 export const AVATAR_COLORS = Object.freeze([
   '#c0392b', '#e2a93b', '#e48aa5', '#3fa58d', '#8e5fb8', '#efe8da',
   '#3b78c2', '#e07b39', '#7b8ea6', '#8a6a4c', '#5f9a4a', '#2c2a30'
@@ -598,8 +609,17 @@ export function createAvatar(initialLook = {}, opts = {}) {
   halo.castShadow = false;
   const nameplate = makeLabel(createCanvas), bubble = makeLabel(createCanvas, true);
   group.add(nameplate.sprite, bubble.sprite);
+  nameplate.sprite.renderOrder = bubble.sprite.renderOrder = 6; // nhãn tên vẽ sau lớp Pháp Tướng 3D (renderOrder 1..5)
   noPick(aura); noPick(halo); noPick(shadow);
   const effects = new THREE.Group(); effects.name = 'effects'; group.add(effects);
+  const noCover = Object.freeze({ demon: false, lotus: false, aura: false, merit: false });
+  const fxOption = opts.fx3d ?? fx3dEnabled();
+  const fxHost = { group, rig, head };
+  const fx = typeof fxOption === 'function' ? fxOption(fxHost)
+    : fxOption && typeof fxOption === 'object' ? fxOption
+      : fxOption ? createFx3d(fxHost, { quality: opts.quality || 'medium', reducedMotion: !!(opts.reducedMotion ?? globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches) })
+        : null;
+  let fxQuality = opts.quality || 'medium', fxReduced = null;
   const cameraPosition = new THREE.Vector3(), origin = new THREE.Vector3(), parentRotation = new THREE.Quaternion();
   const follower = new THREE.Vector3(), followDelta = new THREE.Vector3(), localDelta = new THREE.Vector3();
   let following = false;
@@ -720,7 +740,21 @@ export function createAvatar(initialLook = {}, opts = {}) {
     effects.visible = !first;
     const color = typeof auraColor === 'string' ? auraColor : '#ffd36b';
     const tint = alive && fade > 0.3 ? color : null;
-    const nextKey = `${tier}/${rank}/${demon}/${color}/${tint}`;
+    let covers = noCover;
+    if (fx) {
+      if (typeof state.quality === 'string' && state.quality !== fxQuality) { fxQuality = state.quality; fx.setQuality?.(fxQuality); }
+      if (reduced !== fxReduced) { fxReduced = reduced; fx.setReducedMotion?.(reduced); }
+      covers = fx.update({
+        tier, color, fade, rank,
+        demon: demon ? { n: demon, alpha: clamp(finite(state.demon?.alpha, 1), 0, 1) } : null,
+        walking, yaw: finite(state.yaw), bow, sit: sitting ? (bench ? 'bench' : 'cushion') : false,
+        talk: !!state.talk, bubble: state.bubble, id: state.id ?? state.name ?? '', now
+      }, dt, {
+        distance: finite(state.fx?.distance, Infinity), isSelf: !!(state.isSelf ?? opts.isSelf),
+        slot: state.fx?.slot !== false, hidden: !!first
+      }) || noCover;
+    }
+    const nextKey = `${tier}/${rank}/${demon}/${color}/${tint}/${+!!covers.demon}${+!!covers.lotus}${+!!covers.aura}`;
     if (effectKey !== nextKey) { [...effectParts.keys()].forEach(removeEffect); effectKey = nextKey; }
     const scale = sitting ? (104 - 27) / 104 : 1;
     const pulse = reduced ? 1 : 1 + Math.sin(elapsed * 2.2) * 0.015;
@@ -729,11 +763,13 @@ export function createAvatar(initialLook = {}, opts = {}) {
       return effect(name, resource, 4.8 * pulse, 4.8 * scale * pulse, 0, 0, front ? 0.25 : -0.35, [0.5, 1 - 400 / 512]);
     };
     if (tier) {
-      for (const front of [false, true]) {
-        const node = canvasEffect(front ? 'aura-front' : 'aura-back', tier, 0, color, front);
-        if (node) node.material.opacity = fade * 0.85;
+      if (!covers.aura) {
+        for (const front of [false, true]) {
+          const node = canvasEffect(front ? 'aura-front' : 'aura-back', tier, 0, color, front);
+          if (node) node.material.opacity = fade * 0.85;
+        }
       }
-      if (tier >= 2) {
+      if (tier >= 2 && !covers.lotus) {
         const name = tier >= 9 ? 'lotus-rainbow' : tier >= 8 ? 'lotus-pink' : 'lotus-gold';
         const node = imageEffect('lotus', `/img/fx/aura/${name}.webp`, (72 + (tier - 2) * 3.5) * 0.015, 0, -0.0225, -0.1, [0.5, 0.78]);
         if (node) node.material.opacity = fade;
@@ -753,7 +789,7 @@ export function createAvatar(initialLook = {}, opts = {}) {
       }
     }
     if (rank) canvasEffect('merit-form', 0, rank, tint);
-    if (demon) {
+    if (demon && !covers.demon) {
       group.getWorldPosition(origin);
       if (!following || reduced) follower.copy(origin);
       else follower.lerp(origin, 1 - Math.exp(-clamp(finite(dt), 0, 0.1) / 0.38));
@@ -789,9 +825,10 @@ export function createAvatar(initialLook = {}, opts = {}) {
     [...effectParts.keys()].forEach(removeEffect); cloakResource?.release();
     geometries.forEach(value => value.dispose());
     materials.forEach(value => value.dispose());
+    fx?.dispose?.();
     group.clear();
   }
   setLook(initialLook);
   update(opts.state || {}, 0);
-  return { group, update, setLook(nextLook) { setLook(nextLook); update(lastState, 0); }, dispose };
+  return { group, update, setLook(nextLook) { setLook(nextLook); update(lastState, 0); }, dispose, fx };
 }

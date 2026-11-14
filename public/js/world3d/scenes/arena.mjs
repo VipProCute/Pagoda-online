@@ -1,6 +1,6 @@
 'use strict';
 
-import { makeAvatar } from '../avatar-glb.mjs?v=2';
+import { makeAvatar } from '../avatar-glb.mjs?v=3';
 
 // Cảnh khu đi lại, không phải sàn PK. ctx: { THREE, kit, size: ViewMath.SCENE_SIZE.arena,
 // quality: 'low'|'medium'|'high', reduceMotion }. Không đọc socket, không đổi trạng thái game.

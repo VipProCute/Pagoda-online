@@ -323,3 +323,62 @@ test('cả bộ hiệu ứng cao nhất và trang phục cô nương vẫn khôn
     }
   }
 });
+
+test('covers.demon = true thì sprite quỷ ẩn; false thì sprite hiện như cũ', async t => {
+  const { createAvatar } = await load(); browserImages(t);
+  const fake = {
+    covers: { demon: false, lotus: false, aura: false, merit: false },
+    update() { return this.covers; }, setQuality() {}, setReducedMotion() {},
+    dispose() { this.disposed = true; }
+  };
+  const avatar = createAvatar({ g: 'nam', c: 0, h: 0 }, { fx3d: fake, createCanvas: canvasFactory() });
+  t.after(() => avatar.dispose());
+  const state = { demon: { n: 4, alpha: 1 }, aura: { t: 5, color: '#8fd3ff' } };
+  const node = name => avatar.group.getObjectByName(name);
+  avatar.update(state); await Promise.resolve(); avatar.update(state);
+  for (const name of ['demon', 'demon-eyes', 'demon-fire', 'lotus', 'aura-back', 'aura-front']) assert.ok(node(name));
+  fake.covers.demon = true; avatar.update(state);
+  for (const name of ['demon', 'demon-eyes', 'demon-fire']) assert.equal(node(name), undefined);
+  assert.ok(node('lotus'));
+  fake.covers.lotus = true; avatar.update(state); assert.equal(node('lotus'), undefined);
+  fake.covers.aura = true; avatar.update(state);
+  assert.equal(node('aura-back'), undefined); assert.equal(node('aura-front'), undefined);
+  assert.ok(node('aura-halo'));
+  Object.assign(fake.covers, { demon: false, lotus: false, aura: false }); avatar.update(state);
+  for (const name of ['demon', 'demon-eyes', 'demon-fire', 'lotus', 'aura-back', 'aura-front']) assert.ok(node(name));
+  avatar.dispose(); assert.equal(fake.disposed, true);
+});
+
+test('fx nhận trạng thái chuẩn hóa và ẩn ở góc nhìn thứ nhất', async t => {
+  const { createAvatar } = await load();
+  let received = null;
+  const changes = [];
+  const fake = {
+    update(state, dt, ctx) { received = { state, dt, ctx }; },
+    setQuality(value) { changes.push(['quality', value]); },
+    setReducedMotion(value) { changes.push(['reduced', value]); }
+  };
+  const avatar = createAvatar({}, { fx3d: host => { assert.ok(host.group && host.rig && host.head); return fake; }, createCanvas: canvasFactory() });
+  t.after(() => avatar.dispose());
+  avatar.update({ isSelf: true, view: 'first', demon: { n: 4, alpha: 0.5 }, yaw: 1,
+    quality: 'low', reducedMotion: true, fx: { distance: 5, slot: false } }, 0.016);
+  assert.equal(avatar.fx, fake);
+  assert.equal(received.ctx.hidden, true); assert.equal(received.ctx.slot, false); assert.equal(received.ctx.distance, 5);
+  assert.equal(received.ctx.isSelf, true); assert.equal(received.dt, 0.016);
+  assert.equal(received.state.demon.alpha, 0.5); assert.equal(received.state.yaw, 1);
+  assert.ok(changes.some(([key, value]) => key === 'quality' && value === 'low'));
+  assert.ok(changes.some(([key, value]) => key === 'reduced' && value === true));
+  avatar.update({ demon: { n: 10, alpha: 2 }, yaw: NaN, sit: 0 });
+  assert.deepEqual(received.state.demon, { n: 4, alpha: 1 });
+  assert.equal(received.state.yaw, 0); assert.equal(received.state.sit, 'cushion');
+});
+
+test('công tắc ta-fx3d tắt thì không tạo fx3d', async t => {
+  const { createAvatar } = await load();
+  const old = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+  delete globalThis.localStorage;
+  t.after(() => { if (old) Object.defineProperty(globalThis, 'localStorage', old); });
+  const avatar = createAvatar({}, { createCanvas: canvasFactory() }); t.after(() => avatar.dispose());
+  assert.equal(avatar.group.getObjectByName('fx3d'), undefined);
+  assert.equal(avatar.fx, null);
+});

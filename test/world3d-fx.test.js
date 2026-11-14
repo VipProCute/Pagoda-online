@@ -2,6 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
+globalThis.StandMath = require('../public/js/stand-math.js');
 const load = () => import('../public/js/world3d/fx3d/index.mjs');
 const loadAssets = () => import('../public/js/world3d/fx3d/assets.mjs');
 const loadMaterials = () => import('../public/js/world3d/fx3d/materials.mjs');
@@ -304,4 +305,177 @@ test('placeholder đổi chất lượng không giữ hạt đang hiện khi gi�
   fx.setQuality('low');
   assert.equal(points[0].visible, false);
   fx.dispose();
+});
+
+function fakeAsset({ THREE, skinned = false }) {
+  const scene = new THREE.Group(), geometry = new THREE.BoxGeometry();
+  const count = geometry.attributes.position.count;
+  geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(count * 3).fill(1), 3));
+  geometry.setAttribute('color_1', new THREE.BufferAttribute(new Float32Array(count * 3).fill(1), 3));
+  const spirit = new THREE.MeshStandardMaterial(); spirit.name = 'spirit';
+  const body = skinned ? new THREE.SkinnedMesh(geometry, spirit) : new THREE.Mesh(geometry, spirit);
+  if (skinned) {
+    geometry.setAttribute('skinIndex', new THREE.BufferAttribute(new Uint16Array(count * 4), 4));
+    const weights = new Float32Array(count * 4);
+    for (let i = 0; i < count; i++) weights[i * 4] = 1;
+    geometry.setAttribute('skinWeight', new THREE.BufferAttribute(weights, 4));
+    const bone = new THREE.Bone(); body.add(bone); body.bind(new THREE.Skeleton([bone]));
+  }
+  body.name = 'spirit'; scene.add(body);
+  for (const name of ['shell', 'petals0', 'petals1', 'petals2', 'pod']) {
+    const material = new THREE.MeshStandardMaterial();
+    material.name = name.startsWith('petals') ? 'petal' : name;
+    const node = new THREE.Mesh(geometry, material); node.name = name; scene.add(node);
+  }
+  const animations = ['emerge', 'idle', 'drift', 'scoff', 'peek', 'taunt1', 'taunt2', 'vanish']
+    .map(name => new THREE.AnimationClip(name, 1, []));
+  return { scene, animations, clone: source => source.clone(true) };
+}
+
+async function realFx(opts = {}) {
+  const [{ createFx3d }, { createAssets }, { demonPart }, { lotusPart }, { auraPart }, THREE] = await Promise.all([
+    load(), loadAssets(), import('../public/js/world3d/fx3d/demon.mjs?v=1'),
+    import('../public/js/world3d/fx3d/lotus.mjs?v=1'), import('../public/js/world3d/fx3d/aura.mjs?v=1'), import('three')
+  ]);
+  const assets = createAssets({ loadGltf: opts.loadGltf || (async () => fakeAsset({ THREE, skinned: opts.skinned })) });
+  const host = makeHost(THREE);
+  const fx = createFx3d(host, { ...opts, assets, parts: { demon: demonPart, lotus: lotusPart, aura: auraPart } });
+  return { fx, assets, host, THREE };
+}
+
+test('demon 3D chỉ phủ cấp 4 sau khi nạp xong', async t => {
+  const { fx } = await realFx(); t.after(() => fx.dispose());
+  assert.equal(fx.update({ demon: { n: 4 } }, 0.016).demon, false);
+  await settle();
+  assert.equal(fx.update({ demon: { n: 4 } }, 0.016).demon, true);
+  assert.equal(fx.update({ demon: { n: 2 } }, 0.016).demon, false);
+  assert.equal(fx.update({ demon: { n: 0 } }, 1).demon, false);
+});
+
+test('demon bám theo sau lưng và quay theo chủ', async t => {
+  const { fx, host } = await realFx(); t.after(() => fx.dispose());
+  const state = { demon: { n: 4 }, yaw: 0 };
+  fx.update(state); await settle();
+  for (let i = 0; i < 120; i++) fx.update(state, 1 / 60);
+  const demon = host.group.getObjectByName('fx3d-demon');
+  const near = expected => demon.position.toArray().forEach((value, i) => assert.ok(Math.abs(value - expected[i]) < 0.02));
+  near([0, 1.2, -0.55]);
+  state.yaw = Math.PI / 2;
+  for (let i = 0; i < 120; i++) fx.update(state, 1 / 60);
+  near([-0.55, 1.2, 0]);
+  assert.ok(Math.abs(demon.rotation.y - state.yaw) < 0.02);
+  host.group.position.x = 2;
+  fx.update(state, 1 / 60);
+  assert.ok(demon.position.x < -1, 'quỷ còn trễ sau khi chủ đổi vị trí');
+  for (let i = 0; i < 120; i++) fx.update(state, 1 / 60);
+  near([-0.55, 1.2, 0]);
+});
+
+test('.glb lỗi thì demon, lotus, aura đều không phủ', async t => {
+  let calls = 0;
+  const { fx } = await realFx({ loadGltf: async () => { calls++; return null; } }); t.after(() => fx.dispose());
+  const state = { tier: 5, demon: { n: 4 } };
+  assert.deepEqual(fx.update(state), emptyCovers());
+  await settle();
+  for (let i = 0; i < 3; i++) assert.deepEqual(fx.update(state, 0.016), emptyCovers());
+  assert.equal(calls, 3, 'mỗi phần chỉ thử nạp một lần');
+});
+
+test('lotus phủ bậc 2 đến 7, aura chỉ bậc 5', async t => {
+  const { fx } = await realFx(); t.after(() => fx.dispose());
+  fx.update({ tier: 5 }); await settle();
+  assert.deepEqual(fx.update({ tier: 5 }, 0.016), { demon: false, lotus: true, aura: true, merit: false });
+  for (let tier = 0; tier <= 9; tier++) {
+    const covers = fx.update({ tier }, 0.016);
+    assert.equal(covers.lotus, tier >= 2 && tier <= 7);
+    assert.equal(covers.aura, tier === 5);
+  }
+});
+
+test('giảm chuyển động: không có hạt, sen nở ngay', async t => {
+  const { fx } = await realFx({ quality: 'high', reducedMotion: true }); t.after(() => fx.dispose());
+  const state = { tier: 5, demon: { n: 4 } };
+  fx.update(state); await settle(); fx.update(state, 0.016);
+  fx.root.traverse(node => assert.ok(!node.isPoints));
+  for (const name of ['petals0', 'petals1', 'petals2']) {
+    assert.equal(fx.root.getObjectByName('fx3d-lotus').getObjectByName(name).scale.x, 1);
+  }
+});
+
+test('dispose trả tài nguyên về bộ đệm', async () => {
+  const { fx, assets } = await realFx({ skinned: true });
+  fx.update({ tier: 5, demon: { n: 4 } }); await settle();
+  fx.update({ tier: 5, demon: { n: 4 } });
+  assert.equal(assets.size(), 3);
+  fx.dispose(); fx.dispose();
+  assert.equal(assets.size(), 0);
+});
+
+test('demon tan dần và mờ khi gần máy quay', async t => {
+  const { fx } = await realFx(); t.after(() => fx.dispose());
+  const state = { demon: { n: 4, alpha: 0.5 } };
+  fx.update(state); await settle(); fx.update(state, 0.016, { distance: 1.2 });
+  const mat = fx.root.getObjectByName('spirit').material;
+  assert.equal(mat.userData.uniforms.uAlpha.value, 0.075);
+  fx.update({}, 0, { distance: 3 });
+  assert.equal(fx.covers.demon, true);
+  fx.update({}, 0.3, { distance: 3 });
+  assert.equal(mat.userData.uniforms.uAlpha.value, 0.5);
+  fx.update({}, 0.31);
+  assert.equal(fx.covers.demon, false);
+  fx.setReducedMotion(true);
+  assert.equal(fx.update({}, 0.016).demon, false);
+});
+
+test('giảm chuyển động đưa quỷ về idle ngay giữa lúc chuyển clip', async t => {
+  const THREE = await import('three');
+  const { fx } = await realFx({ loadGltf: async () => {
+    const asset = fakeAsset({ THREE });
+    asset.animations = [
+      new THREE.AnimationClip('emerge', 1, [new THREE.NumberKeyframeTrack('spirit.position[y]', [0, 1], [2, 2])]),
+      new THREE.AnimationClip('idle', 1, [new THREE.NumberKeyframeTrack('spirit.position[y]', [0, 1], [0, 0])])
+    ];
+    return asset;
+  } });
+  t.after(() => fx.dispose());
+  const state = { demon: { n: 4 } };
+  fx.update(state); await settle(); fx.update(state, 0.1);
+  const spirit = fx.root.getObjectByName('spirit');
+  assert.equal(spirit.position.y, 2);
+  fx.setReducedMotion(true); fx.update(state, 0.016);
+  assert.equal(spirit.position.y, 0);
+  for (let i = 0; i < 10; i++) fx.update(state, 0.016);
+  assert.equal(spirit.position.y, 0);
+});
+
+test('đổi chất lượng ẩn hạt và lớp vỏ ngoài ngay, không tạo lại hạt', async t => {
+  const { fx } = await realFx({ quality: 'high' }); t.after(() => fx.dispose());
+  const state = { tier: 5 };
+  fx.update(state); await settle(); fx.update(state, 0.016);
+  const points = [];
+  fx.root.traverse(node => { if (node.isPoints) points.push(node); });
+  assert.equal(points.length, 2);
+  fx.setQuality('low');
+  for (const point of points) assert.equal(point.visible, false);
+  const shells = fx.root.getObjectByName('fx3d-aura').children;
+  assert.equal(shells.filter(shell => shell.visible).length, 2);
+  for (const shell of shells) assert.equal(shell.material.uniforms.uDisplace.value, 0);
+  fx.setQuality('high'); fx.setReducedMotion(true); fx.update(state, 0.016);
+  for (const point of points) assert.equal(point.visible, false);
+  fx.setReducedMotion(false); fx.update(state, 0.016);
+  for (const point of points) assert.equal(point.visible, true);
+  const after = []; fx.root.traverse(node => { if (node.isPoints) after.push(node); });
+  assert.deepEqual(after, points);
+});
+
+test('dispose trước khi tải xong trả đủ tham chiếu và không gắn mô hình muộn', async () => {
+  const waiting = [];
+  const { fx, host, assets, THREE } = await realFx({ loadGltf: () => new Promise(resolve => waiting.push(resolve)) });
+  fx.update({ tier: 5, demon: { n: 4 } }); await settle();
+  assert.equal(waiting.length, 3);
+  fx.dispose();
+  waiting.forEach(resolve => resolve(fakeAsset({ THREE })));
+  await settle();
+  assert.equal(assets.size(), 0);
+  assert.equal(host.group.getObjectByName('fx3d'), undefined);
 });
