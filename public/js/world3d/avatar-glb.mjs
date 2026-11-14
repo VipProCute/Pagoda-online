@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import { createAvatar, AVATAR_COLORS } from './avatar.mjs?v=4';
 
-// Nhân vật dựng bằng Blender (T-120/T-130), bật bằng localStorage['ta-avatar'] = 'blender'.
+// Nhân vật dựng bằng Blender (T-120/T-130) là MẶC ĐỊNH (T-177). Đổi về nhân vật cũ dựng bằng mã: localStorage['ta-avatar'] = 'code'.
 // createGlbAvatar trả CÙNG giao diện với createAvatar: { group, update(state, dt), setLook(look), dispose() }.
 // Bản dựng bằng mã luôn được tạo trước và là THẾ THÂN: nó giữ nhãn tên, bóng, hào quang, pháp tướng, quỷ theo sau.
 // Khi .glb nạp xong thì chỉ ẩn phần thân người (cây `hips` của bản mã) và hiện mô hình .glb tại cùng chỗ.
@@ -11,6 +11,7 @@ import { createAvatar, AVATAR_COLORS } from './avatar.mjs?v=4';
 // opts.assets (tùy chọn, để kiểm thử): { load(url) → Promise<{ scene, animations, clone? } | null> }.
 
 export const AVATAR_SWITCH_KEY = 'ta-avatar';
+export const AVATAR_CODE_VALUE = 'code';           // localStorage['ta-avatar'] === 'code' → dùng nhân vật cũ dựng bằng mã
 export const GLB_URL = Object.freeze({ nam: '/models/avatar/nam.glb', nu: '/models/avatar/nu.glb' });
 const FADE = 0.2;                                  // giây chuyển clip
 const SIT_LIFT = Object.freeze({ cushion: 0.15, bench: 0.25 }); // nâng mô hình lên bồ đoàn cao 0,15 m / ghế đá
@@ -20,8 +21,9 @@ const HAIRS = 4;
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const finite = (v, fallback = 0) => Number.isFinite(v) ? v : fallback;
 
+// Mặc định là nhân vật Blender; chỉ khi khóa = 'code' mới dùng bản dựng bằng mã.
 export function blenderEnabled() {
-  try { return globalThis.localStorage?.getItem(AVATAR_SWITCH_KEY) === 'blender'; } catch (error) { return false; }
+  try { return globalThis.localStorage?.getItem(AVATAR_SWITCH_KEY) !== AVATAR_CODE_VALUE; } catch (error) { return true; }
 }
 
 // Tư thế ngồi giống avatar.mjs: true/'cushion'/'bench'/số nguyên không âm; false và -1 là đứng.
