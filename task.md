@@ -1559,17 +1559,19 @@ Thiết kế, hợp đồng mã, ngân sách và định tuyến mô hình: [doc
 - **Ngoài phạm vi**: đưa ảnh vào `public/`.
 
 ### T-141 · Khung hiệu ứng 3D `fx3d` và ba vật liệu
-- **Trạng thái**: 🔵 Sẵn sàng · **Ưu tiên**: P0 · **Gói ngữ cảnh**: CORE + HALL
-- **Khu vực chạm**: public/js/world3d/fx3d/index.mjs, assets.mjs, materials.mjs (mới), public/world3d-fx.html (mới, trang thử), test/world3d-fx.test.js (mới)
-- **Người làm**: — (gợi ý: gpt-6.1-sol; soát: gemini-4-argon-high chỉ đọc) · **Nhánh**: —
+- **Trạng thái**: 🟣 Chờ soát. Điều phối soát 14/11: `npm run check` sạch (180 file), `node --test test/world3d-fx.test.js` 16/16; đọc mã `index.mjs`, `materials.mjs` khớp đặc tả; mở `/world3d-fx.html` trong trình duyệt (máy chủ thật, cổng 3141): hình khối tạm hiện đủ quỷ, sen, vỏ khí, không lỗi console, ~3.000 tam giác, 51 lượt vẽ.
+- **Ưu tiên**: P0 · **Gói ngữ cảnh**: CORE + HALL
+- **Khu vực chạm**: public/js/world3d/fx3d/index.mjs, assets.mjs, materials.mjs, placeholder.mjs (mới), public/world3d-fx.html (mới, trang thử), test/world3d-fx.test.js (mới)
+- **Người làm**: gpt-6.1-sol (Codex CLI qua proxy, 1 vòng) · đặc tả [docs/phap-tuong/T-141-DAC-TA.md](docs/phap-tuong/T-141-DAC-TA.md) · **Nhánh**: claude/game-graphics-3d-redesign-9b309a
 - **Mục tiêu**: có khung nhận trạng thái nhân vật và vẽ hiệu ứng 3D, kèm ba vật liệu dùng chung, chạy được trên trang thử với hình khối tạm (hình cầu, hình trứng) khi chưa có `.glb`.
 - **Tiêu chí xong**:
-  - [ ] `createFx3d(host, opts)` đúng hợp đồng ở KE-HOACH-PHAP-TUONG-3D §2.1: `update(state, dt, ctx)`, `covers`, `setQuality`, `dispose`; phần con (`demon`, `lotus`, `aura`, `merit`) đăng ký qua `register(name, factory)` để các thẻ sau chỉ thêm file
-  - [ ] `assets.mjs`: `load(url)` có bộ đệm theo URL và đếm tham chiếu, dùng `GLTFLoader` + `SkeletonUtils.clone` như `avatar-glb.mjs`; lỗi hoặc 404 trả `null`, không ghi console
-  - [ ] `materials.mjs`: `spiritMaterial({ color, rim, alpha, dissolveY })`, `flameShellMaterial({ color, height, layers })`, `glowMaterial(color)`; ảnh nhiễu 64×64 sinh bằng mã, dùng chung
-  - [ ] Trang thử `/world3d-fx.html`: nhân vật ở giữa, bảng chọn cấp quỷ 0..4, bậc 0..9, pháp tướng 0..6, mức chất lượng, giảm chuyển động; kéo để xoay máy quay
-  - [ ] Test: `assets` giả trả `null` thì `covers` toàn `false`, không ném lỗi; `dispose` gọi `dispose()` trên mọi geometry, material đã tạo; giảm chuyển động thì không tạo `THREE.Points`
-  - [ ] `npm run check` sạch; `node --test test/world3d-fx.test.js` đạt
+  - [x] `createFx3d(host, opts)` đúng hợp đồng ở KE-HOACH-PHAP-TUONG-3D §2.1: `update(state, dt, ctx)`, `covers`, `setQuality`, `dispose` (thêm `setReducedMotion`); phần con đăng ký qua `register(name, factory)`
+  - [x] `assets.mjs`: `load(url)` có bộ đệm theo URL và đếm tham chiếu (`release`), GLTFLoader + SkeletonUtils.clone; lỗi hoặc 404 trả `null`, không ghi console (có test)
+  - [x] `materials.mjs`: `spiritMaterial`, `flameShellMaterial({ color, height, displace, opacity, side })` (vỏ hai lớp làm bằng hai lưới, không dùng tham số `layers`), `glowMaterial`; ảnh nhiễu 64×64 sinh bằng mã, dùng chung
+  - [x] Trang thử `/world3d-fx.html`: đủ bảng chọn, 4 nút góc nhanh, chế độ đêm, kéo để xoay (xem tận mắt)
+  - [x] Test: `assets` giả trả `null` thì `covers` toàn `false`; `dispose` gọi `dispose()` trên mọi geometry, material đã tạo; giảm chuyển động thì không tạo `THREE.Points`
+  - [x] `npm run check` sạch; `node --test test/world3d-fx.test.js` đạt
+  - [ ] Soát chéo bằng gemini-4-argon-high: chưa làm (Điều phối tự đọc mã)
 - **Ngoài phạm vi**: chạm `avatar.mjs`; mô hình thật.
 
 ### T-142 · Bản mẫu Blender: Ma Vương, đài sen vàng, vỏ khí bậc 5
