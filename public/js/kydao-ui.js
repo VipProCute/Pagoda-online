@@ -186,7 +186,48 @@
     return -1;
   }
 
-  const core = { nextSkinIndex, clockRemaining, settleClock,fmtClock, makeSession, tapSquare, pushMove, handleMoved, canPlay, kingSquare, sideOfPiece, readSkins, applySkin };
+  /* ---------- Cửa hàng skin (khóa, cúng dường để mở) ---------- */
+  const OWN = Object.prototype.hasOwnProperty;
+  const badKey = k => k === '__proto__' || k === 'constructor' || k === 'prototype';
+  /** Chuẩn hóa gói kd:shop:state: chỉ giữ kiểu dữ liệu đúng. Mặc định: cửa hàng tắt. */
+  function readShop(raw) {
+    const o = raw && typeof raw === 'object' ? raw : {};
+    const money = v => (typeof v === 'number' && isFinite(v) && v > 0 ? Math.floor(v) : null);
+    const prices = {};
+    if (o.prices && typeof o.prices === 'object') {
+      for (const k of Object.keys(o.prices)) {
+        if (badKey(k)) continue;
+        const v = money(o.prices[k]);
+        if (v != null) prices[k] = v;
+      }
+    }
+    const owned = Array.isArray(o.owned) ? o.owned.filter(x => typeof x === 'string').slice(0, 300) : [];
+    return { on: o.on === true, price: money(o.price), prices, owned };
+  }
+  /** Loại skin phía máy chủ: 'field' | 'pieces' | 'stones' (đá cờ vây/caro) từ hàng bộ chọn ('field' | 'pieces'). */
+  const shopKindOf = (game, rowKind) => (rowKind === 'field' ? 'field' : isGrid(game) ? 'stones' : 'pieces');
+  /** Skin bị khóa khi cửa hàng đang thu tiền, skin không phải mặc định và chưa nằm trong danh sách đã mở. */
+  function skinLocked(shop, kind, id) {
+    if (!shop || shop.on !== true || id == null || id === '') return false;
+    return !(Array.isArray(shop.owned) && shop.owned.indexOf(kind + ':' + id) >= 0);
+  }
+  /** Mức riêng, nếu không có thì mức chung, nếu không có nữa thì null. */
+  function skinPrice(shop, kind, id) {
+    if (!shop) return null;
+    const key = kind + ':' + id;
+    if (shop.prices && OWN.call(shop.prices, key) && typeof shop.prices[key] === 'number') return shop.prices[key];
+    return typeof shop.price === 'number' ? shop.price : null;
+  }
+  const fmtMoney = n => new Intl.NumberFormat('vi-VN').format(n) + ' đ';
+  /** Chỉ nhận ảnh QR của VietQR hoặc đường dẫn cùng gốc; mọi thứ khác trả null (không gán vào img). */
+  function safeQr(url) {
+    if (typeof url !== 'string' || url.length > 2048 || /[\s\\\u0000-\u001f]/.test(url)) return null;
+    if (url.indexOf('https://img.vietqr.io/') === 0) return url;
+    if (url.charAt(0) === '/' && url.charAt(1) !== '/') return url;
+    return null;
+  }
+
+  const core = { nextSkinIndex, clockRemaining, settleClock,fmtClock, makeSession, tapSquare, pushMove, handleMoved, canPlay, kingSquare, sideOfPiece, readSkins, applySkin, readShop, shopKindOf, skinLocked, skinPrice, fmtMoney, safeQr };
 
   /* ================= Giao diện ================= */
   if (typeof document === 'undefined') return { core };
@@ -227,6 +268,9 @@
   let pref = { field: null, pieces: null };
   let skinFocus = null;                   // { kind, id } nút skin cần trả tiêu điểm sau khi dựng lại bộ chọn
   let fieldSentAt = 0;                    // lần gần nhất gửi khai mở (ms), chặn bấm liên tục
+  let shop = readShop(null);              // trạng thái cửa hàng skin của chính mình (sống qua nhiều ván)
+  let buy = null;                         // khung mở khóa đang hiện: { kind, row, id, step:'confirm'|'qr', busy, ack }
+  let buyFocus = false;                   // dựng lại bộ chọn xong thì đưa tiêu điểm vào khung mở khóa
 
   let ui = null;        // các phần tử DOM
   let S = null;         // phiên ván
@@ -285,7 +329,7 @@
     el.movesBtn = btn('', 'Nước đi ▾', () => { el.moves.hidden = !el.moves.hidden; el.movesBtn.setAttribute('aria-expanded', String(!el.moves.hidden)); }, { 'aria-expanded': 'false' });
     el.viBtn = btn('', 'Chữ Việt', () => setVi(!vi), { 'aria-pressed': 'false' });
     el.boardBtn = btn('', 'Bàn 3D', toggleBoard3D, { 'aria-pressed': 'false' });
-    el.skinBtn = btn('', 'Lãnh địa', () => { el.skins.hidden = !el.skins.hidden; el.skinBtn.setAttribute('aria-expanded', String(!el.skins.hidden)); if (!el.skins.hidden) { renderSkins(); if (typeof el.skins.scrollIntoView === 'function') el.skins.scrollIntoView({ block: 'nearest', behavior: reduced() ? 'auto' : 'smooth' }); } }, { 'aria-expanded': 'false' });
+    el.skinBtn = btn('', 'Lãnh địa', () => { el.skins.hidden = !el.skins.hidden; el.skinBtn.setAttribute('aria-expanded', String(!el.skins.hidden)); if (!el.skins.hidden) { askShop(); renderSkins(); if (typeof el.skins.scrollIntoView === 'function') el.skins.scrollIntoView({ block: 'nearest', behavior: reduced() ? 'auto' : 'smooth' }); } }, { 'aria-expanded': 'false' });
     el.skins = h('div', { class: 'kd-skins', hidden: true });
     el.webgl = hasBoardWebGL();
     el.boardBtn.hidden = !el.webgl;
@@ -428,14 +472,83 @@
 
   const canSkin = () => !!(S && S.you && !S.over && root.KydaoSkins && root.KydaoSkins.supportsPieces(S.game));
   const canField = () => !!(canSkin() && root.KydaoSkins.supports(S.game));
-  /** Gửi skin hiện có của mình lên máy chủ. openField = true khi người chơi bấm "Khai mở". */
-  function sendSkin(openField) {
+  /** Lựa chọn ưa thích còn dùng được: skin đang khóa (cửa hàng bật mà chưa mở) coi như chưa chọn, không tự gửi. */
+  const curField = () => (pref.field != null && skinLocked(shop, 'field', pref.field) ? null : pref.field);
+  const curPieces = () => (pref.pieces != null && S && skinLocked(shop, shopKindOf(S.game, 'pieces'), pref.pieces) ? null : pref.pieces);
+  /** Gửi skin hiện có của mình lên máy chủ. openField = true khi người chơi bấm "Khai mở"; quiet = gửi tự động lúc vào ván. */
+  function sendSkin(openField, quiet) {
     if (!canSkin()) return;
-    const mine = S.skins[S.you];
-    const data = { gameId: S.gameId, pieces: pref.pieces };
-    if (canField()) data.field = openField ? pref.field : mine.field;
+    const mine = S.skins[S.you], gid = S.gameId;
+    const data = { gameId: gid, pieces: curPieces() };
+    if (canField()) data.field = openField ? curField() : mine.field;
     if (openField && canField()) fieldSentAt = now();
-    send('kd:skin', data, ack => { if (ack && !ack.ok) say(ack.reason || 'Chưa đổi được skin.'); });
+    send('kd:skin', data, ack => {
+      if (!ack || ack.ok) return;
+      if (ack.code === 'locked' && ack.kind && ack.id != null) { onLocked(ack, gid, quiet); return; }
+      say(ack.reason || 'Chưa đổi được skin.');
+    });
+  }
+  /** Máy chủ báo skin còn khóa: ghi nhận cửa hàng đang bật, hiện lý do và (không phải gửi tự động) mở khung mở khóa. */
+  function onLocked(ack, gid, quiet) {
+    if (!shop.on) shop = Object.assign({}, shop, { on: true });
+    if (typeof ack.price === 'number' && ack.price > 0) shop = Object.assign({}, shop, { prices: Object.assign({}, shop.prices, { [ack.kind + ':' + ack.id]: Math.floor(ack.price) }) });
+    if (!ui || !S || S.gameId !== gid) return;
+    say(ack.reason || 'Skin này cần cúng dường để mở.');
+    if (quiet) { if (!ui.skins.hidden) renderSkins(); return; }
+    if (ack.kind === 'field' || ack.kind === 'pieces' || ack.kind === 'stones') openBuy(ack.kind, ack.kind === 'field' ? 'field' : 'pieces', String(ack.id));
+  }
+  /** Hỏi máy chủ trạng thái cửa hàng một lần cho mỗi ván (máy chủ cũng tự đẩy khi vào chùa và khi có thay đổi). */
+  function askShop() {
+    if (!S || !S.you || S.shopAsked) return;
+    S.shopAsked = true;
+    try { send('kd:shop:state', {}, ack => { if (ack && ack.ok) onShopEvent(ack); }); } catch (e) { /* bỏ qua: máy chủ cũ chưa có sự kiện */ }
+  }
+  function closeBuy(refocus) {
+    if (!buy) return;
+    if (refocus) skinFocus = { kind: buy.row, id: buy.id };
+    buy = null;
+    if (ui && !ui.skins.hidden) renderSkins();
+  }
+  function openBuy(kind, row, id) {
+    if (!ui || !S) return;
+    buy = { kind, row, id, step: 'confirm', busy: false, ack: null };
+    ui.skins.hidden = false; ui.skinBtn.setAttribute('aria-expanded', 'true');
+    buyFocus = true;
+    renderSkins();
+  }
+  function doBuy() {
+    const b = buy;
+    if (!b || b.busy || !ui) return;
+    b.busy = true;
+    renderSkins();
+    send('kd:shop:buy', { kind: b.kind, id: b.id }, ack => {
+      if (buy !== b) return;
+      b.busy = false;
+      if (ack && ack.ok) { b.step = 'qr'; b.ack = ack; say(''); buyFocus = true; }
+      else {
+        say((ack && ack.reason) || 'Chưa mở được khung cúng dường. Xin thử lại sau.');
+        if (ack && (ack.code === 'owned' || ack.code === 'off')) { if (S) S.shopAsked = false; askShop(); }
+      }
+      if (ui && !ui.skins.hidden) renderSkins();
+    });
+  }
+  /** Nhận trạng thái cửa hàng (ack hoặc sự kiện đẩy). Skin đang chờ mà vừa được mở thì chọn sẵn và dùng. */
+  function onShopEvent(ev) {
+    shop = readShop(ev);
+    const b = buy;
+    if (b && !skinLocked(shop, b.kind, b.id)) {
+      buy = null;
+      if (b.step === 'qr' && ui && S) {
+        const K = root.KydaoSkins, cat = K && (b.kind === 'field' ? K.FIELDS : b.kind === 'stones' ? K.STONES : K.PIECES);
+        const name = cat && OWN.call(cat, b.id) ? cat[b.id].name : b.id;
+        if (b.kind === 'field') { if (canField()) { pref.field = b.id; savePref(pref); } }
+        else if (b.kind === shopKindOf(S.game, 'pieces') && canSkin()) { pref.pieces = b.id; savePref(pref); sendSkin(false); }
+        skinFocus = { kind: b.row, id: b.id };
+        say('Đã mở ' + name + '. Xin tùy hỷ công đức.');
+        announce('Đã mở ' + name + '.');
+      }
+    }
+    if (ui && S && !ui.skins.hidden) renderSkins();
   }
 
   function drawAct(act) {
@@ -592,56 +705,98 @@
     const ae = root.document && root.document.activeElement;
     if (!skinFocus && ae && typeof ae.getAttribute === 'function' && ae.getAttribute('data-kind')) skinFocus = { kind: ae.getAttribute('data-kind'), id: ae.getAttribute('data-id') || '' };
     box.textContent = '';
+    box.classList.toggle('kd-skins-buy', !!buy);
     if (!K) return;
     const skinBtns = [];
     const stoneMode = stoneGame(S.game);
+    /** Ảnh nhỏ của một skin (sân: huy hiệu; quân: ảnh quân; đá: ô trong atlas). */
+    const skinImg = (kind, id) => {
+      if (stoneMode && kind === 'pieces') {
+        const d = h('div', { class: 'kd-skin-stone', role: 'img', 'aria-hidden': 'true' });
+        d.style.backgroundImage = 'url(' + K.stonesAtlas(id) + ')';
+        d.style.backgroundSize = '200% 100%';
+        d.style.backgroundPosition = S.you === 'b' ? '100% 0' : '0 0';
+        return d;
+      }
+      const im = h('img', { class: 'kd-skin-img', alt: '', loading: 'lazy', width: '96', height: '60' });
+      if (kind === 'field' && K.crest) {
+        im.src = K.crest(id);
+        if (im.classList && typeof im.classList.add === 'function') im.classList.add('kd-skin-crest');
+        else im.className = (im.className ? im.className + ' ' : '') + 'kd-skin-crest';
+      } else {
+        im.src = K.thumb(kind, id);
+      }
+      return im;
+    };
     const row = (title, kind, catalog, current, pick) => {
       const list = h('div', { class: 'kd-skin-row', role: 'radiogroup', 'aria-label': title });
       const ids = [null].concat(Object.keys(catalog));
       const cur = current != null && ids.indexOf(current) !== -1 ? current : null;
+      const sk = shopKindOf(S.game, kind);
+      const lockedId = id => id != null && skinLocked(shop, sk, id);
       const choose = id => { skinFocus = { kind, id: id == null ? '' : id }; pick(id); };
       const item = (id, name) => {
-        const b = h('button', { type: 'button', class: 'kd-skin' + (current === id ? ' is-on' : ''), role: 'radio', 'aria-checked': String(current === id),
+        const lk = lockedId(id), price = lk ? skinPrice(shop, sk, id) : null;
+        const b = h('button', { type: 'button', class: 'kd-skin' + (current === id && !lk ? ' is-on' : '') + (lk ? ' is-locked' : ''), role: 'radio', 'aria-checked': String(current === id && !lk),
+          'aria-label': lk ? name + ', đang khóa' + (price != null ? ', cúng dường ' + fmtMoney(price) + ' để mở' : '') : null,
           tabindex: cur === id ? '0' : '-1', 'data-kind': kind, 'data-id': id == null ? '' : id,
-          onclick: () => choose(id),
+          onclick: () => { if (lk) openBuy(sk, kind, id); else choose(id); },
           onkeydown: ev => {
             const ni = nextSkinIndex(ids.length, ids.indexOf(id), ev && ev.key);
             if (ni < 0) return;
             if (typeof ev.preventDefault === 'function') ev.preventDefault();
+            if (lockedId(ids[ni])) { skinFocus = { kind, id: ids[ni] }; renderSkins(); return; } // chỉ dời tiêu điểm, không chọn
             choose(ids[ni]);
           } });
         skinBtns.push({ kind, id: id == null ? '' : id, el: b });
-        if (id && stoneMode && kind === 'pieces') {
-          const d = h('div', { class: 'kd-skin-stone', role: 'img', 'aria-hidden': 'true' });
-          d.style.backgroundImage = 'url(' + K.stonesAtlas(id) + ')';
-          d.style.backgroundSize = '200% 100%';
-          d.style.backgroundPosition = S.you === 'b' ? '100% 0' : '0 0';
-          b.appendChild(d);
-        } else if (id) {
-          const im = h('img', { class: 'kd-skin-img', alt: '', loading: 'lazy', width: '96', height: '60' });
-          if (kind === 'field' && K.crest) {
-            im.src = K.crest(id);
-            if (im.classList && typeof im.classList.add === 'function') im.classList.add('kd-skin-crest');
-            else im.className = (im.className ? im.className + ' ' : '') + 'kd-skin-crest';
-          } else {
-            im.src = K.thumb(kind, id);
-          }
-          b.appendChild(im);
-        }
+        if (id) b.appendChild(skinImg(kind, id));
         else b.appendChild(h('span', { class: 'kd-skin-img kd-skin-none' }));
         b.appendChild(h('span', { class: 'kd-skin-name' }, name));
+        if (lk) {
+          b.appendChild(h('span', { class: 'kd-skin-lock', 'aria-hidden': 'true' }, '🔒'));
+          b.appendChild(h('span', { class: 'kd-skin-price' }, price != null ? fmtMoney(price) : 'Đang khóa'));
+        }
         return b;
       };
       list.appendChild(item(null, 'Mặc định'));
       ids.slice(1).forEach(id => list.appendChild(item(id, catalog[id].name)));
       return h('div', { class: 'kd-skin-group' }, h('div', { class: 'kd-skin-title' }, title), list);
     };
-    if (!stoneMode) box.appendChild(row('Sân của bạn', 'field', K.FIELDS, pref.field, id => { pref.field = id; savePref(pref); renderSkins(); }));
-    box.appendChild(row('Quân của bạn', 'pieces', stoneMode ? K.STONES : K.PIECES, pref.pieces, id => { pref.pieces = id; savePref(pref); renderSkins(); sendSkin(false); }));
+    /** Khung mở khóa ngay trong bộ chọn: bước xác nhận rồi bước QR. */
+    const buyBox = () => {
+      const b = buy, cat = b.kind === 'field' ? K.FIELDS : b.kind === 'stones' ? K.STONES : K.PIECES;
+      const known = !!cat && OWN.call(cat, b.id);
+      const name = known ? cat[b.id].name : String(b.id);
+      const price = skinPrice(shop, b.kind, b.id);
+      const dlg = h('div', { class: 'kd-buy', role: 'dialog', 'aria-label': 'Cúng dường mở skin ' + name,
+        onkeydown: ev => { if (ev && ev.key === 'Escape') { if (typeof ev.preventDefault === 'function') ev.preventDefault(); closeBuy(true); } } });
+      const head = h('div', { class: 'kd-buy-head' });
+      if (known) head.appendChild(skinImg(b.row, b.id));
+      head.appendChild(h('div', { class: 'kd-buy-name' }, name));
+      dlg.appendChild(head);
+      if (b.step === 'qr' && b.ack) {
+        const a = b.ack, qr = safeQr(a.qr);
+        if (qr) { const im = h('img', { class: 'kd-buy-qr', alt: 'Mã QR chuyển khoản cúng dường', width: '200', height: '200' }); im.src = qr; dlg.appendChild(im); }
+        const line = (label, value) => (value ? h('div', { class: 'kd-buy-line' }, label + ': ', h('b', null, String(value))) : null);
+        [line('Số tiền', typeof a.amount === 'number' ? fmtMoney(a.amount) : ''), line('Nội dung chuyển khoản', a.code),
+          line('Ngân hàng', a.bank), line('Số tài khoản', a.account), line('Chủ tài khoản', a.accountName)].forEach(el => { if (el) dlg.appendChild(el); });
+        dlg.appendChild(h('div', { class: 'kd-buy-line kd-buy-wait', role: 'status' }, a.test ? 'Chế độ thử: tự xác nhận sau ít giây.' : 'Đang chờ Ban điều hành xác nhận…'));
+        dlg.appendChild(h('div', { class: 'kd-actions' }, h('button', { type: 'button', class: 'kd-btn kd-buy-first', onclick: () => closeBuy(true) }, 'Đóng')));
+      } else {
+        dlg.appendChild(h('div', { class: 'kd-buy-line' }, price != null ? 'Cúng dường ' + fmtMoney(price) + ' để mở skin này. Mở rồi dùng mãi.' : 'Cúng dường để mở skin này. Mở rồi dùng mãi.'));
+        const go = h('button', { type: 'button', class: 'kd-btn kd-gold kd-buy-first', onclick: doBuy }, 'Cúng dường để mở');
+        if (b.busy) go.disabled = true;
+        dlg.appendChild(h('div', { class: 'kd-actions' }, go, h('button', { type: 'button', class: 'kd-btn kd-ghost', onclick: () => closeBuy(true) }, 'Thôi')));
+      }
+      return dlg;
+    };
+    if (buy) box.appendChild(buyBox());
+    if (!stoneMode) box.appendChild(row('Sân của bạn', 'field', K.FIELDS, curField(), id => { pref.field = id; savePref(pref); renderSkins(); }));
+    box.appendChild(row('Quân của bạn', 'pieces', stoneMode ? K.STONES : K.PIECES, curPieces(), id => { pref.pieces = id; savePref(pref); renderSkins(); sendSkin(false); }));
     const mine = canSkin() ? S.skins[S.you] : null;
     const wait = Math.max(0, 20000 - (now() - fieldSentAt));
-    const open = stoneMode ? null : h('button', { type: 'button', class: 'kd-btn kd-gold', onclick: () => { sendSkin(true); ui.skins.hidden = true; ui.skinBtn.setAttribute('aria-expanded', 'false'); } }, pref.field ? 'Khai mở' : 'Về sân mặc định');
-    if (open) open.disabled = !mine || mine.field === pref.field || wait > 0;
+    const open = stoneMode ? null : h('button', { type: 'button', class: 'kd-btn kd-gold', onclick: () => { sendSkin(true); ui.skins.hidden = true; ui.skinBtn.setAttribute('aria-expanded', 'false'); } }, curField() ? 'Khai mở' : 'Về sân mặc định');
+    if (open) open.disabled = !mine || mine.field === curField() || wait > 0;
     const hide = h('button', { type: 'button', class: 'kd-btn kd-ghost', 'aria-pressed': String(hideFoe), onclick: () => {
       hideFoe = !hideFoe; try { root.localStorage.setItem(HIDE_KEY, hideFoe ? '1' : '0'); } catch (e) { /* bỏ qua */ } renderSkins(); fit(); redraw();
     } }, hideFoe ? 'Hiện skin đối thủ' : 'Ẩn skin đối thủ');
@@ -651,7 +806,13 @@
     box.appendChild(note);
     ui.skinOpen = open; ui.skinNote = note;
     refreshSkinLock();
-    if (skinFocus) {
+    if (buyFocus) {
+      buyFocus = false; skinFocus = null;
+      const first = typeof box.querySelector === 'function' ? box.querySelector('.kd-buy-first') : null;
+      if (first && typeof first.focus === 'function') first.focus({ preventScroll: true });
+      box.scrollTop = 0; // đầu khung (ảnh, tên skin) luôn thấy trước
+      if (typeof box.scrollIntoView === 'function') box.scrollIntoView({ block: 'nearest', behavior: 'auto' });
+    } else if (skinFocus) {
       const hit = skinBtns.find(x => x.kind === skinFocus.kind && x.id === skinFocus.id);
       skinFocus = null;
       if (hit && typeof hit.el.focus === 'function') hit.el.focus();
@@ -663,7 +824,7 @@
     if (!ui || !S || !ui.skinOpen || !ui.skinNote) return;
     const mine = canSkin() ? S.skins[S.you] : null;
     const wait = Math.max(0, 20000 - (now() - fieldSentAt));
-    ui.skinOpen.disabled = !mine || mine.field === pref.field || wait > 0;
+    ui.skinOpen.disabled = !mine || mine.field === curField() || wait > 0;
     const text = wait > 0 ? 'Chờ ' + Math.ceil(wait / 1000) + ' giây nữa mới khai mở lại được.' : '';
     if (ui.skinNote.textContent !== text) ui.skinNote.textContent = text;
     ui.skinNote.hidden = wait <= 0;
@@ -887,7 +1048,7 @@
       clearTimeout(resultTimer);
       if (root.KydaoFx) root.KydaoFx.stop();
       S = makeSession(start, mod);
-      rematchSent = false; confirmOpen = false; minimized = false;
+      rematchSent = false; confirmOpen = false; minimized = false; buy = null;
       if (!ui) {
         ui = build();
         resizeFn = () => { stopFx(); fit(); redraw(); };
@@ -904,7 +1065,7 @@
       startRiver();
       pref = loadPref(); fieldSentAt = 0;
       if (ui.skins) { ui.skins.hidden = true; ui.skinBtn.setAttribute('aria-expanded', 'false'); }
-      if (canSkin() && pref.pieces && S.skins[S.you].pieces !== pref.pieces) sendSkin(false);
+      if (canSkin() && curPieces() && S.skins[S.you].pieces !== curPieces()) sendSkin(false, true);
       return true;
     },
     close() {
@@ -913,14 +1074,15 @@
       clearInterval(timer); timer = 0; clearTimeout(resultTimer);
       if (root.KydaoFx) root.KydaoFx.unmount();
       if (ui) { ui.panel.remove(); ui.chip.remove(); if (resizeFn) root.removeEventListener('resize', resizeFn); if (visFn && root.document && typeof root.document.removeEventListener === 'function') root.document.removeEventListener('visibilitychange', visFn); visFn = null; }
-      ui = null; S = null; geom = null; minimized = false;
+      ui = null; S = null; geom = null; minimized = false; buy = null;
       if (typeof hooks.onClose === 'function') hooks.onClose();
     },
     isOpen() { return !!ui; },
     apply(ev) {
       if (!ev || typeof ev !== 'object') return;
       const type = String(ev.type || '').replace(/^kd:/, '');
-      if (type === 'start') api.open(ev, hooks);
+      if (type === 'shop:state') onShopEvent(ev);
+      else if (type === 'start') api.open(ev, hooks);
       else if (type === 'moved') onMoved(ev);
       else if (type === 'marks' && S && S.game === 'go' && ev.gameId === S.gameId) {
         applyMarks(S, ev); render();
