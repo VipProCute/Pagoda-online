@@ -123,7 +123,7 @@
 | T-150 | Chia suất 3D theo khoảng cách và mức chất lượng, đo hiệu năng | ⏳ T-145 → T-148 | P1 | CORE + HALL | — (gợi ý: gpt-6-luna) |
 | T-151 | Bật mặc định, ảnh chụp, Sổ tay, README, NOTICE | ⏳ T-150 | P2 | CORE + DOCS + OPS | — (gợi ý: gemini-3.8-flash-high + gpt-6-luna) |
 | T-154 | Nâng chất bản mẫu: Ma Vương điêu khắc, thân đặc, vỏ khí ra lửa 👤 duyệt (chặn T-145 → T-149) | ✅ Xong (bản nháp) · PR #68 | P0 | CORE + HALL + KYDAI | Điều phối Claude Opus 5.5 · Claude Sonnet 5.5 (vòng 1 Blender) · gpt-6.1-sol (các vòng sau, shader, JS) · soát hình gemini-4-argon-high |
-| T-203 | Vòng hình 2 Pháp Tướng 3D: quỷ ngoái mặt, mặt và tay Ma Vương, lưới lửa, cánh sen, nhãn tên 👤 duyệt (chặn T-145 → T-149) | 🟣 Chờ soát | P0 | CORE + HALL + KYDAI | Claude Opus 5.5 điều phối, gpt-6.1-sol thực thi |
+| T-203 | Vòng hình 2 Pháp Tướng 3D: quỷ ngoái mặt, mặt và tay Ma Vương, lưới lửa, cánh sen, nhãn tên 👤 duyệt (chặn T-145 → T-149) | ✅ Xong (bản nháp, hình chưa đạt) | P0 | CORE + HALL + KYDAI | Claude Opus 5.5 điều phối, gpt-6.1-sol thực thi |
 | T-152 | (Tùy chọn) Chụp lại ảnh 2D từ mô hình 3D | ⚪ Hộp thư đến 👤 | P3 | CORE + HALL | — |
 | T-153 | Nghiệm thu chéo đợt Pháp Tướng 3D | ⏳ T-151 | P1 | CORE + HALL | — (gợi ý: gemini-4-argon-high soát hình, gpt-6.1-sol soát mã) |
 | T-160 | Danh mục 8 bộ đá cho cờ vây và caro (`STONES`), `kd:skin` nhận theo môn | ✅ Xong · PR #64 | P1 | CORE + KYDAO + KYDAI | gpt-6.1-terra |
@@ -1733,7 +1733,7 @@ Thiết kế, hợp đồng mã, ngân sách và định tuyến mô hình: [doc
   - [ ] Ảnh bật / tắt cùng chỗ (`game-ta-fx3d-bat.jpg`, `game-ta-fx3d-tat.jpg`), hai phương án quỷ của mình (`side` mặc định, `cover`), **👤 chủ dự án duyệt** rồi mới mở T-145 → T-149
 
 ### T-203 · Vòng hình 2 Pháp Tướng 3D: quỷ ngoái mặt, mặt và tay Ma Vương, lưới lửa, cánh sen, nhãn tên
-- **Trạng thái**: 🟣 Chờ soát · 👤 chủ dự án duyệt hình (chấm độc lập: CHƯA ĐẠT, xem [docs/phap-tuong/T-203-SOAT-HINH.md](docs/phap-tuong/T-203-SOAT-HINH.md)) · **chặn T-145 → T-149** · **Ưu tiên**: P0 · **Gói ngữ cảnh**: CORE + HALL + KYDAI
+- **Trạng thái**: ✅ Xong ở mức bản nháp, chủ dự án bảo merge 14/11 để giữ mã (sau công tắc `ta-fx3d` tắt). Nghiệm thu độc lập Claude Opus 14/11: mã đạt, không lỗi chặn, `npm test` 1077 test, 1074 đạt, 0 trượt, 3 bỏ qua (PostgreSQL); hình Ma Vương 2,5/5, đài sen 3/5, vỏ khí 2/5, trong game còn kém 2D; hai lỗi nên sửa và hai ghi nhận đã vào Hộp thư đến · 👤 chủ dự án chọn hướng hình tiếp (chấm của thợ: CHƯA ĐẠT, xem [docs/phap-tuong/T-203-SOAT-HINH.md](docs/phap-tuong/T-203-SOAT-HINH.md)) · **chặn T-145 → T-149** · **Ưu tiên**: P0 · **Gói ngữ cảnh**: CORE + HALL + KYDAI
 - **Khu vực chạm**: tools/blender/fx/build_demon.py, build_lotus.py, build_aura.py, public/models/fx/*.glb, public/js/world3d/fx3d/*.mjs, public/js/stand-math.js, public/js/world3d/avatar.mjs (chỉ nhãn tên), public/js/world3d/index.mjs và scenes/arena.mjs (chỉ phần chia suất), test/world3d-fx.test.js, test/stand-math.test.js, public/world3d-fx.html
 - **Người làm**: Claude Opus 5.5 (điều phối), gpt-6.1-sol (thực thi) · **Nhánh**: claude/T-203-vong-hinh-phap-tuong
 - **Nguồn**: nghiệm thu độc lập T-154 ngày 14/11 (Ma Vương 2,5/5, đài sen 2,5/5, vỏ khí 2/5; trong game bật còn kém tắt). Công tắc `ta-fx3d` vẫn mặc định tắt.
@@ -1764,6 +1764,10 @@ Thiết kế, hợp đồng mã, ngân sách và định tuyến mô hình: [doc
 
 Lấy từ README "Việc nên làm tiếp" và lúc rà repo. Điều phối viết lại thành thẻ đủ trường khi muốn làm.
 
+- ⚪ Pháp Tướng 3D, máy quay sát chủ (nghiệm thu T-203, Claude Opus, 2026-11-14; chỉ lộ khi bật `ta-fx3d`): khi khoảng cách ngang tới máy quay < 0,6 m, `StandMath.selfStand` trả `null`, quỷ của mình trượt về `ANCHOR[4]` ngay trước ống kính với `SELF_SCALE` 1,1 và không mờ (`public/js/world3d/fx3d/demon.mjs` khoảng dòng 106–116 và 168; ở chế độ ngoái mặt `near` luôn bằng 1). Sửa: giữ chỗ đứng gần nhất hoặc dùng cỡ nhỏ nhất và cho mờ; thêm test kiểm cỡ và độ mờ (test `world3d-fx.test.js` hiện chỉ chốt "về neo cũ"). Gói: CORE + HALL.
+- ⚪ Pháp Tướng 3D, suất của pháp tướng công đức (nghiệm thu T-203, 2026-11-14): `fx3d/index.mjs` gộp lotus, aura và merit vào khoá `aura` của `StandMath.fxSlots`, nên người có bậc công đức mà không có hào quang luôn nhận `aura:false` và không bao giờ thấy merit 3D. Tách suất riêng cho merit **trước khi mở T-145 → T-149**. Gói: CORE + HALL.
+- ⚪ Pháp Tướng 3D, nhãn tên xuyên tường (nghiệm thu T-203, 2026-11-14): `avatar.mjs` tắt `depthTest` của nhãn tên và bong bóng khi người đó có hiệu ứng 3D, nên nhãn hiện xuyên tường, cột. 👤 chấp nhận, hoặc đổi sang vẽ sau cùng mà vẫn kiểm chiều sâu với vật đục. Gói: CORE + HALL.
+- ⚪ `public/world3d-scene-arena.html` import `kit.mjs?v=1` trong khi các chỗ khác dùng `?v=2` (có từ trước T-203; nghiệm thu T-203 phát hiện 2026-11-14). Gói: CORE.
 - ⚪ Dùng huy hiệu chủ đề `public/img/kydao/ui/crest-<id>.webp` trong bộ chọn "Lãnh địa" (cạnh tên sân) và cạnh khẩu hiệu khai mở (`.kdfx-banner`). Gói: KYDAI. Thợ gợi ý: gpt-6-luna.
 - ⚪ `public/js/app.js:561–562` ghép `cfg.kinds`, `cfg.tracks` từ máy chủ vào `innerHTML` (mã có từ trước đợt Kỳ Đài; GPT Sol phát hiện 2026-11-13). Dựng phần tử và gán chữ bằng `textContent`. Gói: CORE. Trái bất biến AGENTS.md §3.5.
 - ⚪ Thêm 3 ca test cho `kd:skin` (soát T-110, Gemini 4 Argon, 2026-11-13): (1) gọi `skin` khi đồng hồ vừa quá hạn mà hẹn giờ chưa nổ (nhánh `expired` trong `lib/kydao/manager.js`); (2) e2e gọi `kd:skin` khi đang ở Chánh điện để ghim `where: 'any'`; (3) gửi `field` giữ nguyên + `pieces` mới khi `field` còn trong hạn 20 giây. Gói: KYDAO + KYDAI. Thợ gợi ý: gpt-6-luna.
