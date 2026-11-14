@@ -687,9 +687,11 @@ function confirmDonation(d, info) {
   if (info.amount > d.amount) d.amount = info.amount;
   // Mở skin: cấp quyền ngay (trước phần thông báo, để lỗi ở phần sau không làm mất quyền). IDEMPOTENT bằng d.outcome và bảng unlocks.
   if (d.purpose === 'skin' && d.item && d.outcome !== 'granted') {
-    const g = shop.grant(uid, d.item.kind, d.item.id, d.code);
-    if (g.ok) { d.outcome = 'granted'; pushShopStateToUid(uid); }
-    else console.error('[kydao-shop] không cấp được skin cho khoản', d.code, g.reason);
+    try {
+      const g = shop.grant(uid, d.item.kind, d.item.id, d.code);
+      if (g.ok) { d.outcome = 'granted'; pushShopStateToUid(uid); }
+      else console.error('[kydao-shop] không cấp được skin cho khoản', d.code, g.reason);
+    } catch (e) { console.error('[kydao-shop]', e && e.message); }
   }
   // Hào quang: cộng dồn theo người cúng dường (ẩn danh hoặc tự tắt thì không hiện)
   let aura = null;
@@ -1483,13 +1485,18 @@ io.on('connection', socket => {
     const price = shop.priceOf(kind, id);
     if (!Number.isInteger(price)) return { ok: false, reason: 'Skin này chưa có mức cúng dường.' };
     // đã có khoản chờ đúng người, đúng skin: trả lại khoản đó, không tạo trùng
-    const have = db.donations.find(x => x.status === 'pending' && x.purpose === 'skin' && x.uid === p.uid && x.item && x.item.kind === kind && x.item.id === id);
-    if (have) { scheduleTestDonation(have); return Object.assign({ ok: true, kind, id }, donationAck(have)); }
+    const have = db.donations.find(x => x.status === 'pending' && x.purpose === 'skin' && accountOf(x.uid) === accountOf(p.uid) && x.item && x.item.kind === kind && x.item.id === id);
+    if (have) {
+      if (have.amount !== price && !have.bank) { have.amount = price; store.save(); }
+      if (!(await store.flush())) return { ok: false, reason: 'Chưa lưu được mã cúng dường. Bạn thử lại sau ít giây nhé.' };
+      scheduleTestDonation(have); return Object.assign({ ok: true, kind, id }, donationAck(have));
+    }
     if (!allow('shopbuy', 8000)) return { ok: false, code: 'rate', reason: 'Đợi vài giây rồi tạo mã mới nhé.' };
     const fund = FUNDS[0];
     const don = addDonation({ purpose: 'skin', item: { kind, id }, amount: price, fund: fund.id, fundName: fund.name, name: p.name, anon: false, hide: false, aura: true, note: '', uid: p.uid });
     // mã đã có trong sổ chùa rồi mới đưa cho người cúng dường, để webhook / admin tìm thấy được
-    if (!(await store.flush())) { if (don.mode === 'test') { don.status = 'cancelled'; store.save(); } return { ok: false, reason: 'Chưa lưu được mã cúng dường. Bạn thử lại sau ít giây nhé.' }; }
+    // Khoản chưa ghi bền mà còn chờ sẽ bị trả lại mã chưa có trong sổ.
+    if (!(await store.flush())) { don.status = 'cancelled'; store.save(); return { ok: false, reason: 'Chưa lưu được mã cúng dường. Bạn thử lại sau ít giây nhé.' }; }
     armNewTestDonation(don);
     scheduleTestDonation(don);
     return Object.assign({ ok: true, kind, id }, donationAck(don));
