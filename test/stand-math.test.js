@@ -183,7 +183,7 @@ test('máy quay bị ép lại gần thì quỷ thu nhỏ và nâng lên, xa th�
   assert.ok(Math.abs(wall.scale - O.scaleNear) < 1e-12);
   assert.ok(mid.scale > wall.scale && mid.scale < far.scale);
   // Mặt quỷ (khoảng 1,3 m trên thắt lưng theo cỡ quỷ) không tụt xuống dưới cổ chủ khi thu nhỏ.
-  // T-204 hạ lift 0,5, scaleNear 0,4: máy quay ở trên cao nhìn xuống nên mặt quỷ (đứng sau chủ 1,2 m) vẫn hiện trên đầu chủ,
+  // T-204 hạ lift 0,5, scaleNear 0,45: máy quay ở trên cao nhìn xuống nên mặt quỷ (đứng sau chủ 1,2 m) vẫn hiện trên đầu chủ,
   // còn ở Sân đấu không lọt vào dưới bảng giao diện phía trên.
   for (const stand of [far, mid, wall]) assert.ok(stand.y + 1.3 * stand.scale > 1.4, `mặt quỷ ở ${stand.y + 1.3 * stand.scale}`);
   assert.ok(wall.y + 1.3 * wall.scale < 1.9, 'máy quay sát tường thì mặt quỷ hạ thấp hơn T-203');
