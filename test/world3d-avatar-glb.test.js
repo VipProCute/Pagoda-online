@@ -40,6 +40,11 @@ function withSwitch(t, value) {
   Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: { getItem: key => key === 'ta-avatar' ? value : null } });
   t.after(() => { if (old) Object.defineProperty(globalThis, 'localStorage', old); else delete globalThis.localStorage; });
 }
+function withThrowingStorage(t) {
+  const old = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+  Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: { getItem() { throw new Error('bị chặn'); } } });
+  t.after(() => { if (old) Object.defineProperty(globalThis, 'localStorage', old); else delete globalThis.localStorage; });
+}
 const stand = avatar => avatar.group.getObjectByName('body').children.find(node => node.name === 'hips');
 const glb = avatar => avatar.group.getObjectByName('avatar-glb');
 const robeOf = model => { let found = null; model.traverse(node => { if (node.isMesh) for (const m of [].concat(node.material)) if (m.name === 'robe') found = m; }); return found; };
@@ -55,9 +60,10 @@ test('clipFor: ngồi hơn vái hơn đi hơn đứng yên', async () => {
   assert.equal(clipFor({ bow: Number.NaN }), 'idle');
 });
 
-test('công tắc tắt: makeAvatar trả bản dựng bằng mã và không nạp .glb', async t => {
-  withSwitch(t, null);
-  const { makeAvatar } = await load();
+test('khóa = code: makeAvatar trả bản dựng bằng mã và không nạp .glb', async t => {
+  withSwitch(t, 'code');
+  const { makeAvatar, blenderEnabled } = await load();
+  assert.equal(blenderEnabled(), false);
   const assets = await fakeAssets();
   const avatar = makeAvatar({ g: 'nam', c: 1, h: 0 }, { assets, createCanvas: canvasFactory() });
   await settle();
@@ -65,6 +71,42 @@ test('công tắc tắt: makeAvatar trả bản dựng bằng mã và không n�
   assert.equal(stand(avatar).visible, true);
   assert.deepEqual(assets.log, []);
   avatar.dispose();
+});
+
+test('mặc định: chưa có khóa, khóa "blender", giá trị rác hoặc localStorage ném lỗi đều dùng nhân vật Blender', async t => {
+  const { makeAvatar, blenderEnabled } = await load();
+  for (const value of [null, 'blender', 'rac']) {
+    withSwitch(t, value);
+    assert.equal(blenderEnabled(), true, String(value));
+    const assets = await fakeAssets();
+    const avatar = makeAvatar({ g: 'nu', c: 0, h: 0 }, { assets, createCanvas: canvasFactory() });
+    await settle();
+    assert.ok(glb(avatar), 'có mô hình khi khóa = ' + value);
+    assert.equal(stand(avatar).visible, false);
+    assert.deepEqual(assets.log, ['/models/avatar/nu.glb']);
+    avatar.dispose();
+  }
+  withThrowingStorage(t);
+  assert.equal(blenderEnabled(), true);
+  const assets = await fakeAssets();
+  const avatar = makeAvatar({ g: 'nam', c: 0, h: 0 }, { assets, createCanvas: canvasFactory() });
+  await settle();
+  assert.ok(glb(avatar));
+  avatar.dispose();
+});
+
+test('mặc định mà .glb không nạp được: vẫn có nhân vật bản mã, không ghi console', async t => {
+  withSwitch(t, null);
+  const { makeAvatar } = await load();
+  const logs = [];
+  for (const name of ['log', 'warn', 'error']) t.mock.method(console, name, (...args) => logs.push(args));
+  const avatar = makeAvatar({ g: 'nam', c: 0, h: 0 }, { assets: { load: async () => { throw new Error('404'); } }, createCanvas: canvasFactory() });
+  await settle();
+  avatar.update({ walking: true, yaw: 1 }, 0.05);
+  assert.equal(glb(avatar), undefined);
+  assert.equal(stand(avatar).visible, true);
+  avatar.dispose();
+  assert.deepEqual(logs, []);
 });
 
 test('công tắc bật: ẩn thân thế thân, hiện mô hình, màu áo và tóc theo look', async t => {

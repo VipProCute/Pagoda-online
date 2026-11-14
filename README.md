@@ -88,7 +88,7 @@ Bên cạnh giao diện 2D truyền thống, Chùa Tâm An hỗ trợ không gia
 - **Các trang thử nghiệm độc lập**:
   - `/world3d-test.html`: Kiểm tra tổng thể thế giới 3D.
   - `/world3d-kit.html`: Bộ khối mẫu vật liệu và cấu kiện kiến trúc chùa.
-  - `/world3d-avatar.html`: Thử nghiệm mô hình nhân vật, trang phục, tóc, bước đi và hào quang.
+  - `/world3d-avatar.html`: Thử nghiệm mô hình nhân vật, trang phục, tóc, bước đi và hào quang. Nhân vật dựng bằng Blender là mặc định trong giao diện 3D; nút "Người cũ" (khóa `localStorage["ta-avatar"] = "code"`) đổi về dáng dựng bằng mã.
   - `/world3d-board.html`: Thử nghiệm bàn cờ 3D tương tác có skin.
   - `/world3d-scene-hall.html`: Cảnh Chánh điện 3D.
   - `/world3d-scene-yard.html`: Cảnh Sân chùa 3D.
