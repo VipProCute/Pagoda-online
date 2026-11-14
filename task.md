@@ -137,7 +137,7 @@
 | T-175 | Sửa lệnh mua skin theo kết quả soát của Gemini 4 Argon | ✅ Xong · PR #64 | P1 | CORE + KYDAO + KYDAI | gpt-6.1-terra |
 | T-176 | Bổ sung test cửa hàng skin: ghi sổ hỏng, duyệt tay bằng trình duyệt thật, gộp quyền khi khách đăng nhập | ✅ Xong · PR #65 | P2 | CORE + KYDAO + OPS | Claude Sonnet 5.5 |
 | T-177 | Nhân vật Blender làm mặc định trong giao diện 3D, nút "Người cũ" đổi về dáng cũ | ✅ Xong · PR #66 | P1 | CORE + HALL | Claude Sonnet 5.5 |
-| T-178 | Test tự động cho nút "Người cũ" (`view3d-ui.js`), dọn sổ việc đợt Kỳ Đài | 🟣 Chờ soát (nhánh `claude/T-178-dieu-phoi`) | P2 | CORE + HALL | Claude Sonnet 5.5 |
+| T-178 | Test tự động cho nút "Người cũ" (`view3d-ui.js`), dọn sổ việc đợt Kỳ Đài | ✅ Xong · PR #67 | P2 | CORE + HALL | Claude Sonnet 5.5 |
 
 Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạm `package.json`). **T-005**, **T-007**, **T-002** làm song song được với nhóm trên.
 Đợt 2026-11: làm **T-003, T-004, T-006** trước (T-004 gỡ nút thắt `package.json` cho mọi thẻ thêm file JS; T-006 là cổng "CI xanh"). Sau đó theo lịch 6 đợt ở [docs/KE-HOACH-DOT-2026-11.md §10.3](docs/KE-HOACH-DOT-2026-11.md#103-lịch-theo-đợt-và-khóa-vùng-nóng).
