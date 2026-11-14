@@ -356,9 +356,9 @@ Thiết kế ở `docs/KE-HOACH-KY-DAI.md` §3–4. Danh mục mã là `public/j
 - **Không lưu bền** (K3): skin là trạng thái của ván trong RAM, mất khi hết ván hoặc máy chủ khởi động lại; không có trong `db.kydao`, biên bản ván hay `store-sections`. Lựa chọn ưa thích của người chơi lưu ở `localStorage` trình duyệt; muốn dùng lại ở ván mới thì giao diện (T-115) gửi lại `kd:skin`.
 - **Cờ tướng úp** (K6): gói `kd:skin` chỉ chứa mã skin của một bên, không có `state`, không có thông tin quân; skin quân áp cho mọi quân úp một bên như nhau. Gói không có `uid`.
 
-### 5.5 Cửa hàng skin: khóa skin, cúng dường để mở (T-150, T-151)
+### 5.5 Cửa hàng skin: khóa skin, cúng dường để mở (T-170, T-171)
 
-Đặc tả: `docs/ky-dai/T-150-DAC-TA-KHOA-SKIN.md`. Logic thuần ở `lib/kydao/shop.js`; nối socket, cúng dường, quản trị ở `server.js`. Mặc định **cửa hàng tắt** (`on:false`): mọi skin miễn phí, `kd:skin` không kiểm sở hữu. Ban điều hành bật và đặt mức tiền ở trang quản trị; không có giá mặc định trong mã.
+Đặc tả: `docs/ky-dai/T-170-DAC-TA-KHOA-SKIN.md`. Logic thuần ở `lib/kydao/shop.js`; nối socket, cúng dường, quản trị ở `server.js`. Mặc định **cửa hàng tắt** (`on:false`): mọi skin miễn phí, `kd:skin` không kiểm sở hữu. Ban điều hành bật và đặt mức tiền ở trang quản trị; không có giá mặc định trong mã.
 
 - **Khóa định danh một skin**: `kind:id`, ví dụ `field:volcano`. `kind` ∈ `field` (sân, `KydaoSkins.FIELDS`), `pieces` (quân cờ vua/cờ tướng/cờ úp, `PIECES`), `stones` (đá cờ vây/caro, `STONES`). Bàn và quân mặc định (`null`) luôn miễn phí.
 - **`kd:shop:state`** (có ack, mọi nơi, bọc `kydaoOnly`): gửi `{}` hoặc chỉ callback → `{ ok:true, on:boolean, price:number|null, prices:{ 'field:volcano': đồng }, owned:[ 'field:volcano', … ] }`. `owned` là của **chính người hỏi** (máy chủ tự tra theo `accountOf(uid)`, không tin client), đã sắp xếp. Máy chủ cũng **đẩy** sự kiện `kd:shop:state` cùng nội dung (kể cả `ok:true`) cho đúng người đó khi: vừa `join`; khách vừa liên kết tài khoản; khoản cúng dường mở skin được duyệt (cho mọi tab của tài khoản); Ban điều hành đổi cấu hình (mỗi người nhận bản của riêng mình). `/api/config` và ack `join` chỉ có `config.kydao.shop = { on }`.
@@ -491,7 +491,7 @@ db.kydao = {
                result, reason, moves:[ { m, r? } ] /* r = reveal { mover?, captured? } */, seed? } ],              // giữ 500 ván gần nhất; chỉ ván kết thúc
   active:  { [uid]: gameId },                                              // ván đang đấu, để báo "bị hủy" sau khi khởi động lại
   pairs:   { '<vnDay>|<uidA>|<uidB>|<game>': count }                       // làm phẳng thành một map (khớp kiểu map của store-sections); uidA < uidB theo chuỗi; mục có ngày cũ bị xóa khi ghi mục mới (T-029 chốt chi tiết)
-  shop:    { on, price, prices:{ 'field:volcano': đồng }, updatedAt },     // cửa hàng skin (T-150): cấu hình khóa/giá, mặc định on:false
+  shop:    { on, price, prices:{ 'field:volcano': đồng }, updatedAt },     // cửa hàng skin (T-170): cấu hình khóa/giá, mặc định on:false
   unlocks: { [uid tài khoản]: { 'field:volcano': { at, code } } }          // skin đã mở, vĩnh viễn; xem §5.5
 }
 ```

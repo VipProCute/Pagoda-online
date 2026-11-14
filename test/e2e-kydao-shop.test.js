@@ -1,7 +1,7 @@
 'use strict';
 /*
- * Cửa hàng skin Kỳ Đạo qua máy chủ thật (T-151): khóa skin, cúng dường để mở, duyệt (tự xác nhận / admin / webhook SePay),
- * mở khóa idempotent, khởi động lại giữa chừng, không lộ uid. Đặc tả: docs/ky-dai/T-150-DAC-TA-KHOA-SKIN.md.
+ * Cửa hàng skin Kỳ Đạo qua máy chủ thật (T-171): khóa skin, cúng dường để mở, duyệt (tự xác nhận / admin / webhook SePay),
+ * mở khóa idempotent, khởi động lại giữa chừng, không lộ uid. Đặc tả: docs/ky-dai/T-170-DAC-TA-KHOA-SKIN.md.
  */
 const test = require('node:test');
 const fs = require('node:fs');

@@ -157,7 +157,7 @@ async function iceServers() {
 const db = store.get();    // cùng một object suốt vòng đời; main() gọi store.init() điền dữ liệu trước khi mở cổng
 const sweeper = createSweeper();
 let martial = null, arena = null, kydao = null;   // dịch vụ tu luyện, quản lý sân đấu và bàn cờ, tạo trong main() sau khi dữ liệu đã nạp
-// Cửa hàng skin Kỳ Đạo (T-150/T-151): logic thuần, đọc/ghi db.kydao.shop và db.kydao.unlocks; uid luôn qua accountOf trước khi đưa vào
+// Cửa hàng skin Kỳ Đạo (T-170/T-171): logic thuần, đọc/ghi db.kydao.shop và db.kydao.unlocks; uid luôn qua accountOf trước khi đưa vào
 const shop = createShop({ getState: () => db.kydao, catalog: KydaoSkins, now: Date.now });
 function rollDay() {
   const d = vnDay();

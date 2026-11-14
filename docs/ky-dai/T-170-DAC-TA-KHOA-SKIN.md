@@ -1,4 +1,4 @@
-# Đặc tả T-150 → T-154 · Khóa skin bàn cờ, cúng dường để mở
+# Đặc tả T-170 → T-174 · Khóa skin bàn cờ, cúng dường để mở
 
 > Chủ dự án chốt ngày 2026-11-14:
 > 1. Hiện tại **mọi skin miễn phí**.
@@ -27,9 +27,9 @@
 | S12 | Không bao giờ gửi uid cho client khác. `kd:shop:state` chỉ gửi cho chính người đó: `{ on, price, prices, owned:[ 'field:volcano', … ] }`. `/api/config` chỉ có `kydao.shop = { on }`. |
 | S13 | Mọi thay đổi cấu hình cửa hàng ghi `audit()` (ai, lúc nào, giá cũ → mới, bật/tắt). |
 
-## 2. Các thẻ (chạy nối tiếp: T-150 → T-151 → T-152 và T-153 song song → T-154)
+## 2. Các thẻ (chạy nối tiếp: T-170 → T-171 → T-172 và T-173 song song → T-174)
 
-### T-150 · Module thuần `lib/kydao/shop.js` và lưu bền
+### T-170 · Module thuần `lib/kydao/shop.js` và lưu bền
 
 **File:** `lib/kydao/shop.js` (mới), `lib/store-sections.js`, `test/kydao-shop.test.js` (mới), `test/store-json.test.js`, `test/store-pg.test.js`.
 
@@ -54,7 +54,7 @@
 
 Kiểm: `npm run check`; `node --test test/kydao-shop.test.js test/store-json.test.js`; `npm test`.
 
-### T-151 · Nối máy chủ
+### T-171 · Nối máy chủ
 
 **File:** `server.js`, `lib/kydao/manager.js`, `lib/account.js` (nếu `linkGuest` nằm đó, nếu không thì chỉ `server.js`), `docs/KY-DAO-GIAO-THUC.md`, `docs/agents/ARCHITECTURE.md` (§3, §4), `test/kydao-manager.test.js`, `test/e2e-kydao-shop.test.js` (mới), `.env.example` (nếu thêm biến).
 
@@ -88,13 +88,13 @@ Kiểm: `npm run check`; `node --test test/kydao-shop.test.js test/store-json.te
     - payload gửi người khác không chứa uid.
 13. `npm run check`; `npm test` (đụng `server.js`, `lib/store*`, giao thức).
 
-### T-152 · Trang quản trị
+### T-172 · Trang quản trị
 
 **File:** `public/admin.html` (và JS/CSS nội tuyến của nó), `?v=` nếu có.
 
 Thêm khối "Cửa hàng skin bàn cờ": công tắc **Đang thu tiền** (bật/tắt), ô **Mức chung (đ)**, bảng mọi skin theo ba nhóm (Sân, Quân, Đá) với ô **Mức riêng** (để trống = dùng mức chung), nút **Lưu**, dòng thống kê (số người đã mở, số lượt mở), và cảnh báo rõ khi bật: "Bật thì mọi skin chưa mở sẽ bị gỡ khỏi các ván đang chơi ngay." Nút Lưu bị khóa khi bật mà chưa có mức chung. Gọi `GET/POST /api/admin/kydao-shop` với header `x-admin-key` như các lời gọi khác trong file. Chữ gán bằng `textContent`; tiền định dạng `Intl.NumberFormat('vi-VN')` + `đ`. Khoản `purpose:'skin'` trong danh sách cúng dường hiện thêm nhãn "Mở skin: <tên skin>" (đọc cách file đang phân loại `speedup`).
 
-### T-153 · Bộ chọn trong bảng cờ
+### T-173 · Bộ chọn trong bảng cờ
 
 **File:** `public/js/kydao-ui.js`, `public/css/kydao.css`, `public/js/app.js` (chỉ chuyển sự kiện `kd:shop:state` và `donation:ok` cho KydaoUI như đang làm với `kd:skin`), `public/index.html` (`?v=`), `test/kydao-ui-core.test.js`, `test/kydao-ui-games.test.js`.
 
@@ -110,7 +110,7 @@ Thêm khối "Cửa hàng skin bàn cờ": công tắc **Đang thu tiền** (b�
 10. Nút ≥ 44 px; không `innerHTML`; khung QR có `role="dialog"` và nhãn; bàn phím: Esc đóng khung.
 11. Test: `skinLocked`/`skinPrice`; ván cờ vua với `shop.on` và skin chưa mở → bấm mục không gửi `kd:skin`, gửi `kd:shop:buy` sau khi xác nhận; nhận `kd:shop:state` có `owned` → gửi `kd:skin`; URL QR lạ không được gán.
 
-### T-154 · Tài liệu người chơi, harness, e2e hai trình duyệt
+### T-174 · Tài liệu người chơi, harness, e2e hai trình duyệt
 
 `README.md` (mục Lãnh địa: thêm đoạn "Mở khóa skin" và biến môi trường liên quan nếu có), `public/data/so-tay.vi.json` (mục Bàn cờ: 3–4 câu cho người chơi), `tools/ui-harness/kydao/index.html` (nút giả lập `kd:shop:state` bật khóa và `owned`), `tools/ui-harness/kydao/ui-check.js` (kiểm tra `khoa-skin`: mục khóa có giá; bấm mở khung; sau khi `owned` thì hết khóa), `tools/ui-harness/kydao/e2e-real.js` (bước mới: admin bật cửa hàng qua API với `ADMIN_KEY` thử, A mua một skin ở chế độ thử, chờ tự xác nhận, A dùng được, B bị khóa).
 

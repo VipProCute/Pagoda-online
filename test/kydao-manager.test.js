@@ -920,7 +920,7 @@ test('kd:skin: ván đã kết thúc bị từ chối; đấu lại bắt đầu
   n.shutdown();
 });
 
-/* ----- T-151: khóa skin (skinAllowed / skinPrice) và revalidateSkins ----- */
+/* ----- T-171: khóa skin (skinAllowed / skinPrice) và revalidateSkins ----- */
 
 test('kd:skin: skin chưa mở bị từ chối code locked kèm giá; kiểm quyền đứng trước kiểm tần suất; về mặc định luôn được', () => {
   const owned = new Set(['field:river', 'pieces:wood']);

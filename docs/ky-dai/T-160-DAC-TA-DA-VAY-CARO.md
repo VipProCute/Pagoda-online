@@ -1,4 +1,4 @@
-# Đặc tả T-140 → T-143 · Skin đá cho cờ vây và caro
+# Đặc tả T-160 → T-163 · Skin đá cho cờ vây và caro
 
 > Yêu cầu của chủ dự án (14/11): cờ vây và caro có **skin quân** đa chủ đề (vũ trụ, rừng, đại dương, dung nham…). **Bàn không cần skin.**
 > Nhánh tích hợp đợt 2: `claude/ky-dai-dot-2` (tách từ `main` sau PR #62). Thợ tách nhánh từ đây.
@@ -15,7 +15,7 @@
 
 ---
 
-## T-140 · Máy chủ: `kd:skin` cho cờ vây và caro
+## T-160 · Máy chủ: `kd:skin` cho cờ vây và caro
 
 **File:** `lib/kydao/manager.js`, `docs/KY-DAO-GIAO-THUC.md` (§5.4), `test/kydao-manager.test.js`, `test/kydao-skins.test.js`, `test/e2e-kydao.test.js`.
 
@@ -32,7 +32,7 @@
 
 ---
 
-## T-141 · Blender: ảnh đá 8 bộ
+## T-161 · Blender: ảnh đá 8 bộ
 
 **File:** `tools/blender/kydao/stones.py` (mới), `tools/blender/kydao/README.md`, `public/img/kydao/stones/<id>.webp` (8 file), `public/img/NOTICE.txt`, `docs/ky-dai/anh/da-*.jpg`.
 
@@ -54,7 +54,7 @@
 
 ---
 
-## T-142 · Bàn 2D và bộ chọn
+## T-162 · Bàn 2D và bộ chọn
 
 **File:** `public/js/kydao-draw.js`, `public/js/kydao-ui.js`, `public/css/kydao.css`, `public/index.html` (`?v=`), các trang thử (`?v=`), `test/kydao-draw-stones.test.js` (mới), `test/kydao-ui-core.test.js`, `test/kydao-ui-games.test.js`.
 
@@ -91,7 +91,7 @@ Kiểm: `npm run check`; `node --test test/kydao-*.test.js test/e2e-kydao.test.j
 
 ---
 
-## T-143 · Bàn 3D
+## T-163 · Bàn 3D
 
 **File:** `public/js/world3d/board3d.mjs`, `test/kydao-board3d.test.js`, `?v=` các nơi import.
 

@@ -1,4 +1,4 @@
-"""Kỳ Đài · T-141: render atlas đá cờ vây / caro (8 bộ x 2 viên) bằng Blender.
+"""Kỳ Đài · T-161: render atlas đá cờ vây / caro (8 bộ x 2 viên) bằng Blender.
 
 Chạy trong Blender (5.x) đang mở:
     import runpy

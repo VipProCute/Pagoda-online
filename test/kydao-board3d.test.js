@@ -886,7 +886,7 @@ test('board-assets: nạp ảnh một lần, nhớ cả kết quả thiếu, l�
   assert.equal(typeof A.loadImage, 'function');
 });
 
-// ---- T-143 · skin đá cho cờ vây và caro ----
+// ---- T-163 · skin đá cho cờ vây và caro ----
 const stoneAssets = have => {
   const asked = [];
   return { asked, loadModel: async () => null, instantiate: () => { throw new Error('không có mô hình'); },

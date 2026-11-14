@@ -578,7 +578,7 @@ export function createBoard3D({ canvas, game, skins: catalogInput, quality: qual
     const id = skins[sideOf(ch)].pieces;
     return id ? (layout.stones ? stoneSkin(id) : pieceSkin(id)) : null;
   }
-  /* ---- Skin đá cờ vây/caro (T-143): vật liệu theo KydaoSkins.STONES[id][side]; có ảnh atlas thì phủ mặt trên bằng chỏm cầu. ---- */
+  /* ---- Skin đá cờ vây/caro (T-163): vật liệu theo KydaoSkins.STONES[id][side]; có ảnh atlas thì phủ mặt trên bằng chỏm cầu. ---- */
   function stoneSkin(id) {
     const key = 's:' + id;
     if (pieceSkins.has(key)) return pieceSkins.get(key);

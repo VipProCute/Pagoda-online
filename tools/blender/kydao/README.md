@@ -57,7 +57,7 @@ Tham số: `ONLY` (danh sách mã, mặc định cả 8 bộ), `PREVIEW` (24 m�
 - `disc`: nhìn thẳng từ trên xuống, tâm ô, thân tròn đường kính 108 px (gai trang trí của magma, wood, ice, coral, storm nhô tới 122 px), mặt trên trống.
 - Có bóng đổ mềm nhỏ dưới chân quân (alpha thấp, lệch sang trái ảnh). Không sửa tay atlas; sửa script rồi chạy lại.
 
-## Ảnh đá cờ vây và caro (`stones.py`, T-141)
+## Ảnh đá cờ vây và caro (`stones.py`, T-161)
 
 Render 8 bộ đá (`STONES` trong `public/js/kydao-skins.js`, màu `base`/`accent`/`glow` đọc qua `node`). Cycles, 64 mẫu, nền trong suốt, siêu lấy mẫu 2x, chất liệu thủ tục theo chủ đề. Chạy trong Blender:
 
