@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pháp tướng 3D · Chùa Tâm An</title>
+  <style>
+    :root { color-scheme: light; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #f3ecdd; color: #463323; font: 15px/1.55 system-ui, sans-serif; }
+    main { max-width: 1440px; margin: auto; padding: 28px 32px; }
+    .av-kicker { color: #986e35; letter-spacing: .18em; font-size: 11px; font-weight: 700; }
+    h1 { font: 40px/1.1 Georgia, 'Times New Roman', serif; margin: 10px 0; }
+    .av-intro { margin: 0 0 22px; color: #7c6852; }
+    .av-layout { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 20px; }
+    .av-stage { position: relative; border: 1px solid #ad9169; border-radius: 18px; overflow: hidden; background: #303a32; }
+    canvas { display: block; width: 100%; height: 76vh; min-height: 440px; touch-action: none; cursor: grab; }
+    canvas:active { cursor: grabbing; }
+    canvas:focus-visible { outline: 3px solid #ffd36b; outline-offset: -3px; }
+    .av-hint { position: absolute; left: 20px; bottom: 12px; color: #e4d1ad; pointer-events: none; font-size: 12px; }
+    aside { background: #e9dfcc; padding: 18px; border: 1px solid #d5c5a9; border-radius: 18px; }
+    label { display: block; margin-bottom: 12px; font-size: 13px; color: #6e573d; }
+    select, button { min-height: 44px; width: 100%; padding: 8px 10px; margin-top: 4px; border: 1px solid #c6ad84; border-radius: 7px; background: #faf6ed; color: #463323; font: inherit; }
+    button { background: #735539; color: #fff1d7; cursor: pointer; }
+    input { min-height: 44px; vertical-align: middle; accent-color: #8b633c; }
+    input[type="range"] { display: block; width: 100%; margin: 0; }
+    .av-check { display: flex; align-items: center; gap: 8px; min-height: 44px; margin: 0; }
+    .av-check input { flex: 0 0 44px; width: 44px; height: 44px; margin: 0; }
+    .av-views { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 12px; }
+    .av-note { font-size: 12px; color: #806b52; }
+    .av-status { border-bottom: 1px solid #d4c5ac; padding: 10px 0 16px; min-height: 66px; font-size: 13px; overflow-wrap: anywhere; }
+    a { color: #80532e; }
+    @media (max-width: 800px) {
+      main { padding: 20px 14px; } h1 { font-size: 32px; }
+      .av-layout { grid-template-columns: 1fr; } canvas { height: 60vh; min-height: 360px; }
+      aside { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+      aside label { margin: 0; } .av-wide { grid-column: 1 / -1; }
+    }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  </style>
+  <script type="importmap">
+    { "imports": { "three": "/vendor/three/three.module.js?v=0.187.0" } }
+  </script>
+</head>
+<body>
+  <main>
+    <div class="av-kicker">CHÙA TÂM AN · XƯỞNG PHÁP TƯỚNG</div>
+    <h1>Linh thể sau lưng, hào quang quanh thân.</h1>
+    <p class="av-intro">Thử độ rõ, ánh sáng và từng góc nhìn của pháp tướng.</p>
+    <div class="av-layout">
+      <div class="av-stage">
+        <canvas id="world" aria-label="Pháp tướng 3D; kéo để xoay, cuộn để thu phóng" tabindex="0"></canvas>
+        <p class="av-hint">Kéo để xoay · Cuộn để gần xa · Phím mũi tên để xoay</p>
+      </div>
+      <aside>
+        <label>Cấp quỷ <select id="demon"><option value="0">Không có</option></select></label>
+        <label>Độ rõ quỷ <input id="alpha" type="range" min="0.12" max="1" step="0.01" value="0.65"></label>
+        <label>Bậc hào quang <select id="aura"><option value="0">Không có</option></select></label>
+        <label>Pháp tướng <select id="merit"><option value="0">Không có</option></select></label>
+        <label>Mức chất lượng
+          <select id="quality"><option value="low">Thấp</option><option value="medium" selected>Vừa</option><option value="high">Cao</option></select>
+        </label>
+        <label>Tư thế
+          <select id="pose"><option value="idle">Đứng</option><option value="walk">Đi</option><option value="bow">Vái</option><option value="talk">Nói</option><option value="sit">Ngồi</option></select>
+        </label>
+        <label>Hướng nhân vật
+          <select id="yaw"><option value="0">0°</option><option value="1.5707963267948966">90°</option><option value="3.141592653589793">180°</option><option value="4.71238898038469">270°</option></select>
+        </label>
+        <label class="av-check av-wide"><input id="circle" type="checkbox"> Đi vòng tròn</label>
+        <div class="av-views av-wide" role="group" aria-label="Góc nhìn nhanh">
+          <button type="button" data-yaw="0">Trước</button>
+          <button type="button" data-yaw="0.7853981633974483">Nghiêng 45°</button>
+          <button type="button" data-yaw="1.5707963267948966">Ngang</button>
+          <button type="button" data-yaw="3.141592653589793">Sau</button>
+        </div>
+        <label class="av-check av-wide"><input id="reduced" type="checkbox"> Giảm chuyển động</label>
+        <label class="av-wide">Nguồn hiệu ứng
+          <select id="mode"><option value="real" selected>Mô hình 3D thật (như trong game)</option><option value="temp">Hình khối tạm</option><option value="off">Tắt 3D (ảnh 2D cũ)</option></select>
+        </label>
+        <button type="button" class="av-wide" id="fx-use" aria-pressed="false">Bật Pháp Tướng 3D trong game</button>
+        <label class="av-check av-wide"><input id="night" type="checkbox"> Đêm</label>
+        <p class="av-status av-wide" id="status" role="status">Đang mở cảnh pháp tướng…</p>
+        <p class="av-note av-wide">Bản mẫu có Ma Vương 3D, sen vàng bậc 2–7 và vỏ khí bậc 5. Phần còn lại tự dùng ảnh 2D.</p>
+      </aside>
+    </div>
+    <p class="av-note">Trang thử độc lập · <a href="/world3d-avatar.html">Thử nhân vật</a> · <a href="/">Về chùa</a></p>
+  </main>
+  <script src="/js/aura.js"></script>
+  <script src="/js/merit.js?v=npc2"></script>
+  <script src="/js/stand-math.js?v=1"></script>
+  <script type="module">
+    'use strict';
+
+    import * as THREE from 'three';
+    import { createAvatar, fx3dEnabled, FX3D_SWITCH_KEY } from '/js/world3d/avatar.mjs?v=4';
+    import { createFx3d, registered } from '/js/world3d/fx3d/index.mjs?v=1';
+    import { placeholderParts } from '/js/world3d/fx3d/placeholder.mjs?v=1';
+
+    const byId = id => document.getElementById(id);
+    const canvas = byId('world'), status = byId('status');
+    for (const [id, entries] of [['demon', MERIT.DEMONS], ['aura', AURA.TIERS], ['merit', MERIT.RANKS]]) {
+      for (const entry of entries) {
+        const option = document.createElement('option');
+        option.value = entry.n;
+        option.textContent = entry.name;
+        byId(id).append(option);
+      }
+    }
+    byId('demon').value = '4';
+    byId('aura').value = '5';
+    byId('reduced').checked = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    byId('fx-use').setAttribute('aria-pressed', String(fx3dEnabled()));
+    byId('fx-use').textContent = `${fx3dEnabled() ? 'Tắt' : 'Bật'} Pháp Tướng 3D trong game`;
+    byId('fx-use').addEventListener('click', () => {
+      try {
+        if (fx3dEnabled()) localStorage.removeItem(FX3D_SWITCH_KEY);
+        else localStorage.setItem(FX3D_SWITCH_KEY, '1');
+      } catch (error) { /* Trình duyệt có thể không cho lưu công tắc. */ }
+      location.reload();
+    });
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color('#303a32');
+    const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 80);
+    const target = new THREE.Vector3(0, 1.2, 0);
+    let yaw = 0, pitch = 1.32, distance = 6;
+    function orbit() {
+      camera.position.set(target.x + Math.sin(yaw) * Math.sin(pitch) * distance,
+        target.y + Math.cos(pitch) * distance, target.z + Math.cos(yaw) * Math.sin(pitch) * distance);
+      camera.lookAt(target);
+    }
+    function setView(nextYaw, nextPitch, nextDistance) {
+      if (![nextYaw, nextPitch, nextDistance].every(Number.isFinite)) return;
+      yaw = nextYaw;
+      pitch = THREE.MathUtils.clamp(nextPitch, 0.25, 1.48);
+      distance = THREE.MathUtils.clamp(nextDistance, 3, 42);
+      orbit();
+    }
+    const sky = new THREE.HemisphereLight('#ffe8bf', '#4c5242', 2.7);
+    const sun = new THREE.DirectionalLight('#ffd6a0', 3.2);
+    sun.position.set(-5, 9, 6);
+    const rim = new THREE.DirectionalLight('#b7d0c2', 1.2);
+    rim.position.set(5, 4, -5);
+    scene.add(sky, sun, rim);
+    const floorGeometry = new THREE.CircleGeometry(18, 64);
+    const floorMaterial = new THREE.MeshStandardMaterial({ color: '#8a7960', roughness: 1 });
+    const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+    floor.rotation.x = -Math.PI / 2;
+    scene.add(floor);
+    let renderer = null, avatar = null, frame = 0, last = 0, time = 0, stopped = false;
+    function buildFx() {
+      if (stopped) return;
+      avatar?.dispose();
+      const quality = byId('quality').value, reducedMotion = byId('reduced').checked, mode = byId('mode').value;
+      avatar = createAvatar({ g: 'nam', c: 11, h: 2 }, {
+        quality, reducedMotion,
+        fx3d: mode === 'real' ? true : mode === 'temp' ? host => createFx3d(host, { parts: placeholderParts(), quality, reducedMotion }) : false
+      });
+      scene.add(avatar.group);
+      window.fxDebug = { avatar, camera, scene, renderer, setView, covers: () => ({ ...(avatar.fx?.covers || {}) }) };
+    }
+    function resize() {
+      const rect = canvas.getBoundingClientRect();
+      camera.aspect = rect.width / Math.max(1, rect.height);
+      camera.updateProjectionMatrix();
+      renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.5));
+      renderer.setSize(rect.width, rect.height, false);
+    }
+    function draw(now) {
+      if (stopped) return;
+      const dt = last ? Math.min(0.1, (now - last) / 1000) : 0;
+      last = now;
+      const reducedMotion = byId('reduced').checked;
+      if (!reducedMotion) time += dt;
+      const pose = byId('pose').value, tier = Number(byId('aura').value), rank = Number(byId('merit').value);
+      const demon = Number(byId('demon').value), alpha = Number(byId('alpha').value);
+      const tierDef = AURA.TIERS[tier - 1], color = tierDef?.color || '#ffd36b';
+      const circle = byId('circle').checked;
+      const walking = circle || pose === 'walk', talk = pose === 'talk', sit = !circle && pose === 'sit' ? 'cushion' : false;
+      const avatarYaw = circle ? time * 0.5 + Math.PI / 2 : Number(byId('yaw').value);
+      avatar.group.position.set(circle ? Math.sin(time * 0.5) * 2 : 0, 0, circle ? Math.cos(time * 0.5) * 2 : 0);
+      const bow = !circle && pose === 'bow' ? reducedMotion ? 0.8 : (1 - Math.cos(time * 1.7)) * 0.45 : 0;
+      avatar.update({ name: 'Hắc Phong Ma Khách', id: 'hac-phong', walking, bow, sit, talk, yaw: avatarYaw, now: Date.now(),
+        reducedMotion, quality: byId('quality').value, aura: tier ? { t: tier, color } : null, meritRank: rank,
+        demon: demon ? { n: demon, alpha } : null, fx: { distance: camera.position.distanceTo(avatar.group.position), slot: true } }, dt);
+      const covers = avatar.fx?.covers || {};
+      renderer.render(scene, camera);
+      const labels = [['demon', 'quỷ 3D'], ['lotus', 'sen 3D'], ['aura', 'vỏ khí 3D'], ['merit', 'pháp tướng 3D']];
+      const active = labels.filter(([name]) => covers[name]).map(([, label]) => label);
+      status.textContent = `Đã đăng ký: ${registered().join(', ') || 'chưa có'}. Đang hiện: ${active.join(' · ') || 'chưa có phần 3D'}. ${renderer.info.render.triangles} tam giác · ${renderer.info.render.calls} lượt vẽ.`;
+      frame = requestAnimationFrame(draw);
+    }
+    byId('mode').addEventListener('change', buildFx);
+    byId('quality').addEventListener('change', buildFx);
+    byId('reduced').addEventListener('change', buildFx);
+    byId('night').addEventListener('change', () => {
+      const factor = byId('night').checked ? 0.25 : 1;
+      scene.background.set(byId('night').checked ? '#0d1016' : '#303a32');
+      sky.intensity = 2.7 * factor; sun.intensity = 3.2 * factor; rim.intensity = 1.2 * factor;
+    });
+    document.querySelectorAll('[data-yaw]').forEach(button => button.addEventListener('click', () => setView(Number(button.dataset.yaw), 1.32, 6)));
+    let drag = null;
+    canvas.addEventListener('pointerdown', event => {
+      drag = { x: event.clientX, y: event.clientY };
+      canvas.setPointerCapture(event.pointerId);
+    });
+    canvas.addEventListener('pointermove', event => {
+      if (!drag) return;
+      yaw -= (event.clientX - drag.x) * 0.006;
+      pitch = THREE.MathUtils.clamp(pitch + (event.clientY - drag.y) * 0.006, 0.25, 1.48);
+      drag = { x: event.clientX, y: event.clientY };
+      orbit();
+    });
+    for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) canvas.addEventListener(type, () => { drag = null; });
+    canvas.addEventListener('wheel', event => {
+      event.preventDefault();
+      distance = THREE.MathUtils.clamp(distance * Math.exp(event.deltaY * 0.001), 3, 42);
+      orbit();
+    }, { passive: false });
+    canvas.addEventListener('keydown', event => {
+      if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return;
+      event.preventDefault();
+      if (event.key === 'ArrowLeft') yaw -= 0.12;
+      if (event.key === 'ArrowRight') yaw += 0.12;
+      if (event.key === 'ArrowUp') distance = Math.max(3, distance - 1);
+      if (event.key === 'ArrowDown') distance = Math.min(42, distance + 1);
+      orbit();
+    });
+    const observer = new ResizeObserver(() => { if (renderer && !stopped) resize(); });
+    function stop() {
+      if (stopped) return;
+      stopped = true;
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+      avatar?.dispose();
+      floorGeometry.dispose(); floorMaterial.dispose(); renderer?.dispose();
+    }
+    canvas.addEventListener('webglcontextlost', event => {
+      event.preventDefault(); stop();
+      status.textContent = 'Đã mất kết nối đồ họa. Xin tải lại trang thử.';
+    });
+    document.addEventListener('visibilitychange', () => {
+      if (stopped) return;
+      cancelAnimationFrame(frame); last = 0;
+      if (!document.hidden) frame = requestAnimationFrame(draw);
+    });
+    window.addEventListener('pagehide', stop);
+    try {
+      renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      buildFx(); orbit(); resize(); observer.observe(canvas);
+      frame = requestAnimationFrame(draw);
+    } catch (error) {
+      stop();
+      status.textContent = 'Chưa mở được WebGL2. Xin thử bằng trình duyệt có hỗ trợ đồ họa 3D.';
+    }
+  </script>
+</body>
+</html>

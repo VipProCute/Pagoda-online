@@ -1,7 +1,7 @@
 'use strict';
 
 import * as THREE from 'three';
-import { createAvatar, AVATAR_COLORS } from './avatar.mjs?v=3';
+import { createAvatar, AVATAR_COLORS } from './avatar.mjs?v=4';
 
 // Nhân vật dựng bằng Blender (T-120/T-130), bật bằng localStorage['ta-avatar'] = 'blender'.
 // createGlbAvatar trả CÙNG giao diện với createAvatar: { group, update(state, dt), setLook(look), dispose() }.
@@ -205,7 +205,7 @@ export function createGlbAvatar(initialLook = {}, opts = {}) {
     base.dispose();
   }
   syncLook();
-  return { group, update, setLook, dispose };
+  return { group, update, setLook, dispose, fx: base.fx };
 }
 
 // Chỗ tạo nhân vật chung cho mọi cảnh: tự chọn bản Blender hoặc bản mã theo công tắc.

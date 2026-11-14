@@ -109,6 +109,22 @@
 | T-131 | Kịch bản kiểm giao diện tự động cho bàn cờ (`ui-check.js`) | ✅ Xong · PR #61 | P1 | CORE + KYDAI + OPS | gpt-6.1-terra |
 | T-132 | Sửa lỗi từ đợt soát T-130/T-131 của GPT Sol | ✅ Xong · PR #61 | P1 | CORE + HALL + OPS | Claude Sonnet 5.5 |
 | T-133 | Thử đầu-cuối bàn cờ với máy chủ thật và hai trình duyệt | ✅ Xong · PR thứ hai của đợt Kỳ Đài | P1 | CORE + KYDAI + OPS | Claude Sonnet 5.5 |
+| **Đợt Pháp Tướng 3D** ([docs/KE-HOACH-PHAP-TUONG-3D.md](docs/KE-HOACH-PHAP-TUONG-3D.md)) | | | | | |
+| T-140 | Bảng ý tưởng hình: 4 quỷ hộ thân, đài sen, hào quang | 🔵 Sẵn sàng | P0 | CORE + HALL | — (gợi ý: gpt-image-2.6 + gemini-4-hydrogen-xhigh) |
+| T-141 | Khung hiệu ứng 3D `fx3d` và ba vật liệu (linh thể, vỏ khí, phát sáng) | 🔵 Sẵn sàng | P0 | CORE + HALL | — (gợi ý: gpt-6.1-sol) |
+| T-142 | Bản mẫu Blender: Ma Vương, đài sen vàng, vỏ khí bậc 5 | ⏳ T-140 | P0 | CORE + HALL + KYDAI | — (gợi ý: gpt-6.1-sol viết kịch bản, Điều phối chạy Blender) |
+| T-143 | Toán hành vi quỷ hộ thân `stand-math.js` (thuần, có test) | 🔵 Sẵn sàng | P0 | CORE + HALL | — (gợi ý: gpt-6.1-terra) |
+| T-144 | Nối bản mẫu vào nhân vật sau công tắc `ta-fx3d` 👤 duyệt | ⏳ T-100, T-141, T-142, T-143 | P0 | CORE + HALL | — (gợi ý: gpt-6.1-sol) |
+| T-145 | Quỷ cấp 1, 2, 3 dạng 3D (chung xương, chung clip) | ⏳ T-144 👤 | P1 | CORE + HALL + KYDAI | — (gợi ý: gpt-6.1-sol) |
+| T-146 | Đài sen 3D đủ ba biến thể, nở sen, ngồi thiền trên sen | ⏳ T-144 👤 | P1 | CORE + HALL | — (gợi ý: gpt-6.1-terra) |
+| T-147 | Hào quang bao phủ 3D bậc 1 đến 5 | ⏳ T-144 👤 | P1 | CORE + HALL | — (gợi ý: gpt-6.1-terra) |
+| T-148 | Hào quang bao phủ 3D bậc 6 đến 9 | ⏳ T-147 | P1 | CORE + HALL | — (gợi ý: gpt-6.1-terra) |
+| T-149 | Pháp tướng công đức 6 bậc dạng 3D | ⏳ T-144 👤 | P2 | CORE + HALL + KYDAI | — (gợi ý: gpt-6.1-sol) |
+| T-150 | Chia suất 3D theo khoảng cách và mức chất lượng, đo hiệu năng | ⏳ T-145 → T-148 | P1 | CORE + HALL | — (gợi ý: gpt-6-luna) |
+| T-151 | Bật mặc định, ảnh chụp, Sổ tay, README, NOTICE | ⏳ T-150 | P2 | CORE + DOCS + OPS | — (gợi ý: gemini-3.8-flash-high + gpt-6-luna) |
+| T-154 | Nâng chất bản mẫu: Ma Vương điêu khắc, thân đặc, vỏ khí ra lửa 👤 duyệt (chặn T-145 → T-149) | 🔵 Sẵn sàng | P0 | CORE + HALL + KYDAI | — (gợi ý: Claude Sonnet 5.5 dùng Blender MCP + gpt-6.1-sol sửa shader) |
+| T-152 | (Tùy chọn) Chụp lại ảnh 2D từ mô hình 3D | ⚪ Hộp thư đến 👤 | P3 | CORE + HALL | — |
+| T-153 | Nghiệm thu chéo đợt Pháp Tướng 3D | ⏳ T-151 | P1 | CORE + HALL | — (gợi ý: gemini-4-argon-high soát hình, gpt-6.1-sol soát mã) |
 
 Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạm `package.json`). **T-005**, **T-007**, **T-002** làm song song được với nhóm trên.
 Đợt 2026-11: làm **T-003, T-004, T-006** trước (T-004 gỡ nút thắt `package.json` cho mọi thẻ thêm file JS; T-006 là cổng "CI xanh"). Sau đó theo lịch 6 đợt ở [docs/KE-HOACH-DOT-2026-11.md §10.3](docs/KE-HOACH-DOT-2026-11.md#103-lịch-theo-đợt-và-khóa-vùng-nóng).
@@ -1265,7 +1281,8 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
   - [x] Trang phục NPC nữ (`npcFashion`) và các kiểu tóc giống hình 2D; Obito áo choàng đen mây đỏ, mặt nạ cam xoáy
   - [x] Dáng nhân vật thon, mềm hơn (bớt khối hộp), giữ số tam giác thấp cho điện thoại
   - [x] Hết hạn hào quang thì tắt đúng giờ máy chủ; tôn trọng giảm chuyển động
-  - [ ] npm run check sạch; test avatar và hall-view3d đạt; trang thử /world3d-avatar.html có đủ các biến thể
+  - [x] npm run check sạch; test avatar và hall-view3d đạt; trang thử /world3d-avatar.html có đủ các biến thể
+- **Soát lại 14/11 (Điều phối, trước T-144, checklist ORCHESTRATION §7)**: mã T-100 đã nằm trong nhánh `claude/game-graphics-3d-redesign-9b309a`. `npm run check` sạch; `node --test test/world3d-avatar.test.js test/hall-view3d.test.js` 21/21; `npm test` 962 đạt, 0 trượt, 3 bỏ qua (không có PostgreSQL). Mở `/world3d-avatar.html` bộ "Chín hào quang · sáu pháp tướng · bốn quỷ": hiện đủ, không lỗi console. Diff đúng phạm vi (ngoại lệ đã khai: `scenes/arena.mjs` tăng `?v=`). **Kết luận: đạt, coi như chốt để làm T-144.** Vẫn chưa xem tận mắt trang phục cô nương trong game thật.
 - **Ghi chú bàn giao**: Avatar 11/11, hall-view3d 10/10, hall-npcs 4/4, scene-arena 10/10 đạt khi chạy trực tiếp; cú pháp các file sửa và module trang thử đạt. `npm run check` / `node --test` bị sandbox chặn spawn EPERM; chờ điều phối chạy lại và xem trình duyệt. Hiệu ứng Canvas dùng hình tĩnh chung có nhịp thở; chi tiết chuyển động được giản lược. Một dòng ngoài khu vực: tăng import avatar ở scenes/arena.mjs để tránh cache cũ. Báo cáo: BAN-GIAO-T-100.md (không commit); để nguyên chưa commit theo chỉ dẫn điều phối.
 
 ### T-101 · Nhạc riêng cho từng môn cờ
@@ -1522,6 +1539,184 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
   - [ ] ≤ 1.200 tam giác mỗi nhân vật, `.glb` ≤ 180 KB; 60 nhân vật trên màn vẫn ≥ 30 khung/giây ở mức Thấp (số đo trong bàn giao)
   - [ ] Ảnh so sánh cũ/mới gửi chủ dự án; **chưa** thay `avatar.mjs`
 - **Ngoài phạm vi**: thay nhân vật trong game.
+
+---
+
+## Đợt Pháp Tướng 3D · đài sen, hào quang bao phủ, quỷ hộ thân
+
+Thiết kế, hợp đồng mã, ngân sách và định tuyến mô hình: [docs/KE-HOACH-PHAP-TUONG-3D.md](docs/KE-HOACH-PHAP-TUONG-3D.md) (đọc §0, §1, §2 trước khi làm bất kỳ thẻ nào dưới đây). Trước khi giao mỗi thẻ, Điều phối viết đặc tả chi tiết vào `docs/phap-tuong/T-xxx-DAC-TA.md` theo mẫu `docs/ky-dai/T-115-DAC-TA.md` (file, chuỗi để tìm chỗ sửa, mã mẫu, lệnh kiểm). Quy tắc chung của đợt: **chỉ T-144 được chạm `public/js/world3d/avatar.mjs`**; không đổi máy chủ, giao thức, `hall.js`, bản 2D.
+
+### T-140 · Bảng ý tưởng hình: 4 quỷ hộ thân, đài sen, hào quang
+- **Trạng thái**: 🟣 Chờ soát (Điều phối đã xem tận mắt 6 ảnh, 14/11)
+- **Ưu tiên**: P0 · **Gói ngữ cảnh**: CORE + HALL
+- **Khu vực chạm**: docs/phap-tuong/anh/* (mới), docs/phap-tuong/BANG-Y-TUONG.md (mới)
+- **Người làm**: Điều phối gọi `gpt-image-2.6` (`/v1/images/edits`, có ảnh tham chiếu; không cần dự phòng); `gemini-4-hydrogen-xhigh` soạn phiếu chấm · **Nhánh**: claude/game-graphics-3d-redesign-9b309a
+- **Mục tiêu**: có hình chuẩn ba mặt cho người dựng mô hình, bám sát ảnh 2D đang có.
+- **Tiêu chí xong**:
+  - [x] Mỗi cấp quỷ (1 đến 4) một tấm ba mặt trước / nghiêng / sau, nửa thân trên, dưới tan thành khói; lấy `public/img/fx/demon-N.webp` làm ảnh tham chiếu; đúng bảng màu ở KE-HOACH-PHAP-TUONG-3D §1.1
+  - [x] Đài sen: một tấm nhìn nghiêng 30° + nhìn từ trên, ba tầng cánh 16/12/8; ba biến thể vàng, hồng, pha lê (số cánh trong ảnh AI không đếm được chính xác 16/12/8; kịch bản Blender dựng đúng số)
+  - [x] Hào quang: vỏ khí ôm người bậc 1, bậc 5 và quang bối bậc 6 gộp trong một tấm ba ô
+  - [x] `BANG-Y-TUONG.md` ghi lời nhắc đã dùng, mô hình, ngày; kèm **phiếu chấm hình** (6 mục, thang 1 đến 5) để soát ảnh render ở T-142, T-145
+  - [x] Lời nhắc không nêu tên nhân vật hay tác phẩm nào khác; đã thử `gemini-4-hydrogen-xhigh` qua Codex CLI (`--sandbox read-only`, có ảnh đính kèm): **dùng được**, tự đọc file, nhìn được ảnh (BANG-Y-TUONG §5)
+- **Ngoài phạm vi**: đưa ảnh vào `public/`.
+
+### T-141 · Khung hiệu ứng 3D `fx3d` và ba vật liệu
+- **Trạng thái**: 🟣 Chờ soát. Điều phối soát 14/11: `npm run check` sạch (180 file), `node --test test/world3d-fx.test.js` 16/16; đọc mã `index.mjs`, `materials.mjs` khớp đặc tả; mở `/world3d-fx.html` trong trình duyệt (máy chủ thật, cổng 3141): hình khối tạm hiện đủ quỷ, sen, vỏ khí, không lỗi console, ~3.000 tam giác, 51 lượt vẽ.
+- **Ưu tiên**: P0 · **Gói ngữ cảnh**: CORE + HALL
+- **Khu vực chạm**: public/js/world3d/fx3d/index.mjs, assets.mjs, materials.mjs, placeholder.mjs (mới), public/world3d-fx.html (mới, trang thử), test/world3d-fx.test.js (mới)
+- **Người làm**: gpt-6.1-sol (Codex CLI qua proxy, 1 vòng) · đặc tả [docs/phap-tuong/T-141-DAC-TA.md](docs/phap-tuong/T-141-DAC-TA.md) · **Nhánh**: claude/game-graphics-3d-redesign-9b309a
+- **Mục tiêu**: có khung nhận trạng thái nhân vật và vẽ hiệu ứng 3D, kèm ba vật liệu dùng chung, chạy được trên trang thử với hình khối tạm (hình cầu, hình trứng) khi chưa có `.glb`.
+- **Tiêu chí xong**:
+  - [x] `createFx3d(host, opts)` đúng hợp đồng ở KE-HOACH-PHAP-TUONG-3D §2.1: `update(state, dt, ctx)`, `covers`, `setQuality`, `dispose` (thêm `setReducedMotion`); phần con đăng ký qua `register(name, factory)`
+  - [x] `assets.mjs`: `load(url)` có bộ đệm theo URL và đếm tham chiếu (`release`), GLTFLoader + SkeletonUtils.clone; lỗi hoặc 404 trả `null`, không ghi console (có test)
+  - [x] `materials.mjs`: `spiritMaterial`, `flameShellMaterial({ color, height, displace, opacity, side })` (vỏ hai lớp làm bằng hai lưới, không dùng tham số `layers`), `glowMaterial`; ảnh nhiễu 64×64 sinh bằng mã, dùng chung
+  - [x] Trang thử `/world3d-fx.html`: đủ bảng chọn, 4 nút góc nhanh, chế độ đêm, kéo để xoay (xem tận mắt)
+  - [x] Test: `assets` giả trả `null` thì `covers` toàn `false`; `dispose` gọi `dispose()` trên mọi geometry, material đã tạo; giảm chuyển động thì không tạo `THREE.Points`
+  - [x] `npm run check` sạch; `node --test test/world3d-fx.test.js` đạt
+  - [ ] Soát chéo bằng gemini-4-argon-high: chưa làm (Điều phối tự đọc mã)
+- **Ngoài phạm vi**: chạm `avatar.mjs`; mô hình thật.
+
+### T-142 · Bản mẫu Blender: Ma Vương, đài sen vàng, vỏ khí bậc 5
+- **Trạng thái**: 🟣 Chờ soát (👤 chờ chủ dự án duyệt hình). Kết quả soát hình ở [docs/phap-tuong/T-142-SOAT-HINH.md](docs/phap-tuong/T-142-SOAT-HINH.md): Ma Vương 4,00/5 (vừa đạt theo thợ soát; Điều phối thấy còn thô, thua ảnh 2D), đài sen 3,83/5 (**chưa đạt**, gần ngưỡng), vỏ khí nhận.
+- **Ưu tiên**: P0 · **Gói ngữ cảnh**: CORE + HALL + KYDAI
+- **Khu vực chạm**: tools/blender/fx/build_demon.py, build_lotus.py, build_aura.py, README.md (mới), public/models/fx/demon-4.glb, lotus.glb, aura-kit.glb (mới, sinh bởi công cụ), docs/phap-tuong/anh/* (ảnh render), docs/phap-tuong/T-142-SOAT-HINH.md
+- **Người làm**: kịch bản Ma Vương gpt-6.1-sol (3 vòng); đài sen gpt-6.1-terra (3 vòng; lượt đầu và một lượt vòng 2 hỏng vì gọi apply_patch qua PowerShell, chạy lại) rồi Claude Sonnet 5.5 viết lại phần dựng cánh (dự phòng sau 3 vòng); vỏ khí + README gpt-6.1-terra (1 vòng); Điều phối chạy Blender 5.3, sửa vặt tên engine `BLENDER_EEVEE_NEXT` → `BLENDER_EEVEE`; `gemini-4-hydrogen-xhigh` chấm 3 vòng · đặc tả [docs/phap-tuong/T-142-DAC-TA.md](docs/phap-tuong/T-142-DAC-TA.md) · **Nhánh**: claude/game-graphics-3d-redesign-9b309a
+- **Mục tiêu**: ba tài nguyên 3D đầu tiên đạt phiếu chấm hình, đúng ngân sách.
+- **Tiêu chí xong**:
+  - [x] Kịch bản theo quy ước của `tools/blender/avatar/build.py`: biến `REPO`, `OUT`, `PREVIEW`; cảnh riêng, không lưu `.blend`, hạt giống cố định; `OUT=['check']` in số tam giác và dung lượng (đã chạy cả ba bằng `blender -b --factory-startup`)
+  - [x] Ma Vương: 3.530 tam giác, 250 KB; 17 xương, 8 clip đúng tên; `COLOR_0` + `COLOR_1` có trong `.glb` (đọc lại tệp); gốc ở thắt lưng, mặt nhìn +Z
+  - [x] Đài sen: 808 tam giác, 36 KB; bốn nút `petals0`, `petals1`, `petals2`, `pod`; vật liệu `petal`, `pod`
+  - [x] `aura-kit.glb`: lưới `shell` hình trứng 320 tam giác, 10 KB, UV chạy dọc
+  - [ ] Ảnh 4 góc của từng tài nguyên: có; phiếu chấm ≥ 4/5: **Ma Vương đạt vừa ngưỡng, đài sen chưa đạt (3,83)**
+  - [x] Hiện đúng trên `/world3d-fx.html` (ảnh trong T-142-SOAT-HINH.md)
+- **Ngoài phạm vi**: quỷ cấp 1 đến 3; sen hồng, sen pha lê (chỉ khác vật liệu, làm ở T-146).
+
+### T-143 · Toán hành vi quỷ hộ thân `stand-math.js`
+- **Trạng thái**: 🟣 Chờ soát. Điều phối soát 14/11: `npm run check` sạch, `node --test test/stand-math.test.js` 10/10; thử làm hỏng (bỏ nhánh vái, đổi giảm chấn c = 1) thì test đỏ. Điều phối sửa vặt: `slots` nhận `list` không phải mảng, thêm chú thích đầu file.
+- **Ưu tiên**: P0 · **Gói ngữ cảnh**: CORE + HALL
+- **Khu vực chạm**: public/js/stand-math.js (mới, UMD thuần như `view-math.js`), test/stand-math.test.js (mới)
+- **Người làm**: gpt-6.1-terra (Codex CLI qua proxy, 1 vòng) · đặc tả [docs/phap-tuong/T-143-DAC-TA.md](docs/phap-tuong/T-143-DAC-TA.md) · **Nhánh**: claude/game-graphics-3d-redesign-9b309a
+- **Mục tiêu**: mọi phép tính của hành vi quỷ nằm trong một module thuần, test được bằng node.
+- **Tiêu chí xong**:
+  - [x] `ANCHOR[n]` (chỗ đứng và chiều cao của 4 cấp, đúng bảng §1.1); `spring(pos, vel, target, dt, k = 18, c = 7)` trả `{ pos, vel }` (thêm `springVec`, `turn` cho quay trễ 0,25 giây)
+  - [x] `poseOf(state)` trả một trong `sit | scoff | peek | drift | idle` theo ưu tiên ngồi > vái > nói > đi > đứng; `phaseOf(prevN, n, t)` trả `emerge | steady | vanish`
+  - [x] `tauntOf(id, now)` trả `null | 'taunt1' | 'taunt2'`, ổn định theo hạt giống `id + floor(now / 10000)`
+  - [x] `slots(list, self, quality, kind)` trả tập id được cấp suất 3D: luôn có mình, còn lại theo khoảng cách, số lượng đúng bảng §2.4 (`kind` = `demon` hoặc `aura`)
+  - [x] Không đụng DOM, không phụ thuộc gì, dùng được cả bằng `require` lẫn `<script>` (AGENTS §3.10; test chạy bằng `vm` không có `module`)
+  - [x] Test: lò xo hội tụ dưới 1 cm sau 1,5 giây và không vọt quá 15%; `dt` lớn (0,5 giây) không phát nổ; đủ các nhánh ưu tiên; `slots` đúng số lượng ở ba mức
+  - [ ] Soát chéo bằng gpt-6.1-sol: chưa làm (để dành hạn mức GPT cho T-141, T-142, T-144; Điều phối tự đọc mã)
+- **Ngoài phạm vi**: Three.js.
+
+### T-144 · Nối bản mẫu vào nhân vật sau công tắc `ta-fx3d`
+- **Trạng thái**: 🟣 Chờ soát · 👤 **chủ dự án duyệt bản mẫu** trước khi làm T-145 → T-149. Điều phối soát 14/11: `npm run check` sạch (183 file); `node --test test/world3d-avatar.test.js test/world3d-fx.test.js test/hall-view3d.test.js test/world3d-avatar-glb.test.js test/stand-math.test.js` 71/71; `npm test` 1001 đạt, 0 trượt, 3 bỏ qua (trước đợt: 962/0/3). Đọc toàn bộ diff `avatar.mjs`, `index.mjs`: đúng 6 chỗ nối + `?v=`. Xem trong game thật (máy chủ cục bộ cổng 3141, Tàng Kinh Các 3D): bật công tắc thấy Ma Vương 3D sau lưng, sen vàng, vỏ khí; tắt thì y như cũ.
+- **Ưu tiên**: P0 · **Gói ngữ cảnh**: CORE + HALL
+- **Khu vực chạm**: public/js/world3d/avatar.mjs (điểm nối `fx3d`, điều kiện `covers`, nhãn tên vẽ sau cùng), public/js/world3d/fx3d/demon.mjs, lotus.mjs, aura.mjs (mới), public/js/world3d/index.mjs (khoảng cách, suất), avatar-glb.mjs, scenes/arena.mjs, scenes/yard.mjs, view3d-ui.js, world3d-test.html, world3d-avatar.html (chỉ `?v=`), public/world3d-fx.html, public/index.html (stand-math, `?v=`), test/world3d-avatar.test.js, test/world3d-fx.test.js
+- **Người làm**: gpt-6.1-sol (Codex CLI qua proxy, 1 vòng) · đặc tả [docs/phap-tuong/T-144-DAC-TA.md](docs/phap-tuong/T-144-DAC-TA.md) · **Nhánh**: claude/game-graphics-3d-redesign-9b309a. Điều phối sửa vặt sau khi xem trình duyệt: viền Fresnel quỷ `#ff7a1a` → `#a8300c` (trước đó cả con quỷ thành khối cam trong suốt); nhãn tên `renderOrder = 6` (trước bị quỷ che); quỷ của chính mình mờ sớm hơn (từ 2,5 m, tối thiểu 30%) vì ở góc thứ ba máy quay ngay sau lưng, Ma Vương che kín nhân vật.
+- **Mục tiêu**: bật `localStorage['ta-fx3d'] = '1'` thì trong game thật thấy Ma Vương 3D đứng sau lưng như linh thể hộ thân, đài sen vàng 3D, vỏ khí bậc 5; tắt thì y như hiện nay.
+- **Tiêu chí xong**:
+  - [x] `demon.mjs` dùng `stand-math.js`: trồi lên, bám theo có trễ (lò xo), quay theo trễ 0,25 giây, clip theo tư thế (đi `drift`, vái `scoff`, nói `peek`, đứng `idle` + `taunt`), tan khi hết; `state.demon.alpha` điều khiển độ đặc (có test vị trí; hoạt ảnh từng clip **chưa xem tận mắt** trong trình duyệt vì khung xem bị ẩn, chỉ xem ảnh tĩnh)
+  - [x] `covers.x = true` thì `avatar.mjs` không tạo sprite của phần đó; `.glb` lỗi thì sprite hiện như cũ (có test)
+  - [x] Góc nhìn thứ nhất: ẩn hiệu ứng của chính mình (`hidden`, có test); giảm chuyển động: tư thế tĩnh, không hạt (có test)
+  - [ ] Thứ tự vẽ đúng ở 4 góc: đã chụp trước / xéo / sau trên `/world3d-fx.html`; **lỗi thấy được**: nhìn từ sau thấy mắt và răng phát sáng của quỷ xuyên qua đầu (lớp phát sáng không bị che); chưa có ảnh góc ngang tin cậy
+  - [x] `npm run check` sạch; test khu vực 71/71; `npm test` 1001/0/3, không giảm
+  - [ ] Ảnh gửi chủ dự án: có ảnh trong game bật/tắt (docs/phap-tuong/anh/game-ta-fx3d-*.jpg) nhưng trên **nhân vật thử** (đặt công đức/hào quang chỉ ở trình duyệt), **không** phải Hắc Phong Ma Khách (NPC chọn ngẫu nhiên theo đợt, lúc thử không xuất hiện ở Tàng Kinh Các); chưa có đoạn quay
+- **Ngoài phạm vi**: bật mặc định; quỷ cấp 1 đến 3.
+
+### T-145 · Quỷ cấp 1, 2, 3 dạng 3D
+- **Trạng thái**: ⏳ Chờ T-144 và 👤 duyệt bản mẫu · **Ưu tiên**: P1 · **Gói ngữ cảnh**: CORE + HALL + KYDAI
+- **Khu vực chạm**: tools/blender/fx/build_demon.py, public/models/fx/demon-1.glb, demon-2.glb, demon-3.glb, public/js/world3d/fx3d/demon.mjs (bảng theo cấp), docs/phap-tuong/anh/*
+- **Người làm**: — (gợi ý: gpt-6.1-sol; chấm hình: gemini-4-hydrogen-xhigh) · **Nhánh**: —
+- **Tiêu chí xong**:
+  - [ ] Ba mô hình đúng ngân sách §2.4; cấp 2 và 3 dùng chung xương và clip với cấp 4; cấp 1 xương rút gọn, ngồi trên vai, có clip `peek` riêng
+  - [ ] Cấp 2 cánh dơi đập chậm (xương `wing.L/R`); cấp 3 có lớp lửa tím đen (vỏ khí nhỏ quanh thân)
+  - [ ] Phiếu chấm hình ≥ 4/5 cho từng cấp; ảnh 4 góc
+  - [ ] Đổi cấp trong lúc đang hiện (công đức tụt mốc): quỷ cũ tan, quỷ mới trồi lên
+- **Ngoài phạm vi**: `avatar.mjs`.
+
+### T-146 · Đài sen 3D đủ ba biến thể, nở sen
+- **Trạng thái**: ⏳ Chờ T-144 và 👤 duyệt · **Ưu tiên**: P1 · **Gói ngữ cảnh**: CORE + HALL
+- **Khu vực chạm**: public/js/world3d/fx3d/lotus.mjs, public/js/world3d/fx3d/materials.mjs (thêm vật liệu ngọc, pha lê), test/world3d-fx.test.js
+- **Người làm**: — (gợi ý: gpt-6.1-terra; soát: gpt-6.1-sol) · **Nhánh**: —
+- **Tiêu chí xong**:
+  - [ ] Sen vàng (bậc 2 đến 7), sen hồng trong mờ (bậc 8), sen pha lê đổi màu theo góc nhìn (bậc 9), chung `lotus.glb`
+  - [ ] Nở sen 1,2 giây khi hào quang bật hoặc lên bậc (ba tầng xòe lần lượt); giảm chuyển động thì hiện sẵn dạng nở
+  - [ ] Nhân vật đứng và ngồi trên gương sen không xuyên cánh, kể cả khi ngồi bồ đoàn, ghế đá (kiểm ba tư thế trên trang thử)
+  - [ ] Đốm sáng bay lên ở mức Vừa trở lên; kích thước tăng theo bậc như 2D (`72 + (tier - 2) * 3.5`)
+- **Ngoài phạm vi**: `avatar.mjs`.
+
+### T-147 · Hào quang bao phủ 3D bậc 1 đến 5
+- **Trạng thái**: ⏳ Chờ T-144 và 👤 duyệt · **Ưu tiên**: P1 · **Gói ngữ cảnh**: CORE + HALL
+- **Khu vực chạm**: public/js/world3d/fx3d/aura.mjs, tools/blender/fx/build_aura.py và public/models/fx/aura-kit.glb (thêm vầng sáng, nguyên anh), test/world3d-fx.test.js
+- **Người làm**: — (gợi ý: gpt-6.1-terra; soát: gpt-6.1-sol) · **Nhánh**: —
+- **Tiêu chí xong**:
+  - [ ] Đúng bảng §1.3 cho bậc 1 đến 5: vỏ khí theo màu bậc, 3 dải khí lành bay vòng thật quanh thân, kim đan, vầng sáng sau đầu gắn xương đầu, nguyên anh có vệt đuôi, thần quang hai lớp
+  - [ ] Mờ dần 20 giây cuối theo `fade`; hết hạn thì tắt đúng giờ máy chủ (`state.now`)
+  - [ ] Mỗi bậc một ảnh chụp 2 góc trên trang thử, đặt cạnh ảnh 2D cùng bậc
+- **Ngoài phạm vi**: bậc 6 đến 9; `avatar.mjs`.
+
+### T-148 · Hào quang bao phủ 3D bậc 6 đến 9
+- **Trạng thái**: ⏳ Chờ T-147 (chung `aura.mjs`) · **Ưu tiên**: P1 · **Gói ngữ cảnh**: CORE + HALL
+- **Khu vực chạm**: public/js/world3d/fx3d/aura.mjs, tools/blender/fx/build_aura.py và aura-kit.glb (thêm quang bối), test/world3d-fx.test.js
+- **Người làm**: — (gợi ý: gpt-6.1-terra; soát: gemini-4-argon-high) · **Nhánh**: —
+- **Tiêu chí xong**:
+  - [ ] Quang bối chạm nổi có trời sao thị sai; năm ngũ hành châu quỹ đạo nghiêng; cột sáng + cánh sen rơi vẽ theo lô (`InstancedMesh`, tối đa 24 cánh); tia sét bậc 9 đổi hình mỗi lần giáng, nhịp như 2D
+  - [ ] Giảm chuyển động: không sét chớp, không cánh rơi; mức Thấp: bỏ cột sáng và cánh rơi
+  - [ ] Ảnh chụp như T-147
+- **Ngoài phạm vi**: `avatar.mjs`.
+
+### T-149 · Pháp tướng công đức 6 bậc dạng 3D
+- **Trạng thái**: ⏳ Chờ T-144 và 👤 duyệt · **Ưu tiên**: P2 · **Gói ngữ cảnh**: CORE + HALL + KYDAI
+- **Khu vực chạm**: tools/blender/fx/build_merit.py, public/models/fx/merit-kit.glb, public/js/world3d/fx3d/merit.mjs, test/world3d-fx.test.js
+- **Người làm**: — (gợi ý: gpt-6.1-sol; chấm hình: gemini-4-hydrogen-xhigh) · **Nhánh**: —
+- **Tiêu chí xong**:
+  - [ ] Sáu bậc đúng `MERIT.RANKS`: vòng linh quang, vương miện sen pha lê, đôi cánh lửa (vỗ bằng xương), bánh xe kiếm, pháp luân rồng hai vòng xoay ngược, thánh luân chín tầng
+  - [ ] Tổng ≤ 3.000 tam giác, `.glb` ≤ 180 KB; cộng hưởng màu với hào quang cúng dường (`tint`) như 2D
+  - [ ] Công đức đúng 666: không hiện pháp tướng, hiện Ma Vương (giữ luật hiện có)
+- **Ngoài phạm vi**: `avatar.mjs`.
+
+### T-150 · Chia suất 3D, mức chất lượng, đo hiệu năng
+- **Trạng thái**: ⏳ Chờ T-145 → T-148 · **Ưu tiên**: P1 · **Gói ngữ cảnh**: CORE + HALL
+- **Khu vực chạm**: public/js/world3d/fx3d/budget.mjs (mới), fx3d/index.mjs, public/js/world3d/index.mjs (gọi `slots` mỗi 0,5 giây), public/world3d-fx.html (chế độ 60 nhân vật)
+- **Người làm**: — (gợi ý: gpt-6-luna; soát: gpt-6.1-sol) · **Nhánh**: —
+- **Tiêu chí xong**:
+  - [ ] Suất đúng bảng §2.4 ở ba mức; đổi suất không giật (mờ chéo 0,3 giây giữa sprite và 3D)
+  - [ ] `.glb` chỉ tải khi trong cảnh có người mang hiệu ứng đó (kiểm bằng thẻ Mạng của trình duyệt)
+  - [ ] Số đo trong bàn giao: 60 nhân vật, 10 quỷ, 10 hào quang, ba mức, khung hình/giây và số lượt vẽ; mức Thấp ≥ 30 khung hình/giây
+  - [ ] Rời cảnh hoặc `stop()` giải phóng hết (đếm `renderer.info.memory` về mức trước khi bật)
+
+### T-151 · Bật mặc định, ảnh chụp, Sổ tay, README, NOTICE
+- **Trạng thái**: ⏳ Chờ T-150 · **Ưu tiên**: P2 · **Gói ngữ cảnh**: CORE + DOCS + OPS
+- **Khu vực chạm**: public/js/world3d/fx3d/index.mjs (công tắc `ta-fx3d` thành mặc định bật, `'0'` để tắt), tools/ui-harness (thêm trang `/world3d-fx.html`), README.md, public/js/guide.js (mục hào quang, quỷ), public/img/NOTICE.txt, public/data/NOTICE.txt, docs/agents/ARCHITECTURE.md, public/index.html (`?v=`)
+- **Người làm**: — (gợi ý: gemini-3.8-flash-high viết chữ, gpt-6-luna làm ui-harness) · **Nhánh**: —
+- **Tiêu chí xong**:
+  - [ ] Mặc định bật khi đang ở 3D; máy tự hạ mức thì suất tự giảm theo
+  - [ ] Ảnh chụp 4 góc × 4 cấp quỷ × 3 mức; Sổ tay và README có đoạn mô tả ngắn, giọng nhà chùa
+  - [ ] NOTICE ghi mô hình tự dựng bằng kịch bản trong `tools/blender/fx/`; ARCHITECTURE thêm thư mục `fx3d/`
+
+### T-152 · (Tùy chọn) Chụp lại ảnh 2D từ mô hình 3D
+- **Trạng thái**: ⚪ Hộp thư đến · 👤 chủ dự án quyết có làm không · **Ưu tiên**: P3
+- **Ý**: render `demon-N.webp`, `lotus-*.webp` từ mô hình 3D (như T-126a với quân cờ) để bản 2D, bảng xem trước ở Võ Học Các và Sân đấu đồng nhất với 3D. Ảnh hiện tại là hình vẽ tay đẹp, chỉ nên thay khi bản render không kém hơn.
+
+### T-154 · Nâng chất bản mẫu: Ma Vương điêu khắc, thân đặc có khối, vỏ khí ra lửa
+- **Trạng thái**: 🔵 Sẵn sàng · **chặn T-145 → T-149** (không làm hàng loạt khi bản mẫu còn thua ảnh 2D) · **Ưu tiên**: P0 · **Gói ngữ cảnh**: CORE + HALL + KYDAI
+- **Khu vực chạm**: tools/blender/fx/build_demon.py, build_lotus.py, public/models/fx/*.glb, public/js/world3d/fx3d/materials.mjs, demon.mjs, aura.mjs, public/js/world3d/scenes/arena.mjs (truyền `fx.distance`), test/world3d-fx.test.js
+- **Nguồn**: nghiệm thu độc lập đợt 0 ngày 14/11 (Opus) và nhận xét của Điều phối: bật `ta-fx3d` hiện **kém hơn** bản 2D.
+- **Tiêu chí xong**:
+  - [ ] Ma Vương dựng lại theo lối điêu khắc (Blender MCP: sculpt/remesh rồi bake pháp tuyến hoặc màu đỉnh), có ba mắt, giáp vai chạm, sừng xoắn, vuốt, cơ ngực rõ; vẫn trong ngân sách ≤ 4.000 tam giác (cho phép thêm một ảnh pháp tuyến ≤ 512 px nếu cần)
+  - [ ] Thân quỷ **đặc** ở phần ngực, đầu (không còn là bóng đỏ trong suốt): viền sáng và phần tan khói chỉ ở mép và nửa dưới; trong game đọc ra hình ở khoảng cách máy quay mặc định
+  - [ ] Sửa nhìn xuyên (C2): lượt ghi chiều sâu trước, hoặc `FrontSide` + `depthWrite` cho thân; mắt, răng không sáng xuyên qua đầu khi nhìn từ sau
+  - [ ] Vỏ khí ra lửa, không còn là "vỏ trứng thủy tinh": mép trên bập bùng, giữa thân gần như trong suốt; thêm `colorspace_fragment` (C6)
+  - [ ] Đài sen đạt phiếu chấm ≥ 4/5, sắc vàng ấm như bản 2D
+  - [ ] Sân đấu truyền khoảng cách và suất cho hiệu ứng (C3); thứ tự vẽ giữa nhiều người (C5); lệch một khung của quỷ (C7); test cho lượt tải lỗi rồi tải lại (C4 đã sửa mã, chưa có test)
+  - [ ] Ảnh bật / tắt đặt cạnh nhau, **👤 chủ dự án duyệt** rồi mới mở T-145 → T-149
+
+### T-153 · Nghiệm thu chéo đợt Pháp Tướng 3D
+- **Trạng thái**: ⏳ Chờ T-151 · **Ưu tiên**: P1 · **Gói ngữ cảnh**: CORE + HALL
+- **Người làm**: — (gợi ý: gemini-4-argon-high soát hình và chữ, gpt-6.1-sol soát mã, Điều phối chốt) · **Nhánh**: —
+- **Tiêu chí xong**:
+  - [ ] Soát theo checklist ORCHESTRATION §7 trên toàn bộ diff của đợt; lỗi tìm được ghi thành thẻ sửa
+  - [ ] Chơi thử game thật: bốn cảnh, hai góc nhìn, ba mức chất lượng, giảm chuyển động, công đức âm dần từ −1 tới −1000, cúng dường thử (`DONATION_MODE=test`) lên đủ 9 bậc
+  - [ ] Ghi rõ phần chưa thử được (điện thoại thật, PostgreSQL)
 
 ---
 
