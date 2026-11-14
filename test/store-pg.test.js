@@ -65,6 +65,8 @@ function fill(db) {
   db.kydao.games.push({ id: 16, at: 1, game: 'chess', a: { uid: 'u_a' }, b: { uid: 'u_b' }, result: 'a' });
   db.kydao.active.u_a = 16;
   db.kydao.pairs['2026-11-11|u_a|u_b|chess'] = 3;
+  db.kydao.shop = { on: true, price: 50000, prices: { 'field:volcano': 80000 }, updatedAt: 123 };
+  db.kydao.unlocks.u_a = { 'field:volcano': { at: 5, code: 'CD123456' }, 'stones:cosmos': { at: 9, code: 'CD654321' } };
   db.records.log.push({ id: 17, at: 1, cat: 'xiangqi.now', kind: 'season', name: 'Ánh', v: 1300, season: '2026-10' });
   db.seq = 200;
   return db;
@@ -312,11 +314,11 @@ test('PostgreSQL: kho dữ liệu', async t => {
     delete db.merit.g_b; delete db.linkedGuests.g_b; delete db.authSessions.hash1; delete db.auras.u_a;
     delete db.martial.profiles.u_a; delete db.martial.sessions[5]; delete db.martial.ledger['session:5'];
     db.chat.shift(); db.prayers.pop(); db.incense.length = 0; db.donations.pop(); db.martial.matches.length = 0; db.martial.audit.length = 0;
-    delete db.kydao.ratings.u_a; delete db.kydao.active.u_a; db.kydao.pairs = {}; db.kydao.games.length = 0; db.records.log.length = 0;
+    delete db.kydao.ratings.u_a; delete db.kydao.active.u_a; delete db.kydao.unlocks.u_a; db.kydao.pairs = {}; db.kydao.games.length = 0; db.records.log.length = 0;
     a.save();
     assert.equal(await a.flush(), true);
     assert.equal(await cnt('merit'), 1);
-    for (const sec of ['linkedGuests', 'authSessions', 'auras', 'martial.profiles', 'martial.sessions', 'martial.ledger', 'incense', 'martial.matches', 'martial.audit', 'kydao.ratings', 'kydao.active', 'kydao.pairs', 'kydao.games', 'records.log']) assert.equal(await cnt(sec), 0, sec);
+    for (const sec of ['linkedGuests', 'authSessions', 'auras', 'martial.profiles', 'martial.sessions', 'martial.ledger', 'incense', 'martial.matches', 'martial.audit', 'kydao.ratings', 'kydao.active', 'kydao.pairs', 'kydao.unlocks', 'kydao.games', 'records.log']) assert.equal(await cnt(sec), 0, sec);
     assert.equal(await cnt('chat'), 1);
     assert.equal(await cnt('prayers'), 2);
     assert.equal(await cnt('donations'), 1);

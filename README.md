@@ -78,10 +78,17 @@ Bên cạnh giao diện 2D truyền thống, Chùa Tâm An hỗ trợ không gia
   - Cờ vua: Tốt phong cấp thì bàn chấn động, các quân khác nảy lên. Hết ván (cả 5 môn) có hiệu ứng chiến thắng rồi mới hiện bảng kết quả.
   - Giữa bàn cờ tướng và cờ úp là một dòng sông nước chảy (cả bàn 2D và 3D), không phụ thuộc skin.
   - Tắt hiệu ứng: bật "giảm chuyển động" của máy hoặc tắt hiệu ứng ở Chánh điện (công tắc lưu `ta-fx`) thì bàn cờ không rung, sông đứng yên.
+- **Bộ đá cho cờ vây và caro**:
+  - Ở cờ vây và caro, nút trong bảng cờ đổi thành "Bộ đá". Có 8 bộ: Tinh Hà, Lâm Tuyền, Bích Hải, Dung Nham, Băng Phách, Liên Tử, Lôi Châu, Kim Sa.
+  - Chỉ đổi quân đá của mình; bàn không đổi, không có nút "Khai mở". Người xem và đối thủ thấy bộ đá bạn chọn, có thể bấm "Ẩn skin đối thủ" để nhìn theo kiểu mặc định.
+- **Mở khóa skin**:
+  - Mặc định mọi skin miễn phí. Ban điều hành bật thu tiền và đặt mức trong `/admin.html` (khối "Cửa hàng skin bàn cờ").
+  - Khi bật, skin chưa mở bị gỡ khỏi các ván đang chơi ngay. Người chơi bấm skin đang khóa, cúng dường theo mã QR; khoản được duyệt thì tự mở đúng skin đó và giữ vĩnh viễn (mỗi skin mở riêng, quyền theo tài khoản).
+  - Duyệt qua đúng đường cúng dường thường: Ban điều hành xác nhận, hoặc webhook SePay khi nhận đủ tiền. Với `DONATION_MODE=test` khoản tự xác nhận sau ít giây.
 - **Các trang thử nghiệm độc lập**:
   - `/world3d-test.html`: Kiểm tra tổng thể thế giới 3D.
   - `/world3d-kit.html`: Bộ khối mẫu vật liệu và cấu kiện kiến trúc chùa.
-  - `/world3d-avatar.html`: Thử nghiệm mô hình nhân vật, trang phục, tóc, bước đi và hào quang.
+  - `/world3d-avatar.html`: Thử nghiệm mô hình nhân vật, trang phục, tóc, bước đi và hào quang. Nhân vật dựng bằng Blender là mặc định trong giao diện 3D; nút "Người cũ" (khóa `localStorage["ta-avatar"] = "code"`) đổi về dáng dựng bằng mã.
   - `/world3d-board.html`: Thử nghiệm bàn cờ 3D tương tác có skin.
   - `/world3d-scene-hall.html`: Cảnh Chánh điện 3D.
   - `/world3d-scene-yard.html`: Cảnh Sân chùa 3D.
@@ -438,6 +445,9 @@ public/img/fx/demon-*.webp 4 con quỷ theo sau người công đức âm (Canva
 tools/fx/prepare_demon_sprites.py tách nền xám của 4 con quỷ thành ảnh trong suốt
 tools/fx/prepare_canva_assets.py chuyển PNG xuất từ Canva thành ảnh web
 tools/blender/kydao/   script Blender dựng mô hình quân cờ (.glb) và render mặt sân (.webp)
+tools/blender/kydao/stones.py dựng 8 bộ đá cờ vây và caro
+public/img/kydao/stones/ ảnh 8 bộ đá (.webp, hai ô: bên đi trước và bên đi sau)
+lib/kydao/shop.js      cửa hàng skin: khóa, giá, quyền sở hữu (logic thuần)
 tools/build_chants.py  dựng bài tụng bằng VieNeu-TTS
 tools/build_blessing_voice.py dựng giọng chúc (giọng nữ) bằng VieNeu-TTS
 public/js/lunar.js     lịch âm

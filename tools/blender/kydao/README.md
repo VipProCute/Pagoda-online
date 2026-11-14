@@ -56,3 +56,15 @@ Tham số: `ONLY` (danh sách mã, mặc định cả 8 bộ), `PREVIEW` (24 m�
 - Quân cờ vua: nhìn từ phía trước chếch xuống 22 độ, 67 px/đơn vị mô hình, đáy quân ở y=118 (cách mép dưới 10 px), canh giữa theo chiều ngang. Chiều cao (kể cả thánh giá, chóp): K 108, Q 93, B 86, N 86, R 72, P 58 px. Mã quay mặt sang trái.
 - `disc`: nhìn thẳng từ trên xuống, tâm ô, thân tròn đường kính 108 px (gai trang trí của magma, wood, ice, coral, storm nhô tới 122 px), mặt trên trống.
 - Có bóng đổ mềm nhỏ dưới chân quân (alpha thấp, lệch sang trái ảnh). Không sửa tay atlas; sửa script rồi chạy lại.
+
+## Ảnh đá cờ vây và caro (`stones.py`, T-161)
+
+Render 8 bộ đá (`STONES` trong `public/js/kydao-skins.js`, màu `base`/`accent`/`glow` đọc qua `node`). Cycles, 64 mẫu, nền trong suốt, siêu lấy mẫu 2x, chất liệu thủ tục theo chủ đề. Chạy trong Blender:
+
+    import runpy; g = runpy.run_path(r'<repo>/tools/blender/kydao/stones.py', init_globals={'REPO': r'<repo>', 'ONLY': ['cosmos']}); result = g['result']
+
+Tham số: `ONLY` (mặc định cả 8 bộ), `PREVIEW` (24 mẫu, không ghi `public/`), `SAMPLES`. Mỗi viên mất khoảng 10 giây; gọi 2 bộ một lần để khỏi quá thời gian chờ. Kết quả trả về là dung lượng và độ sáng trung bình vùng giữa (`La`, `Lb`). Ghép atlas gọi `python` hệ thống (cần Pillow). Ảnh tổng hợp: `python tools/blender/kydao/stones.py sheet <repo> docs/ky-dai/anh/da-tong-hop.jpg`.
+
+Đầu ra `public/img/kydao/stones/<id>.webp`: **256x128**, hai ô 128x128, nền trong suốt.
+- Ô trái = đá bên `a` (tối), ô phải = đá bên `b` (sáng). Nhìn thẳng từ trên xuống, đường kính **112 px**, tâm ô (64, 64); bóng đổ mềm lệch xuống dưới-phải, alpha tắt dần trước mép ô.
+- Vùng giữa (đường kính khoảng 60 px) phẳng màu để khắc dấu X/O; hoa văn dồn ra rìa. Mỗi atlas dưới 40 KB. Không sửa tay; sửa script rồi chạy lại.

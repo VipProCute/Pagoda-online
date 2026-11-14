@@ -168,6 +168,20 @@
     }
     return any ? out : null;
   }
+  /** Skin quân cho cờ vây/caro: { a:null|{id,c,atlas}, b:…, onAsset } hoặc null. Bàn không có skin. */
+  function resolveStoneSkins(o) {
+    const cat = o.catalog || (typeof KydaoSkins !== 'undefined' ? KydaoSkins : null);
+    if (!o.skins || typeof o.skins !== 'object' || !cat || typeof cat.stones !== 'function') return null;
+    const out = { a: null, b: null, onAsset: o.onAsset };
+    let any = false;
+    for (const side of ['a', 'b']) {
+      const s = o.skins[side];
+      if (!s || !s.pieces || (o.hideSkins && o.hideSkins[side])) continue;
+      const st = cat.stones(s.pieces);
+      if (st && st[side]) { out[side] = { id: s.pieces, c: st[side], atlas: cat.stonesAtlas ? cat.stonesAtlas(s.pieces) : null }; any = true; }
+    }
+    return any ? out : null;
+  }
   const hasField = sk => !!(sk && (sk.a.field || sk.b.field));
   const sideOfChar = ch => (ch === ch.toUpperCase() ? 'a' : 'b');
 
@@ -825,7 +839,45 @@
     }
   }
 
-  function drawStone(ctx, p, cell, side, game) {
+  /** Màu base pha trắng/đen theo tỉ lệ k (0..1), trả về rgb(). */
+  function mixColor(hex, to, k) {
+    const m = /^#?([0-9a-f]{6})$/i.exec(String(hex || ''));
+    if (!m) return hex;
+    const n = parseInt(m[1], 16), c = [n >> 16 & 255, n >> 8 & 255, n & 255];
+    return 'rgb(' + c.map(v => Math.round(v + (to - v) * k)).join(',') + ')';
+  }
+
+  /** Viên đá có skin: ảnh atlas (ô trái = a, ô phải = b) hoặc gradient theo màu bộ khi ảnh chưa tải. */
+  function drawSkinStone(ctx, p, cell, side, game, skin, onAsset) {
+    const r = cell * 0.44, c = skin.c || {};
+    const img = skin.atlas ? loadImage(skin.atlas, onAsset) : null;
+    if (img) {
+      const T = cell * 0.88 * 128 / 112;
+      ctx.drawImage(img, side === 'a' ? 0 : 128, 0, 128, 128, p.x - T / 2, p.y - T / 2, T, T);
+    } else {
+      ctx.save(); ctx.shadowColor = 'rgba(25,15,5,.45)'; ctx.shadowBlur = cell * 0.14; ctx.shadowOffsetY = cell * 0.07;
+      const shade = ctx.createRadialGradient(p.x - r * 0.35, p.y - r * 0.4, r * 0.1, p.x, p.y, r);
+      shade.addColorStop(0, mixColor(c.base, 255, 0.35)); shade.addColorStop(1, mixColor(c.base, 0, 0.35));
+      ball(ctx, p.x, p.y, r); ctx.fillStyle = shade; ctx.fill(); ctx.restore();
+      ctx.strokeStyle = c.accent || '#fff'; ctx.lineWidth = Math.max(1, cell * 0.03);
+      ball(ctx, p.x, p.y, r * 0.94); ctx.stroke();
+    }
+    if (game === 'gomoku') {
+      const q = r * 0.5 * 0.7, w = Math.max(2, cell * 0.09);
+      ctx.lineCap = 'round';
+      const glyph = () => {
+        ctx.beginPath();
+        if (side === 'a') { ctx.moveTo(p.x - q, p.y - q); ctx.lineTo(p.x + q, p.y + q); ctx.moveTo(p.x + q, p.y - q); ctx.lineTo(p.x - q, p.y + q); }
+        else ctx.arc(p.x, p.y, r * 0.5 * 0.8, 0, Math.PI * 2);
+        ctx.stroke();
+      };
+      ctx.strokeStyle = c.base || '#000'; ctx.globalAlpha = 0.6; ctx.lineWidth = w * 1.8; glyph();
+      ctx.globalAlpha = 1; ctx.strokeStyle = c.mark || '#fff'; ctx.lineWidth = w; glyph();
+    }
+  }
+
+  function drawStone(ctx, p, cell, side, game, skin, onAsset) {
+    if (skin) { drawSkinStone(ctx, p, cell, side, game, skin, onAsset); return; }
     const r = cell * 0.44;
     if (game === 'gomoku') {
       ctx.strokeStyle = side === 'a' ? '#8f2520' : '#252d37'; ctx.lineWidth = Math.max(2, cell * 0.1); ctx.lineCap = 'round';
@@ -847,6 +899,7 @@
     ctx.clearRect(0, 0, o.w, o.h);
     // Skin chỉ dành cho cờ vua / cờ tướng / cờ úp; không có o.skins thì vẽ y như cũ.
     const sk = isGrid(o.game) ? null : resolveSkins(o);
+    const stoneSkins = isGrid(o.game) ? resolveStoneSkins(o) : null;
     const skinMark = hasField(sk);
     if (isGrid(o.game)) drawGridBoard(ctx, g, flip);
     else if (chess) drawChessBoard(ctx, g, flip, sk);
@@ -893,7 +946,7 @@
       if (j) p = { x: p.x + j.dx, y: p.y + j.dy };
       const pieceSkin = sk && !isGrid(o.game) ? sk[sideOfChar(ch)].pieces : null;
       const atlasImg = atlasImage(pieceSkin, sk && sk.onAsset);
-      if (isGrid(o.game)) drawStone(ctx, p, g.cell, ch, o.game);
+      if (isGrid(o.game)) drawStone(ctx, p, g.cell, ch, o.game, stoneSkins ? stoneSkins[ch] : null, stoneSkins && stoneSkins.onAsset);
       else if (chess) drawChessPiece(ctx, p.x, p.y, g.cell * 0.92, ch, false, pieceSkin, atlasImg);
       else {
         const reveal = o.reveal && o.reveal.square === nameOf(o.game, c, r) ? o.reveal.progress : 1;
@@ -924,5 +977,5 @@
     return g;
   }
 
-  return { aspect, layout, cellXY, squareAt, nameOf, parseSq, boardIndex, draw, starPoints, HAN, VIET, resolveSkins, loadImage, imageState, riverWave, readableOn };
+  return { aspect, layout, cellXY, squareAt, nameOf, parseSq, boardIndex, draw, starPoints, HAN, VIET, resolveSkins, resolveStoneSkins, loadImage, imageState, riverWave, readableOn };
 });

@@ -571,11 +571,70 @@ export function createBoard3D({ canvas, game, skins: catalogInput, quality: qual
   }
 
   /* ---- Skin quân: mỗi bên một bộ vật liệu theo KydaoSkins.PIECES[id][side]; hình nhận diện giữ nguyên (K5). ---- */
-  const sideOf = ch => (ch === ch.toUpperCase() ? 'a' : 'b');
+  const sideOf = ch => (layout.stones ? ch : ch === ch.toUpperCase() ? 'a' : 'b');
+  const skinKey = id => (id ? (layout.stones ? 's:' + id : id) : null);
   function pieceSkinOf(ch) {
-    if (layout.stones || !ch) return null;
+    if (!ch) return null;
     const id = skins[sideOf(ch)].pieces;
-    return id ? pieceSkin(id) : null;
+    return id ? (layout.stones ? stoneSkin(id) : pieceSkin(id)) : null;
+  }
+  /* ---- Skin đá cờ vây/caro (T-163): vật liệu theo KydaoSkins.STONES[id][side]; có ảnh atlas thì phủ mặt trên bằng chỏm cầu. ---- */
+  function stoneSkin(id) {
+    const key = 's:' + id;
+    if (pieceSkins.has(key)) return pieceSkins.get(key);
+    const def = catalog && typeof catalog.stones === 'function' && catalog.stones(id);
+    if (!def) return null;
+    const s = { id, key, def, stone: true, res: new Set(), mats: {}, cap: {}, templateIds: new Set(), model: null, img: false };
+    const own = r => { s.res.add(r); return r; };
+    for (const side of ['a', 'b']) {
+      const c = def[side];
+      const stone = own(new THREE.MeshStandardMaterial({ color: c.base, roughness: 0.25, metalness: 0.05,
+        emissive: c.glow || '#000000', emissiveIntensity: c.glow ? 0.18 : 0 }));
+      const mark = own(new THREE.MeshStandardMaterial({ color: c.mark, roughness: 0.4, metalness: 0.05 }));
+      s.mats[side] = { stone, mark, own };
+    }
+    pieceSkins.set(key, s);
+    loadStoneImage(s);
+    return s;
+  }
+  function loadStoneImage(s) {
+    if (!fieldImages || !catalog || typeof catalog.stonesAtlas !== 'function') return;
+    let url = null;
+    try { url = catalog.stonesAtlas(s.id); } catch (e) { url = null; }
+    if (!url) return;
+    imageApi().then(api => (api && typeof api.loadImage === 'function' ? api.loadImage(url) : null)).then(img => {
+      if (!img || stopped || pieceSkins.get(s.key) !== s) return;
+      const k = 0.62; // phần giữa của ô 128 px phủ vừa chỏm đá
+      for (const side of ['a', 'b']) {
+        const tex = s.mats[side].own(new THREE.Texture(img)); tex.colorSpace = THREE.SRGBColorSpace;
+        tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+        tex.repeat.set(0.5 * k, k); tex.offset.set((side === 'a' ? 0 : 0.5) + 0.25 * (1 - k), (1 - k) / 2); tex.needsUpdate = true;
+        const c = s.def[side];
+        s.cap[side] = s.mats[side].own(new THREE.MeshStandardMaterial({ color: '#ffffff', map: tex, roughness: 0.25, metalness: 0.05,
+          emissive: c.glow || '#000000', emissiveIntensity: c.glow ? 0.18 : 0 }));
+      }
+      s.img = true;
+      for (const id of s.templateIds) templates.delete(id);
+      s.templateIds.clear();
+      refreshVisuals(); requestRender();
+    }).catch(() => {});
+  }
+  // Chỏm cầu cùng dáng viên đá, UV chiếu thẳng từ trên xuống (ô ảnh nhìn từ trên xuống).
+  const stoneCapGeometry = () => sharedGeo('stonecap', () => {
+    const R = 0.432, rim = 0.78, g = new THREE.SphereGeometry(R, 28, 6, 0, Math.PI * 2, 0, rim), p = g.attributes.position, uv = g.attributes.uv, span = 2 * R * Math.sin(rim);
+    for (let i = 0; i < p.count; i++) uv.setXY(i, p.getX(i) / span + 0.5, -p.getZ(i) / span + 0.5);
+    uv.needsUpdate = true; return g;
+  });
+  function stoneTemplate(s, ch) {
+    const g = new THREE.Group(), m = s.mats[ch];
+    const body = mesh(sharedGeo('stone', () => new THREE.SphereGeometry(0.43, 28, 16)), m.stone, g, 0, 0.14); body.scale.y = 0.34;
+    if (s.cap[ch]) { const cap = mesh(stoneCapGeometry(), s.cap[ch], g, 0, 0.14); cap.scale.y = 0.34; cap.castShadow = false; }
+    if (layout.game === 'gomoku') {
+      if (ch === 'a') for (const angle of [-Math.PI / 4, Math.PI / 4]) {
+        const mark = mesh(sharedGeo('stone-x', () => new THREE.BoxGeometry(0.40, 0.008, 0.045)), m.mark, g, 0, 0.291); mark.rotation.y = angle;
+      } else { const o = mesh(sharedGeo('stone-o', () => new THREE.TorusGeometry(0.17, 0.022, 8, 40)), m.mark, g, 0, 0.291); o.rotation.x = Math.PI / 2; }
+    }
+    return g;
   }
   function pieceSkin(id) {
     if (pieceSkins.has(id)) return pieceSkins.get(id);
@@ -677,7 +736,7 @@ export function createBoard3D({ canvas, game, skins: catalogInput, quality: qual
     }).catch(() => {});
   }
   function pruneSkins() {
-    const used = new Set([skins.a.pieces, skins.b.pieces]);
+    const used = new Set([skinKey(skins.a.pieces), skinKey(skins.b.pieces)]);
     for (const [id, s] of pieceSkins) if (!used.has(id)) {
       for (const tid of s.templateIds) templates.delete(tid);
       for (const r of s.res) r.dispose();
@@ -686,7 +745,7 @@ export function createBoard3D({ canvas, game, skins: catalogInput, quality: qual
   }
   function visualId(ch) {
     const s = pieceSkinOf(ch);
-    return layout.game + ':' + ch + ':' + !!state.vi + ':' + (s ? s.id + (s.model ? '+m' : '') : '');
+    return layout.game + ':' + ch + ':' + !!state.vi + ':' + (s ? s.id + (s.model ? '+m' : '') + (s.img ? '+i' : '') : '');
   }
 
   function template(ch) {
@@ -695,7 +754,7 @@ export function createBoard3D({ canvas, game, skins: catalogInput, quality: qual
       const s = pieceSkinOf(ch);
       if (s) {
         const side = sideOf(ch);
-        templates.set(id, (s.model && modelPiece(s, ch, side)) || reskin(baseTemplate(ch), s, side, ch));
+        templates.set(id, s.stone ? stoneTemplate(s, ch) : (s.model && modelPiece(s, ch, side)) || reskin(baseTemplate(ch), s, side, ch));
         s.templateIds.add(id);
       } else baseTemplate(ch);
     }
@@ -1045,9 +1104,13 @@ export function createBoard3D({ canvas, game, skins: catalogInput, quality: qual
   }
   function flushRetired() { for (const h of retired) disposeHalf(h); retired = []; }
   function readSkins(o) {
-    if (!catalog || layout.stones || (typeof catalog.supports === 'function' && !catalog.supports(game))) return { a: NO_SKIN, b: NO_SKIN };
+    const none = { a: NO_SKIN, b: NO_SKIN };
+    if (!catalog) return none;
+    if (layout.stones) { if (typeof catalog.supportsPieces !== 'function' || !catalog.supportsPieces(game)) return none; }
+    else if (typeof catalog.supports === 'function' && !catalog.supports(game)) return none;
     const src = o && o.skins && typeof o.skins === 'object' ? o.skins : {};
-    const pick = side => (Object.prototype.hasOwnProperty.call(src, side) ? catalog.normalize(src[side]) : NO_SKIN);
+    // Đá cờ vây/caro: chỉ lấy bộ đá (field luôn null), tra trong STONES.
+    const pick = side => (Object.prototype.hasOwnProperty.call(src, side) ? (layout.stones ? { field: null, pieces: catalog.normalize(src[side], game).pieces } : catalog.normalize(src[side])) : NO_SKIN);
     return { a: pick('a'), b: pick('b') };
   }
   function applySkins(next) {

@@ -71,5 +71,20 @@ Các bước:
 7. Đi e4, e5, Nf3, Nc6 bằng chạm canvas; A đầu hàng và xác nhận: cả hai thấy khẩu hiệu rồi `.kd-result`.
 8. Cờ tướng ở bàn 3: A khai mở Trường Giang, canvas B đổi theo thời gian (băm điểm ảnh khác nhau giữa các lần lấy mẫu), B đầu hàng, hiện bảng kết quả.
 9. Không `pageerror`, không `console.error`, không HTTP ≥ 500, nhật ký máy chủ không có lỗi.
+10. Caro ở bàn 2: A bấm "Bộ đá", chọn Tinh Hà (đủ 8 bộ, không có nút "Khai mở", chưa có mục khóa), đặt quân giữa bàn; màu quân của A trên canvas B khác hẳn giữa lúc hiện và lúc B bấm "Ẩn skin đối thủ". A đầu hàng.
+11. Máy chủ được bật với `ADMIN_KEY` thử (sinh mới mỗi lần chạy), `DONATION_MODE=test`, `BANK_ID`/`BANK_ACCOUNT` giả. Ván cờ vua ở bàn 1, A khai mở Hỏa Diệm Sơn; kịch bản gọi `POST /api/admin/kydao-shop` (`price: 20000`, `on: true`) giữa ván: nửa sân của A trên cả hai trang về mặc định.
+12. A mở Lãnh địa: mọi skin có lớp `is-locked` và giá "20.000 đ", mục Mặc định không khóa. Bấm quân Dung Nham: khung xác nhận; "Cúng dường để mở": khung QR (`src` bắt đầu bằng `https://img.vietqr.io/`, ảnh được chặn bằng `route` nên không gọi ra ngoài), số tiền 20.000 đ, mã `CD` + 6 ký tự.
+13. Chờ chế độ thử tự xác nhận (tối đa 20 giây): khung QR đóng, Dung Nham hết khóa ở A (skin sân khác vẫn khóa), canvas B đổi theo quân của A; B mở Lãnh địa vẫn thấy Dung Nham khóa.
+14. B ép gửi `kd:skin` qua socket của trang (`window.__sock`, nối bằng `addInitScript`): máy chủ trả `code:'locked'` kèm `kind`, `id`, `price`; B bấm mục khóa thì hiện khung mua.
+15. `POST /api/admin/kydao-shop` với `on: false`: cả hai hết `is-locked`; `GET` cho `stats.unlocks >= 1`.
+16. Suốt các bước mới: không `pageerror`, không `console.error`, không HTTP ≥ 500, nhật ký máy chủ không có lỗi.
+
+Các bước 17 đến 21 (chế độ thật) tự bật một máy chủ `server.js` THỨ HAI ở cổng trống với `DONATION_MODE=live`, `ADMIN_KEY` ngẫu nhiên, `BANK_*` giả, `SEPAY_API_KEY` rỗng, và hai trình duyệt mới (An2, Bình2):
+
+17. Admin bật cửa hàng (`price: 20000`) qua API; A2 và B2 vào chùa, ngồi bàn 1, mở ván cờ vua; A2 mở Lãnh địa, bấm quân Dung Nham đang khóa, "Cúng dường để mở": khung QR hiện mã `CD` + 6 ký tự.
+18. Chờ 3 giây: khung QR vẫn mở, Dung Nham vẫn khóa (chế độ thật không tự xác nhận).
+19. Ban điều hành xác nhận khoản bằng `POST /api/admin/donations/<mã>/confirm` (header `x-admin-key`): trong vài giây khung QR của A2 tự đóng, Dung Nham hết khóa ở A2 (skin khác vẫn khóa), B2 vẫn thấy khóa.
+20. Xác nhận lần hai: HTTP 200, `already: true`, `outcome: 'granted'`; `stats` vẫn `{ owners: 1, unlocks: 1 }`.
+21. Suốt pha này: không `pageerror`, không `console.error`, không HTTP ≥ 500, nhật ký máy chủ thứ hai không có lỗi.
 
 Ảnh chụp từng mốc nằm ở `SHOTS` (`e2e-*.png`); khi một bước trượt, ảnh cả hai trang lưu thành `fail-<số bước>-<tên>.png`. Ảnh tiêu biểu của một lần chạy đạt: `docs/ky-dai/anh/e2e-*.png`.

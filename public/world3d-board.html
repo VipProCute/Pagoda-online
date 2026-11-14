@@ -66,10 +66,10 @@
   <script src="/js/kydao/gomoku.js?v=1"></script>
   <script src="/js/kydao-skins.js?v=4"></script>
   <script type="module">
-    import { createBoard3D } from '/js/world3d/board3d.mjs?v=6';
+    import { createBoard3D } from '/js/world3d/board3d.mjs?v=7';
 
     const SKINS = window.KydaoSkins;
-    const SIDES = { chess: { a: 'Trắng', b: 'Đen' }, xiangqi: { a: 'Đỏ', b: 'Đen' }, jieqi: { a: 'Đỏ', b: 'Đen' } };
+    const SIDES = { chess: { a: 'Trắng', b: 'Đen' }, xiangqi: { a: 'Đỏ', b: 'Đen' }, jieqi: { a: 'Đỏ', b: 'Đen' }, go: { a: 'Đen', b: 'Trắng' }, gomoku: { a: 'X', b: 'O' } };
     const qualityEl = document.getElementById('quality'), openingEl = document.getElementById('opening');
     const views = [];
     qualityEl.addEventListener('change', () => views.forEach(view => view.setQuality(qualityEl.value)));
@@ -78,7 +78,7 @@
       const wrap = document.createElement('label'); wrap.textContent = label;
       const select = document.createElement('select');
       const none = document.createElement('option'); none.value = ''; none.textContent = 'Mặc định (gỗ)'; select.append(none);
-      for (const [id, def] of Object.entries(kind === 'field' ? SKINS.FIELDS : SKINS.PIECES)) {
+      for (const [id, def] of Object.entries(kind === 'field' ? SKINS.FIELDS : kind === 'stones' ? SKINS.STONES : SKINS.PIECES)) {
         const o = document.createElement('option'); o.value = id; o.textContent = def.name; select.append(o);
       }
       select.addEventListener('change', () => onPick(select.value || null));
@@ -98,7 +98,8 @@
       const skinbar = document.createElement('div'); skinbar.className = 'kd-skins';
       const status = document.createElement('p'); status.className = 'kd-status'; status.setAttribute('role', 'status'); status.textContent = 'Đang mở bàn cờ…';
       const skinnable = SKINS && SKINS.supports(game);
-      article.append(heading, stage, toolbar, ...(skinnable ? [skinbar] : []), fxbar, status); parent.append(article);
+      const stonable = SKINS && !skinnable && SKINS.supportsPieces(game); // cờ vây/caro: chỉ chọn bộ đá, không có skin sân
+      article.append(heading, stage, toolbar, ...(skinnable || stonable ? [skinbar] : []), fxbar, status); parent.append(article);
       const button = (text, fn, bar = toolbar) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = text; b.addEventListener('click', fn); bar.append(b); return b; };
       const fresh = () => mod.create(createOptions || (game === 'go' ? { size: 9 } : {}));
       const pairMove = game === 'chess' || game === 'xiangqi' || game === 'jieqi';
@@ -141,6 +142,15 @@
             }, fxbar);
           }
         }
+        if (stonable) {
+          for (const side of ['a', 'b']) {
+            const p = picker('ĐÁ ' + SIDES[game][side].toUpperCase(), 'stones', id => {
+              skins = { ...skins, [side]: { ...skins[side], pieces: id } }; draw();
+              status.textContent = 'Bộ nhớ GPU: ' + memory() + '.';
+            });
+            skinbar.append(p.wrap);
+          }
+        }
         if (game === 'chess') button('Chấn động', () => view.playFx('promote', { at: last[1] || 'd4' }), fxbar);
         button('Chiến thắng', () => {
           // Bên vừa đi là bên thắng (trang thử); caro thì cột sáng trên các quân của bên đen.
@@ -177,6 +187,7 @@
       addBoard('go', 'Cờ vây', '04 / ĐÁ ĐEN & TRẮNG', window.KyGo, ['C3', 'G7', 'C7', 'G3', 'E5'], parent);
       addBoard('gomoku', 'Caro', '05 / QUÂN X & O', window.KyGomoku, ['h8', 'i8', 'h9', 'i9', 'h10'], parent);
     });
+    document.getElementById('stones').open = true; // mở sẵn để xem bàn cờ vây và caro
     window.addEventListener('pagehide', () => views.forEach(view => view.dispose()), { once: true });
   </script>
 </body>

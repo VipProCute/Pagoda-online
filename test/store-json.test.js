@@ -50,6 +50,8 @@ function fill(db) {
   db.kydao.games.push({ id: 16, at: 1, game: 'chess', a: { uid: 'u_a' }, b: { uid: 'u_b' }, result: 'a' });
   db.kydao.active.u_a = 16;
   db.kydao.pairs['2026-11-11|u_a|u_b|chess'] = 3;
+  db.kydao.shop = { on: true, price: 50000, prices: { 'field:volcano': 80000 }, updatedAt: 123 };
+  db.kydao.unlocks.u_a = { 'field:volcano': { at: 5, code: 'CD123456' }, 'stones:cosmos': { at: 9, code: 'CD654321' } };
   db.records.log.push({ id: 17, at: 1, cat: 'xiangqi.now', kind: 'season', name: 'Ánh', v: 1300, season: '2026-10' });
   db.seq = 200;
   return db;
@@ -344,10 +346,10 @@ test('store-sections: snapshot / diff / adopt cho biết đúng phần chênh', 
 
 test('store-sections: kydao và records có mặc định, vá khi thiếu/sai kiểu, và diff theo id', () => {
   const f = S.fresh();
-  assert.deepEqual(f.kydao, { ratings: {}, games: [], active: {}, pairs: {} });
+  assert.deepEqual(f.kydao, { ratings: {}, games: [], active: {}, pairs: {}, shop: {}, unlocks: {} });
   assert.deepEqual(f.records, { log: [] });
   const db = S.adopt({}, { version: 2, kydao: { games: 'x', ratings: { u: { name: 'U' } } }, records: null });
-  assert.deepEqual(db.kydao, { ratings: { u: { name: 'U' } }, games: [], active: {}, pairs: {} });
+  assert.deepEqual(db.kydao, { ratings: { u: { name: 'U' } }, games: [], active: {}, pairs: {}, shop: {}, unlocks: {} });
   assert.deepEqual(db.records, { log: [] });
   const old = S.adopt({}, { version: 2 });
   assert.deepEqual(old.kydao, S.fresh().kydao, 'dữ liệu cũ không có hai khóa vẫn nạp được');
@@ -367,6 +369,35 @@ test('store-sections: kydao.pairs khứ hồi qua snapshot → rowsToRaw → ado
   for (const [name, m] of S.snapshot(db)) rows.set(name, [...m].map(([k, str]) => ({ k, v: JSON.parse(str) })));
   const back = S.adopt({}, S.rowsToRaw(rows));
   assert.deepEqual(back.kydao.pairs, { '2026-11-11|a|b|go': 2 });
+});
+
+test('store-sections: kydao.shop và kydao.unlocks có mặc định khi dữ liệu cũ thiếu, vá khóa thiếu/sai kiểu', () => {
+  const old = S.adopt({}, { version: 2, kydao: { ratings: {}, games: [], active: {}, pairs: {} } });
+  assert.deepEqual(old.kydao.shop, {}, 'rỗng = tắt; CSDL mới không ghi dòng mặc định');
+  assert.deepEqual(old.kydao.unlocks, {});
+  const part = S.adopt({}, { version: 2, kydao: { shop: { on: true, price: 20000 }, unlocks: 'x' } });
+  assert.deepEqual(part.kydao.shop, { on: true, price: 20000 }, 'khóa thiếu để lib/kydao/shop.js điền khi dùng');
+  assert.deepEqual(part.kydao.unlocks, {}, 'unlocks sai kiểu về mặc định');
+  const bad = S.adopt({}, { version: 2, kydao: { shop: { on: true, prices: 5 } } });
+  assert.deepEqual(bad.kydao.shop, { on: true }, 'prices sai kiểu bị bỏ');
+  assert.deepEqual(S.adopt({}, { version: 2, kydao: { shop: 7 } }).kydao.shop, {}, 'shop sai kiểu về rỗng');
+  assert.deepEqual(S.unknownKeys(part), [], 'hai khóa mới đã có section nên không bị coi là khóa lạ');
+});
+
+test('store-sections: kydao.shop và kydao.unlocks khứ hồi qua snapshot → rowsToRaw → adopt', () => {
+  const db = S.adopt({}, { version: 2 });
+  db.kydao.shop = { on: true, price: 50000, prices: { 'field:volcano': 80000 }, updatedAt: 123 };
+  db.kydao.unlocks.u_a = { 'field:volcano': { at: 5, code: 'CD123456' } };
+  const rows = new Map();
+  for (const [name, m] of S.snapshot(db)) rows.set(name, [...m].map(([k, str]) => ({ k, v: JSON.parse(str) })));
+  assert.ok(rows.get('kydao.shop').length === 4, 'mỗi khóa của shop là một dòng, kể cả price null');
+  const back = S.adopt({}, S.rowsToRaw(rows));
+  assert.deepEqual(back.kydao.shop, db.kydao.shop);
+  assert.deepEqual(back.kydao.unlocks, db.kydao.unlocks);
+  db.kydao.shop.price = null; db.kydao.shop.on = false;
+  const rows2 = new Map();
+  for (const [name, m] of S.snapshot(db)) rows2.set(name, [...m].map(([k, str]) => ({ k, v: JSON.parse(str) })));
+  assert.equal(S.adopt({}, S.rowsToRaw(rows2)).kydao.shop.price, null);
 });
 
 test('store-sections: chuỗi có NUL hoặc surrogate lẻ được làm sạch để jsonb nhận', () => {

@@ -12,7 +12,7 @@
   let world = null, target = null, layer = null, canvas = null, toolbar = null, toggle = null, angle = null, stick = null, figure = null;
   let active = false, paused = false, pk = false, revision = 0, queued = false, notify = () => {}, previousVisibility = '';
   const save = () => { try { localStorage.setItem('ta-view', JSON.stringify(prefs)); } catch (error) { /* Vẫn dùng được trong phiên này. */ } };
-  const figureOn = () => { try { return localStorage.getItem('ta-avatar') === 'blender'; } catch (error) { return false; } };
+  const figureOn = () => { try { return localStorage.getItem('ta-avatar') !== 'code'; } catch (error) { return true; } };
   const editing = event => event.target?.closest?.('input,textarea,select,[contenteditable]:not([contenteditable="false"]),[role="textbox"],dialog[open]');
 
   function buttons() {
@@ -26,13 +26,13 @@
     angle.title = 'Đổi góc nhìn thứ nhất / thứ ba (V)';
     stick.hidden = !active;
     figure.hidden = !active || pk;
-    figure.textContent = 'Người mới';
-    figure.setAttribute('aria-pressed', String(figureOn()));
-    figure.title = 'Nhân vật mới (thử nghiệm): dáng người dựng bằng Blender, bấm để đổi và dựng lại cảnh';
+    figure.textContent = 'Người cũ';
+    figure.setAttribute('aria-pressed', String(!figureOn()));
+    figure.title = figureOn() ? 'Đổi về dáng nhân vật cũ (dựng bằng mã). Cảnh sẽ dựng lại.' : 'Đang dùng dáng nhân vật cũ; bấm để dùng dáng mới. Cảnh sẽ dựng lại.';
   }
   function changeFigure() {
     try {
-      if (figureOn()) localStorage.removeItem('ta-avatar'); else localStorage.setItem('ta-avatar', 'blender');
+      if (figureOn()) localStorage.setItem('ta-avatar', 'code'); else localStorage.removeItem('ta-avatar');
     } catch (error) { notify('Trình duyệt không cho lưu lựa chọn nhân vật.'); return; }
     sync();   // dựng lại cảnh ngay để nhân vật đổi theo
   }

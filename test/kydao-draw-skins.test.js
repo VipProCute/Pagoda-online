@@ -64,10 +64,10 @@ test('Không có o.skins / o.jolt (hoặc skin vô nghĩa): chuỗi lệnh vẽ 
     ];
     for (const extra of same) sameLog(run(opts(game, { ...common, ...extra })), base, game + ' ' + JSON.stringify(extra));
   }
-  // Cờ vây / caro bỏ qua skin và jolt không có ô.
+  // Cờ vây / caro: skin có mã không thuộc STONES (skin đá thật xem kydao-draw-stones.test.js) vẫn vẽ mặc định.
   for (const game of ['go', 'gomoku']) {
     const o = { game, size: 9, board: Array(81).fill('').map((_, i) => (i === 10 ? 'a' : i === 11 ? 'b' : '')), w: 300, h: 300, dpr: 1 };
-    sameLog(run({ ...o, skins: SKINS }), run(o), game);
+    sameLog(run({ ...o, skins: { a: { field: null, pieces: 'ice' }, b: { field: null, pieces: 'jade' } } }), run(o), game); // mã không thuộc STONES thì vẽ mặc định
   }
 });
 

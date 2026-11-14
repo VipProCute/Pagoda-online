@@ -189,9 +189,65 @@ async function main() {
       for (const id of ['#b-xq', '#b-jieqi', '#b-caro', '#b-go']) {
         await openGame(page, id);
         assert.ok((await page.locator('.kd-canvas').boundingBox()).width > 150, `${id}: bàn cờ quá hẹp`);
-        if (id === '#b-caro' || id === '#b-go') assert.ok(!(await button(page, 'Lãnh địa').isVisible()), `${id}: nút lãnh địa chưa ẩn`);
+        if (id === '#b-caro' || id === '#b-go') {
+          assert.ok(!(await button(page, 'Lãnh địa').isVisible()), `${id}: vẫn còn chữ Lãnh địa`);
+          assert.ok(await button(page, 'Bộ đá').isVisible(), `${id}: nút Bộ đá chưa hiện`);
+          await button(page, 'Bộ đá').click();
+          assert.ok(!(await button(page, 'Khai mở').isVisible()) && !(await button(page, 'Về sân mặc định').isVisible()), `${id}: bộ chọn đá không được có nút Khai mở`);
+        }
       }
       await shot(page, 'nam-mon-mo-duoc', kind);
+    });
+    for (const kind of sizes) await t('da-skin-caro-co-vay', kind, async page => {
+      for (const [id, name] of [['#b-caro', 'caro'], ['#b-go', 'co-vay']]) {
+        await openGame(page, id);
+        await button(page, 'Bộ đá').click();
+        await page.locator('.kd-skin[data-kind="pieces"][data-id="cosmos"]').click();
+        await page.locator('.kd-skin-stone').first().waitFor({ state: 'visible' });
+        const tile = await page.locator('.kd-skin[data-kind="pieces"][data-id="cosmos"] .kd-skin-stone').evaluate(el => getComputedStyle(el).backgroundImage);
+        assert.ok(tile.includes('/img/kydao/stones/cosmos.webp'), `${name}: ô chọn chưa dùng ảnh đá`);
+        await tapCell(page, kind, 3, 3); await tapCell(page, kind, 5, 5);
+        await harnessClick(page, '#b-foe'); await harnessClick(page, '#b-opp');
+        await page.waitForTimeout(400);
+        await shot(page, `da-skin-${name}`, kind);
+      }
+    });
+    for (const kind of ['mobile', 'desktop']) await t('khoa-skin', kind, async page => {
+      await openGame(page, '#b-chess');
+      await harnessClick(page, '#b-shop');
+      await button(page, 'Lãnh địa').click();
+      await page.locator('.kd-skins').waitFor({ state: 'visible' });
+      const pieces = page.getByRole('radiogroup', { name: 'Quân của bạn' });
+      const locked = pieces.locator('.kd-skin.is-locked');
+      await locked.first().waitFor({ state: 'visible' });
+      assert.ok(await locked.count() > 0, 'Không có mục nào bị khóa');
+      assert.match(await locked.first().textContent(), /20\.000\s*đ/, 'Mục khóa chưa có giá');
+      assert.match(await locked.first().getAttribute('aria-label'), /đang khóa, cúng dường 20\.000\s*đ để mở/, 'aria-label mục khóa sai');
+      assert.ok(await page.locator('.kd-skin').evaluateAll(items => items.every(item => item.getBoundingClientRect().height >= 44)), 'Mục skin quá thấp');
+      await shot(page, 'khoa-skin-bo-chon', kind);
+      // Bấm mục sân khóa rồi Esc: khung xác nhận hiện rồi đóng, chưa gửi gì.
+      await page.getByRole('radiogroup', { name: 'Sân của bạn' }).locator('.kd-skin.is-locked').first().click();
+      await page.locator('.kd-buy').waitFor({ state: 'visible' });
+      await page.keyboard.press('Escape');
+      await page.locator('.kd-buy').waitFor({ state: 'detached' });
+      // Bấm mục quân khóa: khung xác nhận, chưa gửi kd:skin.
+      const id = await locked.first().getAttribute('data-id');
+      await locked.first().click();
+      const dialog = page.locator('.kd-buy');
+      await dialog.waitFor({ state: 'visible' });
+      assert.match(await dialog.textContent(), /Cúng dường 20\.000\s*đ để mở skin này\. Mở rồi dùng mãi\./);
+      assert.ok(!/gửi kd:skin/.test(await page.locator('#log').textContent()), 'Bấm mục khóa mà vẫn gửi kd:skin');
+      await button(page, 'Cúng dường để mở').click();
+      await dialog.locator('img.kd-buy-qr').waitFor({ state: 'visible' });
+      assert.ok(await dialog.locator('img.kd-buy-qr').evaluate(img => img.getAttribute('src') === '/img/kydao/ui/crest-lotus.webp'), 'Ảnh QR chưa gán');
+      assert.match(await dialog.textContent(), /CDTEST01/);
+      await shot(page, 'khoa-skin-qr', kind);
+      // Máy chủ giả phát owned sau 1,5 giây: khung đóng, mục hết khóa, gửi kd:skin.
+      await page.waitForFunction(() => !document.querySelector('.kd-buy'), null, { timeout: 5000 });
+      assert.equal(await pieces.locator(`.kd-skin[data-id="${id}"]`).evaluate(el => el.classList.contains('is-locked')), false, 'Mục vẫn khóa sau khi được mở');
+      await page.waitForFunction(() => /gửi kd:skin/.test(document.getElementById('log').textContent), null, { timeout: 2000 });
+      assert.equal(await pieces.locator(`.kd-skin[data-id="${id}"]`).getAttribute('aria-checked'), 'true', 'Skin vừa mở chưa được chọn');
+      await shot(page, 'khoa-skin-da-mo', kind);
     });
     await t('ban-3d', 'desktop', async page => {
       await openGame(page, '#b-chess');

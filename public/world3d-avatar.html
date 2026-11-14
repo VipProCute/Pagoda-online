@@ -389,11 +389,11 @@
     $('bm-robe').addEventListener('input', e => { robeColor.set(e.target.value); for (const k of ['nam', 'nu']) if (SRC[k]) eachMaterial(SRC[k].scene, m => { if (m.name === 'robe') m.color.copy(robeColor); }); });
     $('bm-halo').addEventListener('change', e => { haloOn = e.target.checked; entries.forEach(haloFor); });
     $('bm-crowd').addEventListener('click', crowd60);
-    const useBlender = () => { try { return localStorage.getItem('ta-avatar') === 'blender'; } catch (error) { return false; } };
+    const useBlender = () => { try { return localStorage.getItem('ta-avatar') !== 'code'; } catch (error) { return true; } };
     $('bm-use').setAttribute('aria-pressed', String(useBlender()));
     $('bm-use').textContent = (useBlender() ? 'Đang dùng' : 'Dùng') + ' nhân vật Blender cho dàn nhân vật phía trên' + (useBlender() ? ' · bấm để tắt' : '');
     $('bm-use').addEventListener('click', () => {
-      try { if (useBlender()) localStorage.removeItem('ta-avatar'); else localStorage.setItem('ta-avatar', 'blender'); } catch (error) { /* không lưu được */ }
+      try { if (useBlender()) localStorage.setItem('ta-avatar', 'code'); else localStorage.removeItem('ta-avatar'); } catch (error) { /* không lưu được */ }
       location.reload();
     });
     $('bm-pair').addEventListener('click', pair);
