@@ -6,7 +6,8 @@
 const test = require('node:test');
 const fs = require('node:fs');
 const assert = require('node:assert/strict');
-const { startServer } = require('./helpers/live');
+const path = require('node:path');
+const { startServer, freePort } = require('./helpers/live');
 const { connect, call, join, waitFor, sleep } = require('./helpers/client');
 
 const BANK = { BANK_ID: '970436', BANK_ACCOUNT: '0123456789', BANK_ACCOUNT_NAME: 'CHUA' };
@@ -237,6 +238,40 @@ test('khóa skin: webhook SePay chỉ tự mở khi nhận đủ tiền; thiếu
   assert.deepEqual((await unlocked3).owned, ['field:glacier', 'pieces:jade']);
 });
 
+test('khóa skin: ghi sổ hỏng khi mua thì không trả QR, khoản vừa tạo bị hủy; ghi lại được thì mua bình thường', async t => {
+  const srv = await startServer({ DONATION_MODE: 'live', ...BANK, SEPAY_API_KEY: '' });
+  // kho JSON ghi qua file tạm `<db>.tmp` rồi đổi tên: một THƯ MỤC trùng tên file tạm làm lần ghi thất bại (cả Windows lẫn Linux)
+  const blocker = srv.dataFile + '.tmp';
+  const unblock = () => { try { fs.rmSync(blocker, { recursive: true, force: true }); } catch (e) { /* đã dọn */ } };
+  t.after(unblock);                 // đăng ký trước nên chạy trước srv.stop() (after chạy theo thứ tự đăng ký): kho ghi lại được thì tắt máy chủ êm; đừng đảo hai dòng này
+  t.after(() => srv.stop());
+  assert.equal((await srv.admin('/api/admin/kydao-shop', 'POST', { on: true, price: 20000 })).status, 200);
+  const A = await open(t, srv, 'Dao Huu A', UID.a);
+
+  fs.mkdirSync(blocker);
+  const bad = await call(A.s, 'kd:shop:buy', { kind: 'field', id: 'forest' });
+  assert.equal(bad.ok, false); assert.ok(bad.reason);
+  assert.equal(bad.qr, undefined); assert.equal(bad.code, undefined, 'không trả mã chưa ghi bền');
+  let sum = await srv.admin('/api/admin/summary');
+  let skins = sum.json.donations.filter(x => x.purpose === 'skin');
+  assert.equal(skins.length, 1);
+  assert.equal(skins[0].status, 'cancelled', 'khoản chưa ghi được không còn chờ');
+  assert.equal(skins.filter(x => x.status === 'pending').length, 0);
+  assert.deepEqual((await call(A.s, 'kd:shop:state', {})).owned, []);
+
+  // kho ghi được lại: qua nhịp 8 giây, mua tạo mã mới bình thường
+  unblock();
+  await sleep(8100);
+  const ok = await call(A.s, 'kd:shop:buy', { kind: 'field', id: 'forest' });
+  assert.equal(ok.ok, true); assert.ok(ok.code && ok.qr);
+  assert.notEqual(ok.code, skins[0].code, 'mã mới, không dùng lại khoản đã hủy');
+  assert.ok(fs.readFileSync(srv.dataFile, 'utf8').includes(ok.code), 'mã mới đã ghi bền');
+  sum = await srv.admin('/api/admin/summary');
+  skins = sum.json.donations.filter(x => x.purpose === 'skin');
+  assert.equal(skins.filter(x => x.status === 'pending').length, 1);
+  assert.equal(skins.find(x => x.status === 'pending').code, ok.code);
+});
+
 test('khóa skin: nhịp tạo mã 8 giây, khoản thường và hoàn thành tu luyện không bị ảnh hưởng', async t => {
   const srv = await startServer({ DONATION_MODE: 'test', ...BANK, SEPAY_API_KEY: '' });
   t.after(() => srv.stop());
@@ -254,4 +289,74 @@ test('khóa skin: nhịp tạo mã 8 giây, khoản thường và hoàn thành t
   // tắt cửa hàng: ai cũng dùng được, mua bị từ chối
   assert.equal((await srv.admin('/api/admin/kydao-shop', 'POST', { on: false })).status, 200);
   assert.equal((await call(A.s, 'kd:shop:buy', { kind: 'field', id: 'lotus' })).code, 'off');
+});
+
+test('khóa skin: khách mua skin rồi đăng nhập Google, quyền mở theo về tài khoản, không nhân đôi', async t => {
+  const port = await freePort();
+  const origin = `http://127.0.0.1:${port}`;
+  const fake = path.join(__dirname, 'helpers', 'fake-google.js').replace(/\\/g, '/');
+  const srv = await startServer({
+    DONATION_MODE: 'test', ...BANK, SEPAY_API_KEY: '', PORT: String(port),
+    GOOGLE_CLIENT_ID: 'client-thu', GOOGLE_CLIENT_SECRET: 'bi-mat-thu', AUTH_ORIGIN: origin,
+    NODE_OPTIONS: `--require "${fake}"`
+  });
+  t.after(() => srv.stop());
+  assert.equal((await srv.admin('/api/admin/kydao-shop', 'POST', { on: true, price: 20000 })).status, 200);
+
+  // khách A mua skin và chờ tự xác nhận
+  const A = await open(t, srv, 'Dao Huu A', UID.a);
+  const unlocked = waitFor(A.s, 'kd:shop:state', ownedIncludes('field:forest'), 20000);
+  const buy = await call(A.s, 'kd:shop:buy', { kind: 'field', id: 'forest' });
+  assert.equal(buy.ok, true);
+  assert.deepEqual((await unlocked).owned, ['field:forest']);
+
+  // khách B không đăng nhập: không sở hữu
+  const B = await open(t, srv, 'Dao Huu B', UID.b);
+  assert.deepEqual((await call(B.s, 'kd:shop:state', {})).owned, []);
+
+  const cookieOf = (res, name) => res.headers.getSetCookie().map(c => c.split(';')[0]).find(c => c.startsWith(name + '='));
+  const login = async (guest, state) => {
+    const start = await fetch(origin + '/api/auth/google', {
+      method: 'POST', headers: { origin, 'content-type': 'application/json' }, body: JSON.stringify({ guest })
+    });
+    assert.equal(start.status, 200);
+    assert.ok((await start.json()).url.startsWith('https://accounts.google.com/'));
+    const flowCookie = cookieOf(start, 'ta-google-flow');
+    assert.ok(flowCookie, 'có cookie luồng đăng nhập');
+    const flow = JSON.parse(Buffer.from(flowCookie.slice(flowCookie.indexOf('=') + 1).split('.')[0], 'base64url').toString('utf8'));
+    const code = Buffer.from(JSON.stringify({ nonce: flow.nonce, sub: 'nguoi-thu-1' })).toString('base64url');
+    const qs = new URLSearchParams({ state: state === undefined ? flow.state : state, code });
+    return fetch(`${origin}/api/auth/google/callback?${qs}`, { redirect: 'manual', headers: { cookie: flowCookie } });
+  };
+
+  // state sai: báo lỗi, không tạo phiên
+  const bad = await login(UID.a, 'state-sai');
+  assert.equal(bad.status, 303);
+  assert.ok(bad.headers.get('location').includes('auth=error'));
+  assert.equal(cookieOf(bad, 'ta-session'), undefined);
+
+  // đăng nhập đúng: nhận phiên
+  const ok = await login(UID.a);
+  assert.equal(ok.status, 303);
+  assert.ok(ok.headers.get('location').includes('auth=ok'));
+  const session = cookieOf(ok, 'ta-session');
+  assert.ok(session, 'có cookie phiên');
+
+  // kết nối mới kèm cookie phiên: quyền mở theo về tài khoản
+  const s2 = await connect(srv.port, { extraHeaders: { cookie: session } });
+  t.after(() => s2.close());
+  const j2 = await join(s2, 'Dao Huu A', UID.a);
+  assert.equal(j2.ok, true); assert.equal(j2.auth.signedIn, true);
+  assert.equal((await call(s2, 'scene', 'yard')).ok, true);
+  assert.deepEqual((await call(s2, 'kd:shop:state', {})).owned, ['field:forest']);
+  assert.equal((await call(s2, 'kd:shop:buy', { kind: 'field', id: 'forest' })).code, 'owned');
+  await sleep(1000);
+  const river = await call(s2, 'kd:shop:buy', { kind: 'field', id: 'river' });
+  assert.equal(river.ok, true, 'skin khác vẫn khóa, mua được khoản mới');
+  assert.ok(river.code);
+
+  // không nhân đôi; B vẫn không có
+  const stats = await srv.admin('/api/admin/kydao-shop');
+  assert.deepEqual(stats.json.stats, { owners: 1, unlocks: 1 });
+  assert.deepEqual((await call(B.s, 'kd:shop:state', {})).owned, []);
 });

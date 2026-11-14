@@ -128,7 +128,7 @@ const ok = (c, m) => { if (!c) throw new Error(m); };
 
 (async () => {
   const browser = await pw.chromium.launch({ channel: process.env.PW_CHANNEL || undefined, headless: true });
-  let srv = null, C = null;
+  let srv = null, srv2 = null, C = null;
   try {
     srv = await startServer({ DONATION_MODE: 'test', ADMIN_KEY: ADMIN, BANK_ID: '970436', BANK_ACCOUNT: '0123456789', BANK_ACCOUNT_NAME: 'CHUA THU', SEPAY_API_KEY: '' });
     const A = await newPlayer(browser, 'An'), B = await newPlayer(browser, 'Bình');
@@ -444,6 +444,71 @@ const ok = (c, m) => { if (!c) throw new Error(m); };
       const serverErr = srv.logs.join('').split('\n').filter(l => /error|exception|unhandled/i.test(l) && !/EADDRINUSE/.test(l));
       ok(!serverErr.length, 'nhật ký máy chủ có lỗi: ' + serverErr.slice(0, 2).join(' | '));
     });
+
+    /* ===== Đợt 3: chế độ THẬT (live): không tự xác nhận, Ban điều hành duyệt tay thì skin tự mở ===== */
+    const ADMIN2 = 'e2e-' + require('crypto').randomBytes(9).toString('hex');
+    srv2 = await startServer({ DONATION_MODE: 'live', ADMIN_KEY: ADMIN2, BANK_ID: '970436', BANK_ACCOUNT: '0123456789', BANK_ACCOUNT_NAME: 'CHUA THU', SEPAY_API_KEY: '' });
+    const admin2 = (p, method = 'GET', body) => fetch(srv2.url + p, { method, headers: { 'x-admin-key': ADMIN2, 'content-type': 'application/json' }, body: body ? JSON.stringify(body) : undefined })
+      .then(async r => ({ status: r.status, json: await r.json().catch(() => null) }));
+    const A2 = await newPlayer(browser, 'An2'), B2 = await newPlayer(browser, 'Binh2');
+    stepPages.push(A2, B2);
+    let liveCode = null;
+    const magmaLocked = p => p.locator('.kd-skin[data-kind="pieces"][data-id="magma"].is-locked').count();
+
+    await step('17. (live) Admin bật cửa hàng 20.000 đ; A mở ván cờ vua với B, bấm quân Dung Nham khóa, "Cúng dường để mở": khung QR hiện mã CD…', async () => {
+      const r = await admin2('/api/admin/kydao-shop', 'POST', { on: true, price: 20000 });
+      ok(r.status === 200 && r.json.ok && r.json.config.on === true, 'bật cửa hàng: ' + r.status + ' ' + JSON.stringify(r.json));
+      await enterYard(A2, srv2, 'Diệu An'); await enterYard(B2, srv2, 'Diệu Bình');
+      await seatAndStart(A2, B2, 1, 'chess');
+      await sleep(500);
+      await panelOpen(A2, 'Lãnh địa');
+      await A2.waitForSelector('.kd-skin.is-locked', { timeout: 5000 });
+      ok(await magmaLocked(A2) === 1, 'Dung Nham phải đang khóa');
+      await A2.click('.kd-skin[data-kind="pieces"][data-id="magma"]');
+      await A2.waitForSelector('.kd-buy');
+      await A2.click('.kd-buy .kd-gold');
+      await A2.waitForSelector('.kd-buy-qr', { timeout: 6000 });
+      const txt = await A2.textContent('.kd-buy');
+      ok(money.test(txt), 'khung QR thiếu số tiền: ' + txt);
+      liveCode = (txt.match(/CD[A-Z0-9]{6}/) || [])[0];
+      ok(liveCode, 'khung QR thiếu mã CD…: ' + txt);
+      await shot(A2, 'live-khung-qr');
+      return 'mã ' + liveCode;
+    });
+
+    await step('18. (live) Chờ 3 giây: khung QR vẫn mở, skin vẫn khóa (không tự xác nhận)', async () => {
+      await sleep(3000);
+      ok(await A2.locator('.kd-buy-qr').count() === 1, 'khung QR đã tự đóng');
+      ok(await magmaLocked(A2) === 1, 'skin đã tự hết khóa khi chưa duyệt');
+    });
+
+    await step('19. (live) Ban điều hành xác nhận khoản qua API: khung QR của A tự đóng, Dung Nham hết khóa, B vẫn khóa', async () => {
+      ok(liveCode, 'chưa có mã khoản');
+      const r = await admin2(`/api/admin/donations/${liveCode}/confirm`, 'POST');
+      ok(r.status === 200 && r.json && r.json.ok !== false && r.json.outcome === 'granted', 'xác nhận: ' + r.status + ' ' + JSON.stringify(r.json));
+      await A2.waitForFunction(() => !document.querySelector('.kd-buy') && !document.querySelector('.kd-skin[data-kind="pieces"][data-id="magma"].is-locked'), null, { timeout: 8000 });
+      ok(await magmaLocked(A2) === 0, 'A vẫn thấy khóa');
+      ok(await A2.locator('.kd-skin[data-kind="field"][data-id="river"].is-locked').count() === 1, 'skin khác của A phải vẫn khóa');
+      await panelOpen(B2, 'Lãnh địa');
+      ok(await magmaLocked(B2) === 1, 'B phải vẫn thấy Dung Nham bị khóa');
+      await panelClose(B2, 'Lãnh địa');
+      await shot(A2, 'live-mo-khoa-xong');
+    });
+
+    await step('20. (live) Xác nhận lần hai: không lỗi (already), thống kê unlocks vẫn 1', async () => {
+      const r = await admin2(`/api/admin/donations/${liveCode}/confirm`, 'POST');
+      ok(r.status === 200 && r.json && r.json.already === true && r.json.outcome === 'granted', 'xác nhận lần hai: ' + r.status + ' ' + JSON.stringify(r.json));
+      const v = await admin2('/api/admin/kydao-shop');
+      ok(v.status === 200 && v.json.stats.unlocks === 1 && v.json.stats.owners === 1, 'thống kê: ' + JSON.stringify(v.json && v.json.stats));
+      return 'thống kê: ' + JSON.stringify(v.json.stats);
+    });
+
+    await step('21. (live) Suốt pha mới: không pageerror, không console.error, không HTTP >= 500, máy chủ không lỗi', async () => {
+      const errs = [...A2.errs.map(e => 'A2 ' + e), ...B2.errs.map(e => 'B2 ' + e), ...A2.http5xx.map(e => 'A2 ' + e), ...B2.http5xx.map(e => 'B2 ' + e)];
+      ok(!errs.length, errs.slice(0, 4).join(' | '));
+      const serverErr = srv2.logs.join('').split('\n').filter(l => /error|exception|unhandled/i.test(l) && !/EADDRINUSE/.test(l));
+      ok(!serverErr.length, 'nhật ký máy chủ có lỗi: ' + serverErr.slice(0, 2).join(' | '));
+    });
   } catch (e) {
     console.error('Lỗi dựng kịch bản:', e); results.push([false, 'dựng kịch bản', String(e && e.message || e)]);
   } finally {
@@ -451,6 +516,7 @@ const ok = (c, m) => { if (!c) throw new Error(m); };
     for (const c of ctxs) await c.close().catch(() => {});
     await browser.close().catch(() => {});
     if (srv) await srv.stop().catch(() => {});
+    if (srv2) await srv2.stop().catch(() => {});
   }
   console.log('\nBước | Kết quả | Chi tiết');
   for (const [pass, name, detail] of results) console.log(`${pass ? 'ĐẠT ' : 'TRƯỢT'} | ${name}${detail ? ' | ' + detail : ''}`);
