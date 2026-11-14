@@ -1489,8 +1489,9 @@ io.on('connection', socket => {
     if (have) {
       // Mã đã phát thì chỉ hạ theo mức mới (có lợi cho người cúng dường); mức tăng không áp vào mã cũ, kẻo tiền đang chuyển bị coi là thiếu.
       const old = have.amount;
-      if (price < old && !have.bank) { have.amount = price; store.save(); }
-      if (!(await store.flush())) { if (have.status === 'pending' && !have.bank) have.amount = old; return { ok: false, reason: 'Chưa lưu được mã cúng dường. Bạn thử lại sau ít giây nhé.' }; }
+      const lowered = price < old && !have.bank;
+      if (lowered) { have.amount = price; store.save(); }
+      if (!(await store.flush())) { if (lowered && have.status === 'pending' && !have.bank) have.amount = old; return { ok: false, reason: 'Chưa lưu được mã cúng dường. Bạn thử lại sau ít giây nhé.' }; }
       // trong lúc chờ ghi, khoản có thể đã bị hủy hoặc hết hạn (hai lần bấm sát nhau)
       if (have.status !== 'pending') return { ok: false, reason: 'Mã cúng dường đã hết hạn. Bạn bấm mở lại nhé.' };
       scheduleTestDonation(have); return Object.assign({ ok: true, kind, id }, donationAck(have));
