@@ -3,9 +3,9 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 globalThis.StandMath = require('../public/js/stand-math.js');
-const load = () => import('../public/js/world3d/fx3d/index.mjs?v=3');
+const load = () => import('../public/js/world3d/fx3d/index.mjs?v=4');
 const loadAssets = () => import('../public/js/world3d/fx3d/assets.mjs');
-const loadMaterials = () => import('../public/js/world3d/fx3d/materials.mjs?v=3');
+const loadMaterials = () => import('../public/js/world3d/fx3d/materials.mjs?v=4');
 const emptyCovers = () => ({ demon: false, lotus: false, aura: false, merit: false });
 const settle = () => new Promise(resolve => setTimeout(resolve, 0));
 
@@ -202,12 +202,14 @@ test('vật liệu đúng cờ trong suốt', async () => {
   assert.equal(masked.defines.SPIRIT_GLOW, '');
   assert.equal(masked.customProgramCacheKey(), 'fx-spirit-glow');
   const shell = materials.flameShellMaterial({ side: THREE.BackSide });
-  assert.equal(shell.blending, THREE.AdditiveBlending);
+  // T-203: trộn thường để giữ màu bậc trên nền sáng (cộng sáng làm vỏ khí và lửa ngả trắng).
+  assert.equal(shell.blending, THREE.NormalBlending);
+  assert.equal(materials.flameShellMaterial({ ribbon: true }).blending, THREE.NormalBlending);
   assert.equal(shell.side, THREE.BackSide);
   assert.equal(shell.depthWrite, false);
   assert.equal(shell.transparent, true);
   assert.match(shell.fragmentShader, /#include <colorspace_fragment>/);
-  assert.equal(shell.toneMapped, false);
+  assert.equal(shell.toneMapped, true);
   const depth = materials.spiritDepthMaterial();
   assert.equal(depth.colorWrite, false);
   assert.equal(depth.depthWrite, true);
@@ -217,7 +219,8 @@ test('vật liệu đúng cờ trong suốt', async () => {
   const depthShader = { uniforms: {}, vertexShader: THREE.ShaderLib.basic.vertexShader, fragmentShader: THREE.ShaderLib.basic.fragmentShader };
   depth.onBeforeCompile(depthShader);
   assert.match(depthShader.vertexShader, /vLocalY = transformed.y/);
-  assert.match(depthShader.fragmentShader, /if \(spiritCut < uThreshold\) discard/);
+  assert.match(depthShader.fragmentShader, /if \(spiritCut < uThreshold \|\| uAlpha < uMinAlpha\) discard/);
+  assert.equal(depthShader.uniforms.uMinAlpha.value, 0.6);
   assert.equal(depthShader.uniforms.uNoise.value, shader.uniforms.uNoise.value);
   const map = new THREE.Texture(), normalMap = new THREE.Texture(), emissiveMap = new THREE.Texture();
   const textured = materials.spiritMaterial({ map, normalMap, emissiveMap, glowMask: true });
@@ -235,7 +238,7 @@ test('vật liệu đúng cờ trong suốt', async () => {
   assert.match(texturedShader.fragmentShader, /#include <emissivemap_fragment>[\s\S]*spiritGlow = max\(max\(emissiveColor.r/);
   assert.match(texturedShader.fragmentShader, /float glowA = spiritGlow \* spiritCut/);
   const ribbon = materials.flameShellMaterial({ ribbon: true });
-  assert.equal(ribbon.side, THREE.DoubleSide);
+  assert.equal(ribbon.side, THREE.FrontSide);
   assert.equal(ribbon.defines.FLAME_RIBBON, '');
   assert.match(ribbon.vertexShader, /#include <skinning_vertex>/);
   const glow = materials.glowMaterial();
@@ -270,7 +273,7 @@ test('viền linh thể có ảnh dùng pháp tuyến chưa nhiễu của Three.
 });
 
 test('placeholder vẽ được ba phần và trả covers', async () => {
-  const [{ createFx3d }, { placeholderParts }, THREE] = await Promise.all([load(), import('../public/js/world3d/fx3d/placeholder.mjs'), import('three')]);
+  const [{ createFx3d }, { placeholderParts }, THREE] = await Promise.all([load(), import('../public/js/world3d/fx3d/placeholder.mjs?v=2'), import('three')]);
   const host = makeHost(THREE);
   const fx = createFx3d(host, { parts: placeholderParts() });
   assert.deepEqual(fx.update({ tier: 5, color: '#8fd3ff', fade: 1, demon: { n: 4, alpha: 0.5 } }, 0.016, {}),
@@ -345,7 +348,7 @@ test('release lúc đang tải dọn kết quả muộn và không xóa lượt 
 });
 
 test('placeholder đổi chất lượng không giữ hạt đang hiện khi giảm chuyển động', async () => {
-  const [{ createFx3d }, { placeholderParts }, THREE] = await Promise.all([load(), import('../public/js/world3d/fx3d/placeholder.mjs'), import('three')]);
+  const [{ createFx3d }, { placeholderParts }, THREE] = await Promise.all([load(), import('../public/js/world3d/fx3d/placeholder.mjs?v=2'), import('three')]);
   const fx = createFx3d(makeHost(THREE), { quality: 'medium', parts: placeholderParts() });
   const state = { tier: 5, color: '#8fd3ff', fade: 0.7 };
   fx.update(state, 0.016);
@@ -390,8 +393,8 @@ function fakeAsset({ THREE, skinned = false }) {
 
 async function realFx(opts = {}) {
   const [{ createFx3d }, { createAssets }, { demonPart }, { lotusPart }, { auraPart }, THREE] = await Promise.all([
-    load(), loadAssets(), import('../public/js/world3d/fx3d/demon.mjs?v=3'),
-    import('../public/js/world3d/fx3d/lotus.mjs?v=2'), import('../public/js/world3d/fx3d/aura.mjs?v=3'), import('three')
+    load(), loadAssets(), import('../public/js/world3d/fx3d/demon.mjs?v=4'),
+    import('../public/js/world3d/fx3d/lotus.mjs?v=3'), import('../public/js/world3d/fx3d/aura.mjs?v=4'), import('three')
   ]);
   const assets = createAssets({ loadGltf: opts.loadGltf || (async () => fakeAsset({ THREE, skinned: opts.skinned })) });
   const host = makeHost(THREE);
@@ -571,7 +574,7 @@ test('dispose trước khi tải xong trả đủ tham chiếu và không gắn 
 
 test('tải quỷ lỗi rồi tải lại không trả nhầm tham chiếu của lượt sau', async t => {
   const [{ createFx3d }, { createAssets }, { demonPart }, THREE] = await Promise.all([
-    load(), loadAssets(), import('../public/js/world3d/fx3d/demon.mjs?v=3'), import('three')
+    load(), loadAssets(), import('../public/js/world3d/fx3d/demon.mjs?v=4'), import('three')
   ]);
   const asset = fakeAsset({ THREE });
   const disposed = watchDispose(asset.scene.getObjectByName('spirit').geometry);
@@ -640,7 +643,7 @@ test('neo quỷ dùng vị trí chủ mới ngay khi ma trận thế giới chư
   assert.ok(position.distanceTo(expected) < 1e-6, 'neo phải theo vị trí mới trong cùng khung');
 });
 
-test('thân quỷ có ảnh ghi chiều sâu bằng bản sao chung xương và chỉ lửa có hai mặt', async t => {
+test('thân quỷ có ảnh ghi chiều sâu bằng bản sao chung xương, mọi lưới chỉ vẽ mặt trước', async t => {
   const THREE = await import('three');
   const asset = fakeAsset({ THREE, skinned: true });
   const source = asset.scene.getObjectByName('spirit');
@@ -677,7 +680,7 @@ test('thân quỷ có ảnh ghi chiều sâu bằng bản sao chung xương và 
   fx.root.getObjectByName('fx3d-demon').traverse(node => {
     if (node.isMesh && node !== ribbon) assert.equal(node.material.side, THREE.FrontSide);
   });
-  assert.equal(ribbon.material.side, THREE.DoubleSide);
+  assert.equal(ribbon.material.side, THREE.FrontSide);
   fx.update({ demon: { n: 4, alpha: 0.01 } }, 0, { distance: 3 });
   assert.equal(pre.visible, false, 'quỷ gần tan không để lại lỗ chiều sâu');
   assert.equal(pre.material.userData.uniforms.uAlpha.value, 0.01);
@@ -687,7 +690,7 @@ test('thân quỷ có ảnh ghi chiều sâu bằng bản sao chung xương và 
 });
 
 test('quỷ của mình đứng lệch sang trái ở chế độ side và trả được về cover', async t => {
-  const { SELF_DEMON } = await import('../public/js/world3d/fx3d/demon.mjs?v=3');
+  const { SELF_DEMON } = await import('../public/js/world3d/fx3d/demon.mjs?v=4');
   const previous = SELF_DEMON.mode;
   const { fx } = await realFx({ reducedMotion: true });
   t.after(() => { SELF_DEMON.mode = previous; fx.dispose(); });
@@ -707,4 +710,164 @@ test('quỷ của mình đứng lệch sang trái ở chế độ side và trả
   SELF_DEMON.mode = 'cover';
   fx.update(state, 0, { isSelf: true });
   assert.ok(demon.position.distanceTo(coverPosition) < 1e-6);
+});
+
+test('quỷ của mình ngoái mặt về máy quay, người khác và lúc thiếu máy quay vẫn dùng neo cũ', async t => {
+  const { SELF_DEMON } = await import('../public/js/world3d/fx3d/demon.mjs?v=4');
+  const previous = SELF_DEMON.mode;
+  assert.equal(previous, 'face');
+  SELF_DEMON.mode = 'face';
+  const THREE = await import('three');
+  const { fx, host } = await realFx({ reducedMotion: true, loadGltf: async () => {
+    const asset = fakeAsset({ THREE });
+    const neck = new THREE.Bone(), head = new THREE.Bone();
+    neck.name = 'neck'; head.name = 'head'; neck.add(head); asset.scene.add(neck);
+    neck.rotation.x = 0.3; head.rotation.z = 0.2;
+    asset.animations = asset.animations.map(clip => new THREE.AnimationClip(clip.name, 1, [
+      new THREE.QuaternionKeyframeTrack('neck.quaternion', [0, 1], [...neck.quaternion.toArray(), ...neck.quaternion.toArray()]),
+      new THREE.QuaternionKeyframeTrack('head.quaternion', [0, 1], [...head.quaternion.toArray(), ...head.quaternion.toArray()])
+    ]));
+    return asset;
+  } });
+  t.after(() => { SELF_DEMON.mode = previous; fx.dispose(); });
+  const state = { demon: { n: 4 }, yaw: 0 }, camera = { x: 0, y: 3.45, z: -5.4 };
+  fx.update(state); await settle(); fx.update(state, 0, { isSelf: true });
+  const demon = fx.root.getObjectByName('fx3d-demon'), head = demon.getObjectByName('head');
+  const original = head.quaternion.clone();
+  assert.ok(demon.position.distanceTo(new THREE.Vector3(0, 1.2, -0.55)) < 1e-6);
+  const stand = globalThis.StandMath.selfStand(camera);
+  fx.update(state, 0, { isSelf: true, camera, distance: 0.6 });
+  assert.ok(demon.position.z > 0.3 && demon.position.x > 0.3);
+  assert.ok(Math.abs(demon.rotation.y - stand.yaw) < 1e-6);
+  assert.ok(demon.position.distanceTo(new THREE.Vector3(stand.x, stand.y, stand.z)) < 1e-6);
+  assert.equal(demon.scale.x, 1.1);
+  assert.equal(demon.getObjectByName('spirit').material.userData.uniforms.uAlpha.value, 1);
+  assert.ok(head.quaternion.angleTo(original) > 0.1);
+  const turned = head.quaternion.clone();
+  for (let i = 0; i < 5; i++) fx.update(state, 0, { isSelf: true, camera });
+  assert.ok(head.quaternion.angleTo(turned) < 1e-6, 'góc đầu không cộng dồn');
+  fx.update({ ...state, yaw: 0.8 }, 0, { isSelf: false, camera });
+  assert.equal(demon.rotation.y, 0.8);
+  assert.equal(demon.scale.x, 1);
+  assert.ok(head.quaternion.angleTo(original) < 1e-6);
+  const anchor = globalThis.StandMath.ANCHOR[4];
+  assert.ok(demon.position.distanceTo(new THREE.Vector3(anchor.z * Math.sin(0.8), anchor.y, anchor.z * Math.cos(0.8))) < 1e-6);
+  // Vị trí máy quay là thế giới, còn neo face theo hệ của chủ, không theo yaw của chủ.
+  host.group.position.set(2, 0.5, 3); host.group.rotation.y = 0.4;
+  host.group.updateWorldMatrix(true, false);
+  const worldCamera = host.group.localToWorld(new THREE.Vector3(camera.x, camera.y, camera.z));
+  fx.update({ ...state, yaw: 1.2, sit: true }, 0, { isSelf: true, camera: worldCamera });
+  assert.ok(demon.position.distanceTo(new THREE.Vector3(stand.x, stand.y - 0.35, stand.z)) < 1e-6);
+  assert.ok(Math.abs(demon.rotation.y - stand.yaw) < 1e-6);
+  fx.update(state, 0, { isSelf: true, camera: host.group.position.clone() });
+  assert.ok(demon.position.distanceTo(new THREE.Vector3(0, 1.2, -0.55)) < 1e-6, 'máy quay sát chủ trả về neo cũ');
+  assert.ok(head.quaternion.angleTo(original) < 1e-6);
+});
+
+test('lưới thân bắt máy quay qua onBeforeRender sau khi đã tạo bản sao chiều sâu', async t => {
+  const { SELF_DEMON } = await import('../public/js/world3d/fx3d/demon.mjs?v=4');
+  const previous = SELF_DEMON.mode; SELF_DEMON.mode = 'face';
+  const { fx, THREE } = await realFx({ reducedMotion: true });
+  t.after(() => { SELF_DEMON.mode = previous; fx.dispose(); });
+  const state = { demon: { n: 4 } };
+  fx.update(state); await settle(); fx.update(state, 0, { isSelf: true });
+  const body = fx.root.getObjectByName('spirit'), pre = fx.root.getObjectByName('spirit-depth');
+  assert.notEqual(body.onBeforeRender, pre.onBeforeRender);
+  const camera = new THREE.PerspectiveCamera(); camera.position.set(4, 3, -5);
+  body.onBeforeRender(null, null, camera);
+  fx.update(state, 0, { isSelf: true });
+  const stand = globalThis.StandMath.selfStand(camera.position), demon = fx.root.getObjectByName('fx3d-demon');
+  assert.ok(demon.position.distanceTo(new THREE.Vector3(stand.x, stand.y, stand.z)) < 1e-6);
+  assert.ok(Math.abs(demon.rotation.y - stand.yaw) < 1e-6);
+});
+
+test('suất riêng ẩn đúng nhóm quỷ hoặc toàn bộ hào quang và đài sen', async t => {
+  const { fx } = await realFx({ quality: 'high' }); t.after(() => fx.dispose());
+  const state = { tier: 5, demon: { n: 4 } };
+  fx.update(state); await settle(); fx.update(state);
+  const covers = fx.update(state, 0, { slots: { demon: false, aura: true } });
+  assert.equal(covers.demon, false); assert.equal(covers.aura, true); assert.equal(covers.lotus, true);
+  assert.equal(fx.root.getObjectByName('fx3d-demon').visible, false);
+  fx.update(state, 0, { slots: { demon: true, aura: false } });
+  assert.equal(covers.demon, true); assert.equal(covers.aura, false); assert.equal(covers.lotus, false);
+  for (const name of ['fx3d-lotus', 'fx3d-aura']) assert.equal(fx.root.getObjectByName(name).visible, false);
+  fx.root.traverse(node => { if (node.isPoints) assert.equal(node.visible, false); });
+});
+
+test('phần bị chặn suất chỉ được ẩn, không cập nhật, kể cả phần công đức', async t => {
+  const [{ createFx3d, PARTS }, THREE] = await Promise.all([load(), import('three')]);
+  const updates = {}, hidden = {};
+  const parts = Object.fromEntries(PARTS.map(name => [name, () => ({
+    update() { updates[name] = (updates[name] || 0) + 1; return true; },
+    hide() { hidden[name] = (hidden[name] || 0) + 1; }
+  })]));
+  const fx = createFx3d(makeHost(THREE), { parts }); t.after(() => fx.dispose());
+  fx.update({}, 0, { slots: { demon: true, aura: false } });
+  assert.deepEqual(updates, { demon: 1 });
+  assert.deepEqual(hidden, { lotus: 1, aura: 1, merit: 1 });
+  fx.update({}, 0, { slots: { demon: false, aura: true } });
+  assert.deepEqual(updates, { demon: 1, lotus: 1, aura: 1, merit: 1 });
+  assert.equal(fx.covers.demon, false);
+});
+
+test('quỷ mờ 0,55 không ghi chiều sâu nhưng độ rõ 0,7 thì có', async t => {
+  const { fx } = await realFx({ reducedMotion: true }); t.after(() => fx.dispose());
+  fx.update({ demon: { n: 4 } }); await settle();
+  for (const [alpha, visible] of [[0.55, false], [0.7, true]]) {
+    fx.update({ demon: { n: 4, alpha } }, 0, { distance: 3 });
+    const pre = fx.root.getObjectByName('spirit-depth');
+    assert.equal(pre.visible, visible);
+    assert.equal(pre.material.userData.uniforms.uAlpha.value, alpha);
+  }
+});
+
+test('hạt hào quang và đài sen dùng chung ảnh đốm tròn mềm', async t => {
+  const materials = await loadMaterials();
+  const texture = materials.dotTexture();
+  assert.equal(texture, materials.dotTexture());
+  assert.equal(texture.image.width, 32); assert.equal(texture.image.height, 32);
+  const data = texture.image.data;
+  assert.equal(data[3], 0); assert.equal(data[(32 * 32 - 1) * 4 + 3], 0);
+  // Tâm hình nằm giữa bốn texel; giá trị theo công thức bán kính ở C4.
+  assert.equal(data[(15 * 32 + 15) * 4 + 3], 253);
+  assert.ok(data[(8 * 32 + 15) * 4 + 3] > 0);
+  const { fx, THREE } = await realFx({ quality: 'high' }); t.after(() => fx.dispose());
+  assert.equal(texture.format, THREE.RGBAFormat); assert.equal(texture.generateMipmaps, false);
+  assert.equal(texture.minFilter, THREE.LinearFilter); assert.equal(texture.magFilter, THREE.LinearFilter);
+  const state = { tier: 5 };
+  fx.update(state); await settle(); fx.update(state);
+  const points = []; fx.root.traverse(node => { if (node.isPoints) points.push(node); });
+  assert.equal(points.length, 2);
+  for (const point of points) {
+    const mat = point.material;
+    assert.equal(mat.map, texture); assert.equal(mat.size, 0.09); assert.equal(mat.sizeAttenuation, true);
+    assert.equal(mat.alphaTest, 0.01); assert.equal(mat.depthWrite, false); assert.equal(mat.toneMapped, false);
+    assert.equal(mat.transparent, true); assert.equal(mat.blending, THREE.AdditiveBlending);
+  }
+});
+
+test('vỏ khí giảm cháy trắng theo khoảng cách và ánh xạ tông trước đổi không gian màu', async () => {
+  const { flameShellMaterial } = await loadMaterials();
+  const shell = flameShellMaterial(), ribbon = flameShellMaterial({ ribbon: true });
+  try {
+    assert.equal(shell.toneMapped, true);
+    assert.match(shell.vertexShader, /vDist = -mv.z/);
+    assert.match(shell.fragmentShader, /smoothstep\(0\.9, 2\.6, vDist\)/);
+    assert.match(shell.fragmentShader, /a = min\(a, 0\.8\)/);
+    assert.match(shell.fragmentShader, /col \* 1\.25/);
+    assert.match(shell.fragmentShader, /#include <tonemapping_fragment>/);
+    assert.ok(shell.fragmentShader.indexOf('#include <tonemapping_fragment>') < shell.fragmentShader.indexOf('#include <colorspace_fragment>'));
+    assert.match(ribbon.fragmentShader, /pow\(abs\(dot\(normalize\(vN\), normalize\(vV\)\)\), 1\.3\)/);
+    assert.match(ribbon.fragmentShader, /smoothstep\(0\.7, 1\.0, vH\)/);
+  } finally { shell.dispose(); ribbon.dispose(); }
+});
+
+test('URL mô hình vòng hai đều có phiên bản chống bộ đệm cũ', async () => {
+  const [{ DEMON_URL }, { LOTUS_URL }, { AURA_KIT_URL }] = await Promise.all([
+    import('../public/js/world3d/fx3d/demon.mjs?v=4'), import('../public/js/world3d/fx3d/lotus.mjs?v=3'),
+    import('../public/js/world3d/fx3d/aura.mjs?v=4')
+  ]);
+  assert.equal(DEMON_URL[4], '/models/fx/demon-4.glb?v=2');
+  assert.equal(LOTUS_URL, '/models/fx/lotus.glb?v=2');
+  assert.equal(AURA_KIT_URL, '/models/fx/aura-kit.glb?v=2');
 });

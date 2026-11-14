@@ -4,7 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 
-const load = () => import('../public/js/world3d/avatar.mjs');
+const load = () => import('../public/js/world3d/avatar.mjs?v=7');
 function canvasFactory(writes = []) {
   return () => ({ width: 0, height: 0, getContext: () => ({
     clearRect() {}, beginPath() {}, roundRect() {}, fill() {}, stroke() {}, fillRect() {},
@@ -361,10 +361,11 @@ test('fx nhận trạng thái chuẩn hóa và ẩn ở góc nhìn thứ nhất'
   const avatar = createAvatar({}, { fx3d: host => { assert.ok(host.group && host.rig && host.head); return fake; }, createCanvas: canvasFactory() });
   t.after(() => avatar.dispose());
   avatar.update({ isSelf: true, view: 'first', demon: { n: 4, alpha: 0.5 }, yaw: 1,
-    quality: 'low', reducedMotion: true, fx: { distance: 5, slot: false } }, 0.016);
+    quality: 'low', reducedMotion: true, fx: { distance: 5, slot: false, slots: { demon: false, aura: true } } }, 0.016);
   assert.equal(avatar.fx, fake);
   assert.equal(received.ctx.hidden, true); assert.equal(received.ctx.slot, false); assert.equal(received.ctx.distance, 5);
   assert.equal(received.ctx.isSelf, true); assert.equal(received.dt, 0.016);
+  assert.deepEqual(received.ctx.slots, { demon: false, aura: true });
   assert.equal(received.state.demon.alpha, 0.5); assert.equal(received.state.yaw, 1);
   assert.ok(changes.some(([key, value]) => key === 'quality' && value === 'low'));
   assert.ok(changes.some(([key, value]) => key === 'reduced' && value === true));
@@ -381,4 +382,29 @@ test('công tắc ta-fx3d tắt thì không tạo fx3d', async t => {
   const avatar = createAvatar({}, { createCanvas: canvasFactory() }); t.after(() => avatar.dispose());
   assert.equal(avatar.group.getObjectByName('fx3d'), undefined);
   assert.equal(avatar.fx, null);
+});
+
+test('fx phủ quỷ, hào quang hoặc sen thì nhãn tên và bong bóng không bị chiều sâu cắt', async t => {
+  const { createAvatar } = await load();
+  const covers = { demon: false, lotus: false, aura: false, merit: false };
+  const fake = { update: () => covers, setQuality() {}, setReducedMotion() {}, dispose() {} };
+  const avatar = createAvatar({}, { fx3d: fake, createCanvas: canvasFactory() });
+  const plain = createAvatar({}, { fx3d: false, createCanvas: canvasFactory() });
+  t.after(() => { avatar.dispose(); plain.dispose(); });
+  const state = { name: 'Tâm An', bubble: 'Bình an' };
+  const check = (instance, expected) => {
+    for (const name of ['nameplate', 'bubble']) {
+      const sprite = instance.group.getObjectByName(name);
+      assert.equal(sprite.material.depthTest, expected);
+      assert.equal(sprite.material.depthWrite, false);
+      assert.equal(sprite.visible, true);
+    }
+  };
+  avatar.update(state); check(avatar, true);
+  for (const name of ['demon', 'aura', 'lotus']) {
+    covers[name] = true; avatar.update(state); check(avatar, false);
+    covers[name] = false; avatar.update(state); check(avatar, true);
+  }
+  covers.merit = true; avatar.update(state); check(avatar, true);
+  plain.update(state); check(plain, true);
 });

@@ -7,7 +7,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const ViewMath = require('../public/js/view-math.js');
 const dependencies = Promise.all([
-  import('three'), import('../public/js/world3d/kit.mjs'), import('../public/js/world3d/scenes/arena.mjs')
+  import('three'), import('../public/js/world3d/kit.mjs'), import('../public/js/world3d/scenes/arena.mjs?v=9')
 ]);
 
 async function fixture(options = {}) {
@@ -191,4 +191,40 @@ test('Trang thử có cú pháp hợp lệ, đúng đường Three.js và điề
   for (const name of ['createView', 'cameraPose', 'moveTarget', 'SCENE_SIZE.arena']) assert.ok(source.includes('ViewMath.' + name));
   assert.ok(source.includes('content.pick(raycaster)'));
   assert.ok(!source.includes('innerHTML'));
+});
+
+test('suất quỷ mức Thấp giữ mình và hai người gần máy quay nhất theo khoảng cách ngang', async () => {
+  const previous = Object.getOwnPropertyDescriptor(globalThis, 'StandMath');
+  globalThis.StandMath = require('../public/js/stand-math.js');
+  const { THREE, scene, kit, ctx } = await fixture({ quality: 'low' });
+  try {
+    ctx.camera = new THREE.PerspectiveCamera(); ctx.camera.position.set(-8, 17, 4);
+    scene.group.position.set(1, 0.5, -2);
+    const players = Array.from({ length: 6 }, (_, i) => ({
+      id: i === 5 ? 'self' : 'p' + i, x: 0.1 + i * 0.12, z: 0.85, demon: { n: 4 }, aura: { t: 5 }
+    }));
+    const state = { me: 'self', players };
+    scene.update(state, 0.016);
+    const avatars = scene.group.children.filter(node => node.name === 'avatar').sort((a, b) => a.position.x - b.position.x);
+    assert.equal(avatars.length, 6);
+    for (let i = 0; i < avatars.length; i++) {
+      const avatar = avatars[i], fx = avatar.userData.fx;
+      const position = avatar.getWorldPosition(new THREE.Vector3());
+      const expected = Math.hypot(position.x - ctx.camera.position.x, position.z - ctx.camera.position.z);
+      assert.ok(Math.abs(fx.distance - expected) < 1e-6);
+      assert.equal(fx.slots.demon, i < 2 || i === 5);
+      assert.equal(fx.slots.aura, i < 2 || i === 5);
+    }
+    assert.equal(avatars[2].userData.fx.slots.demon, false);
+    ctx.camera = null; scene.update(state, 0.016);
+    for (const avatar of avatars) assert.equal(avatar.userData.fx.distance, Infinity);
+    delete globalThis.StandMath; scene.update(state, 0.016);
+    for (const avatar of avatars) {
+      assert.equal(avatar.userData.fx.slot, true);
+      assert.equal(avatar.userData.fx.slots, undefined);
+    }
+  } finally {
+    cleanup(scene, kit);
+    if (previous) Object.defineProperty(globalThis, 'StandMath', previous); else delete globalThis.StandMath;
+  }
 });

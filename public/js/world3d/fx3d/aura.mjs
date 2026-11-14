@@ -1,9 +1,9 @@
 'use strict';
 
 import * as THREE from 'three';
-import { register } from './index.mjs?v=3';
+import { register } from './index.mjs?v=4';
 
-export const AURA_KIT_URL = '/models/fx/aura-kit.glb';
+export const AURA_KIT_URL = '/models/fx/aura-kit.glb?v=2';
 export const AURA_3D_TIERS = Object.freeze([5]);
 const isSitting = sit => sit === true || sit === 'cushion' || sit === 'bench' || (Number.isInteger(sit) && sit >= 0);
 
@@ -49,7 +49,7 @@ export function auraPart(env) {
       mat.uniforms.uDisplace.value = env.quality === 'low' ? 0 : 1;
     }
     const enabled = env.quality === 'high' && !env.reducedMotion;
-    if (enabled && !points) points = env.particles(32, env.track(new THREE.PointsMaterial({ color: '#8fd3ff', size: 0.045, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })));
+    if (enabled && !points) points = env.particles(32, env.track(env.materials.sparkMaterial('#8fd3ff')));
     if (points) points.visible = enabled && !!holder?.visible;
   }
   function hide() { if (holder) holder.visible = false; if (points) points.visible = false; }
