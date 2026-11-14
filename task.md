@@ -1586,17 +1586,19 @@ Thiết kế, hợp đồng mã, ngân sách và định tuyến mô hình: [doc
 - **Ngoài phạm vi**: quỷ cấp 1 đến 3; sen hồng, sen pha lê (chỉ khác vật liệu, làm ở T-146).
 
 ### T-143 · Toán hành vi quỷ hộ thân `stand-math.js`
-- **Trạng thái**: 🔵 Sẵn sàng · **Ưu tiên**: P0 · **Gói ngữ cảnh**: CORE + HALL
+- **Trạng thái**: 🟣 Chờ soát. Điều phối soát 14/11: `npm run check` sạch, `node --test test/stand-math.test.js` 10/10; thử làm hỏng (bỏ nhánh vái, đổi giảm chấn c = 1) thì test đỏ. Điều phối sửa vặt: `slots` nhận `list` không phải mảng, thêm chú thích đầu file.
+- **Ưu tiên**: P0 · **Gói ngữ cảnh**: CORE + HALL
 - **Khu vực chạm**: public/js/stand-math.js (mới, UMD thuần như `view-math.js`), test/stand-math.test.js (mới)
-- **Người làm**: — (gợi ý: gpt-6.1-terra; soát: gpt-6.1-sol) · **Nhánh**: —
+- **Người làm**: gpt-6.1-terra (Codex CLI qua proxy, 1 vòng) · đặc tả [docs/phap-tuong/T-143-DAC-TA.md](docs/phap-tuong/T-143-DAC-TA.md) · **Nhánh**: claude/game-graphics-3d-redesign-9b309a
 - **Mục tiêu**: mọi phép tính của hành vi quỷ nằm trong một module thuần, test được bằng node.
 - **Tiêu chí xong**:
-  - [ ] `ANCHOR[n]` (chỗ đứng và chiều cao của 4 cấp, đúng bảng §1.1); `spring(pos, vel, target, dt, k = 18, c = 7)` trả `{ pos, vel }`
-  - [ ] `poseOf(state)` trả một trong `sit | scoff | peek | drift | idle` theo ưu tiên ngồi > vái > nói > đi > đứng; `phaseOf(prevN, n, t)` trả `emerge | steady | vanish`
-  - [ ] `tauntOf(id, now)` trả `null | 'taunt1' | 'taunt2'`, ổn định theo hạt giống `id + floor(now / 10000)`
-  - [ ] `slots(list, self, quality)` trả tập id được cấp suất 3D: luôn có mình, còn lại theo khoảng cách, số lượng đúng bảng §2.4
-  - [ ] Không đụng DOM, không phụ thuộc gì, dùng được cả bằng `require` lẫn `<script>` (AGENTS §3.10)
-  - [ ] Test: lò xo hội tụ dưới 1 cm sau 1,5 giây và không vọt quá 15%; `dt` lớn (0,5 giây) không phát nổ; đủ các nhánh ưu tiên; `slots` đúng số lượng ở ba mức
+  - [x] `ANCHOR[n]` (chỗ đứng và chiều cao của 4 cấp, đúng bảng §1.1); `spring(pos, vel, target, dt, k = 18, c = 7)` trả `{ pos, vel }` (thêm `springVec`, `turn` cho quay trễ 0,25 giây)
+  - [x] `poseOf(state)` trả một trong `sit | scoff | peek | drift | idle` theo ưu tiên ngồi > vái > nói > đi > đứng; `phaseOf(prevN, n, t)` trả `emerge | steady | vanish`
+  - [x] `tauntOf(id, now)` trả `null | 'taunt1' | 'taunt2'`, ổn định theo hạt giống `id + floor(now / 10000)`
+  - [x] `slots(list, self, quality, kind)` trả tập id được cấp suất 3D: luôn có mình, còn lại theo khoảng cách, số lượng đúng bảng §2.4 (`kind` = `demon` hoặc `aura`)
+  - [x] Không đụng DOM, không phụ thuộc gì, dùng được cả bằng `require` lẫn `<script>` (AGENTS §3.10; test chạy bằng `vm` không có `module`)
+  - [x] Test: lò xo hội tụ dưới 1 cm sau 1,5 giây và không vọt quá 15%; `dt` lớn (0,5 giây) không phát nổ; đủ các nhánh ưu tiên; `slots` đúng số lượng ở ba mức
+  - [ ] Soát chéo bằng gpt-6.1-sol: chưa làm (để dành hạn mức GPT cho T-141, T-142, T-144; Điều phối tự đọc mã)
 - **Ngoài phạm vi**: Three.js.
 
 ### T-144 · Nối bản mẫu vào nhân vật sau công tắc `ta-fx3d`
