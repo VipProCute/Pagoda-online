@@ -4,6 +4,7 @@
  * mở khóa idempotent, khởi động lại giữa chừng, không lộ uid. Đặc tả: docs/ky-dai/T-150-DAC-TA-KHOA-SKIN.md.
  */
 const test = require('node:test');
+const fs = require('node:fs');
 const assert = require('node:assert/strict');
 const { startServer } = require('./helpers/live');
 const { connect, call, join, waitFor, sleep } = require('./helpers/client');
@@ -154,6 +155,7 @@ test('khóa skin: khởi động lại máy chủ khi khoản đang chờ, kho�
   let A = await open(t, srv, 'Dao Huu A', UID.a);
   const buy = await call(A.s, 'kd:shop:buy', { kind: 'stones', id: 'cosmos' });
   assert.equal(buy.ok, true); assert.equal(buy.amount, 20000);
+  assert.ok(fs.readFileSync(srv.dataFile, 'utf8').includes(buy.code), 'mã đã được ghi bền trước khi trả QR (await store.flush)');
   A.s.close();
   await srv.restart();       // mã đã được ghi bền trước khi trả QR nên còn nguyên sau khi tắt máy chủ
   A = await open(t, srv, 'Dao Huu A', UID.a);
@@ -178,6 +180,7 @@ test('khóa skin: webhook SePay chỉ tự mở khi nhận đủ tiền; thiếu
   const A = await open(t, srv, 'Dao Huu A', UID.a);
   const buy = await call(A.s, 'kd:shop:buy', { kind: 'pieces', id: 'jade' });
   assert.equal(buy.ok, true); assert.equal(buy.amount, 30000); assert.equal(buy.test, false);
+  assert.ok(fs.readFileSync(srv.dataFile, 'utf8').includes(buy.code), 'chế độ thật: mã đã ghi bền trước khi trả QR (await store.flush)');
 
   // thiếu tiền: chỉ ghi nhận, không mở
   const low = await hook(buy.code, 10000, 'REF-LOW');
