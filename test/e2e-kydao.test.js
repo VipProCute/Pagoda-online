@@ -262,7 +262,7 @@ test('kd:skin (T-110): người chơi đổi skin nửa sân của mình; đối
   assert.equal(O.s.log.some(x => x.ev === 'kd:skin'), false, 'người ngoài không nhận kd:skin');
 });
 
-test('kd:skin: người chơi rời Sân chùa sang chánh điện vẫn đổi được skin (where = any); đối thủ nhận gói', async t => {
+test('kd:skin: người chơi rời Sân chùa sang chánh điện rồi vào Võ Học Các vẫn đổi được skin (where = any); đối thủ nhận gói', async t => {
   const srv = await startServer(); t.after(() => srv.stop());
   const A = await yard(t, srv, 'An', UID.a), B = await yard(t, srv, 'Binh', UID.b);
   assert.equal((await call(A.s, 'kd:sit', { table: 3, seat: 0 })).ok, true);
@@ -273,6 +273,8 @@ test('kd:skin: người chơi rời Sân chùa sang chánh điện vẫn đổi 
   await call(B.s, 'kd:ready', { table: 3, ready: true });
   const sa = await started;
   assert.equal((await call(A.s, 'scene', 'hall')).ok, true);
+  // vào hẳn một nơi không phải chánh điện lẫn Sân chùa: where 'hall' hay 'yard' đều sẽ từ chối, chỉ 'any' mới nhận
+  assert.equal((await call(A.s, 'place:set', { place: 'dojo' })).ok, true);
   const got = waitFor(B.s, 'kd:skin');
   assert.deepEqual(await call(A.s, 'kd:skin', { gameId: sa.gameId, field: 'volcano', pieces: 'magma' }), { ok: true, field: 'volcano', pieces: 'magma' });
   assert.deepEqual(await got, { gameId: sa.gameId, side: 'a', field: 'volcano', pieces: 'magma', opened: true });
