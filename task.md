@@ -108,6 +108,7 @@
 | T-130 | Nhân vật Blender dùng trong game dạng tùy chọn (4 kiểu tóc, gộp vật liệu) | ✅ Xong · PR #61 | P1 | CORE + HALL + KYDAI | Claude Sonnet 5.5 (Blender) |
 | T-131 | Kịch bản kiểm giao diện tự động cho bàn cờ (`ui-check.js`) | ✅ Xong · PR #61 | P1 | CORE + KYDAI + OPS | gpt-6.1-terra |
 | T-132 | Sửa lỗi từ đợt soát T-130/T-131 của GPT Sol | ✅ Xong · PR #61 | P1 | CORE + HALL + OPS | Claude Sonnet 5.5 |
+| T-133 | Thử đầu-cuối bàn cờ với máy chủ thật và hai trình duyệt | 🟣 Đã soát đạt · chờ 👤 push và merge | P1 | CORE + KYDAI + OPS | Claude Sonnet 5.5 |
 
 Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạm `package.json`). **T-005**, **T-007**, **T-002** làm song song được với nhóm trên.
 Đợt 2026-11: làm **T-003, T-004, T-006** trước (T-004 gỡ nút thắt `package.json` cho mọi thẻ thêm file JS; T-006 là cổng "CI xanh"). Sau đó theo lịch 6 đợt ở [docs/KE-HOACH-DOT-2026-11.md §10.3](docs/KE-HOACH-DOT-2026-11.md#103-lịch-theo-đợt-và-khóa-vùng-nóng).
@@ -1306,6 +1307,7 @@ Thiết kế và quy ước chung: [docs/KE-HOACH-3D.md](docs/KE-HOACH-3D.md) (�
 - **Soát T-130/T-131**: GPT Sol FAIL (1 lỗi chặn ở máy chủ harness chỉ dùng khi phát triển: kiểm ranh giới thư mục bằng tiền tố; 4 điểm nên sửa) → **T-132** sửa hết → **Gemini 4 Argon xác nhận PASS**; góp ý chặn ký tự NUL đã làm luôn.
 - **Tổng kết đợt** (nhánh tích hợp `claude/chess-game-graphics-upgrade-553ef6`, CHƯA push, CHƯA mở PR): `npm run check` sạch 172 file; `npm test` **962 đạt, 0 trượt, 3 bỏ qua** trên 965 (2 PostgreSQL, 1 perft sâu); `ui-check.js` 24/24. Mọi thẻ T-110 → T-132 đã qua soát độc lập (Gemini 4 Argon hoặc GPT Sol) và điều phối đã xem bằng mắt.
 - **PR #61** (14/11): chủ dự án bấm "Create PR" rồi chọn "Merge ngay"; CI "check + test (Node 22)" xanh (có PostgreSQL thật); điều phối merge theo lời chủ dự án.
+- **T-133** (14/11): `tools/ui-harness/kydao/e2e-real.js` chạy `server.js` thật, hai trình duyệt Chrome thật (A, B) và một bot xem (C): ngồi bàn đá, chọn luật, khai mở lãnh địa hai chiều, ẩn skin đối thủ, khóa 20 giây do máy chủ từ chối, người xem nhận `skins`, đi quân, đầu hàng, bảng kết quả, cờ tướng có sông chảy. **9/9 bước đạt** (thợ chạy, điều phối chạy lại). Không phát hiện lỗi game. Giới hạn: chạy ở cỡ điện thoại, hai trình duyệt trên cùng một máy. Nhánh `claude/T-133-e2e-kydao-that` mới ở trên máy, chưa push.
 - **Còn để chủ dự án quyết 👤**: (1) có bật nhân vật Blender làm mặc định không; (2) cách mở khóa skin (hiện miễn phí); (3) có cho chọn khẩu hiệu không; (4) skin cho cờ vây, caro; (5) vẽ lại 4 huy hiệu ghép tay khi Canva có credit; (6) thử một ván thật giữa hai máy qua mạng.
 - `npm test` trên nhánh tích hợp trước T-121: 906 đạt, 0 trượt, 3 bỏ qua (2 PostgreSQL, 1 perft sâu).
 
