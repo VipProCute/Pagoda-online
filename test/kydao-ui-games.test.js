@@ -130,8 +130,24 @@ test('khai mở sân: gửi kd:skin và hai bên thấy skin', () => {
   assert.doesNotThrow(() => b.api.apply({ type: 'kd:skin', gameId: gid, side: 'a', field: 'volcano', pieces: 'magma', opened: true }));
   e.manager.shutdown();
   const c = gameEnv('gomoku', undefined, false, extra);
-  assert.equal(c.sent.filter(x => x.name === 'kd:skin').length, 0, 'caro không có skin');
+  assert.equal(c.sent.filter(x => x.name === 'kd:skin').length, 0, 'caro không đọc khóa kydao.skin của môn khác');
   c.manager.shutdown();
+});
+
+test('caro và cờ vây: bộ đá lưu ở kydao.stone, gửi kd:skin chỉ có pieces, nút "Bộ đá" và bộ chọn không có "Khai mở"', () => {
+  const store = { 'kydao.stone': JSON.stringify({ pieces: 'cosmos' }), 'kydao.skin': JSON.stringify({ field: 'volcano', pieces: 'magma' }) };
+  const extra = { KydaoSkins: require('../public/js/kydao-skins.js'), localStorage: { getItem: k => store[k] ?? null, setItem: (k, v) => { store[k] = String(v); } } };
+  for (const [game, size] of [['gomoku', undefined], ['go', 9]]) {
+    const e = gameEnv(game, size, false, extra), [a] = e.views;
+    const calls = e.sent.filter(x => x.name === 'kd:skin');
+    assert.ok(calls.length >= 1, game + ': tự gửi bộ đá khi vào ván');
+    for (const c of calls) assert.deepEqual(JSON.parse(JSON.stringify(c.data)), { gameId: e.state().gameId, pieces: 'cosmos' });
+    assert.equal(a.button('Lãnh địa'), undefined, 'không còn chữ Lãnh địa');
+    a.click('Bộ đá');
+    assert.equal(a.button('Khai mở'), undefined); assert.equal(a.button('Về sân mặc định'), undefined);
+    assert.ok(a.button('Ẩn skin đối thủ'));
+    e.manager.shutdown();
+  }
 });
 
 test('hiệu ứng thắng ném lỗi thì bảng kết quả vẫn hiện', () => {

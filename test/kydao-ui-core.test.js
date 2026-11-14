@@ -35,6 +35,17 @@ test('applySkin chỉ nhận gói đúng ván và đúng bên', () => {
   assert.strictEqual(S.skins.b.field, 'ocean');
 });
 
+test('readSkins theo môn: cờ vây nhận mã STONES và bỏ field; applySkin trên phiên caro', () => {
+  const raw = { a: { field: 'volcano', pieces: 'cosmos' }, b: { pieces: 'magma' } };
+  assert.deepStrictEqual(core.readSkins(raw, 'go'), { a: { field: null, pieces: 'cosmos' }, b: { field: null, pieces: 'magma' } });
+  assert.deepStrictEqual(core.readSkins({ a: { pieces: 'jade' } }, 'go').a, { field: null, pieces: null }, 'mã quân cờ vua không dùng cho đá');
+  const S = session('gomoku', KyGomoku, 'a');
+  assert.strictEqual(core.applySkin(S, { gameId: 'g1', side: 'b', field: 'volcano', pieces: 'lotus' }), true);
+  assert.deepStrictEqual(S.skins.b, { field: null, pieces: 'lotus' });
+  assert.strictEqual(core.applySkin(S, { gameId: 'g1', side: 'a', pieces: '__proto__' }), true);
+  assert.deepStrictEqual(S.skins.a, { field: null, pieces: null });
+});
+
 test('applySkin không nhận khóa nguy hiểm', () => {
   const S = session('chess', KyChess, 'a');
   assert.strictEqual(core.applySkin(S, { gameId: 'g1', side: 'a', field: '__proto__' }), true);

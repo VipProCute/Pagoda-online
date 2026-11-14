@@ -77,15 +77,15 @@
 
   const NO_SKIN = () => ({ field: null, pieces: null });
   /** Chuẩn hóa skin của hai bên từ dữ liệu máy chủ; không có danh mục thì coi như mặc định. */
-  function readSkins(raw) {
+  function readSkins(raw, game) {
     const K = root.KydaoSkins, o = raw && typeof raw === 'object' ? raw : {};
-    return { a: K ? K.normalize(o.a) : NO_SKIN(), b: K ? K.normalize(o.b) : NO_SKIN() };
+    return { a: K ? K.normalize(o.a, game) : NO_SKIN(), b: K ? K.normalize(o.b, game) : NO_SKIN() };
   }
   /** Áp một gói kd:skin lên phiên. Trả true nếu gói hợp lệ và thuộc ván này. */
   function applySkin(S, ev) {
     if (!S || !ev || ev.gameId !== S.gameId || (ev.side !== 'a' && ev.side !== 'b')) return false;
     const K = root.KydaoSkins;
-    S.skins[ev.side] = K ? K.normalize(ev) : NO_SKIN();
+    S.skins[ev.side] = K ? K.normalize(ev, S.game) : NO_SKIN();
     return true;
   }
   /** Dựng phiên ván từ StartPayload. */
@@ -97,7 +97,7 @@
       moves: Array.isArray(start.moves) ? start.moves.map(x => ({ m: x.m, t: x.t, r: x.r })) : [],
       clock: start.clock || null, over: false, sel: null, targets: [], last: [], inCheck: false,
       offer: start.offer || null, downgraded: start.downgraded || null,
-      marks: start.marks || null, win: [], zoom: 1, skins: readSkins(start.skins), jolt: null
+      marks: start.marks || null, win: [], zoom: 1, skins: readSkins(start.skins, start.game), jolt: null
     };
     if (S.moves.length) S.last = lastSquares(S.game, S.moves[S.moves.length - 1].m);
     if (S.game === 'chess' && mod.inCheck) S.inCheck = !!mod.inCheck(S.state);
@@ -216,11 +216,14 @@
   let hideFoe = false;
   try { hideFoe = root.localStorage && root.localStorage.getItem(HIDE_KEY) === '1'; } catch (e) { /* bỏ qua */ }
   const SKIN_KEY = 'kydao.skin';          // { field, pieces } người chơi ưa thích
+  const STONE_KEY = 'kydao.stone';        // { pieces } bộ đá cờ vây/caro (mã khác bảng quân)
+  const stoneGame = game => game === 'go' || game === 'gomoku';
+  const prefKey = () => (S && stoneGame(S.game) ? STONE_KEY : SKIN_KEY);
   function loadPref() {
-    try { const K = root.KydaoSkins; return K ? K.normalize(JSON.parse(root.localStorage.getItem(SKIN_KEY) || '{}')) : { field: null, pieces: null }; }
+    try { const K = root.KydaoSkins; return K ? K.normalize(JSON.parse(root.localStorage.getItem(prefKey()) || '{}'), S && S.game) : { field: null, pieces: null }; }
     catch (e) { return { field: null, pieces: null }; }
   }
-  function savePref(p) { try { root.localStorage.setItem(SKIN_KEY, JSON.stringify(p)); } catch (e) { /* bỏ qua */ } }
+  function savePref(p) { try { root.localStorage.setItem(prefKey(), JSON.stringify(stoneGame(S && S.game) ? { pieces: p.pieces } : p)); } catch (e) { /* bỏ qua */ } }
   let pref = { field: null, pieces: null };
   let skinFocus = null;                   // { kind, id } nút skin cần trả tiêu điểm sau khi dựng lại bộ chọn
   let fieldSentAt = 0;                    // lần gần nhất gửi khai mở (ms), chặn bấm liên tục
@@ -423,13 +426,15 @@
     render();
   }
 
-  const canSkin = () => !!(S && S.you && !S.over && root.KydaoSkins && root.KydaoSkins.supports(S.game));
+  const canSkin = () => !!(S && S.you && !S.over && root.KydaoSkins && root.KydaoSkins.supportsPieces(S.game));
+  const canField = () => !!(canSkin() && root.KydaoSkins.supports(S.game));
   /** Gửi skin hiện có của mình lên máy chủ. openField = true khi người chơi bấm "Khai mở". */
   function sendSkin(openField) {
     if (!canSkin()) return;
     const mine = S.skins[S.you];
-    const data = { gameId: S.gameId, pieces: pref.pieces, field: openField ? pref.field : mine.field };
-    if (openField) fieldSentAt = now();
+    const data = { gameId: S.gameId, pieces: pref.pieces };
+    if (canField()) data.field = openField ? pref.field : mine.field;
+    if (openField && canField()) fieldSentAt = now();
     send('kd:skin', data, ack => { if (ack && !ack.ok) say(ack.reason || 'Chưa đổi được skin.'); });
   }
 
@@ -537,7 +542,7 @@
       checkSq: S.inCheck && !S.over ? kingSquare(S, sessionTurn(S)) : null, vi
     };
     options.time = riverTime;
-    if (root.KydaoSkins && root.KydaoSkins.supports(S.game)) {
+    if (root.KydaoSkins && root.KydaoSkins.supportsPieces(S.game)) {
       const foe = S.you === 'a' ? 'b' : S.you === 'b' ? 'a' : null;
       const blank = { field: null, pieces: null };
       // Ẩn skin đối thủ: đưa thẳng skin mặc định cho bên đó, nên bàn 2D và bàn 3D đều theo.
@@ -589,6 +594,7 @@
     box.textContent = '';
     if (!K) return;
     const skinBtns = [];
+    const stoneMode = stoneGame(S.game);
     const row = (title, kind, catalog, current, pick) => {
       const list = h('div', { class: 'kd-skin-row', role: 'radiogroup', 'aria-label': title });
       const ids = [null].concat(Object.keys(catalog));
@@ -605,7 +611,13 @@
             choose(ids[ni]);
           } });
         skinBtns.push({ kind, id: id == null ? '' : id, el: b });
-        if (id) {
+        if (id && stoneMode && kind === 'pieces') {
+          const d = h('div', { class: 'kd-skin-stone', role: 'img', 'aria-hidden': 'true' });
+          d.style.backgroundImage = 'url(' + K.stonesAtlas(id) + ')';
+          d.style.backgroundSize = '200% 100%';
+          d.style.backgroundPosition = S.you === 'b' ? '100% 0' : '0 0';
+          b.appendChild(d);
+        } else if (id) {
           const im = h('img', { class: 'kd-skin-img', alt: '', loading: 'lazy', width: '96', height: '60' });
           if (kind === 'field' && K.crest) {
             im.src = K.crest(id);
@@ -624,12 +636,12 @@
       ids.slice(1).forEach(id => list.appendChild(item(id, catalog[id].name)));
       return h('div', { class: 'kd-skin-group' }, h('div', { class: 'kd-skin-title' }, title), list);
     };
-    box.appendChild(row('Sân của bạn', 'field', K.FIELDS, pref.field, id => { pref.field = id; savePref(pref); renderSkins(); }));
-    box.appendChild(row('Quân của bạn', 'pieces', K.PIECES, pref.pieces, id => { pref.pieces = id; savePref(pref); renderSkins(); sendSkin(false); }));
+    if (!stoneMode) box.appendChild(row('Sân của bạn', 'field', K.FIELDS, pref.field, id => { pref.field = id; savePref(pref); renderSkins(); }));
+    box.appendChild(row('Quân của bạn', 'pieces', stoneMode ? K.STONES : K.PIECES, pref.pieces, id => { pref.pieces = id; savePref(pref); renderSkins(); sendSkin(false); }));
     const mine = canSkin() ? S.skins[S.you] : null;
     const wait = Math.max(0, 20000 - (now() - fieldSentAt));
-    const open = h('button', { type: 'button', class: 'kd-btn kd-gold', onclick: () => { sendSkin(true); ui.skins.hidden = true; ui.skinBtn.setAttribute('aria-expanded', 'false'); } }, pref.field ? 'Khai mở' : 'Về sân mặc định');
-    open.disabled = !mine || mine.field === pref.field || wait > 0;
+    const open = stoneMode ? null : h('button', { type: 'button', class: 'kd-btn kd-gold', onclick: () => { sendSkin(true); ui.skins.hidden = true; ui.skinBtn.setAttribute('aria-expanded', 'false'); } }, pref.field ? 'Khai mở' : 'Về sân mặc định');
+    if (open) open.disabled = !mine || mine.field === pref.field || wait > 0;
     const hide = h('button', { type: 'button', class: 'kd-btn kd-ghost', 'aria-pressed': String(hideFoe), onclick: () => {
       hideFoe = !hideFoe; try { root.localStorage.setItem(HIDE_KEY, hideFoe ? '1' : '0'); } catch (e) { /* bỏ qua */ } renderSkins(); fit(); redraw();
     } }, hideFoe ? 'Hiện skin đối thủ' : 'Ẩn skin đối thủ');
@@ -675,6 +687,7 @@
     ui.minBtn.hidden = !player || S.over; // người xem/ván xong thì chỉ đóng
     const skinOk = canSkin();
     ui.skinBtn.hidden = !skinOk;
+    ui.skinBtn.textContent = stoneGame(S.game) ? 'Bộ đá' : 'Lãnh địa';
     if (!skinOk) { ui.skins.hidden = true; ui.skinBtn.setAttribute('aria-expanded', 'false'); }
     ui.closeBtn.hidden = live;            // đang đấu: không đóng được, chỉ thu nhỏ hoặc đầu hàng
   }

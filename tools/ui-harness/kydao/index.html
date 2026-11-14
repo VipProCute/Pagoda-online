@@ -6,7 +6,7 @@
 <title>Thử bảng bàn cờ Kỳ Đạo</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="/css/style.css">
-<link rel="stylesheet" href="/css/kydao.css?v=5">
+<link rel="stylesheet" href="/css/kydao.css?v=6">
 <link rel="stylesheet" href="/css/kydao-fx.css?v=2">
 </head>
 <body>
@@ -38,8 +38,8 @@
 <script src="/js/kydao/gomoku.js"></script>
 <script src="/js/kydao-skins.js?v=4"></script>
 <script src="/js/kydao-fx.js?v=5"></script>
-<script src="/js/kydao-draw.js?v=skins7"></script>
-<script src="/js/kydao-ui.js?v=kydai11"></script>
+<script src="/js/kydao-draw.js?v=stones1"></script>
+<script src="/js/kydao-ui.js?v=stones1"></script>
 <script>
 (function () {
   var log = document.getElementById('log'), cur = null;
@@ -89,7 +89,7 @@
         } else if (name === 'kd:skin') {
           // Máy chủ giả: chuẩn hóa rồi phát lại như máy chủ thật.
           var mine = cur.skins[cur.you];
-          var want = KydaoSkins.normalize({ field: 'field' in data ? data.field : mine.field, pieces: 'pieces' in data ? data.pieces : mine.pieces });
+          var want = KydaoSkins.normalize({ field: 'field' in data ? data.field : mine.field, pieces: 'pieces' in data ? data.pieces : mine.pieces }, cur.game);
           var opened = want.field !== mine.field && want.field !== null;
           cur.skins[cur.you] = want;
           cb({ ok: true, field: want.field, pieces: want.pieces });
@@ -130,8 +130,9 @@
   document.getElementById('b-foe').onclick = function () {
     if (!cur) { say('chưa mở ván'); return; }
     var side = other(cur.you), f = fieldSel.value;
-    cur.skins[side] = { field: f, pieces: null };
-    KydaoUI.apply({ type: 'kd:skin', gameId: cur.gameId, side: side, field: f, pieces: null, opened: true });
+    var stone = cur.game === 'go' || cur.game === 'gomoku';
+    cur.skins[side] = stone ? { field: null, pieces: 'lotus' } : { field: f, pieces: null };
+    KydaoUI.apply({ type: 'kd:skin', gameId: cur.gameId, side: side, field: cur.skins[side].field, pieces: cur.skins[side].pieces, opened: !stone });
   };
   document.getElementById('b-end').onclick = function () {
     if (!cur) { say('chưa mở ván'); return; }
