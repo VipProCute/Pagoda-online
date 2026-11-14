@@ -319,7 +319,7 @@ test('khóa lạ bị bỏ, kd:* giới hạn tần suất', async t => {
 test('KYDAO_ENABLED=0: mọi kd:* trả "Bàn cờ chưa mở."', async t => {
   const srv = await startServer({ KYDAO_ENABLED: '0' }); t.after(() => srv.stop());
   const A = await yard(t, srv, 'An', UID.a);
-  assert.deepEqual(A.join.config.kydao, { enabled: false, loginRequired: false });
+  assert.deepEqual(A.join.config.kydao, { enabled: false, loginRequired: false, shop: { on: false } });
   for (const ev of ['kd:tables', 'kd:sit', 'kd:resume', 'kd:invite', 'kd:move']) {
     const r = await call(A.s, ev, { table: 1, seat: 0 });
     assert.deepEqual(r, { ok: false, code: 'off', reason: 'Bàn cờ chưa mở.' }, ev);
@@ -330,7 +330,7 @@ test('bật đăng nhập Google: khách không chọn được ván xếp hạn
   const srv = await startServer({ GOOGLE_CLIENT_ID: 'id-thu', GOOGLE_CLIENT_SECRET: 'bi-mat-thu', AUTH_ORIGIN: 'http://127.0.0.1:1' });
   t.after(() => srv.stop());
   const A = await yard(t, srv, 'An', UID.a);
-  assert.deepEqual(A.join.config.kydao, { enabled: true, loginRequired: true });
+  assert.deepEqual(A.join.config.kydao, { enabled: true, loginRequired: true, shop: { on: false } });
   await call(A.s, 'kd:sit', { table: 1, seat: 0 });
   const r = await call(A.s, 'kd:setup', { table: 1, game: 'chess', rated: true, pace: 'fast' });
   assert.equal(r.ok, false); assert.equal(r.code, 'login');

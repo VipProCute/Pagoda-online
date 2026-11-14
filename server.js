@@ -22,6 +22,8 @@ const { createSweeper } = require('./lib/sweeper');
 const { mergeMartialGuest, mergeKydaoGuest, donatedBy } = require('./lib/account');
 const { createArenaManager } = require('./lib/pk/manager');
 const { createKydaoManager } = require('./lib/kydao/manager');
+const { createShop } = require('./lib/kydao/shop');
+const KydaoSkins = require('./public/js/kydao-skins.js');
 const fs = require('fs');
 
 // Bài tụng dựng sẵn (tools/build_chants.py): tên, file và thời lượng thật của từng bài
@@ -155,6 +157,8 @@ async function iceServers() {
 const db = store.get();    // cùng một object suốt vòng đời; main() gọi store.init() điền dữ liệu trước khi mở cổng
 const sweeper = createSweeper();
 let martial = null, arena = null, kydao = null;   // dịch vụ tu luyện, quản lý sân đấu và bàn cờ, tạo trong main() sau khi dữ liệu đã nạp
+// Cửa hàng skin Kỳ Đạo (T-150/T-151): logic thuần, đọc/ghi db.kydao.shop và db.kydao.unlocks; uid luôn qua accountOf trước khi đưa vào
+const shop = createShop({ getState: () => db.kydao, catalog: KydaoSkins, now: Date.now });
 function rollDay() {
   const d = vnDay();
   if (db.day !== d) {
@@ -258,8 +262,10 @@ function linkGuest(guest, uid) {
   const undoMartial = mergeMartialGuest(db, guest, uid, now());
   // Elo Kỳ Đạo của khách cũng theo về tài khoản (mỗi môn lấy bản nhiều ván hơn)
   const undoKydao = mergeKydaoGuest(db, guest, uid);
+  const undoShop = shop.mergeGuest(guest, uid);     // skin đã mở của khách theo về tài khoản (hợp, giữ mốc sớm hơn)
   db.linkedGuests[guest] = uid;
   return () => {
+    undoShop();
     if (undoKydao) undoKydao();
     if (undoMartial) undoMartial();
     delete db.linkedGuests[guest];
@@ -385,7 +391,7 @@ function clientConfig() {
     voice: VOICE_ENABLED,
     tts: announce.enabled,
     martial: { enabled: MARTIAL_ENABLED, pk: PK_ENABLED, speedup: SPEEDUP_ENABLED, loginRequired: auth.enabled },
-    kydao: { enabled: KYDAO_ENABLED, loginRequired: auth.enabled }
+    kydao: { enabled: KYDAO_ENABLED, loginRequired: auth.enabled, shop: { on: shop.publicConfig().on } }
   };
 }
 
@@ -481,6 +487,11 @@ app.post('/api/webhooks/sepay', async (req, res) => {
     return (await store.flush()) ? res.json({ success: true, matched: true, duplicate: true }) : res.status(503).json({ success: false });
   }
   if (!d || d.mode === 'test') return res.json({ success: true, matched: false });
+  if (d.purpose === 'skin' && amount < d.amount) {   // mở skin: nhận thiếu tiền thì chỉ ghi nhận, Ban điều hành quyết (không tự mở)
+    d.bank = { at: now(), amount, ref };
+    if (!(await store.flush())) return res.status(503).json({ success: false });
+    return res.json({ success: true, matched: true, manual: true, reason: 'amount_too_low' });
+  }
   if (amount < d.amount) return res.json({ success: true, matched: false, reason: 'amount_too_low' });
   if (d.purpose === 'speedup') {   // hoàn thành tu luyện ngay chỉ xong khi Ban điều hành bấm xác nhận: ngân hàng báo thì chỉ đánh dấu
     d.bank = { at: now(), amount, ref };
@@ -568,6 +579,34 @@ app.post('/api/admin/prayers/:id/hide', admin, (req, res) => {
   if (p) { p.hidden = true; io.emit('prayer:hide', { id: p.id }); audit(req, 'prayer.hide', p.id); store.save(); }
   res.json({ ok: true });
 });
+/* Cửa hàng skin Kỳ Đạo: Ban điều hành bật/tắt thu tiền và đặt mức. Không có giá mặc định trong mã. */
+const shopCatalogView = () => {
+  const list = t => Object.keys(t).map(id => ({ id, name: t[id].name }));
+  return { field: list(KydaoSkins.FIELDS), pieces: list(KydaoSkins.PIECES), stones: list(KydaoSkins.STONES) };
+};
+app.get('/api/admin/kydao-shop', admin, (req, res) => {
+  const un = db.kydao.unlocks || {};
+  let owners = 0, unlocks = 0;
+  for (const u of Object.keys(un)) { const n = shop.owned(u).length; if (n) { owners++; unlocks += n; } }
+  res.json({ config: shop.publicConfig(), catalog: shopCatalogView(), stats: { owners, unlocks } });
+});
+app.post('/api/admin/kydao-shop', admin, async (req, res) => {
+  const b = req.body && typeof req.body === 'object' && !Array.isArray(req.body) ? req.body : {};
+  const input = {};
+  for (const k of ['on', 'price', 'prices']) if (Object.prototype.hasOwnProperty.call(b, k)) input[k] = b[k];   // khóa lạ bị bỏ
+  const before = shop.publicConfig();
+  const r = shop.setConfig(input);
+  if (!r.ok) return res.status(400).json({ ok: false, error: r.reason });
+  audit(req, 'kydao-shop.config', 'kydao-shop', { on: [before.on, r.config.on], price: [before.price, r.config.price], prices: Object.keys(r.config.prices).length });
+  const saved = await store.flush();
+  const changed = before.on !== r.config.on || before.price !== r.config.price || JSON.stringify(before.prices) !== JSON.stringify(r.config.prices);
+  let removed = 0;
+  if (changed) {
+    if (r.config.on && kydao) removed = kydao.revalidateSkins();      // bật thu tiền có hiệu lực ngay: gỡ skin chưa mở khỏi ván đang chơi
+    pushShopStateToAll();
+  }
+  res.json({ ok: true, saved, config: r.config, removed });
+});
 app.post('/api/admin/announce', admin, (req, res) => {
   const text = clean((req.body || {}).text, 300);
   if (!text) return res.status(400).json({ error: 'Nội dung trống.' });
@@ -600,6 +639,7 @@ auth.mount(app, {
       if (p.uid !== uid) continue;
       updatePlayerMerit(p, meritTotal(uid));
       p.socket.emit('aura:me', aura);
+      pushShopState(p);
       io.emit('aura', { pid: p.id, au: auraOf(uid), up: false });
     }
   },
@@ -645,6 +685,12 @@ function confirmDonation(d, info) {
   const uid = accountOf(d.uid);
   d.status = 'confirmed'; d.confirmedAt = now(); d.paidAmount = d.mode === 'test' ? 0 : info.amount; d.ref = info.ref; d.source = d.mode === 'test' ? 'auto' : info.source;
   if (info.amount > d.amount) d.amount = info.amount;
+  // Mở skin: cấp quyền ngay (trước phần thông báo, để lỗi ở phần sau không làm mất quyền). IDEMPOTENT bằng d.outcome và bảng unlocks.
+  if (d.purpose === 'skin' && d.item && d.outcome !== 'granted') {
+    const g = shop.grant(uid, d.item.kind, d.item.id, d.code);
+    if (g.ok) { d.outcome = 'granted'; pushShopStateToUid(uid); }
+    else console.error('[kydao-shop] không cấp được skin cho khoản', d.code, g.reason);
+  }
   // Hào quang: cộng dồn theo người cúng dường (ẩn danh hoặc tự tắt thì không hiện)
   let aura = null;
   if (!d.anon && d.aura !== false) {
@@ -696,6 +742,11 @@ const accountReady = p => !auth.enabled || !!auth.sessionFor(p.socket.data.authK
 const BLOCK_SECRET = crypto.randomBytes(24);     // chỉ sống trong tiến trình: mã mờ chỉ dùng trong một phiên làm việc
 const blockHandle = uid => crypto.createHmac('sha256', BLOCK_SECRET).update(String(uid)).digest('base64url').slice(0, 16);
 function emitToUid(uid, ev, payload) { for (const q of players.values()) if (q.uid === uid) q.socket.emit(ev, payload); }
+/* Trạng thái cửa hàng skin gửi riêng từng người (owned là của chính họ, không bao giờ gửi cho người khác). */
+function shopStateFor(uid) { return { ok: true, ...shop.publicConfig(), owned: shop.owned(accountOf(uid)) }; }
+function pushShopState(q) { if (KYDAO_ENABLED) q.socket.emit('kd:shop:state', shopStateFor(q.uid)); }
+function pushShopStateToUid(account) { for (const q of players.values()) if (accountOf(q.uid) === account) pushShopState(q); }
+function pushShopStateToAll() { for (const q of players.values()) pushShopState(q); }
 function deliverUpdates(r) { if (r && r.updates) for (const u of r.updates) { emitToUid(u.uid, 'tu:update', u.update); syncCult(u.uid); } }
 /** Cấp pháp tướng (Lc), quỷ (Lq), hào quang (Ld) ngay lúc này; lấy từ đúng dữ liệu công đức / cúng dường đang chạy. */
 function buffInputsOf(uid) {
@@ -909,6 +960,7 @@ io.on('connection', socket => {
       donations: db.donations.filter(d => d.status === 'confirmed').slice(-20).map(publicDonation),
       funds: fundsSummary(), chant, fortuneQueue: fortuneQueue.snapshot(), sweeper: sweeper.current()
     });
+    pushShopState(p);
     socket.broadcast.emit('pj', publicPlayer(p));
     if (players.size <= 80) socket.broadcast.emit('ticker', { text: `${p.name} vừa vào chánh điện` });
   });
@@ -1406,8 +1458,11 @@ io.on('connection', socket => {
     if (!bucket('kd', 5, 15)) return ack({ ok: false, code: 'rate', reason: 'Bạn thao tác quá nhanh.' });
     if (where === 'yard' && !kdInYard(p)) return ack({ ok: false, reason: 'Hãy ra Sân chùa để chơi cờ.' });
     if (where === 'hall' && !kdInHall(p)) return ack({ ok: false, reason: 'Hãy về chánh điện hoặc Sân chùa để chơi cờ.' });
-    try { ack(fn(d && typeof d === 'object' && !Array.isArray(d) ? d : {})); }
-    catch (e) { console.error('[kydao]', e && e.stack || e); ack({ ok: false, reason: 'Có lỗi, bạn thử lại nhé.' }); }
+    const onErr = e => { console.error('[kydao]', e && e.stack || e); ack({ ok: false, reason: 'Có lỗi, bạn thử lại nhé.' }); };
+    try {
+      const r = fn(d && typeof d === 'object' && !Array.isArray(d) ? d : {});
+      if (r && typeof r.then === 'function') r.then(ack, onErr); else ack(r);     // handler async (kd:shop:buy) trả Promise
+    } catch (e) { onErr(e); }
   };
   const kdPass = name => socket.on('kd:' + name.event, kydaoOnly(name.where, d => kydao[name.fn](kdUser(p), d)));
   [
@@ -1417,6 +1472,28 @@ io.on('connection', socket => {
     { event: 'agree', where: 'any', fn: 'agree' }, { event: 'resume-play', where: 'any', fn: 'resumePlay' }, { event: 'resume', where: 'any', fn: 'resume' },
     { event: 'skin', where: 'any', fn: 'skin' }      // skin sân/quân của chính mình; manager kiểm mã bằng KydaoSkins.normalize
   ].forEach(kdPass);
+  /* Cửa hàng skin: client chỉ gửi { kind, id }; GIÁ do máy chủ lấy từ shop (bỏ mọi `amount` client gửi). Duyệt đi qua đúng đường xác nhận cúng dường. */
+  socket.on('kd:shop:state', kydaoOnly('any', () => shopStateFor(p.uid)));
+  socket.on('kd:shop:buy', kydaoOnly('any', async d => {
+    if (!DONATION_ENABLED) return { ok: false, reason: 'Nhà chùa chưa mở nhận tịnh tài trực tuyến.' };
+    if (!shop.publicConfig().on) return { ok: false, code: 'off', reason: 'Skin hiện đang miễn phí, chưa cần cúng dường.' };
+    const kind = d.kind, id = d.id;
+    if (!shop.keyOf(kind, id)) return { ok: false, reason: 'Không có skin này.' };
+    if (shop.owns(accountOf(p.uid), kind, id)) return { ok: false, code: 'owned', reason: 'Bạn đã mở skin này rồi.' };
+    const price = shop.priceOf(kind, id);
+    if (!Number.isInteger(price)) return { ok: false, reason: 'Skin này chưa có mức cúng dường.' };
+    // đã có khoản chờ đúng người, đúng skin: trả lại khoản đó, không tạo trùng
+    const have = db.donations.find(x => x.status === 'pending' && x.purpose === 'skin' && x.uid === p.uid && x.item && x.item.kind === kind && x.item.id === id);
+    if (have) { scheduleTestDonation(have); return Object.assign({ ok: true, kind, id }, donationAck(have)); }
+    if (!allow('shopbuy', 8000)) return { ok: false, code: 'rate', reason: 'Đợi vài giây rồi tạo mã mới nhé.' };
+    const fund = FUNDS[0];
+    const don = addDonation({ purpose: 'skin', item: { kind, id }, amount: price, fund: fund.id, fundName: fund.name, name: p.name, anon: false, hide: false, aura: true, note: '', uid: p.uid });
+    // mã đã có trong sổ chùa rồi mới đưa cho người cúng dường, để webhook / admin tìm thấy được
+    if (!(await store.flush())) { if (don.mode === 'test') { don.status = 'cancelled'; store.save(); } return { ok: false, reason: 'Chưa lưu được mã cúng dường. Bạn thử lại sau ít giây nhé.' }; }
+    armNewTestDonation(don);
+    scheduleTestDonation(don);
+    return Object.assign({ ok: true, kind, id }, donationAck(don));
+  }));
   socket.on('kd:tables', kydaoOnly('hall', d => {
     const r = kydao.tables(kdUser(p), d);
     // bàn thật chỉ gửi cho người ở sân; ở chánh điện chỉ thấy các bàn trong (ván mời đang đấu)
@@ -1578,6 +1655,8 @@ async function main() {
     emit: kdEmit, emitRoom: kdRoom,
     newId: () => crypto.randomBytes(9).toString('base64url'),       // gameId, inviteId: khó đoán
     isAccount: uid => !auth.enabled || String(uid).startsWith('google:'),
+    skinAllowed: (uid, kind, id) => shop.allowed(accountOf(uid), kind, id),     // khóa skin: tắt thì ai cũng dùng được
+    skinPrice: (kind, id) => shop.priceOf(kind, id),
     getRating: kdGetRating, setRating: kdSetRating, saveGame: kdSaveGame, pairCountToday: kdPairCount,
     getActive: kdGetActive, setActive: kdSetActive,
     log: (...a) => console.error('[kydao]', ...a),
