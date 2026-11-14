@@ -609,7 +609,6 @@ export function createAvatar(initialLook = {}, opts = {}) {
   halo.castShadow = false;
   const nameplate = makeLabel(createCanvas), bubble = makeLabel(createCanvas, true);
   group.add(nameplate.sprite, bubble.sprite);
-  nameplate.sprite.renderOrder = bubble.sprite.renderOrder = 6; // nhãn tên vẽ sau lớp Pháp Tướng 3D (renderOrder 1..5)
   noPick(aura); noPick(halo); noPick(shadow);
   const effects = new THREE.Group(); effects.name = 'effects'; group.add(effects);
   const noCover = Object.freeze({ demon: false, lotus: false, aura: false, merit: false });
@@ -619,6 +618,8 @@ export function createAvatar(initialLook = {}, opts = {}) {
     : fxOption && typeof fxOption === 'object' ? fxOption
       : fxOption ? createFx3d(fxHost, { quality: opts.quality || 'medium', reducedMotion: !!(opts.reducedMotion ?? globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches) })
         : null;
+  // Nhãn tên vẽ sau lớp Pháp Tướng 3D (renderOrder 1..5); công tắc tắt thì giữ thứ tự vẽ cũ.
+  if (fx) nameplate.sprite.renderOrder = bubble.sprite.renderOrder = 6;
   let fxQuality = opts.quality || 'medium', fxReduced = null;
   const cameraPosition = new THREE.Vector3(), origin = new THREE.Vector3(), parentRotation = new THREE.Quaternion();
   const follower = new THREE.Vector3(), followDelta = new THREE.Vector3(), localDelta = new THREE.Vector3();

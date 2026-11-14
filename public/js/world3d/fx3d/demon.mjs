@@ -9,13 +9,13 @@ const finite = (value, fallback = 0) => Number.isFinite(value) ? value : fallbac
 
 export function demonPart(env) {
   let holder = null, model = null, mixer = null, current = null, currentName = '', lastReduced = null;
-  let requested = false, settled = false, released = false, failed = false, disposed = false, url = null;
+  let requested = false, settled = false, released = false, failed = false, disposed = false, empty = false, url = null;
   let t = 0, lastN = 0, prevN = 0, since = 0, placed = false, facing = null;
   let pos = [0, 0, 0], vel = [0, 0, 0];
   const local = new THREE.Vector3(), target = new THREE.Vector3();
   const actions = new Map(), materials = [];
   function release() {
-    if (!requested || released) return;
+    if (!requested || released || empty) return; // lượt tải lỗi đã bị bộ đệm gỡ, không trả tham chiếu thay lượt khác
     released = true;
     env.assets.release(url);
   }
@@ -23,7 +23,7 @@ export function demonPart(env) {
     requested = true; url = nextUrl;
     try {
       const asset = await env.assets.load(url);
-      settled = true;
+      settled = true; empty = !asset;
       if (disposed) { release(); return; }
       if (!asset) { failed = true; return; }
       model = asset.clone(asset.scene);

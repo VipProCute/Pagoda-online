@@ -122,6 +122,7 @@
 | T-149 | Pháp tướng công đức 6 bậc dạng 3D | ⏳ T-144 👤 | P2 | CORE + HALL + KYDAI | — (gợi ý: gpt-6.1-sol) |
 | T-150 | Chia suất 3D theo khoảng cách và mức chất lượng, đo hiệu năng | ⏳ T-145 → T-148 | P1 | CORE + HALL | — (gợi ý: gpt-6-luna) |
 | T-151 | Bật mặc định, ảnh chụp, Sổ tay, README, NOTICE | ⏳ T-150 | P2 | CORE + DOCS + OPS | — (gợi ý: gemini-3.8-flash-high + gpt-6-luna) |
+| T-154 | Nâng chất bản mẫu: Ma Vương điêu khắc, thân đặc, vỏ khí ra lửa 👤 duyệt (chặn T-145 → T-149) | 🔵 Sẵn sàng | P0 | CORE + HALL + KYDAI | — (gợi ý: Claude Sonnet 5.5 dùng Blender MCP + gpt-6.1-sol sửa shader) |
 | T-152 | (Tùy chọn) Chụp lại ảnh 2D từ mô hình 3D | ⚪ Hộp thư đến 👤 | P3 | CORE + HALL | — |
 | T-153 | Nghiệm thu chéo đợt Pháp Tướng 3D | ⏳ T-151 | P1 | CORE + HALL | — (gợi ý: gemini-4-argon-high soát hình, gpt-6.1-sol soát mã) |
 
@@ -1695,6 +1696,19 @@ Thiết kế, hợp đồng mã, ngân sách và định tuyến mô hình: [doc
 ### T-152 · (Tùy chọn) Chụp lại ảnh 2D từ mô hình 3D
 - **Trạng thái**: ⚪ Hộp thư đến · 👤 chủ dự án quyết có làm không · **Ưu tiên**: P3
 - **Ý**: render `demon-N.webp`, `lotus-*.webp` từ mô hình 3D (như T-126a với quân cờ) để bản 2D, bảng xem trước ở Võ Học Các và Sân đấu đồng nhất với 3D. Ảnh hiện tại là hình vẽ tay đẹp, chỉ nên thay khi bản render không kém hơn.
+
+### T-154 · Nâng chất bản mẫu: Ma Vương điêu khắc, thân đặc có khối, vỏ khí ra lửa
+- **Trạng thái**: 🔵 Sẵn sàng · **chặn T-145 → T-149** (không làm hàng loạt khi bản mẫu còn thua ảnh 2D) · **Ưu tiên**: P0 · **Gói ngữ cảnh**: CORE + HALL + KYDAI
+- **Khu vực chạm**: tools/blender/fx/build_demon.py, build_lotus.py, public/models/fx/*.glb, public/js/world3d/fx3d/materials.mjs, demon.mjs, aura.mjs, public/js/world3d/scenes/arena.mjs (truyền `fx.distance`), test/world3d-fx.test.js
+- **Nguồn**: nghiệm thu độc lập đợt 0 ngày 14/11 (Opus) và nhận xét của Điều phối: bật `ta-fx3d` hiện **kém hơn** bản 2D.
+- **Tiêu chí xong**:
+  - [ ] Ma Vương dựng lại theo lối điêu khắc (Blender MCP: sculpt/remesh rồi bake pháp tuyến hoặc màu đỉnh), có ba mắt, giáp vai chạm, sừng xoắn, vuốt, cơ ngực rõ; vẫn trong ngân sách ≤ 4.000 tam giác (cho phép thêm một ảnh pháp tuyến ≤ 512 px nếu cần)
+  - [ ] Thân quỷ **đặc** ở phần ngực, đầu (không còn là bóng đỏ trong suốt): viền sáng và phần tan khói chỉ ở mép và nửa dưới; trong game đọc ra hình ở khoảng cách máy quay mặc định
+  - [ ] Sửa nhìn xuyên (C2): lượt ghi chiều sâu trước, hoặc `FrontSide` + `depthWrite` cho thân; mắt, răng không sáng xuyên qua đầu khi nhìn từ sau
+  - [ ] Vỏ khí ra lửa, không còn là "vỏ trứng thủy tinh": mép trên bập bùng, giữa thân gần như trong suốt; thêm `colorspace_fragment` (C6)
+  - [ ] Đài sen đạt phiếu chấm ≥ 4/5, sắc vàng ấm như bản 2D
+  - [ ] Sân đấu truyền khoảng cách và suất cho hiệu ứng (C3); thứ tự vẽ giữa nhiều người (C5); lệch một khung của quỷ (C7); test cho lượt tải lỗi rồi tải lại (C4 đã sửa mã, chưa có test)
+  - [ ] Ảnh bật / tắt đặt cạnh nhau, **👤 chủ dự án duyệt** rồi mới mở T-145 → T-149
 
 ### T-153 · Nghiệm thu chéo đợt Pháp Tướng 3D
 - **Trạng thái**: ⏳ Chờ T-151 · **Ưu tiên**: P1 · **Gói ngữ cảnh**: CORE + HALL

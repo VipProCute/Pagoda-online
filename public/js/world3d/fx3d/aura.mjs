@@ -9,17 +9,17 @@ const isSitting = sit => sit === true || sit === 'cushion' || sit === 'bench' ||
 
 export function auraPart(env) {
   let holder = null, points = null, t = 0;
-  let requested = false, settled = false, released = false, failed = false, disposed = false;
+  let requested = false, settled = false, released = false, failed = false, disposed = false, empty = false;
   const shells = [];
   function release() {
-    if (!requested || released) return;
+    if (!requested || released || empty) return; // lượt tải lỗi đã bị bộ đệm gỡ, không trả tham chiếu thay lượt khác
     released = true; env.assets.release(AURA_KIT_URL);
   }
   async function request() {
     requested = true;
     try {
       const asset = await env.assets.load(AURA_KIT_URL);
-      settled = true;
+      settled = true; empty = !asset;
       if (disposed) { release(); return; }
       const source = asset?.scene.getObjectByName('shell');
       if (!source?.isMesh) { failed = true; return; }

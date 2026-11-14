@@ -9,17 +9,17 @@ const clamp = value => Math.max(0, Math.min(1, value));
 
 export function lotusPart(env) {
   let holder = null, model = null, petal = null, pod = null, layers = [], points = null;
-  let requested = false, settled = false, released = false, failed = false, disposed = false;
+  let requested = false, settled = false, released = false, failed = false, disposed = false, empty = false;
   let t = 0, bloom = 0, lastTier = 0;
   function release() {
-    if (!requested || released) return;
+    if (!requested || released || empty) return; // lượt tải lỗi đã bị bộ đệm gỡ, không trả tham chiếu thay lượt khác
     released = true; env.assets.release(LOTUS_URL);
   }
   async function request() {
     requested = true;
     try {
       const asset = await env.assets.load(LOTUS_URL);
-      settled = true;
+      settled = true; empty = !asset;
       if (disposed) { release(); return; }
       if (!asset) { failed = true; return; }
       model = asset.scene.clone(true);
