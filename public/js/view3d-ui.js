@@ -56,7 +56,7 @@
     if (!prefs.on || paused || pk || !target) return;
     const scene = root.Hall.scene;
     try {
-      const module = await import('/js/world3d/index.mjs?v=13');
+      const module = await import('/js/world3d/index.mjs?v=14');
       if (ticket !== revision) return;
       world = module;
       if (!prefs.quality) {

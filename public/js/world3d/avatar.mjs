@@ -15,10 +15,14 @@ import './fx3d/aura.mjs?v=5';
 // sit: false/-1 = đứng, true/0..n/'cushion' = bồ đoàn, 'bench' = ghế đá.
 // aura: { t, until, color }, meritRank, demon: { n, alpha }, obito, now (giờ máy chủ).
 // Texture hiệu ứng dùng chung có đếm tham chiếu; không tải ảnh khi không có DOM.
-// Pháp Tướng 3D (T-144): bật bằng localStorage['ta-fx3d'] = '1'. Tắt thì y như cũ (ảnh 2D dán tấm phẳng).
+// Pháp Tướng 3D (T-144): từ T-205 mặc định BẬT trong trình duyệt; tắt bằng localStorage['ta-fx3d'] = '0'.
+// Tắt (hoặc không có localStorage, ví dụ khi chạy test) thì y như cũ: ảnh 2D dán tấm phẳng.
 export const FX3D_SWITCH_KEY = 'ta-fx3d';
 export function fx3dEnabled() {
-  try { return globalThis.localStorage?.getItem(FX3D_SWITCH_KEY) === '1'; } catch (error) { return false; }
+  try {
+    const store = globalThis.localStorage;
+    return !!store && store.getItem(FX3D_SWITCH_KEY) !== '0';
+  } catch (error) { return false; }
 }
 
 export const AVATAR_COLORS = Object.freeze([

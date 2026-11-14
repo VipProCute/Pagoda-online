@@ -135,7 +135,7 @@ test('Giải phóng đúng một lần tài nguyên riêng, không hủy vật l
 });
 
 test('Avatar có người ngồi dùng đúng tư thế bồ đoàn, nhìn về trang kinh', async () => {
-  const { createAvatar } = await import('../public/js/world3d/avatar.mjs?v=8');
+  const { createAvatar } = await import('../public/js/world3d/avatar.mjs?v=9');
   const avatar = createAvatar();
   for (const sit of [0, 7]) {
     avatar.update({ sit, yaw: Math.PI, reducedMotion: true }, 0);
@@ -149,7 +149,7 @@ test('Avatar có người ngồi dùng đúng tư thế bồ đoàn, nhìn về 
 // Chạy trang thật với Three thật, chỉ thay renderer và DOM vì Node không có WebGL.
 async function preview() {
   const [THREE, Kit, { build }] = await dependencies;
-  const { createAvatar } = await import('../public/js/world3d/avatar.mjs?v=8');
+  const { createAvatar } = await import('../public/js/world3d/avatar.mjs?v=9');
   function element(extra = {}) {
     return { events: {}, addEventListener(type, fn) { this.events[type] = fn; }, removeEventListener() {}, ...extra };
   }

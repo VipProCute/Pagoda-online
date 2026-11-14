@@ -1,6 +1,6 @@
 'use strict';
 
-import { makeAvatar } from '../avatar-glb.mjs?v=7';
+import { makeAvatar } from '../avatar-glb.mjs?v=8';
 
 /* Cùng hợp đồng build/update/pick/bounds/dispose với hall.mjs.
  * state: { daylight: boolean | 0..1,

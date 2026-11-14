@@ -125,6 +125,7 @@
 | T-154 | Nâng chất bản mẫu: Ma Vương điêu khắc, thân đặc, vỏ khí ra lửa 👤 duyệt (chặn T-145 → T-149) | ✅ Xong (bản nháp) · PR #68 | P0 | CORE + HALL + KYDAI | Điều phối Claude Opus 5.5 · Claude Sonnet 5.5 (vòng 1 Blender) · gpt-6.1-sol (các vòng sau, shader, JS) · soát hình gemini-4-argon-high |
 | T-203 | Vòng hình 2 Pháp Tướng 3D: quỷ ngoái mặt, mặt và tay Ma Vương, lưới lửa, cánh sen, nhãn tên 👤 duyệt (chặn T-145 → T-149) | ✅ Xong (bản nháp, hình chưa đạt) | P0 | CORE + HALL + KYDAI | Claude Opus 5.5 điều phối, gpt-6.1-sol thực thi |
 | T-204 | Vòng hình 3 Pháp Tướng 3D: nới ngân sách Ma Vương (6.000 tam giác, ảnh 1024 px), lửa hộ thân thay vỏ khí, sửa lỗi máy quay sát 👤 duyệt (chặn T-145 → T-149) | ✅ Xong (bản nháp, hình chưa đạt) | P0 | CORE + HALL + KYDAI | Claude Opus 5.5 điều phối, gpt-6.1-sol thực thi |
+| T-205 | Bật Pháp Tướng 3D mặc định cho người chơi (bản vòng 3), tắt bằng `ta-fx3d`='0' 👤 chủ dự án bảo bật 14/11 "chơi tạm" | ✅ Xong | P0 | CORE + HALL | Claude Fable 5.2 |
 | T-152 | (Tùy chọn) Chụp lại ảnh 2D từ mô hình 3D | ⚪ Hộp thư đến 👤 | P3 | CORE + HALL | — |
 | T-153 | Nghiệm thu chéo đợt Pháp Tướng 3D | ⏳ T-151 | P1 | CORE + HALL | — (gợi ý: gemini-4-argon-high soát hình, gpt-6.1-sol soát mã) |
 | T-160 | Danh mục 8 bộ đá cho cờ vây và caro (`STONES`), `kd:skin` nhận theo môn | ✅ Xong · PR #64 | P1 | CORE + KYDAO + KYDAI | gpt-6.1-terra |
@@ -1781,9 +1782,21 @@ Thiết kế, hợp đồng mã, ngân sách và định tuyến mô hình: [doc
   - [ ] `npm run check` sạch, `npm test` 0 trượt (1.093 test, 3 PostgreSQL bỏ qua); ảnh bật/tắt cùng góc ở Tàng Kinh Các và Sân đấu; phiếu chấm `docs/phap-tuong/T-204-SOAT-HINH.md` — đã xong; còn 👤 duyệt
 - **Ngoài phạm vi**: server.js, hall.js, giao thức, bản 2D, `public/img/fx`, máy quay, quỷ cấp 1–3 (T-145).
 
+### T-205 · Bật Pháp Tướng 3D mặc định cho người chơi (bản vòng 3)
+- **Trạng thái**: ✅ Xong · chủ dự án bảo bật 14/11 để "chơi tạm", cải thiện hình sau · **Ưu tiên**: P0 · **Gói ngữ cảnh**: CORE + HALL
+- **Người làm**: Claude Fable 5.2 · **Nhánh**: claude/T-205-bat-phap-tuong-3d · **Soát**: Claude Opus (độc lập, 14/11): được merge, không lỗi chặn
+- **Đổi gì**: `fx3dEnabled()` trong `public/js/world3d/avatar.mjs` trả true khi có `localStorage` và `ta-fx3d` khác `'0'` (giá trị cũ `'1'` vẫn là bật); không có `localStorage` hoặc đọc lỗi thì false. **Tắt**: `localStorage['ta-fx3d'] = '0'` hoặc nút ở `/world3d-fx.html`. Các dòng "mặc định tắt" trong thẻ và tài liệu T-144 → T-204 là lịch sử, thẻ này đảo lại.
+- **Ai thấy khác** (chỉ người đã bấm nút 3D; giao diện 2D không đổi, không tải thêm gì): quỷ cấp 4 Ma Vương thành 3D (cấp 1–3 vẫn 2D); hào quang bậc 2–7 có đài sen vàng 3D; bậc 5 thêm lửa hộ thân 3D; bậc 8–9, vầng sáng, quang bối, sét, pháp tướng công đức vẫn 2D. `.glb` chỉ tải khi trong cảnh có người mang hiệu ứng tương ứng; đang tải, tải lỗi hoặc ngoài suất thì hiện ảnh 2D.
+- **Kiểm**: `npm run check` sạch (190 file); `npm test` 1102 test, 1099 đạt, 0 trượt, 3 bỏ qua (2 test PostgreSQL, 1 test `perft d4` cần `PERFT_DEEP=1`). Mở game thật ở máy chủ thử: Sân đấu 3D không lỗi console, ba `.glb` tải được.
+- **Còn mở (chủ dự án chấp nhận tạm)**: chưa có nút tắt trong game; nhãn tên và bong bóng của người có hiệu ứng 3D hiện xuyên tường; chưa đo FPS và bộ nhớ GPU trên điện thoại (Ma Vương 1,13 MB, ba ảnh 1024 px); shader tự viết nếu biên dịch hỏng trên GPU nào đó thì mất hình quỷ hoặc lửa, không có đường lùi; hình chưa bằng tranh 2D (T-204).
+
 ---
 
 ## Hộp thư đến (ý tưởng, chưa đủ để giao)
+
+- ⚪ Pháp Tướng 3D: thêm nút tắt/bật trong thanh công cụ 3D (`public/js/view3d-ui.js`, cạnh "Người cũ") ghi `ta-fx3d`; cân nhắc tự tắt ở mức chất lượng thấp sau khi đo FPS trên điện thoại (nghiệm thu T-205, 2026-11-14). Gói: CORE + HALL.
+- ⚪ Pháp Tướng 3D: đường lùi khi shader fx3d biên dịch hỏng (lưới không vẽ nhưng `covers` vẫn true nên ảnh 2D bị ẩn) (nghiệm thu T-205, 2026-11-14). Gói: CORE + HALL.
+- ⚪ Sân đấu 3D tính suất Pháp Tướng hai lần riêng (người chơi ở `scenes/arena.mjs`, NPC ở `world3d/index.mjs`), ngân sách thực có thể gấp đôi `LIMITS` (có từ trước; nghiệm thu T-205, 2026-11-14). Gói: CORE + HALL.
 
 Lấy từ README "Việc nên làm tiếp" và lúc rà repo. Điều phối viết lại thành thẻ đủ trường khi muốn làm.
 

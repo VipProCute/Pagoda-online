@@ -4,7 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 
-const load = () => import('../public/js/world3d/avatar.mjs?v=8');
+const load = () => import('../public/js/world3d/avatar.mjs?v=9');
 function canvasFactory(writes = []) {
   return () => ({ width: 0, height: 0, getContext: () => ({
     clearRect() {}, beginPath() {}, roundRect() {}, fill() {}, stroke() {}, fillRect() {},
@@ -382,6 +382,22 @@ test('công tắc ta-fx3d tắt thì không tạo fx3d', async t => {
   const avatar = createAvatar({}, { createCanvas: canvasFactory() }); t.after(() => avatar.dispose());
   assert.equal(avatar.group.getObjectByName('fx3d'), undefined);
   assert.equal(avatar.fx, null);
+});
+
+test('công tắc ta-fx3d mặc định bật trong trình duyệt, đặt 0 thì tắt', async t => {
+  const { fx3dEnabled, FX3D_SWITCH_KEY } = await load();
+  const old = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+  const data = new Map();
+  const store = { getItem: key => data.has(key) ? data.get(key) : null };
+  Object.defineProperty(globalThis, 'localStorage', { value: store, configurable: true, writable: true });
+  t.after(() => { delete globalThis.localStorage; if (old) Object.defineProperty(globalThis, 'localStorage', old); });
+  assert.equal(fx3dEnabled(), true);
+  data.set(FX3D_SWITCH_KEY, '1'); assert.equal(fx3dEnabled(), true);
+  data.set(FX3D_SWITCH_KEY, '0'); assert.equal(fx3dEnabled(), false);
+  store.getItem = () => { throw new Error('bị chặn'); };
+  assert.equal(fx3dEnabled(), false);
+  delete globalThis.localStorage;
+  assert.equal(fx3dEnabled(), false);
 });
 
 test('fx phủ quỷ, hào quang hoặc sen thì nhãn tên và bong bóng không bị chiều sâu cắt', async t => {

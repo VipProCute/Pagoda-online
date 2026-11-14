@@ -7,7 +7,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const ViewMath = require('../public/js/view-math.js');
 const dependencies = Promise.all([
-  import('three'), import('../public/js/world3d/kit.mjs'), import('../public/js/world3d/scenes/arena.mjs?v=10')
+  import('three'), import('../public/js/world3d/kit.mjs'), import('../public/js/world3d/scenes/arena.mjs?v=11')
 ]);
 
 async function fixture(options = {}) {
