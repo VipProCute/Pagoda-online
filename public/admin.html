@@ -26,6 +26,9 @@
   .item { border-bottom: 1px dashed var(--line); padding: 6px 0; display: flex; gap: 8px; justify-content: space-between; align-items: start; font-size: 13.5px; }
   .item.hidden { opacity: .45; }
   .item p { margin: 0; overflow-wrap: anywhere; }
+  .shop-table table { min-width: 0; }
+  .shop-table input { width: 100%; min-width: 130px; }
+  #shopSave { min-height: 44px; }
 </style>
 </head>
 <body>
@@ -51,6 +54,21 @@
       <p class="hint" id="donationModeHelp">Đang tải chế độ cúng dường…</p>
       <p class="warn" id="confirmMsg" hidden style="color:var(--jade)"></p>
       <div class="tbl"><table><thead><tr><th>Mã</th><th>Loại</th><th>Thời gian</th><th>Tên</th><th>Số tiền</th><th>Quỹ</th><th>Lời nhắn</th><th>Trạng thái</th><th></th></tr></thead><tbody id="dons"></tbody></table></div>
+    </section>
+    <section class="card" id="shop">
+      <h2>Cửa hàng skin bàn cờ</h2>
+      <p id="shopStatus">Đang tải…</p>
+      <form id="shopForm">
+        <p><label><input type="checkbox" id="shopOn"> Thu tiền mở skin</label></p>
+        <p><label for="shopPrice">Mức chung (đ)</label> <input class="field" type="number" id="shopPrice" min="10000" max="100000000" step="1000"></p>
+        <p class="hint" id="shopPriceDisplay"></p>
+        <div id="shopCatalog"></div>
+        <p id="shopStats"></p>
+        <p class="warn">Bật thu tiền thì skin chưa mở sẽ bị gỡ khỏi các ván đang chơi ngay.</p>
+        <p class="warn" id="shopReason" hidden>Cần đặt mức chung trước khi bật thu tiền.</p>
+        <button class="btn primary" type="submit" id="shopSave" disabled>Lưu</button>
+        <p class="hint" id="shopMessage" role="status" aria-live="polite"></p>
+      </form>
     </section>
     <section>
       <h2>Hào quang đang sáng</h2>
@@ -78,10 +96,80 @@
   const OUT = { applied: 'đã hoàn thành phiên tu luyện', late: 'tiền tới khi phiên đã xong/hủy → cấp phiếu hoàn thành ngay', rejected: 'đã từ chối' };
   const SESS = { active: 'đang tu', completed: 'đã xong', cancelled: 'đã hủy', missing: 'không còn' };
   let key = sessionStorage.getItem('ta-admin-key') || '';
+  let shopCatalog = null;
+  let shopWasOn = false;
+  let shopReady = false;
+  let shopSaving = false;
   const api = (path, method = 'GET', body) => fetch(path, { method, headers: { 'x-admin-key': key, 'content-type': 'application/json' }, body: body ? JSON.stringify(body) : undefined })
     .then(async r => { const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || 'Lỗi ' + r.status); return j; });
   const cell = (tr, text, cls) => { const td = document.createElement('td'); td.textContent = text; if (cls) td.className = cls; tr.appendChild(td); return td; };
   function btn(label, fn, cls = 'btn small') { const b = document.createElement('button'); b.type = 'button'; b.className = cls; b.textContent = label; b.addEventListener('click', fn); return b; }
+  function shopSkinName(item) {
+    const skin = item || {};
+    const match = shopCatalog && (shopCatalog[skin.kind] || []).find(entry => entry.id === skin.id);
+    return match ? match.name : `${skin.kind}:${skin.id}`;
+  }
+  function updateShopSave() {
+    const price = $('#shopPrice');
+    const value = price.valueAsNumber;
+    const invalid = $('#shopOn').checked && (!Number.isInteger(value) || value < 10000 || value > 100000000);
+    $('#shopReason').hidden = !invalid;
+    $('#shopSave').disabled = !shopReady || shopSaving || invalid;
+    $('#shopPriceDisplay').textContent = price.value && Number.isFinite(value) ? new Intl.NumberFormat('vi-VN').format(value) + ' đ' : '';
+  }
+  async function loadShop() {
+    try {
+      const data = await api('/api/admin/kydao-shop');
+      shopCatalog = data.catalog;
+      shopWasOn = data.config.on;
+      $('#shopStatus').textContent = shopWasOn ? 'Đang thu tiền' : 'Đang miễn phí';
+      $('#shopOn').checked = shopWasOn;
+      $('#shopPrice').value = data.config.price == null ? '' : data.config.price;
+      const catalog = $('#shopCatalog'); catalog.textContent = '';
+      [['field', 'Sân'], ['pieces', 'Quân (cờ vua, cờ tướng, cờ úp)'], ['stones', 'Đá (cờ vây, caro)']].forEach(([kind, title]) => {
+        const heading = document.createElement('h3'); heading.textContent = title; catalog.appendChild(heading);
+        const wrap = document.createElement('div'); wrap.className = 'tbl shop-table';
+        const table = document.createElement('table');
+        const head = document.createElement('thead'); const row = document.createElement('tr');
+        ['Skin', 'Mức riêng (đ)'].forEach(text => { const th = document.createElement('th'); th.scope = 'col'; th.textContent = text; row.appendChild(th); });
+        head.appendChild(row); table.appendChild(head);
+        const body = document.createElement('tbody');
+        (shopCatalog[kind] || []).forEach((skin, index) => {
+          const tr = document.createElement('tr'); cell(tr, skin.name);
+          const td = cell(tr, ''); const label = document.createElement('label');
+          const input = document.createElement('input'); input.className = 'field'; input.type = 'number';
+          input.id = `shop-${kind}-${index}`; input.min = '10000'; input.max = '100000000'; input.step = '1000';
+          input.dataset.shopKey = `${kind}:${skin.id}`;
+          const price = data.config.prices[input.dataset.shopKey]; input.value = price == null ? '' : price;
+          label.htmlFor = input.id; label.className = 'sr'; label.textContent = `Mức riêng của ${skin.name} (đ)`;
+          td.append(label, input); body.appendChild(tr);
+        });
+        table.appendChild(body); wrap.appendChild(table); catalog.appendChild(wrap);
+      });
+      $('#shopStats').textContent = `Đã có ${NUM(data.stats.owners)} người mở, tổng ${NUM(data.stats.unlocks)} lượt mở.`;
+      shopReady = true; updateShopSave();
+      load();
+    } catch (e) {
+      shopReady = false; updateShopSave(); $('#shopMessage').textContent = e.message;
+    }
+  }
+  $('#shopOn').addEventListener('change', updateShopSave);
+  $('#shopPrice').addEventListener('input', updateShopSave);
+  $('#shopForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    if (!shopReady || shopSaving) return;
+    const on = $('#shopOn').checked;
+    if (on && !shopWasOn && !confirm('Bật thu tiền mở skin? Skin chưa mở sẽ bị gỡ khỏi các ván đang chơi.')) return;
+    const prices = {};
+    $('#shopCatalog').querySelectorAll('input[data-shop-key]').forEach(input => { prices[input.dataset.shopKey] = input.value === '' ? null : input.valueAsNumber; });
+    shopSaving = true; updateShopSave(); $('#shopMessage').textContent = '';
+    try {
+      const result = await api('/api/admin/kydao-shop', 'POST', { on, price: $('#shopPrice').value === '' ? null : $('#shopPrice').valueAsNumber, prices });
+      $('#shopMessage').textContent = 'Đã lưu.' + (result.removed > 0 ? ` Đã gỡ skin của ${NUM(result.removed)} bên đang chơi.` : '');
+      await loadShop();
+    } catch (error) { $('#shopMessage').textContent = error.message; }
+    finally { shopSaving = false; updateShopSave(); }
+  });
   async function load() {
     try {
       const d = await api('/api/admin/summary');
@@ -93,10 +181,10 @@
       d.donations.forEach(x => {
         const tr = document.createElement('tr');
         const sp = x.purpose === 'speedup' ? x.speedup || {} : null;
-        cell(tr, x.code, 'code'); cell(tr, (sp ? 'Hoàn thành tu luyện' : 'Cúng dường') + (x.mode === 'test' ? ' · tự xác nhận' : '')); cell(tr, t(x.createdAt)); cell(tr, x.name + (x.anon ? ' (ẩn danh)' : ''));
+        cell(tr, x.code, 'code'); cell(tr, (sp ? 'Hoàn thành tu luyện' : 'Cúng dường') + (x.purpose === 'skin' ? ' · Mở skin: ' + shopSkinName(x.item) : '') + (x.mode === 'test' ? ' · tự xác nhận' : '')); cell(tr, t(x.createdAt)); cell(tr, x.name + (x.anon ? ' (ẩn danh)' : ''));
         cell(tr, NUM(x.amount) + 'đ' + (x.hide ? ' (ẩn)' : '')); cell(tr, x.fundName);
         cell(tr, sp ? `${sp.methodName} (${sp.durationKey}) · phiên ${SESS[sp.sessionStatus] || sp.sessionStatus}` + (sp.bankReported ? ' · ngân hàng đã báo nhận' : '') + (x.note ? ' · ' + x.note : '') : x.note || '');
-        cell(tr, ST[x.status] + (x.source ? ' · ' + x.source : '') + (x.outcome ? ' · ' + (OUT[x.outcome] || x.outcome) : ''), 'st-' + x.status);
+        cell(tr, ST[x.status] + (x.source ? ' · ' + x.source : '') + (x.outcome ? ' · ' + (x.purpose === 'skin' && x.outcome === 'granted' ? 'đã mở' : OUT[x.outcome] || x.outcome) : ''), 'st-' + x.status);
         const a = cell(tr, '');
         if (x.status === 'pending' && x.mode === 'test') {
           a.textContent = 'Tự xác nhận sau 10 giây';
@@ -173,12 +261,13 @@
     sessionStorage.setItem('ta-admin-key', key);
     try { localStorage.setItem('ta-admin', key); } catch (_) {}
     load();
+    loadShop();
   });
   $('#announce').addEventListener('submit', e => {
     e.preventDefault();
     api('/api/admin/announce', 'POST', { text: $('#annText').value }).then(() => { $('#annText').value = ''; load(); }).catch(er => alert(er.message));
   });
-  if (key) { $('#key').value = key; load(); }
+  if (key) { $('#key').value = key; load(); loadShop(); }
   setInterval(() => { if (!$('#app').hidden) load(); }, 15000);
 })();
 </script>
