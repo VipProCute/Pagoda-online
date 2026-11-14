@@ -6,7 +6,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const MODELS = path.join(__dirname, '..', 'public', 'models', 'avatar');
-const load = () => import('../public/js/world3d/avatar-glb.mjs?v=7');
+const load = () => import('../public/js/world3d/avatar-glb.mjs?v=8');
 const settle = async () => { for (let i = 0; i < 6; i++) await new Promise(resolve => setImmediate(resolve)); };
 
 function canvasFactory() {
@@ -118,7 +118,7 @@ test('mặc định mà .glb không nạp được: vẫn có nhân vật bản 
 test('công tắc bật: ẩn thân thế thân, hiện mô hình, màu áo và tóc theo look', async t => {
   withSwitch(t, 'blender');
   const { makeAvatar } = await load();
-  const { AVATAR_COLORS } = await import('../public/js/world3d/avatar.mjs?v=8');
+  const { AVATAR_COLORS } = await import('../public/js/world3d/avatar.mjs?v=9');
   const assets = await fakeAssets();
   const a = makeAvatar({ g: 'nam', c: 6, h: 1 }, { assets, createCanvas: canvasFactory() });
   const b = makeAvatar({ g: 'nu', c: 2, h: 3 }, { assets, createCanvas: canvasFactory() });

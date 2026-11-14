@@ -92,7 +92,7 @@
     'use strict';
 
     import * as THREE from 'three';
-    import { createAvatar, fx3dEnabled, FX3D_SWITCH_KEY } from '/js/world3d/avatar.mjs?v=8';
+    import { createAvatar, fx3dEnabled, FX3D_SWITCH_KEY } from '/js/world3d/avatar.mjs?v=9';
     import { createFx3d, registered } from '/js/world3d/fx3d/index.mjs?v=5';
     import { placeholderParts } from '/js/world3d/fx3d/placeholder.mjs?v=3';
 
@@ -113,8 +113,8 @@
     byId('fx-use').textContent = `${fx3dEnabled() ? 'Tắt' : 'Bật'} Pháp Tướng 3D trong game`;
     byId('fx-use').addEventListener('click', () => {
       try {
-        if (fx3dEnabled()) localStorage.removeItem(FX3D_SWITCH_KEY);
-        else localStorage.setItem(FX3D_SWITCH_KEY, '1');
+        if (fx3dEnabled()) localStorage.setItem(FX3D_SWITCH_KEY, '0');
+        else localStorage.removeItem(FX3D_SWITCH_KEY);
       } catch (error) { /* Trình duyệt có thể không cho lưu công tắc. */ }
       location.reload();
     });

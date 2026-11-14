@@ -29,7 +29,7 @@ test('Three.js: phục vụ build có cache và module phụ thuộc, không l�
     });
     assert.ok(status === 403 || status === 404, url + ': ' + status);
   }
-  const module = await fetch(server.url + '/js/world3d/index.mjs?v=13');
+  const module = await fetch(server.url + '/js/world3d/index.mjs?v=14');
   assert.equal(module.status, 200);
   assert.match(module.headers.get('content-type'), /javascript/);
   const page = await fetch(server.url + '/world3d-test.html');
