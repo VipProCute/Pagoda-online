@@ -34,6 +34,7 @@
 **File:** `lib/kydao/shop.js` (mới), `lib/store-sections.js`, `test/kydao-shop.test.js` (mới), `test/store-json.test.js`, `test/store-pg.test.js`.
 
 1. `lib/store-sections.js`: trong `kydaoFresh` (tìm hàm tạo mặc định của `kydao`) thêm `shop: { on: false, price: null, prices: {}, updatedAt: 0 }` và `unlocks: {}`; thêm section tương ứng vào `SECTIONS` theo đúng cách các khóa lồng của `kydao` đang khai (đọc cách `kydao.*` hiện có được khai: `map(...)`/`list(...)` và `NESTED`); `adopt()` phải vá dữ liệu cũ thiếu hai khóa này. Cập nhật danh sách section cứng và `fill()` trong `test/store-pg.test.js`, và test liệt kê khóa trong `test/store-json.test.js`. Thêm test: dữ liệu cũ không có `shop`/`unlocks` → sau `adopt` có mặc định; ghi rồi đọc lại (JSON) giữ nguyên `unlocks`.
+   > Sửa sau CI của PR #64: mặc định của `shop` là `{}` (rỗng = tắt), không lưu `price: null`; `lib/kydao/shop.js` tự điền khi dùng. Lý do: kho PostgreSQL quy ước CSDL mới tinh chỉ ghi một dòng meta, mặc định 4 khóa làm ghi thừa 4 dòng (test `store-pg` bắt được).
 2. `lib/kydao/shop.js`: logic **thuần** (không socket, không timer, không I/O; `now` tiêm vào), kiểu nhà máy:
    ```js
    createShop({ getState, catalog, now })

@@ -346,10 +346,10 @@ test('store-sections: snapshot / diff / adopt cho biết đúng phần chênh', 
 
 test('store-sections: kydao và records có mặc định, vá khi thiếu/sai kiểu, và diff theo id', () => {
   const f = S.fresh();
-  assert.deepEqual(f.kydao, { ratings: {}, games: [], active: {}, pairs: {}, shop: { on: false, price: null, prices: {}, updatedAt: 0 }, unlocks: {} });
+  assert.deepEqual(f.kydao, { ratings: {}, games: [], active: {}, pairs: {}, shop: {}, unlocks: {} });
   assert.deepEqual(f.records, { log: [] });
   const db = S.adopt({}, { version: 2, kydao: { games: 'x', ratings: { u: { name: 'U' } } }, records: null });
-  assert.deepEqual(db.kydao, { ratings: { u: { name: 'U' } }, games: [], active: {}, pairs: {}, shop: { on: false, price: null, prices: {}, updatedAt: 0 }, unlocks: {} });
+  assert.deepEqual(db.kydao, { ratings: { u: { name: 'U' } }, games: [], active: {}, pairs: {}, shop: {}, unlocks: {} });
   assert.deepEqual(db.records, { log: [] });
   const old = S.adopt({}, { version: 2 });
   assert.deepEqual(old.kydao, S.fresh().kydao, 'dữ liệu cũ không có hai khóa vẫn nạp được');
@@ -373,13 +373,14 @@ test('store-sections: kydao.pairs khứ hồi qua snapshot → rowsToRaw → ado
 
 test('store-sections: kydao.shop và kydao.unlocks có mặc định khi dữ liệu cũ thiếu, vá khóa thiếu/sai kiểu', () => {
   const old = S.adopt({}, { version: 2, kydao: { ratings: {}, games: [], active: {}, pairs: {} } });
-  assert.deepEqual(old.kydao.shop, { on: false, price: null, prices: {}, updatedAt: 0 });
+  assert.deepEqual(old.kydao.shop, {}, 'rỗng = tắt; CSDL mới không ghi dòng mặc định');
   assert.deepEqual(old.kydao.unlocks, {});
   const part = S.adopt({}, { version: 2, kydao: { shop: { on: true, price: 20000 }, unlocks: 'x' } });
-  assert.deepEqual(part.kydao.shop, { on: true, price: 20000, prices: {}, updatedAt: 0 }, 'shop thiếu khóa được bổ sung');
+  assert.deepEqual(part.kydao.shop, { on: true, price: 20000 }, 'khóa thiếu để lib/kydao/shop.js điền khi dùng');
   assert.deepEqual(part.kydao.unlocks, {}, 'unlocks sai kiểu về mặc định');
   const bad = S.adopt({}, { version: 2, kydao: { shop: { on: true, prices: 5 } } });
-  assert.deepEqual(bad.kydao.shop.prices, {});
+  assert.deepEqual(bad.kydao.shop, { on: true }, 'prices sai kiểu bị bỏ');
+  assert.deepEqual(S.adopt({}, { version: 2, kydao: { shop: 7 } }).kydao.shop, {}, 'shop sai kiểu về rỗng');
   assert.deepEqual(S.unknownKeys(part), [], 'hai khóa mới đã có section nên không bị coi là khóa lạ');
 });
 
