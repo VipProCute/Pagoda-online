@@ -885,3 +885,80 @@ test('board-assets: nạp ảnh một lần, nhớ cả kết quả thiếu, l�
   assert.equal(await loader.loadImage('https://x.test/a.webp'), null); assert.equal(await loader.loadImage(null), null);
   assert.equal(typeof A.loadImage, 'function');
 });
+
+// ---- T-143 · skin đá cho cờ vây và caro ----
+const stoneAssets = have => {
+  const asked = [];
+  return { asked, loadModel: async () => null, instantiate: () => { throw new Error('không có mô hình'); },
+    loadImage: async url => { asked.push(url); return have ? { width: 256, height: 128 } : null; } };
+};
+const stoneState = game => (game === 'go'
+  ? Go.play(Go.play(Go.create({ size: 9 }), 'C3').state, 'G7').state
+  : Gomoku.play(Gomoku.play(Gomoku.create({}), 'h8').state, 'i8').state);
+const stoneBodies = () => meshes(renderedScene).filter(o => o.geometry.type === 'SphereGeometry' && o.geometry.parameters.radius === 0.43 && o.position.y === 0.14);
+
+test('Kỳ Đài 3D: đá cờ vây/caro theo bộ của từng bên; bên không skin giữ mặc định; cờ vua không bị ảnh hưởng', async () => {
+  for (const game of ['go', 'gomoku']) {
+    const { env, view } = await openBoard(game, { assets: stoneAssets(false) });
+    const st = stoneState(game);
+    view.setState({ game, ...st, skins: { a: { pieces: 'cosmos' } } }); await settle(); env.flush();
+    const bodies = stoneBodies(), colors = bodies.map(hex);
+    assert.equal(bodies.length, 2);
+    assert.ok(colors.includes(Skins.STONES.cosmos.a.base), game + ': đá bên a theo màu Tinh Hà');
+    assert.ok(colors.includes('#f7dfae'), game + ': bên b không skin giữ ngà mặc định');
+    const mat = bodies.find(b => hex(b) === Skins.STONES.cosmos.a.base).material;
+    assert.equal(mat.roughness, 0.25); assert.equal(mat.metalness, 0.05);
+    assert.equal(mat.emissive.getHexString(), Skins.STONES.cosmos.a.glow.slice(1)); assert.equal(mat.emissiveIntensity, 0.18);
+    assert.equal(view.stats().pieceSkins, 1);
+    if (game === 'gomoku') assert.ok(meshes(renderedScene).some(o => hex(o) === Skins.STONES.cosmos.a.mark), 'dấu X theo màu mark');
+    view.setState({ game, ...st, skins: { a: { pieces: 'cosmos' }, b: { pieces: 'forest' } } }); env.flush();
+    assert.ok(stoneBodies().map(hex).includes(Skins.STONES.forest.b.base));
+    view.setState({ game, ...st, skins: { a: { pieces: 'hack' }, b: { pieces: '__proto__' } } }); env.flush();
+    assert.deepEqual(stoneBodies().map(hex).sort(), ['#292d29', '#f7dfae']);
+    assert.equal(view.stats().pieceSkins, 0, 'bỏ skin thì giải phóng');
+    view.dispose();
+  }
+  const { env, view } = await openBoard('chess', { assets: stoneAssets(false) }), st = Chess.create({});
+  view.setState({ game: 'chess', board: st.board, skins: { a: { pieces: 'cosmos' } } }); env.flush();
+  assert.equal(view.stats().pieceSkins, 0, 'cosmos không có trong PIECES của cờ vua');
+  view.dispose();
+});
+
+test('Kỳ Đài 3D: đá có ảnh atlas thì phủ chỏm trên bằng ô của đúng bên; 404 thì chỉ màu', async () => {
+  const THREE = await import(threeURL);
+  const assets = stoneAssets(true), { env, view } = await openBoard('go', { assets });
+  view.setState({ game: 'go', ...stoneState('go'), skins: { a: { pieces: 'magma' }, b: { pieces: 'ocean' } } }); await settle(); env.flush();
+  assert.deepEqual([...new Set(assets.asked)].sort(), ['/img/kydao/stones/magma.webp', '/img/kydao/stones/ocean.webp']);
+  const caps = meshes(renderedScene).filter(o => o.geometry.type === 'SphereGeometry' && o.geometry.parameters.thetaLength === 0.78);
+  assert.equal(caps.length, 2);
+  const cell = side => caps.find(c => c.material.map.offset.x >= (side === 'a' ? 0 : 0.5) && c.material.map.offset.x < (side === 'a' ? 0.5 : 1));
+  assert.ok(cell('a') && cell('b') && cell('a') !== cell('b'), 'mỗi bên một ô atlas');
+  for (const c of caps) { assert.equal(c.material.map.colorSpace, THREE.SRGBColorSpace); assert.ok(c.material.map.repeat.x < 0.5 && c.material.map.repeat.y < 1); assert.equal(c.castShadow, false); }
+  const uv = caps[0].geometry.attributes.uv; let lo = 1, hi = 0;
+  for (let i = 0; i < uv.count; i++) { lo = Math.min(lo, uv.getX(i), uv.getY(i)); hi = Math.max(hi, uv.getX(i), uv.getY(i)); }
+  assert.ok(lo >= -1e-6 && hi <= 1 + 1e-6, 'UV chiếu trong [0,1]');
+  view.dispose();
+  const none = stoneAssets(false), second = await openBoard('go', { assets: none });
+  second.view.setState({ game: 'go', ...stoneState('go'), skins: { a: { pieces: 'magma' } } }); await settle(); second.env.flush();
+  assert.equal(meshes(renderedScene).filter(o => o.geometry.parameters && o.geometry.parameters.thetaLength === 0.78).length, 0);
+  second.view.dispose();
+});
+
+test('Kỳ Đài 3D: đổi bộ đá 20 lần không tăng bộ nhớ GPU; dispose trả hết', async () => {
+  const sets = Object.keys(Skins.STONES);
+  for (const game of ['go', 'gomoku']) {
+    const { env, view } = await openBoard(game, { assets: stoneAssets(true) }), st = stoneState(game);
+    let T = performance.now() + 5000;
+    const show = i => { view.setState({ game, ...st, skins: { a: { pieces: sets[i % 8] }, b: { pieces: sets[(i + 5) % 8] } } }); env.flushAt(T += 10); };
+    view.setState({ game, ...st }); env.flushAt(T);
+    show(0); await settle(); env.flushAt(T += 10);
+    const first = view.stats();
+    assert.equal(first.pieceSkins, 2);
+    for (let i = 1; i <= 20; i++) { show(i); await settle(); env.flushAt(T += 10); }
+    show(0); await settle(); env.flushAt(T += 10);
+    assert.deepEqual(view.stats(), first, game + ': bộ nhớ giữ nguyên sau 20 lần đổi');
+    view.dispose();
+    const after = view.stats();
+    assert.deepEqual([after.geometries, after.textures], [0, 0], game + ': dispose giải phóng mọi hình và texture');
+  }
+});
