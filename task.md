@@ -123,7 +123,7 @@
 | T-150 | Chia suất 3D theo khoảng cách và mức chất lượng, đo hiệu năng | ⏳ T-145 → T-148 | P1 | CORE + HALL | — (gợi ý: gpt-6-luna) |
 | T-151 | Bật mặc định, ảnh chụp, Sổ tay, README, NOTICE | ⏳ T-150 | P2 | CORE + DOCS + OPS | — (gợi ý: gemini-3.8-flash-high + gpt-6-luna) |
 | T-154 | Nâng chất bản mẫu: Ma Vương điêu khắc, thân đặc, vỏ khí ra lửa 👤 duyệt (chặn T-145 → T-149) | ✅ Xong (bản nháp) · PR #68 | P0 | CORE + HALL + KYDAI | Điều phối Claude Opus 5.5 · Claude Sonnet 5.5 (vòng 1 Blender) · gpt-6.1-sol (các vòng sau, shader, JS) · soát hình gemini-4-argon-high |
-| T-203 | Vòng hình 2 Pháp Tướng 3D: quỷ ngoái mặt, mặt và tay Ma Vương, lưới lửa, cánh sen, nhãn tên 👤 duyệt (chặn T-145 → T-149) | 🔵 Sẵn sàng | P0 | CORE + HALL + KYDAI | — (gợi ý: gpt-6.1-sol) |
+| T-203 | Vòng hình 2 Pháp Tướng 3D: quỷ ngoái mặt, mặt và tay Ma Vương, lưới lửa, cánh sen, nhãn tên 👤 duyệt (chặn T-145 → T-149) | 🟣 Chờ soát | P0 | CORE + HALL + KYDAI | Claude Opus 5.5 điều phối, gpt-6.1-sol thực thi |
 | T-152 | (Tùy chọn) Chụp lại ảnh 2D từ mô hình 3D | ⚪ Hộp thư đến 👤 | P3 | CORE + HALL | — |
 | T-153 | Nghiệm thu chéo đợt Pháp Tướng 3D | ⏳ T-151 | P1 | CORE + HALL | — (gợi ý: gemini-4-argon-high soát hình, gpt-6.1-sol soát mã) |
 | T-160 | Danh mục 8 bộ đá cho cờ vây và caro (`STONES`), `kd:skin` nhận theo môn | ✅ Xong · PR #64 | P1 | CORE + KYDAO + KYDAI | gpt-6.1-terra |
@@ -1733,21 +1733,21 @@ Thiết kế, hợp đồng mã, ngân sách và định tuyến mô hình: [doc
   - [ ] Ảnh bật / tắt cùng chỗ (`game-ta-fx3d-bat.jpg`, `game-ta-fx3d-tat.jpg`), hai phương án quỷ của mình (`side` mặc định, `cover`), **👤 chủ dự án duyệt** rồi mới mở T-145 → T-149
 
 ### T-203 · Vòng hình 2 Pháp Tướng 3D: quỷ ngoái mặt, mặt và tay Ma Vương, lưới lửa, cánh sen, nhãn tên
-- **Trạng thái**: 🔵 Sẵn sàng · 👤 chủ dự án duyệt hình · **chặn T-145 → T-149** · **Ưu tiên**: P0 · **Gói ngữ cảnh**: CORE + HALL + KYDAI
+- **Trạng thái**: 🟣 Chờ soát · 👤 chủ dự án duyệt hình (chấm độc lập: CHƯA ĐẠT, xem [docs/phap-tuong/T-203-SOAT-HINH.md](docs/phap-tuong/T-203-SOAT-HINH.md)) · **chặn T-145 → T-149** · **Ưu tiên**: P0 · **Gói ngữ cảnh**: CORE + HALL + KYDAI
 - **Khu vực chạm**: tools/blender/fx/build_demon.py, build_lotus.py, build_aura.py, public/models/fx/*.glb, public/js/world3d/fx3d/*.mjs, public/js/stand-math.js, public/js/world3d/avatar.mjs (chỉ nhãn tên), public/js/world3d/index.mjs và scenes/arena.mjs (chỉ phần chia suất), test/world3d-fx.test.js, test/stand-math.test.js, public/world3d-fx.html
-- **Người làm**: — · **Nhánh**: claude/T-203-vong-hinh-phap-tuong
+- **Người làm**: Claude Opus 5.5 (điều phối), gpt-6.1-sol (thực thi) · **Nhánh**: claude/T-203-vong-hinh-phap-tuong
 - **Nguồn**: nghiệm thu độc lập T-154 ngày 14/11 (Ma Vương 2,5/5, đài sen 2,5/5, vỏ khí 2/5; trong game bật còn kém tắt). Công tắc `ta-fx3d` vẫn mặc định tắt.
 - **Tiêu chí xong**:
-  - [ ] **Quỷ của chính mình ngoái mặt về máy quay** ở góc nhìn thứ ba: thân xoay nghiêng khoảng 3/4, đầu quay về phía máy quay, đứng lệch sau vai, nằm gọn trong khung (không bị cắt mép) ở khoảng cách máy quay mặc định; quỷ của người khác vẫn quay theo chủ. Toán nằm ở `stand-math.js`, có test
-  - [ ] Ma Vương: tay và bàn tay to, cơ bắp như ảnh 2D; đầu lớn hơn, mặt không lộ đa giác khi nhìn gần; giáp vai rõ khối; lửa sau vai là khối lửa có thể tích (không phải dải phẳng), nhìn từ sau không thành vệt trắng; ảnh pháp tuyến không ra vệt khối (PNG hoặc JPEG chất lượng cao hơn, vẫn ≤ 600 KB)
-  - [ ] Đài sen: cánh sen tròn đầy, cong hai chiều, có gân, ba tầng 16/12/8 đọc ra là hoa sen (không phải vương miện gai); vàng ấm có ánh sáng như `public/img/fx/aura/lotus-gold.webp`; ≤ 1.200 tam giác
-  - [ ] Vỏ khí: đổi lưới trong `build_aura.py` thành hình ngọn lửa (đáy rộng ôm chân, thắt dần, đỉnh xé thành nhiều lưỡi); không cháy trắng khi máy quay gần (qua tone mapping hoặc hạ cường độ); số lớp khớp bảng §2.4 (sửa mã hoặc sửa bảng cho khớp nhau)
-  - [ ] Hạt dùng ảnh đốm tròn mềm sinh bằng mã (hết ô vuông trắng)
-  - [ ] Nhãn tên và bong bóng chat không bị thân quỷ cắt và không bị lửa đè (ví dụ `depthTest: false` hoặc vẽ sau cùng), kiểm bằng ảnh nhìn từ sau
-  - [ ] Lượt ghi chiều sâu theo độ mờ: quỷ đang mờ (0,1 đến 0,55) không che nhãn và ảnh 2D phía sau
-  - [ ] Chia suất chặt: người ngoài suất quỷ không được bật quỷ 3D dù lọt suất hào quang; có test cho phần Sân đấu truyền khoảng cách và suất
-  - [ ] `world3d-fx.html` import `placeholder.mjs` đúng số `?v=` mới
-  - [ ] Xem tận mắt clip `emerge`; ảnh bật / tắt cùng góc trong game; phiếu chấm hình so trực tiếp với ảnh 2D; **👤 chủ dự án duyệt** rồi mới mở T-145 → T-149
+  - [x] **Quỷ của chính mình ngoái mặt về máy quay** ở góc nhìn thứ ba: thân xoay nghiêng khoảng 3/4, đầu quay về phía máy quay, đứng lệch sau vai, nằm gọn trong khung (không bị cắt mép) ở khoảng cách máy quay mặc định; quỷ của người khác vẫn quay theo chủ. Toán nằm ở `stand-math.js`, có test · _Đạt ở Tàng Kinh Các (máy quay ~3,1 m); quỷ tự thu nhỏ khi máy quay sát người, Sân đấu (~1 m) vẫn bị cắt một phần sừng_
+  - [ ] Ma Vương: tay và bàn tay to, cơ bắp như ảnh 2D; đầu lớn hơn, mặt không lộ đa giác khi nhìn gần; giáp vai rõ khối; lửa sau vai là khối lửa có thể tích (không phải dải phẳng), nhìn từ sau không thành vệt trắng; ảnh pháp tuyến không ra vệt khối (PNG hoặc JPEG chất lượng cao hơn, vẫn ≤ 600 KB) · _Làm một phần: tay, đầu, giáp vai, lửa ống kín, pháp tuyến JPEG 97 + TANGENT, 4.000 tam giác, 565 KB; mặt còn gãy mặt phẳng khi nhìn gần, bàn tay chưa xòe ngón rõ (terra 2,58/5)_
+  - [x] Đài sen: cánh sen tròn đầy, cong hai chiều, có gân, ba tầng 16/12/8 đọc ra là hoa sen (không phải vương miện gai); vàng ấm có ánh sáng như `public/img/fx/aura/lotus-gold.webp`; ≤ 1.200 tam giác · _1.200 tam giác, 40,4 KB; terra 3,33/5 (đọc ra sen 4/5)_
+  - [x] Vỏ khí: đổi lưới trong `build_aura.py` thành hình ngọn lửa (đáy rộng ôm chân, thắt dần, đỉnh xé thành nhiều lưỡi); không cháy trắng khi máy quay gần (qua tone mapping hoặc hạ cường độ); số lớp khớp bảng §2.4 (sửa mã hoặc sửa bảng cho khớp nhau) · _Lưới giọt lửa sáu thùy 400 tam giác; trộn thường + tone mapping + mờ khi máy quay < ~2,6 m; bảng §2.4 sửa thành ba lớp ở mức Cao. Terra chấm dáng lửa 2/5_
+  - [x] Hạt dùng ảnh đốm tròn mềm sinh bằng mã (hết ô vuông trắng)
+  - [x] Nhãn tên và bong bóng chat không bị thân quỷ cắt và không bị lửa đè (ví dụ `depthTest: false` hoặc vẽ sau cùng), kiểm bằng ảnh nhìn từ sau
+  - [x] Lượt ghi chiều sâu theo độ mờ: quỷ đang mờ (0,1 đến 0,55) không che nhãn và ảnh 2D phía sau
+  - [x] Chia suất chặt: người ngoài suất quỷ không được bật quỷ 3D dù lọt suất hào quang; có test cho phần Sân đấu truyền khoảng cách và suất
+  - [x] `world3d-fx.html` import `placeholder.mjs` đúng số `?v=` mới
+  - [ ] Xem tận mắt clip `emerge`; ảnh bật / tắt cùng góc trong game; phiếu chấm hình so trực tiếp với ảnh 2D; **👤 chủ dự án duyệt** rồi mới mở T-145 → T-149 · _Đã có ảnh emerge, ảnh bật/tắt cùng góc, phiếu chấm terra (CHƯA ĐẠT: trong game 3D vẫn kém 2D); chờ 👤 chủ dự án_
 - **Ngoài phạm vi**: quỷ cấp 1 đến 3, hào quang bậc khác, bật mặc định, máy chủ, bản 2D.
 
 ### T-153 · Nghiệm thu chéo đợt Pháp Tướng 3D

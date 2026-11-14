@@ -135,8 +135,8 @@ Theo dây chuyền đã có ở `tools/blender/avatar/build.py` và `tools/blend
 | Tiểu Quỷ | ≤ 1.200 | ≤ 120 KB | |
 | Ác Quỷ | ≤ 2.400 | ≤ 200 KB | có cánh |
 | Quỷ Vương | ≤ 3.000 | ≤ 240 KB | |
-| Ma Vương | ≤ 4.000 | ≤ 600 KB | T-154: nới từ 300 KB vì nhúng 3 ảnh bake 512 px (màu, pháp tuyến, phát sáng); hiện 3.994 tam giác, 461 KB. **Chờ chủ dự án xác nhận** |
-| Đài sen | ≤ 1.200 | ≤ 60 KB | 3 biến thể chung lưới. T-154: nới từ 900 tam giác để cánh cong mượt; hiện 1.196 tam giác, 41,5 KB. **Chờ chủ dự án xác nhận** |
+| Ma Vương | ≤ 4.000 | ≤ 600 KB | T-154: nới từ 300 KB vì nhúng 3 ảnh bake 512 px (màu, pháp tuyến, phát sáng); T-203: 4.000 tam giác, 565 KB (thêm TANGENT, pháp tuyến JPEG chất lượng 97). **Chờ chủ dự án xác nhận** |
+| Đài sen | ≤ 1.200 | ≤ 60 KB | 3 biến thể chung lưới. T-154: nới từ 900 tam giác để cánh cong mượt; T-203: 1.200 tam giác, 40,4 KB. **Chờ chủ dự án xác nhận** |
 | Bộ hào quang (`aura-kit.glb`) | ≤ 1.500 tổng | ≤ 90 KB | vỏ khí, quang bối, vầng sáng, nguyên anh |
 | Bộ pháp tướng (`merit-kit.glb`) | ≤ 3.000 tổng | ≤ 180 KB | 6 bậc |
 
@@ -148,7 +148,7 @@ Suất 3D theo mức chất lượng (nhân vật ngoài suất dùng ảnh 2D n
 |---|---|---|---|---|
 | Thấp | mình + 2 người gần nhất | mình + 2 | tắt | một lớp, không đẩy đỉnh |
 | Vừa | mình + 6 | mình + 8 | tắt | hai lớp |
-| Cao | mình + 12 | tất cả trong 25 m | bật | hai lớp + hạt |
+| Cao | mình + 12 | tất cả trong 25 m | bật | ba lớp + hạt (T-203: khớp mã `aura.mjs`) |
 
 Đích hiệu năng: 60 nhân vật trên màn, 10 người có quỷ, 10 người có hào quang, mức Thấp vẫn ≥ 30 khung hình/giây trên máy thử (số đo ghi trong bàn giao T-150).
 

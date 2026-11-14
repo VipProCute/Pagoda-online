@@ -29,7 +29,7 @@ test('Three.js: phục vụ build có cache và module phụ thuộc, không l�
     });
     assert.ok(status === 403 || status === 404, url + ': ' + status);
   }
-  const module = await fetch(server.url + '/js/world3d/index.mjs?v=1');
+  const module = await fetch(server.url + '/js/world3d/index.mjs?v=12');
   assert.equal(module.status, 200);
   assert.match(module.headers.get('content-type'), /javascript/);
   const page = await fetch(server.url + '/world3d-test.html');
@@ -39,7 +39,7 @@ test('Three.js: phục vụ build có cache và module phụ thuộc, không l�
 });
 
 test('World3D: thiếu WebGL2 hoặc khung vẽ thì trả lý do tiếng Việt, không ném lỗi', async () => {
-  const world = await import(pathToFileURL(path.join(__dirname, '../public/js/world3d/index.mjs')).href);
+  const world = await import(pathToFileURL(path.join(__dirname, '../public/js/world3d/index.mjs')).href + '?v=12');
   for (const options of [undefined, { canvas: { getContext: () => null } }, { canvas: { getContext() { throw new Error('Không có ngữ cảnh'); } } }]) {
     const result = await world.start(options);
     assert.equal(result.ok, false);

@@ -16,6 +16,32 @@
     aura: Object.freeze({ low: 2, medium: 8, high: Infinity })
   });
   const AURA_HIGH_RANGE = 25;
+  // Điều phối chỉnh khi xem trong game (T-203): lùi 1,2 m, lệch 0,35 m, thấp 0,8 m để mặt quỷ hiện ngay trên đầu chủ và gọn trong khung.
+  // Máy quay bị tường ép lại gần (Sân đấu có lúc chỉ 1 m): thu nhỏ quỷ từ scale xuống scaleNear và nâng
+  // điểm đặt để mặt quỷ vẫn ở trên đầu chủ, cả con nằm gọn trong khung. fitNear..fitFar là khoảng cách ngang.
+  const SELF_STAND = Object.freeze({ back: 1.2, side: 0.35, y: 0.8, bodyTurn: 0.6, headMax: 1.0, minCamera: 0.6,
+    scale: 1.1, scaleNear: 0.45, fitNear: 1.0, fitFar: 3.1, lift: 1.3, sink: 0.25 });
+
+  // Quỷ đứng bên kia chủ, lệch trái màn hình; thân quay 3/4, đầu ngoái về máy quay.
+  // Trả thêm scale (độ phóng của quỷ) theo khoảng cách máy quay.
+  function selfStand(camera, opts = SELF_STAND) {
+    if (!camera || !Number.isFinite(camera.x) || !Number.isFinite(camera.z)) return null;
+    const cx = camera.x, cz = camera.z, d = Math.hypot(cx, cz);
+    if (!Number.isFinite(d) || d < opts.minCamera || d === 0) return null;
+    const near = Number.isFinite(opts.fitNear) ? opts.fitNear : 0, far = Number.isFinite(opts.fitFar) ? opts.fitFar : 0;
+    const fit = far > near ? Math.max(0, Math.min(1, (d - near) / (far - near))) : 1;
+    const big = Number.isFinite(opts.scale) ? opts.scale : 1, small = Number.isFinite(opts.scaleNear) ? opts.scaleNear : big;
+    const scale = small + (big - small) * fit;
+    const y = opts.y + (big - scale) * (opts.lift || 0) - (1 - fit) * (opts.sink || 0);
+    const ux = cx / d, uz = cz / d;
+    const x = -ux * opts.back - uz * opts.side, z = -uz * opts.back + ux * opts.side;
+    const yaw = Math.atan2(ux, uz) + opts.bodyTurn;
+    const look = Math.atan2(cx - x, cz - z);
+    let head = (look - yaw) % (Math.PI * 2);
+    if (head <= -Math.PI) head += Math.PI * 2;
+    if (head > Math.PI) head -= Math.PI * 2;
+    return { x, y, z, yaw, head: Math.max(-opts.headMax, Math.min(opts.headMax, head)), scale };
+  }
 
   function isSitting(sit) {
     return sit === true || sit === 'cushion' || sit === 'bench' || (Number.isInteger(sit) && sit >= 0);
@@ -122,7 +148,16 @@
     for (const item of candidates.slice(0, LIMITS[kind][quality])) result.add(item.id);
     return result;
   }
-  const api = { ANCHOR, DURATION, LIMITS, isSitting, spring, springVec, turn, poseOf, phaseOf, tauntOf, slots };
+  function fxSlots(list, self, quality) {
+    const people = (Array.isArray(list) ? list : []).filter(item => item && item.id != null);
+    const demons = slots(people.filter(item => item.demon), self, quality, 'demon');
+    const auras = slots(people.filter(item => item.aura), self, quality, 'aura');
+    return new Map(people.map(item => {
+      const demon = !!item.demon && demons.has(item.id), aura = !!item.aura && auras.has(item.id);
+      return [item.id, { demon, aura, slot: demon || aura || (!item.demon && !item.aura) }];
+    }));
+  }
+  const api = { ANCHOR, DURATION, LIMITS, SELF_STAND, selfStand, isSitting, spring, springVec, turn, poseOf, phaseOf, tauntOf, slots, fxSlots };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.StandMath = api;
 })(this);

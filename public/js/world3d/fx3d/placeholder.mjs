@@ -1,6 +1,6 @@
 'use strict';
 
-import { register } from './index.mjs?v=3';
+import { register } from './index.mjs?v=4';
 
 function demon(env) {
   const { THREE, materials, RENDER, track } = env;
@@ -86,7 +86,7 @@ function aura(env) {
   function syncParticles() {
     const enabled = env.quality === 'high' && !env.reducedMotion;
     if (enabled && !points) {
-      points = env.particles(32, track(new THREE.PointsMaterial({ color: '#8fd3ff', size: 0.05, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })));
+      points = env.particles(32, track(materials.sparkMaterial('#8fd3ff')));
     }
     if (points) points.visible = enabled && group.visible;
   }

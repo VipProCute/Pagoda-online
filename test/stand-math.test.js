@@ -120,3 +120,62 @@ test('chạy được trong trình duyệt không cần module', () => {
   vm.runInNewContext(source, context);
   assert.equal(context.StandMath.poseOf({ walking: true }), 'drift');
 });
+
+test('quỷ của mình đứng bên kia chủ, lệch trái màn hình và ngoái đầu về máy quay', () => {
+  const camera = { x: 0, z: -5 }, stand = S.selfStand(camera);
+  assert.ok(Object.isFrozen(S.SELF_STAND));
+  assert.ok(stand.z > 0 && stand.x > 0);
+  assert.equal(stand.y, S.SELF_STAND.y);
+  assert.ok(Math.abs(stand.yaw - (Math.PI + S.SELF_STAND.bodyTurn)) < 1e-9);
+  const look = Math.atan2(camera.x - stand.x, camera.z - stand.z);
+  const difference = Math.atan2(Math.sin(stand.yaw + stand.head - look), Math.cos(stand.yaw + stand.head - look));
+  assert.ok(Math.abs(difference) < 1e-9);
+});
+
+test('xoay máy quay tám hướng vẫn giữ bán kính và quỷ ở nửa xa máy quay', () => {
+  const radius = Math.hypot(S.SELF_STAND.back, S.SELF_STAND.side);
+  for (let i = 0; i < 8; i++) {
+    const angle = i * Math.PI / 4, camera = { x: Math.sin(angle) * 5, z: Math.cos(angle) * 5 };
+    const stand = S.selfStand(camera);
+    assert.ok(Math.abs(Math.hypot(stand.x, stand.z) - radius) < 1e-9);
+    assert.ok(stand.x * camera.x + stand.z * camera.z < 0);
+    const look = Math.atan2(camera.x - stand.x, camera.z - stand.z);
+    assert.ok(Math.abs(Math.atan2(Math.sin(stand.yaw + stand.head - look), Math.cos(stand.yaw + stand.head - look))) < 1e-9);
+  }
+});
+
+test('máy quay thiếu, không hữu hạn hoặc sát chủ không đổi neo quỷ', () => {
+  for (const camera of [undefined, null, {}, { x: NaN, z: 5 }, { x: 0, z: Infinity },
+    { x: Infinity, z: 0 }, { x: 0, z: 0 }, { x: 0, z: 0.59 }]) assert.equal(S.selfStand(camera), null);
+  assert.ok(S.selfStand({ x: 0, z: 0.6 }));
+  const stand = S.selfStand({ x: 0, z: 5 }, { ...S.SELF_STAND, bodyTurn: 2, headMax: 0.25 });
+  assert.equal(stand.head, -0.25);
+});
+
+test('máy quay bị ép lại gần thì quỷ thu nhỏ và nâng lên, xa thì giữ cỡ đầy đủ', () => {
+  const O = S.SELF_STAND;
+  const far = S.selfStand({ x: 0, z: -5 }), wall = S.selfStand({ x: 0, z: -O.fitNear }), mid = S.selfStand({ x: 0, z: -(O.fitNear + O.fitFar) / 2 });
+  assert.equal(far.scale, O.scale);
+  assert.equal(far.y, O.y);
+  assert.ok(Math.abs(wall.scale - O.scaleNear) < 1e-12);
+  assert.ok(mid.scale > wall.scale && mid.scale < far.scale);
+  // Mặt quỷ (khoảng 1,3 m trên thắt lưng theo cỡ quỷ) không tụt xuống dưới đầu chủ khi thu nhỏ.
+  for (const stand of [far, mid, wall]) assert.ok(stand.y + 1.3 * stand.scale > 1.9, `mặt quỷ ở ${stand.y + 1.3 * stand.scale}`);
+  // Đỉnh sừng (khoảng 1,85 m theo cỡ quỷ) khi máy quay sát tường thấp hơn lúc máy quay xa.
+  assert.ok(wall.y + 1.85 * wall.scale < far.y + 1.85 * far.scale);
+});
+
+test('suất từng phần giữ hào quang khi hết suất quỷ và luôn giữ quỷ của mình', () => {
+  const list = [
+    { id: 'near1', distance: 1, demon: true, aura: false },
+    { id: 'near2', distance: 2, demon: true, aura: false },
+    { id: 'both', distance: 3, demon: true, aura: true },
+    { id: 'empty', distance: 4, demon: false, aura: false },
+    { id: 'self', distance: Infinity, demon: true, aura: true }
+  ];
+  const result = S.fxSlots(list, 'self', 'low');
+  assert.deepEqual(result.get('both'), { demon: false, aura: true, slot: true });
+  assert.deepEqual(result.get('empty'), { demon: false, aura: false, slot: true });
+  assert.deepEqual(result.get('self'), { demon: true, aura: true, slot: true });
+  assert.deepEqual(S.fxSlots([{ id: 'self' }], 'self', 'low').get('self'), { demon: false, aura: false, slot: true });
+});

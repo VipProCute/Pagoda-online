@@ -58,7 +58,7 @@ def new_scene():
     return scene
 
 
-def make_mesh(name, vertices, faces, colors=None, uvs=None):
+def make_mesh(name, vertices, faces, colors=None, uvs=None, normals=None):
     mesh = bpy.data.meshes.new(SCENE + '_' + name + 'Mesh')
     mesh.from_pydata(vertices, [], faces)
     mesh.update()
@@ -66,6 +66,9 @@ def make_mesh(name, vertices, faces, colors=None, uvs=None):
     bpy.context.scene.collection.objects.link(obj)
     for polygon in mesh.polygons:
         polygon.use_smooth = True
+    if normals is not None:
+        # Đường nối UV tách đỉnh vẫn dùng chung pháp tuyến để không lộ vệt dọc.
+        mesh.normals_split_custom_set([normals[loop.vertex_index] for loop in mesh.loops])
     if colors is not None:
         layer = mesh.color_attributes.new(name='Col', type='FLOAT_COLOR', domain='CORNER')
         for loop in mesh.loops:
@@ -98,7 +101,7 @@ def material(name, color, metallic=0.0, roughness=0.35, vertex_color=False, alph
     if emission:
         try:
             shader.inputs['Emission Color'].default_value = rgb(color)
-            shader.inputs['Emission Strength'].default_value = 2.0
+            shader.inputs['Emission Strength'].default_value = 0.65
         except (KeyError, AttributeError) as error:
             res['warnings'].append('Không đặt được phát sáng: ' + str(error))
     if alpha < 1:
@@ -124,7 +127,7 @@ def stage(scene):
     scene.camera = camera
     camera_data.type = 'ORTHO'
     lights = []
-    for name, energy, size in (('Key', 900, 5), ('Fill', 500, 5), ('Rim', 1100, 4)):
+    for name, energy, size in (('Key', 280, 5), ('Fill', 180, 5), ('Rim', 380, 4)):
         data = bpy.data.lights.new(SCENE + name, 'AREA')
         data.energy, data.shape, data.size = energy, 'DISK', size
         obj = bpy.data.objects.new(SCENE + name, data)
@@ -173,7 +176,7 @@ def export(path, objects):
     bpy.context.view_layer.objects.active = objects[0]
     options = dict(filepath=path, export_format='GLB', use_selection=True, export_yup=True,
                    export_cameras=False, export_lights=False, use_active_scene=True,
-                   export_texcoords=TEXCOORDS, export_animations=False, export_skins=False,
+                   export_texcoords=TEXCOORDS, export_normals=True, export_animations=False, export_skins=False,
                    export_materials='EXPORT', export_vertex_color='ACTIVE')
     try:
         bpy.ops.export_scene.gltf(**options)
@@ -223,33 +226,60 @@ def finish(objects):
 
 # Ranh giới phần dùng chung của hai kịch bản độc lập.
 def build_shell():
-    """Dựng 12 vòng, hai cực và đường nối UV tách đỉnh."""
-    profile = [(-0.05, 0.0), (0.05, 0.24), (0.22, 0.39), (0.42, 0.49),
-               (0.62, 0.53), (0.85, 0.55), (1.05, 0.52), (1.27, 0.46),
-               (1.48, 0.39), (1.70, 0.30), (1.90, 0.18), (2.05, 0.0)]
-    vertices = []
-    for height, radius in profile:
-        for index in range(17):
-            angle = 2 * math.pi * index / 16
-            vertices.append((radius * math.cos(angle), radius * math.sin(angle), height))
+    """Giọt lửa 11 vòng × 20 cột: bụng nở, chân thu, sáu thùy rộng liền thân."""
+    columns = 20
+    # Ít vòng dưới bụng; nửa trên dành năm vòng để thùy vuốt cong, không mọc gai rời.
+    profile = [(0.0, 0.30, 0.0), (0.10, 0.37, 0.0), (0.55, 0.52, 0.0),
+               (0.90, 0.51, 0.0), (1.25, 0.41, 0.0), (1.45, 0.33, 0.0),
+               (1.45, 0.33, 0.15), (1.45, 0.33, 0.33), (1.45, 0.33, 0.55),
+               (1.45, 0.33, 0.78), (1.45, 0.33, 1.0)]
+    # Đặt cột đúng cả chóp lẫn khe của sáu thùy, tránh lệch pha khi 20 không chia hết 6.
+    # Hai thùy trước/sau có bốn cột; bốn thùy bên có ba cột, đối xứng qua mặt trước.
+    angles = []
+    for lobe in range(6):
+        fractions = (0.0, 0.25, 0.5, 0.75) if lobe in (0, 3) else (
+            (0.0, 0.25, 0.5) if lobe in (1, 4) else (0.0, 0.5, 0.75))
+        for fraction in fractions:
+            angles.append(-math.pi / 2 + (lobe - 0.5 + fraction) * math.pi / 3)
+
+    def surface(row, angle):
+        height, radius, split = profile[row]
+        direction = angle + math.pi / 2
+        # Cả cung 60° là gốc chung của thùy; vai bầu vẫn rộng sát hai mép chữ V.
+        crest = (0.5 + 0.5 * math.cos(6 * direction)) ** 0.65
+        valley = 1.84 + 0.04 * math.cos(2 * direction)
+        if split > 0:
+            # Khe chỉ sâu 0,28–0,34 m; chóp cao 2,14–2,20 m, không còn gai dài rời.
+            height = 1.45 + split * (valley + 0.32 * crest - 1.45)
+            # Giữ bụng thùy rộng rồi mới vuốt ngọn, không kéo chóp sát trục thành kim.
+            radius -= 0.10 * split + 0.065 * crest * split ** 2
+        twist = 0.08 * min(1.0, height / 1.45) ** 2 + 0.20 * split + 0.10 * crest * split ** 2
+        angle += twist
+        return Vector((radius * math.cos(angle), radius * math.sin(angle), height))
+
+    vertices, normals, vertex_uvs = [], [], []
+    stride = columns + 1
+    for row in range(len(profile)):
+        for index in range(stride):
+            # Dùng cùng tọa độ/pháp tuyến ở hai mép, chỉ U khác nhau (0 và 1).
+            angle = angles[index % columns]
+            point = surface(row, angle)
+            around = surface(row, angle + 0.0001) - surface(row, angle - 0.0001)
+            upward = surface(min(row + 1, len(profile) - 1), angle) - surface(max(0, row - 1), angle)
+            vertices.append(tuple(point))
+            normals.append(tuple(around.cross(upward).normalized()))
+            u = (angle - angles[0]) / (2 * math.pi) if index < columns else 1.0
+            vertex_uvs.append((u, point.z / 2.2))
     faces, uvs = [], []
-    for row in range(11):
-        for index in range(16):
-            lower, upper = row * 17 + index, (row + 1) * 17 + index
-            bottom_v = (profile[row][0] + 0.05) / 2.1
-            top_v = (profile[row + 1][0] + 0.05) / 2.1
-            left, right = index / 16, (index + 1) / 16
-            if row == 0:
-                faces.append((lower, upper + 1, upper))
-                uvs.extend([((left + right) / 2, bottom_v), (right, top_v), (left, top_v)])
-            elif row == 10:
-                faces.append((lower, lower + 1, upper))
-                uvs.extend([(left, bottom_v), (right, bottom_v), ((left + right) / 2, top_v)])
-            else:
-                faces.extend(((lower, lower + 1, upper + 1), (lower, upper + 1, upper)))
-                uvs.extend([(left, bottom_v), (right, bottom_v), (right, top_v), (left, bottom_v), (right, top_v), (left, top_v)])
-    obj = make_mesh('shell', vertices, faces, uvs=uvs)
-    obj.data.materials.append(material('shell', '#8fd3ff', alpha=0.35, emission=True))
+    for row in range(len(profile) - 1):
+        for index in range(columns):
+            lower, upper = row * stride + index, (row + 1) * stride + index
+            for face in ((lower, lower + 1, upper + 1), (lower, upper + 1, upper)):
+                faces.append(face)
+                uvs.extend(vertex_uvs[vertex] for vertex in face)
+    # Không bịt nắp hay chụm cực: sáu thùy cùng một mặt liên tục, 10×20×2 = 400 tam giác.
+    obj = make_mesh('shell', vertices, faces, uvs=uvs, normals=normals)
+    obj.data.materials.append(material('shell', '#399de8', alpha=0.22, emission=True))
     return obj
 
 
