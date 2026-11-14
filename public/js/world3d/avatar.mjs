@@ -1,10 +1,10 @@
 'use strict';
 
 import * as THREE from 'three';
-import { createFx3d } from './fx3d/index.mjs?v=1';
-import './fx3d/demon.mjs?v=1';
-import './fx3d/lotus.mjs?v=1';
-import './fx3d/aura.mjs?v=1';
+import { createFx3d } from './fx3d/index.mjs?v=3';
+import './fx3d/demon.mjs?v=3';
+import './fx3d/lotus.mjs?v=2';
+import './fx3d/aura.mjs?v=3';
 
 // Đơn vị mét, chân ở y=0, mặt hướng +Z; yaw tính bằng radian.
 // opts: role (beggar/wanderer/obito/sweeper/fortune), isSelf, view,

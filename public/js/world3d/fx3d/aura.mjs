@@ -1,7 +1,7 @@
 'use strict';
 
 import * as THREE from 'three';
-import { register } from './index.mjs?v=1';
+import { register } from './index.mjs?v=3';
 
 export const AURA_KIT_URL = '/models/fx/aura-kit.glb';
 export const AURA_3D_TIERS = Object.freeze([5]);
@@ -24,13 +24,18 @@ export function auraPart(env) {
       const source = asset?.scene.getObjectByName('shell');
       if (!source?.isMesh) { failed = true; return; }
       holder = env.group('aura'); holder.visible = false;
-      for (const outer of [false, true]) for (const side of [THREE.BackSide, THREE.FrontSide]) {
-        const mat = env.track(env.materials.flameShellMaterial({ side }));
+      const layers = [
+        { scale: [1, 1, 1], opacity: 1, seed: 0 },
+        { scale: [1.1, 1.22, 1.1], opacity: 0.7, seed: 0.37 },
+        { scale: [1.2, 1.45, 1.2], opacity: 0.45, seed: 0.71 }
+      ];
+      for (const [level, layer] of layers.entries()) for (const side of [THREE.BackSide, THREE.FrontSide]) {
+        const mat = env.track(env.materials.flameShellMaterial({ side, seed: layer.seed }));
         const shell = new THREE.Mesh(source.geometry, mat);
-        if (outer) shell.scale.set(1.14, 1.32, 1.14);
+        shell.scale.set(...layer.scale);
         shell.renderOrder = side === THREE.BackSide ? env.RENDER.shellBack : env.RENDER.shellFront;
         shell.frustumCulled = false; shell.castShadow = false;
-        holder.add(shell); shells.push({ shell, mat, outer });
+        holder.add(shell); shells.push({ shell, mat, level, opacity: layer.opacity, side });
       }
     } catch (error) {
       settled = true; failed = true; hide();
@@ -38,8 +43,9 @@ export function auraPart(env) {
     }
   }
   function syncQuality() {
-    for (const { shell, mat, outer } of shells) {
-      shell.visible = !outer || env.quality !== 'low';
+    const layerCount = env.quality === 'high' ? 3 : env.quality === 'medium' ? 2 : 1;
+    for (const { shell, mat, level } of shells) {
+      shell.visible = level < layerCount;
       mat.uniforms.uDisplace.value = env.quality === 'low' ? 0 : 1;
     }
     const enabled = env.quality === 'high' && !env.reducedMotion;
@@ -54,9 +60,9 @@ export function auraPart(env) {
     if (!env.reducedMotion && Number.isFinite(dt)) t += Math.max(0, dt);
     holder.visible = true; holder.scale.y = isSitting(state.sit) ? 0.8 : 1;
     syncQuality();
-    for (const { mat, outer } of shells) {
+    for (const { mat, opacity, side } of shells) {
       mat.uniforms.uColor.value.set(state.color || '#8fd3ff');
-      mat.uniforms.uOpacity.value = (state.fade ?? 1) * 0.9 * (outer ? 0.55 : 1);
+      mat.uniforms.uOpacity.value = (state.fade ?? 1) * opacity * (side === THREE.BackSide ? 0.45 : 1);
       env.materials.tick(mat, t);
     }
     if (points?.visible) {

@@ -1,9 +1,11 @@
 'use strict';
 
 import * as THREE from 'three';
-import { register } from './index.mjs?v=1';
+import { register } from './index.mjs?v=3';
 
 export const DEMON_URL = Object.freeze({ 4: '/models/fx/demon-4.glb' });
+export const SELF_DEMON = { mode: 'side' };
+const SELF_SIDE = Object.freeze({ x: 0.9, y: 0.3, z: 0.35 }); // Điều phối chỉnh khi xem trong game: đứng ngang vai trái, xa máy quay hơn để không tràn khung.
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 const finite = (value, fallback = 0) => Number.isFinite(value) ? value : fallback;
 
@@ -13,7 +15,8 @@ export function demonPart(env) {
   let t = 0, lastN = 0, prevN = 0, since = 0, placed = false, facing = null;
   let pos = [0, 0, 0], vel = [0, 0, 0];
   const local = new THREE.Vector3(), target = new THREE.Vector3();
-  const actions = new Map(), materials = [];
+  const actions = new Map(), materials = [], flames = [], depthMeshes = [];
+  let depthMat = null;
   function release() {
     if (!requested || released || empty) return; // lượt tải lỗi đã bị bộ đệm gỡ, không trả tham chiếu thay lượt khác
     released = true;
@@ -28,18 +31,31 @@ export function demonPart(env) {
       if (!asset) { failed = true; return; }
       model = asset.clone(asset.scene);
       holder = env.group('demon'); holder.visible = false; holder.add(model);
-      const material = glowMask => {
-        const mat = env.track(env.materials.spiritMaterial({ color: '#ffffff', rim: '#a8300c', glow: '#ffc23a', alpha: 1, dissolveY: [-0.75, 0.1], glowMask }));
-        mat.vertexColors = true; materials.push(mat); return mat;
-      };
-      const mat = material(true);
-      let unmasked = null;
+      const meshes = [];
       model.traverse(node => {
-        if (!node.isMesh) return;
-        node.material = node.geometry.attributes.color_1 ? mat : (unmasked || (unmasked = material(false)));
-        node.renderOrder = env.RENDER.demon;
-        node.frustumCulled = false; node.castShadow = false;
+        if (node.isMesh) meshes.push(node);
       });
+      depthMat = env.track(env.materials.spiritDepthMaterial({ dissolveY: [-0.75, 0.1] }));
+      for (const node of meshes) {
+        const source = node.material;
+        node.frustumCulled = false; node.castShadow = false;
+        if (node.name.startsWith('demon_flame') || source?.name === 'demon_flame') {
+          const mat = env.track(env.materials.flameShellMaterial({ ribbon: true, color: '#ff6a1a' }));
+          node.material = mat; node.renderOrder = env.RENDER.demonFlame; flames.push(mat);
+          continue;
+        }
+        const mat = env.track(env.materials.spiritMaterial({
+          color: '#ffffff', rim: '#7a1a08', glow: '#ffc23a', alpha: 1, dissolveY: [-0.75, 0.1],
+          ...(source?.map ? { map: source.map, normalMap: source.normalMap, emissiveMap: source.emissiveMap }
+            : { glowMask: !!node.geometry.attributes.color_1 })
+        }));
+        mat.vertexColors = !source?.map && !!node.geometry.attributes.color;
+        materials.push(mat); node.material = mat; node.renderOrder = env.RENDER.demon;
+        // Bản sao giữ chung xương; thêm sau khi đã gom lưới để không duyệt lặp.
+        const pre = node.clone(false);
+        pre.name = node.name + '-depth'; pre.material = depthMat; pre.renderOrder = env.RENDER.demonDepth;
+        node.parent.add(pre); depthMeshes.push({ node, pre });
+      }
       mixer = new THREE.AnimationMixer(model);
       for (const clip of asset.animations) {
         const action = mixer.clipAction(clip);
@@ -68,7 +84,10 @@ export function demonPart(env) {
     if (!shown || !model) { hide(); return false; }
     const a = SM.ANCHOR[shown], yaw = finite(state.yaw);
     const c = Math.cos(yaw), s = Math.sin(yaw), sitDrop = SM.isSitting(state.sit) ? 0.35 : 0;
-    local.set(a.x * c + a.z * s, a.y - sitDrop, -a.x * s + a.z * c);
+    const side = ctx.isSelf && shown === 4 && SELF_DEMON.mode === 'side' ? SELF_SIDE : { x: 0, y: 0, z: 0 };
+    const ax = a.x + side.x, az = a.z + side.z;
+    local.set(ax * c + az * s, a.y + side.y - sitDrop, -ax * s + az * c);
+    env.host.group.updateWorldMatrix(true, false);
     target.copy(local); env.host.group.localToWorld(target);
     if (!placed || reduced) { pos = [target.x, target.y, target.z]; vel = [0, 0, 0]; placed = true; }
     else ({ pos, vel } = SM.springVec(pos, vel, [target.x, target.y, target.z], dt));
@@ -92,13 +111,26 @@ export function demonPart(env) {
       else current.paused = false;
     }
     mixer.update(reduced ? 0 : Math.min(dt, 0.1));
-    // Ma Vương mờ dần khi máy quay gần; quỷ của chính mình (góc thứ ba, máy quay ngay sau lưng) mờ sớm hơn để không che nhân vật.
-    const fadeFrom = ctx.isSelf ? 2.5 : 1.2, fadeSpan = ctx.isSelf ? 4 : 0.8, fadeMin = ctx.isSelf ? 0.3 : 0.15;
+    // Chế độ đứng lệch giữ thân rõ; chế độ che lưng mờ sớm để thấy nhân vật.
+    const cover = ctx.isSelf && SELF_DEMON.mode === 'cover';
+    const fadeFrom = cover ? 2.5 : 1.2, fadeSpan = cover ? 4 : 0.8, fadeMin = cover ? 0.3 : 0.55;
     const near = shown === 4 && Number.isFinite(ctx.distance) ? clamp((ctx.distance - fadeFrom) / fadeSpan, fadeMin, 1) : 1;
     const vanishFade = phase === 'vanish' ? clamp(1 - since / SM.DURATION.vanish, 0, 1) : 1;
-    for (const mat of materials) {
-      mat.userData.uniforms.uAlpha.value = alpha * near * vanishFade;
+    const opacity = alpha * near * vanishFade;
+    for (const mat of [...materials, depthMat]) {
+      mat.userData.uniforms.uAlpha.value = opacity;
       env.materials.tick(mat, t);
+    }
+    for (const mat of flames) {
+      mat.uniforms.uOpacity.value = opacity * 0.9;
+      mat.uniforms.uDisplace.value = reduced ? 0 : 1;
+      env.materials.tick(mat, t);
+    }
+    for (const { node, pre } of depthMeshes) {
+      pre.visible = node.visible && opacity >= 0.05;
+      pre.position.copy(node.position); pre.quaternion.copy(node.quaternion); pre.scale.copy(node.scale);
+      pre.matrix.copy(node.matrix);
+      if (node.morphTargetInfluences) pre.morphTargetInfluences = node.morphTargetInfluences;
     }
     holder.visible = true;
     return true;
@@ -107,7 +139,9 @@ export function demonPart(env) {
     if (disposed) return;
     disposed = true;
     mixer?.stopAllAction(); mixer?.uncacheRoot(model);
-    model?.traverse(node => { if (node.isSkinnedMesh) node.skeleton?.dispose(); });
+    const skeletons = new Set();
+    model?.traverse(node => { if (node.isSkinnedMesh && node.skeleton) skeletons.add(node.skeleton); });
+    skeletons.forEach(skeleton => skeleton.dispose());
     holder?.removeFromParent();
     // Lượt tải đang chờ tự trả tham chiếu khi hoàn tất, không trả hai lần.
     if (settled) release();

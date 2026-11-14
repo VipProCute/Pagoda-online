@@ -135,8 +135,8 @@ Theo dây chuyền đã có ở `tools/blender/avatar/build.py` và `tools/blend
 | Tiểu Quỷ | ≤ 1.200 | ≤ 120 KB | |
 | Ác Quỷ | ≤ 2.400 | ≤ 200 KB | có cánh |
 | Quỷ Vương | ≤ 3.000 | ≤ 240 KB | |
-| Ma Vương | ≤ 4.000 | ≤ 300 KB | |
-| Đài sen | ≤ 900 | ≤ 60 KB | 3 biến thể chung lưới |
+| Ma Vương | ≤ 4.000 | ≤ 600 KB | T-154: nới từ 300 KB vì nhúng 3 ảnh bake 512 px (màu, pháp tuyến, phát sáng); hiện 3.994 tam giác, 461 KB. **Chờ chủ dự án xác nhận** |
+| Đài sen | ≤ 1.200 | ≤ 60 KB | 3 biến thể chung lưới. T-154: nới từ 900 tam giác để cánh cong mượt; hiện 1.196 tam giác, 41,5 KB. **Chờ chủ dự án xác nhận** |
 | Bộ hào quang (`aura-kit.glb`) | ≤ 1.500 tổng | ≤ 90 KB | vỏ khí, quang bối, vầng sáng, nguyên anh |
 | Bộ pháp tướng (`merit-kit.glb`) | ≤ 3.000 tổng | ≤ 180 KB | 6 bậc |
 

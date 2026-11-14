@@ -2,11 +2,11 @@
 
 import * as THREE from 'three';
 import { sharedAssets } from './assets.mjs?v=1';
-import * as materials from './materials.mjs?v=1';
+import * as materials from './materials.mjs?v=3';
 
 export const PARTS = Object.freeze(['demon', 'lotus', 'aura', 'merit']);
-// Thân đục vẽ trước; các lớp trong suốt vẽ theo thứ tự này.
-export const RENDER = Object.freeze({ shellBack: 1, demon: 2, lotus: 3, shellFront: 4, particles: 5 });
+// Trong mỗi người, ghi chiều sâu của quỷ trước lượt màu và dải lửa.
+export const RENDER = Object.freeze({ shellBack: 1, demonDepth: 2, demon: 3, demonFlame: 4, lotus: 5, shellFront: 6, particles: 7 });
 const registry = new Map();
 
 export function register(name, factory) {
@@ -78,6 +78,9 @@ export function createFx3d(host, opts = {}) {
     for (const [name, instance] of instances) {
       try { covers[name] = !!instance.update(state, dt, ctx); } catch (error) { covers[name] = false; }
     }
+    // Three.js lấy groupOrder từ Group gần nhất, kể cả nhóm trong glTF.
+    const order = Number.isFinite(ctx.distance) ? -1 - Math.min(9998, Math.round(ctx.distance * 10)) : -9999;
+    root.traverse(node => { if (node.isGroup) node.renderOrder = order; });
     return covers;
   }
   function setQuality(q) {
