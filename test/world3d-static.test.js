@@ -39,7 +39,7 @@ test('Three.js: phục vụ build có cache và module phụ thuộc, không l�
 });
 
 test('World3D: thiếu WebGL2 hoặc khung vẽ thì trả lý do tiếng Việt, không ném lỗi', async () => {
-  const world = await import(pathToFileURL(path.join(__dirname, '../public/js/world3d/index.mjs')).href + '?v=13');
+  const world = await import(pathToFileURL(path.join(__dirname, '../public/js/world3d/index.mjs')).href + '?v=14');
   for (const options of [undefined, { canvas: { getContext: () => null } }, { canvas: { getContext() { throw new Error('Không có ngữ cảnh'); } } }]) {
     const result = await world.start(options);
     assert.equal(result.ok, false);
