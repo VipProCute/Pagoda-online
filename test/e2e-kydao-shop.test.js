@@ -237,6 +237,40 @@ test('khóa skin: webhook SePay chỉ tự mở khi nhận đủ tiền; thiếu
   assert.deepEqual((await unlocked3).owned, ['field:glacier', 'pieces:jade']);
 });
 
+test('khóa skin: ghi sổ hỏng khi mua thì không trả QR, khoản vừa tạo bị hủy; ghi lại được thì mua bình thường', async t => {
+  const srv = await startServer({ DONATION_MODE: 'live', ...BANK, SEPAY_API_KEY: '' });
+  // kho JSON ghi qua file tạm `<db>.tmp` rồi đổi tên: một THƯ MỤC trùng tên file tạm làm lần ghi thất bại (cả Windows lẫn Linux)
+  const blocker = srv.dataFile + '.tmp';
+  const unblock = () => { try { fs.rmSync(blocker, { recursive: true, force: true }); } catch (e) { /* đã dọn */ } };
+  t.after(unblock);                 // chạy trước srv.stop() (after chạy ngược thứ tự đăng ký): kho ghi lại được thì tắt máy chủ êm
+  t.after(() => srv.stop());
+  assert.equal((await srv.admin('/api/admin/kydao-shop', 'POST', { on: true, price: 20000 })).status, 200);
+  const A = await open(t, srv, 'Dao Huu A', UID.a);
+
+  fs.mkdirSync(blocker);
+  const bad = await call(A.s, 'kd:shop:buy', { kind: 'field', id: 'forest' });
+  assert.equal(bad.ok, false); assert.ok(bad.reason);
+  assert.equal(bad.qr, undefined); assert.equal(bad.code, undefined, 'không trả mã chưa ghi bền');
+  let sum = await srv.admin('/api/admin/summary');
+  let skins = sum.json.donations.filter(x => x.purpose === 'skin');
+  assert.equal(skins.length, 1);
+  assert.equal(skins[0].status, 'cancelled', 'khoản chưa ghi được không còn chờ');
+  assert.equal(skins.filter(x => x.status === 'pending').length, 0);
+  assert.deepEqual((await call(A.s, 'kd:shop:state', {})).owned, []);
+
+  // kho ghi được lại: qua nhịp 8 giây, mua tạo mã mới bình thường
+  unblock();
+  await sleep(8100);
+  const ok = await call(A.s, 'kd:shop:buy', { kind: 'field', id: 'forest' });
+  assert.equal(ok.ok, true); assert.ok(ok.code && ok.qr);
+  assert.notEqual(ok.code, skins[0].code, 'mã mới, không dùng lại khoản đã hủy');
+  assert.ok(fs.readFileSync(srv.dataFile, 'utf8').includes(ok.code), 'mã mới đã ghi bền');
+  sum = await srv.admin('/api/admin/summary');
+  skins = sum.json.donations.filter(x => x.purpose === 'skin');
+  assert.equal(skins.filter(x => x.status === 'pending').length, 1);
+  assert.equal(skins.find(x => x.status === 'pending').code, ok.code);
+});
+
 test('khóa skin: nhịp tạo mã 8 giây, khoản thường và hoàn thành tu luyện không bị ảnh hưởng', async t => {
   const srv = await startServer({ DONATION_MODE: 'test', ...BANK, SEPAY_API_KEY: '' });
   t.after(() => srv.stop());

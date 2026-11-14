@@ -79,4 +79,12 @@ Các bước:
 15. `POST /api/admin/kydao-shop` với `on: false`: cả hai hết `is-locked`; `GET` cho `stats.unlocks >= 1`.
 16. Suốt các bước mới: không `pageerror`, không `console.error`, không HTTP ≥ 500, nhật ký máy chủ không có lỗi.
 
+Các bước 17 đến 21 (chế độ thật) tự bật một máy chủ `server.js` THỨ HAI ở cổng trống với `DONATION_MODE=live`, `ADMIN_KEY` ngẫu nhiên, `BANK_*` giả, `SEPAY_API_KEY` rỗng, và hai trình duyệt mới (An2, Bình2):
+
+17. Admin bật cửa hàng (`price: 20000`) qua API; A2 và B2 vào chùa, ngồi bàn 1, mở ván cờ vua; A2 mở Lãnh địa, bấm quân Dung Nham đang khóa, "Cúng dường để mở": khung QR hiện mã `CD` + 6 ký tự.
+18. Chờ 3 giây: khung QR vẫn mở, Dung Nham vẫn khóa (chế độ thật không tự xác nhận).
+19. Ban điều hành xác nhận khoản bằng `POST /api/admin/donations/<mã>/confirm` (header `x-admin-key`): trong vài giây khung QR của A2 tự đóng, Dung Nham hết khóa ở A2 (skin khác vẫn khóa), B2 vẫn thấy khóa.
+20. Xác nhận lần hai: HTTP 200, `already: true`, `outcome: 'granted'`; `stats` vẫn `{ owners: 1, unlocks: 1 }`.
+21. Suốt pha này: không `pageerror`, không `console.error`, không HTTP ≥ 500, nhật ký máy chủ thứ hai không có lỗi.
+
 Ảnh chụp từng mốc nằm ở `SHOTS` (`e2e-*.png`); khi một bước trượt, ảnh cả hai trang lưu thành `fail-<số bước>-<tên>.png`. Ảnh tiêu biểu của một lần chạy đạt: `docs/ky-dai/anh/e2e-*.png`.
