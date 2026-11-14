@@ -140,7 +140,7 @@
 | T-177 | Nhân vật Blender làm mặc định trong giao diện 3D, nút "Người cũ" đổi về dáng cũ | ✅ Xong · PR #66 | P1 | CORE + HALL | Claude Sonnet 5.5 |
 | T-178 | Test tự động cho nút "Người cũ" (`view3d-ui.js`), dọn sổ việc đợt Kỳ Đài | ✅ Xong · PR #67 | P2 | CORE + HALL | Claude Sonnet 5.5 |
 | T-179 | Ba ca test còn thiếu cho `kd:skin` (hết giờ chưa nổ hẹn giờ, gọi từ Chánh điện, giữ sân đổi quân trong hạn), chốt sổ việc đợt Kỳ Đài | ✅ Xong · PR #70 | P2 | CORE + KYDAO + KYDAI | Claude Sonnet 5.5 |
-| T-180 | Bỏ `innerHTML` chèn dữ liệu máy chủ trong `app.js` (loại nhang, bài kinh, quỹ cúng dường) | ✅ Xong · PR #__T180__ | P1 | CORE | Claude Sonnet 5.5 |
+| T-180 | Bỏ `innerHTML` chèn dữ liệu máy chủ trong `app.js` (loại nhang, bài kinh, quỹ cúng dường) | ✅ Xong · PR #71 | P1 | CORE | Claude Sonnet 5.5 |
 
 Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạm `package.json`). **T-005**, **T-007**, **T-002** làm song song được với nhóm trên.
 Đợt 2026-11: làm **T-003, T-004, T-006** trước (T-004 gỡ nút thắt `package.json` cho mọi thẻ thêm file JS; T-006 là cổng "CI xanh"). Sau đó theo lịch 6 đợt ở [docs/KE-HOACH-DOT-2026-11.md §10.3](docs/KE-HOACH-DOT-2026-11.md#103-lịch-theo-đợt-và-khóa-vùng-nóng).
@@ -1774,7 +1774,7 @@ Lấy từ README "Việc nên làm tiếp" và lúc rà repo. Điều phối vi
 - ⚪ Pháp Tướng 3D, nhãn tên xuyên tường (nghiệm thu T-203, 2026-11-14): `avatar.mjs` tắt `depthTest` của nhãn tên và bong bóng khi người đó có hiệu ứng 3D, nên nhãn hiện xuyên tường, cột. 👤 chấp nhận, hoặc đổi sang vẽ sau cùng mà vẫn kiểm chiều sâu với vật đục. Gói: CORE + HALL.
 - ⚪ `public/world3d-scene-arena.html` import `kit.mjs?v=1` trong khi các chỗ khác dùng `?v=2` (có từ trước T-203; nghiệm thu T-203 phát hiện 2026-11-14). Gói: CORE.
 - ✅ (đã làm ở T-127, PR #61: huy hiệu hiện trong bộ chọn và cạnh khẩu hiệu) Dùng huy hiệu chủ đề `public/img/kydao/ui/crest-<id>.webp` trong bộ chọn "Lãnh địa" (cạnh tên sân) và cạnh khẩu hiệu khai mở (`.kdfx-banner`). Gói: KYDAI. Thợ gợi ý: gpt-6-luna.
-- ✅ (đã làm ở T-180, PR #__T180__) `public/js/app.js:561–562` ghép `cfg.kinds`, `cfg.tracks` từ máy chủ vào `innerHTML` (mã có từ trước đợt Kỳ Đài; GPT Sol phát hiện 2026-11-13). Dựng phần tử và gán chữ bằng `textContent`. Gói: CORE. Trái bất biến AGENTS.md §3.5.
+- ✅ (đã làm ở T-180, PR #71) `public/js/app.js:561–562` ghép `cfg.kinds`, `cfg.tracks` từ máy chủ vào `innerHTML` (mã có từ trước đợt Kỳ Đài; GPT Sol phát hiện 2026-11-13). Dựng phần tử và gán chữ bằng `textContent`. Gói: CORE. Trái bất biến AGENTS.md §3.5.
 - ✅ (đã làm ở T-179, PR #70) Thêm 3 ca test cho `kd:skin` (soát T-110, Gemini 4 Argon, 2026-11-13): (1) gọi `skin` khi đồng hồ vừa quá hạn mà hẹn giờ chưa nổ (nhánh `expired` trong `lib/kydao/manager.js`); (2) e2e gọi `kd:skin` khi đang ở Chánh điện để ghim `where: 'any'`; (3) gửi `field` giữ nguyên + `pieces` mới khi `field` còn trong hạn 20 giây. Gói: KYDAO + KYDAI. Thợ gợi ý: gpt-6-luna.
 - ⚪ Cờ vua: nhận diện thế cờ chết tổng quát (hàng rào Tốt khóa có Tốt phụ, ví dụ FEN `4k3/8/8/p1p1p1p1/P1P1P1P1/P7/8/4K3 w - - 0 1`); hiện chỉ có 4 ca thiếu quân + một mẫu hàng rào đúng khớp. Đổi tên biến tiếng Việt (`ten`, `ca`, `ds`) trong test sang tiếng Anh. Gói: KYDAO. (Soát T-021, 2026-11-11.)
 - ⚪ Chưa có test nào cho `lib/moderation.js` (`checkMessage`, `checkName`, `clean`), trong khi đây là bất biến AGENTS.md §3.6 (chặn link, dãy số chống lừa đảo). Thêm test cả ca dương và ca âm ("chim cút", "đi ngủ" không bị bắt). Gói: SOCIAL. (Soát T-003 phát hiện 2026-11-11.)
