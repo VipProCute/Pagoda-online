@@ -1,6 +1,6 @@
 'use strict';
 
-import { register } from './index.mjs?v=4';
+import { register } from './index.mjs?v=5';
 
 function demon(env) {
   const { THREE, materials, RENDER, track } = env;

@@ -124,7 +124,7 @@
 | T-151 | Bật mặc định, ảnh chụp, Sổ tay, README, NOTICE | ⏳ T-150 | P2 | CORE + DOCS + OPS | — (gợi ý: gemini-3.8-flash-high + gpt-6-luna) |
 | T-154 | Nâng chất bản mẫu: Ma Vương điêu khắc, thân đặc, vỏ khí ra lửa 👤 duyệt (chặn T-145 → T-149) | ✅ Xong (bản nháp) · PR #68 | P0 | CORE + HALL + KYDAI | Điều phối Claude Opus 5.5 · Claude Sonnet 5.5 (vòng 1 Blender) · gpt-6.1-sol (các vòng sau, shader, JS) · soát hình gemini-4-argon-high |
 | T-203 | Vòng hình 2 Pháp Tướng 3D: quỷ ngoái mặt, mặt và tay Ma Vương, lưới lửa, cánh sen, nhãn tên 👤 duyệt (chặn T-145 → T-149) | ✅ Xong (bản nháp, hình chưa đạt) | P0 | CORE + HALL + KYDAI | Claude Opus 5.5 điều phối, gpt-6.1-sol thực thi |
-| T-204 | Vòng hình 3 Pháp Tướng 3D: nới ngân sách Ma Vương (6.000 tam giác, ảnh 1024 px), lửa hộ thân thay vỏ khí, sửa lỗi máy quay sát 👤 duyệt (chặn T-145 → T-149) | 🟡 Đang làm | P0 | CORE + HALL + KYDAI | Claude Opus 5.5 điều phối, gpt-6.1-sol thực thi |
+| T-204 | Vòng hình 3 Pháp Tướng 3D: nới ngân sách Ma Vương (6.000 tam giác, ảnh 1024 px), lửa hộ thân thay vỏ khí, sửa lỗi máy quay sát 👤 duyệt (chặn T-145 → T-149) | 🟣 Chờ soát | P0 | CORE + HALL + KYDAI | Claude Opus 5.5 điều phối, gpt-6.1-sol thực thi |
 | T-152 | (Tùy chọn) Chụp lại ảnh 2D từ mô hình 3D | ⚪ Hộp thư đến 👤 | P3 | CORE + HALL | — |
 | T-153 | Nghiệm thu chéo đợt Pháp Tướng 3D | ⏳ T-151 | P1 | CORE + HALL | — (gợi ý: gemini-4-argon-high soát hình, gpt-6.1-sol soát mã) |
 | T-160 | Danh mục 8 bộ đá cho cờ vây và caro (`STONES`), `kd:skin` nhận theo môn | ✅ Xong · PR #64 | P1 | CORE + KYDAO + KYDAI | gpt-6.1-terra |
@@ -1761,20 +1761,20 @@ Thiết kế, hợp đồng mã, ngân sách và định tuyến mô hình: [doc
   - [ ] Ghi rõ phần chưa thử được (điện thoại thật, PostgreSQL)
 
 ### T-204 · Vòng hình 3 Pháp Tướng 3D: nới ngân sách Ma Vương, lửa hộ thân thay vỏ khí, sửa lỗi máy quay sát
-- **Trạng thái**: 🟡 Đang làm · 👤 chủ dự án duyệt hình · **chặn T-145 → T-149** · **Ưu tiên**: P0 · **Gói ngữ cảnh**: CORE + HALL + KYDAI
+- **Trạng thái**: 🟣 Chờ soát (terra chấm CHƯA ĐẠT, trong game còn kém 2D; xem phiếu) · 👤 chủ dự án duyệt hình · **chặn T-145 → T-149** · **Ưu tiên**: P0 · **Gói ngữ cảnh**: CORE + HALL + KYDAI
 - **Khu vực chạm**: tools/blender/fx/build_demon.py, build_aura.py, build_lotus.py (chỉ dáng nhìn ngang), public/models/fx/*.glb, public/js/world3d/fx3d/*.mjs, public/js/stand-math.js, public/js/world3d/scenes/arena.mjs (chỉ phần Pháp Tướng), test/world3d-fx.test.js, test/stand-math.test.js, docs/phap-tuong/, docs/KE-HOACH-PHAP-TUONG-3D.md §2.4
 - **Người làm**: Claude Opus 5.5 (điều phối), gpt-6.1-sol (thực thi), gpt-6.1-terra (chấm hình) · **Nhánh**: claude/T-204-vong-hinh-3-noi-ngan-sach
 - **Nguồn**: chủ dự án chọn "nới ngân sách 3D" ngày 14/11 sau nghiệm thu T-203 (Ma Vương 2,5/5, đài sen 3/5, vỏ khí 2/5; trong game còn kém 2D). Công tắc `ta-fx3d` vẫn mặc định tắt.
 - **Ngân sách mới (chủ dự án duyệt 14/11)**: Ma Vương ≤ 6.000 tam giác, ảnh bake 1024 px, tệp ≤ 1,5 MB. Đài sen ≤ 1.200 tam giác, vỏ khí ≤ 1.500 tam giác giữ nguyên.
 - **Tiêu chí xong**:
-  - [ ] **Ma Vương**: mặt không còn lộ mặt phẳng đa giác khi nhìn gần (thêm tam giác cho mặt, làm mịn pháp tuyến, bake pháp tuyến 1024 px từ lưới dày); bàn tay xòe đủ ngón có vuốt; lửa sau vai là khối lửa mềm (không phải thanh gấp khúc); màu sáng và tương phản hơn để không chìm thành khối đỏ tối trong game; vẫn đủ 17 xương và 8 clip; ≤ 6.000 tam giác, ≤ 1,5 MB
-  - [ ] **Lửa hộ thân thay vỏ khí**: bỏ lớp vỏ kín bao người; thay bằng các lưỡi lửa bốc từ chân lên, cao không quá ngang vai chủ, **không che mặt quỷ và không che đầu nhân vật** ở góc nhìn thứ ba; đọc ra lửa (không giống lọ kính); không cháy trắng; 9 bậc hào quang vẫn đổi màu được
-  - [ ] **Đài sen**: nhìn ngang trong game vẫn đọc ra hoa sen (không giống vương miện): cánh ngoài xòe thấp hơn, đầu cánh bớt nhọn
-  - [ ] **Sân đấu**: quỷ của mình nằm gọn trong khung và không bị bảng giao diện che mặt ở khoảng cách máy quay của Sân đấu (hạ chỗ đứng hoặc thu nhỏ; không đổi máy quay)
-  - [ ] **Máy quay sát chủ** (Hộp thư đến): khi `selfStand` trả `null`, quỷ không nhảy về neo cũ với cỡ lớn nhất; giữ chỗ đứng gần nhất, thu nhỏ và mờ dần; có test kiểm cỡ và độ mờ
-  - [ ] **Suất merit** (Hộp thư đến): `fxSlots` có khoá riêng cho pháp tướng công đức, người không có hào quang vẫn nhận được suất merit; có test
-  - [ ] Công tắc tắt thì hành vi y như trước; `.glb` lỗi tải thì rơi về ảnh 2D; mọi `?v=` đã tăng đồng bộ
-  - [ ] `npm run check` sạch, `npm test` 0 trượt; ảnh bật/tắt cùng góc ở Tàng Kinh Các và Sân đấu; phiếu chấm `docs/phap-tuong/T-204-SOAT-HINH.md`; 👤 duyệt
+  - [x] **Ma Vương** (6.000 tam giác, 1.184.020 byte, ảnh 1024, 17 xương, 8 clip; terra vẫn chấm 2,58/5): mặt không còn lộ mặt phẳng đa giác khi nhìn gần (thêm tam giác cho mặt, làm mịn pháp tuyến, bake pháp tuyến 1024 px từ lưới dày); bàn tay xòe đủ ngón có vuốt; lửa sau vai là khối lửa mềm (không phải thanh gấp khúc); màu sáng và tương phản hơn để không chìm thành khối đỏ tối trong game; vẫn đủ 17 xương và 8 clip; ≤ 6.000 tam giác, ≤ 1,5 MB
+  - [x] **Lửa hộ thân thay vỏ khí** (`flames` 1.056 tam giác, cao nhất 1,20 m; terra 3,17/5, còn hơi gợi băng): bỏ lớp vỏ kín bao người; thay bằng các lưỡi lửa bốc từ chân lên, cao không quá ngang vai chủ, **không che mặt quỷ và không che đầu nhân vật** ở góc nhìn thứ ba; đọc ra lửa (không giống lọ kính); không cháy trắng; 9 bậc hào quang vẫn đổi màu được
+  - [x] **Đài sen** (terra nhìn ngang 3,5/5; góc 0° còn hơi dẹt): nhìn ngang trong game vẫn đọc ra hoa sen (không giống vương miện): cánh ngoài xòe thấp hơn, đầu cánh bớt nhọn
+  - [x] **Sân đấu** (`lift` 0,5, `sideNear` 0,75; ảnh `game-san-dau.jpg`, `game-san-dau-sat.jpg`): quỷ của mình nằm gọn trong khung và không bị bảng giao diện che mặt ở khoảng cách máy quay của Sân đấu (hạ chỗ đứng hoặc thu nhỏ; không đổi máy quay)
+  - [x] **Máy quay sát chủ** (Hộp thư đến; chỉ kiểm bằng test, chưa tái hiện trong game): khi `selfStand` trả `null`, quỷ không nhảy về neo cũ với cỡ lớn nhất; giữ chỗ đứng gần nhất, thu nhỏ và mờ dần; có test kiểm cỡ và độ mờ
+  - [x] **Suất merit** (Hộp thư đến): `fxSlots` có khoá riêng cho pháp tướng công đức, người không có hào quang vẫn nhận được suất merit; có test
+  - [x] Công tắc tắt thì hành vi y như trước (`avatar.mjs` chỉ đổi dòng `?v=`); `.glb` lỗi tải thì rơi về ảnh 2D; mọi `?v=` đã tăng đồng bộ
+  - [ ] `npm run check` sạch, `npm test` 0 trượt (1.093 test, 3 PostgreSQL bỏ qua); ảnh bật/tắt cùng góc ở Tàng Kinh Các và Sân đấu; phiếu chấm `docs/phap-tuong/T-204-SOAT-HINH.md` — đã xong; còn 👤 duyệt
 - **Ngoài phạm vi**: server.js, hall.js, giao thức, bản 2D, `public/img/fx`, máy quay, quỷ cấp 1–3 (T-145).
 
 ---
@@ -1783,8 +1783,6 @@ Thiết kế, hợp đồng mã, ngân sách và định tuyến mô hình: [doc
 
 Lấy từ README "Việc nên làm tiếp" và lúc rà repo. Điều phối viết lại thành thẻ đủ trường khi muốn làm.
 
-- ⚪ Pháp Tướng 3D, máy quay sát chủ (nghiệm thu T-203, Claude Opus, 2026-11-14; chỉ lộ khi bật `ta-fx3d`): khi khoảng cách ngang tới máy quay < 0,6 m, `StandMath.selfStand` trả `null`, quỷ của mình trượt về `ANCHOR[4]` ngay trước ống kính với `SELF_SCALE` 1,1 và không mờ (`public/js/world3d/fx3d/demon.mjs` khoảng dòng 106–116 và 168; ở chế độ ngoái mặt `near` luôn bằng 1). Sửa: giữ chỗ đứng gần nhất hoặc dùng cỡ nhỏ nhất và cho mờ; thêm test kiểm cỡ và độ mờ (test `world3d-fx.test.js` hiện chỉ chốt "về neo cũ"). Gói: CORE + HALL.
-- ⚪ Pháp Tướng 3D, suất của pháp tướng công đức (nghiệm thu T-203, 2026-11-14): `fx3d/index.mjs` gộp lotus, aura và merit vào khoá `aura` của `StandMath.fxSlots`, nên người có bậc công đức mà không có hào quang luôn nhận `aura:false` và không bao giờ thấy merit 3D. Tách suất riêng cho merit **trước khi mở T-145 → T-149**. Gói: CORE + HALL.
 - ⚪ Pháp Tướng 3D, nhãn tên xuyên tường (nghiệm thu T-203, 2026-11-14): `avatar.mjs` tắt `depthTest` của nhãn tên và bong bóng khi người đó có hiệu ứng 3D, nên nhãn hiện xuyên tường, cột. 👤 chấp nhận, hoặc đổi sang vẽ sau cùng mà vẫn kiểm chiều sâu với vật đục. Gói: CORE + HALL.
 - ⚪ `public/world3d-scene-arena.html` import `kit.mjs?v=1` trong khi các chỗ khác dùng `?v=2` (có từ trước T-203; nghiệm thu T-203 phát hiện 2026-11-14). Gói: CORE.
 - ⚪ Dùng huy hiệu chủ đề `public/img/kydao/ui/crest-<id>.webp` trong bộ chọn "Lãnh địa" (cạnh tên sân) và cạnh khẩu hiệu khai mở (`.kdfx-banner`). Gói: KYDAI. Thợ gợi ý: gpt-6-luna.

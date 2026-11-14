@@ -7,7 +7,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const ViewMath = require('../public/js/view-math.js');
 const dependencies = Promise.all([
-  import('three'), import('../public/js/world3d/kit.mjs'), import('../public/js/world3d/scenes/arena.mjs?v=9')
+  import('three'), import('../public/js/world3d/kit.mjs'), import('../public/js/world3d/scenes/arena.mjs?v=10')
 ]);
 
 async function fixture(options = {}) {
@@ -193,7 +193,7 @@ test('Trang thử có cú pháp hợp lệ, đúng đường Three.js và điề
   assert.ok(!source.includes('innerHTML'));
 });
 
-test('suất quỷ mức Thấp giữ mình và hai người gần máy quay nhất theo khoảng cách ngang', async () => {
+test('suất Sân đấu tách công đức khỏi hào quang và giữ người gần máy quay ở mức Thấp', async () => {
   const previous = Object.getOwnPropertyDescriptor(globalThis, 'StandMath');
   globalThis.StandMath = require('../public/js/stand-math.js');
   const { THREE, scene, kit, ctx } = await fixture({ quality: 'low' });
@@ -216,6 +216,12 @@ test('suất quỷ mức Thấp giữ mình và hai người gần máy quay nh�
       assert.equal(fx.slots.aura, i < 2 || i === 5);
     }
     assert.equal(avatars[2].userData.fx.slots.demon, false);
+    players.push({ id: 'meritOnly', x: 0.9, z: 0.85, meritRank: 2 });
+    scene.update(state, 0.016);
+    const meritOnly = scene.group.children.find(node => node.name === 'avatar' && node.userData.fx.slots.merit);
+    assert.ok(meritOnly);
+    assert.deepEqual(meritOnly.userData.fx.slots, { demon: false, aura: false, merit: true });
+    assert.equal(meritOnly.userData.fx.slot, true);
     ctx.camera = null; scene.update(state, 0.016);
     for (const avatar of avatars) assert.equal(avatar.userData.fx.distance, Infinity);
     delete globalThis.StandMath; scene.update(state, 0.016);

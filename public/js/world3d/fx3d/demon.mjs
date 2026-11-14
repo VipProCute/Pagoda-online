@@ -1,9 +1,9 @@
 'use strict';
 
 import * as THREE from 'three';
-import { register } from './index.mjs?v=4';
+import { register } from './index.mjs?v=5';
 
-export const DEMON_URL = Object.freeze({ 4: '/models/fx/demon-4.glb?v=2' });
+export const DEMON_URL = Object.freeze({ 4: '/models/fx/demon-4.glb?v=3' });
 export const SELF_DEMON = { mode: 'face' };
 const SELF_SCALE = 1.1;
 const DEPTH_MIN_ALPHA = 0.6;
@@ -16,6 +16,7 @@ export function demonPart(env) {
   let requested = false, settled = false, released = false, failed = false, disposed = false, empty = false, url = null;
   let t = 0, lastN = 0, prevN = 0, since = 0, placed = false, facing = null, headYaw = 0;
   let cameraSeen = false, neckBone = null, headBone = null, selfScale = null;
+  let lastStand = null, fadeSmooth = null;
   let pos = [0, 0, 0], vel = [0, 0, 0];
   const local = new THREE.Vector3(), target = new THREE.Vector3();
   const cameraWorld = new THREE.Vector3(), cameraLocal = new THREE.Vector3(), axis = new THREE.Vector3();
@@ -103,19 +104,25 @@ export function demonPart(env) {
     local.set(ax * c + az * s, a.y + side.y - sitDrop, -ax * s + az * c);
     env.host.group.updateWorldMatrix(true, false);
     const face = ctx.isSelf && shown === 4 && SELF_DEMON.mode === 'face';
-    let goal = yaw, headGoal = 0, scaleGoal = face ? SELF_SCALE : 1;
+    let goal = yaw, headGoal = 0, scaleGoal = face ? SELF_SCALE : 1, fade = 1;
     if (face && (ctx.camera || cameraSeen)) {
       cameraLocal.copy(ctx.camera || cameraWorld);
       env.host.group.worldToLocal(cameraLocal);
-      const stand = SM.selfStand({ x: cameraLocal.x, z: cameraLocal.z });
+      let stand = SM.selfStand({ x: cameraLocal.x, z: cameraLocal.z });
+      if (stand) lastStand = stand;
+      else if (lastStand) stand = { ...lastStand, scale: Math.min(lastStand.scale, SM.SELF_STAND.scaleNear), fade: SM.SELF_STAND.fadeMin };
+      scaleGoal = SM.SELF_STAND.scaleNear;
+      fade = SM.SELF_STAND.fadeMin;
       if (stand) {
         local.set(stand.x, stand.y - sitDrop, stand.z);
         goal = stand.yaw; headGoal = stand.head;
         if (Number.isFinite(stand.scale)) scaleGoal = stand.scale;
+        fade = stand.fade;
       }
     }
-    // Máy quay bị tường ép lại gần thì quỷ thu nhỏ dần (T-203), không giật theo từng khung.
+    // Máy quay bị tường ép lại gần thì quỷ thu nhỏ và mờ dần, không giật theo từng khung.
     selfScale = reduced || selfScale == null ? scaleGoal : selfScale + (scaleGoal - selfScale) * (1 - Math.exp(-dt / 0.3));
+    fadeSmooth = reduced || fadeSmooth == null ? fade : fadeSmooth + (fade - fadeSmooth) * (1 - Math.exp(-dt / 0.3));
     target.copy(local); env.host.group.localToWorld(target);
     if (!placed || reduced) { pos = [target.x, target.y, target.z]; vel = [0, 0, 0]; placed = true; }
     else ({ pos, vel } = SM.springVec(pos, vel, [target.x, target.y, target.z], dt));
@@ -165,7 +172,7 @@ export function demonPart(env) {
     // Chế độ đứng lệch giữ thân rõ; chế độ che lưng mờ sớm để thấy nhân vật.
     const cover = ctx.isSelf && SELF_DEMON.mode === 'cover';
     const fadeFrom = cover ? 2.5 : 1.2, fadeSpan = cover ? 4 : 0.8, fadeMin = cover ? 0.3 : 0.55;
-    const near = !face && shown === 4 && Number.isFinite(ctx.distance) ? clamp((ctx.distance - fadeFrom) / fadeSpan, fadeMin, 1) : 1;
+    const near = face ? fadeSmooth : shown === 4 && Number.isFinite(ctx.distance) ? clamp((ctx.distance - fadeFrom) / fadeSpan, fadeMin, 1) : 1;
     const vanishFade = phase === 'vanish' ? clamp(1 - since / SM.DURATION.vanish, 0, 1) : 1;
     const opacity = alpha * near * vanishFade;
     for (const mat of [...materials, depthMat]) {

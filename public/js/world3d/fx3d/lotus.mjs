@@ -1,9 +1,9 @@
 'use strict';
 
 import * as THREE from 'three';
-import { register } from './index.mjs?v=4';
+import { register } from './index.mjs?v=5';
 
-export const LOTUS_URL = '/models/fx/lotus.glb?v=2';
+export const LOTUS_URL = '/models/fx/lotus.glb?v=3';
 const active = tier => tier >= 2 && tier <= 7;
 const clamp = value => Math.max(0, Math.min(1, value));
 

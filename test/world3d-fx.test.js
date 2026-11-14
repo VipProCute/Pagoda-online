@@ -3,9 +3,9 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 globalThis.StandMath = require('../public/js/stand-math.js');
-const load = () => import('../public/js/world3d/fx3d/index.mjs?v=4');
+const load = () => import('../public/js/world3d/fx3d/index.mjs?v=5');
 const loadAssets = () => import('../public/js/world3d/fx3d/assets.mjs');
-const loadMaterials = () => import('../public/js/world3d/fx3d/materials.mjs?v=4');
+const loadMaterials = () => import('../public/js/world3d/fx3d/materials.mjs?v=5');
 const emptyCovers = () => ({ demon: false, lotus: false, aura: false, merit: false });
 const settle = () => new Promise(resolve => setTimeout(resolve, 0));
 
@@ -273,7 +273,7 @@ test('viền linh thể có ảnh dùng pháp tuyến chưa nhiễu của Three.
 });
 
 test('placeholder vẽ được ba phần và trả covers', async () => {
-  const [{ createFx3d }, { placeholderParts }, THREE] = await Promise.all([load(), import('../public/js/world3d/fx3d/placeholder.mjs?v=2'), import('three')]);
+  const [{ createFx3d }, { placeholderParts }, THREE] = await Promise.all([load(), import('../public/js/world3d/fx3d/placeholder.mjs?v=3'), import('three')]);
   const host = makeHost(THREE);
   const fx = createFx3d(host, { parts: placeholderParts() });
   assert.deepEqual(fx.update({ tier: 5, color: '#8fd3ff', fade: 1, demon: { n: 4, alpha: 0.5 } }, 0.016, {}),
@@ -348,7 +348,7 @@ test('release lúc đang tải dọn kết quả muộn và không xóa lượt 
 });
 
 test('placeholder đổi chất lượng không giữ hạt đang hiện khi giảm chuyển động', async () => {
-  const [{ createFx3d }, { placeholderParts }, THREE] = await Promise.all([load(), import('../public/js/world3d/fx3d/placeholder.mjs?v=2'), import('three')]);
+  const [{ createFx3d }, { placeholderParts }, THREE] = await Promise.all([load(), import('../public/js/world3d/fx3d/placeholder.mjs?v=3'), import('three')]);
   const fx = createFx3d(makeHost(THREE), { quality: 'medium', parts: placeholderParts() });
   const state = { tier: 5, color: '#8fd3ff', fade: 0.7 };
   fx.update(state, 0.016);
@@ -366,7 +366,7 @@ test('placeholder đổi chất lượng không giữ hạt đang hiện khi gi�
   fx.dispose();
 });
 
-function fakeAsset({ THREE, skinned = false }) {
+function fakeAsset({ THREE, skinned = false, auraNode = 'flames' }) {
   const scene = new THREE.Group(), geometry = new THREE.BoxGeometry();
   const count = geometry.attributes.position.count;
   geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(count * 3).fill(1), 3));
@@ -381,7 +381,7 @@ function fakeAsset({ THREE, skinned = false }) {
     const bone = new THREE.Bone(); body.add(bone); body.bind(new THREE.Skeleton([bone]));
   }
   body.name = 'spirit'; scene.add(body);
-  for (const name of ['shell', 'petals0', 'petals1', 'petals2', 'pod']) {
+  for (const name of [auraNode, 'petals0', 'petals1', 'petals2', 'pod']) {
     const material = new THREE.MeshStandardMaterial();
     material.name = name.startsWith('petals') ? 'petal' : name;
     const node = new THREE.Mesh(geometry, material); node.name = name; scene.add(node);
@@ -393,10 +393,10 @@ function fakeAsset({ THREE, skinned = false }) {
 
 async function realFx(opts = {}) {
   const [{ createFx3d }, { createAssets }, { demonPart }, { lotusPart }, { auraPart }, THREE] = await Promise.all([
-    load(), loadAssets(), import('../public/js/world3d/fx3d/demon.mjs?v=4'),
-    import('../public/js/world3d/fx3d/lotus.mjs?v=3'), import('../public/js/world3d/fx3d/aura.mjs?v=4'), import('three')
+    load(), loadAssets(), import('../public/js/world3d/fx3d/demon.mjs?v=5'),
+    import('../public/js/world3d/fx3d/lotus.mjs?v=4'), import('../public/js/world3d/fx3d/aura.mjs?v=5'), import('three')
   ]);
-  const assets = createAssets({ loadGltf: opts.loadGltf || (async () => fakeAsset({ THREE, skinned: opts.skinned })) });
+  const assets = createAssets({ loadGltf: opts.loadGltf || (async () => fakeAsset({ THREE, skinned: opts.skinned, auraNode: opts.auraNode })) });
   const host = makeHost(THREE);
   const fx = createFx3d(host, { ...opts, assets, parts: { demon: demonPart, lotus: lotusPart, aura: auraPart } });
   return { fx, assets, host, THREE };
@@ -507,7 +507,7 @@ test('giảm chuyển động đưa quỷ về idle ngay giữa lúc chuyển cl
   assert.equal(spirit.position.y, 0);
 });
 
-test('đổi chất lượng giữ ba, hai, một lớp vỏ và ẩn hạt ngay, không tạo lại hạt', async t => {
+test('đổi chất lượng giữ ba, hai, một lớp lửa và ẩn hạt ngay, không tạo lại hạt', async t => {
   const { fx } = await realFx({ quality: 'high' }); t.after(() => fx.dispose());
   const state = { tier: 5 };
   fx.update(state); await settle(); fx.update(state, 0.016);
@@ -515,20 +515,20 @@ test('đổi chất lượng giữ ba, hai, một lớp vỏ và ẩn hạt ngay
   fx.root.traverse(node => { if (node.isPoints) points.push(node); });
   assert.equal(points.length, 2);
   const shells = fx.root.getObjectByName('fx3d-aura').children;
-  assert.equal(shells.length, 6, 'mỗi lớp có mặt sau và mặt trước');
-  assert.equal(shells.filter(shell => shell.visible).length, 6);
+  assert.equal(shells.length, 3, 'mỗi lớp chỉ có một lưới mặt trước');
+  assert.equal(shells.filter(shell => shell.visible).length, 3);
   fx.setQuality('medium');
-  assert.equal(shells.filter(shell => shell.visible).length, 4);
-  assert.deepEqual(shells.filter(shell => shell.visible).map(shell => shell.material.uniforms.uSeed.value), [0, 0, 0.37, 0.37]);
+  assert.equal(shells.filter(shell => shell.visible).length, 2);
+  assert.deepEqual(shells.filter(shell => shell.visible).map(shell => shell.material.uniforms.uSeed.value), [0, 0.37]);
   for (const point of points) assert.equal(point.visible, false);
   for (const shell of shells) assert.equal(shell.material.uniforms.uDisplace.value, 1);
   fx.setQuality('low');
   for (const point of points) assert.equal(point.visible, false);
-  assert.equal(shells.filter(shell => shell.visible).length, 2);
+  assert.equal(shells.filter(shell => shell.visible).length, 1);
   assert.ok(shells.filter(shell => shell.visible).every(shell => shell.material.uniforms.uSeed.value === 0));
   for (const shell of shells) assert.equal(shell.material.uniforms.uDisplace.value, 0);
   fx.setQuality('high');
-  assert.equal(shells.filter(shell => shell.visible).length, 6);
+  assert.equal(shells.filter(shell => shell.visible).length, 3);
   for (const shell of shells) assert.equal(shell.material.uniforms.uDisplace.value, 1);
   fx.setReducedMotion(true); fx.update(state, 0.016);
   for (const point of points) assert.equal(point.visible, false);
@@ -538,26 +538,48 @@ test('đổi chất lượng giữ ba, hai, một lớp vỏ và ẩn hạt ngay
   assert.deepEqual(after, points);
 });
 
-test('ba lớp lửa lệch pha nhiễu, tăng kích thước và giảm độ đục ra ngoài', async t => {
+test('ba lớp lửa mặt trước thấp hơn vai, xoay xen kẽ và đổi màu theo bậc', async t => {
   const { fx, THREE } = await realFx({ quality: 'high' }); t.after(() => fx.dispose());
   const state = { tier: 5, fade: 0.8, color: '#8fd3ff' };
   fx.update(state); await settle(); fx.update(state, 0.016);
   const shells = fx.root.getObjectByName('fx3d-aura').children;
-  assert.equal(shells.length, 6);
-  const scales = [[1, 1, 1], [1.1, 1.22, 1.1], [1.2, 1.45, 1.2]];
-  const seeds = [0, 0.37, 0.71], opacities = [1, 0.7, 0.45];
+  assert.equal(shells.length, 3);
+  const scales = [[1, 1, 1], [1.12, 0.82, 1.12], [0.9, 0.68, 0.9]];
+  const rotations = [0, Math.PI / 9, -Math.PI / 9];
+  const seeds = [0, 0.37, 0.71], opacities = [1, 0.75, 0.6];
   for (let i = 0; i < 3; i++) {
-    const [back, front] = shells.slice(i * 2, i * 2 + 2);
-    assert.equal(back.material.side, THREE.BackSide);
-    assert.equal(front.material.side, THREE.FrontSide);
-    for (const shell of [back, front]) {
-      assert.deepEqual(shell.scale.toArray(), scales[i]);
-      assert.equal(shell.material.uniforms.uSeed.value, seeds[i]);
-      assert.equal(shell.material.uniforms.uColor.value.getHexString(), '8fd3ff');
-    }
-    assert.equal(front.material.uniforms.uOpacity.value, state.fade * opacities[i]);
-    assert.equal(back.material.uniforms.uOpacity.value, state.fade * opacities[i] * 0.45);
+    const shell = shells[i];
+    assert.equal(shell.material.side, THREE.FrontSide);
+    assert.ok(Object.hasOwn(shell.material.defines, 'FLAME_TONGUE'));
+    assert.deepEqual(shell.scale.toArray(), scales[i]);
+    assert.ok(shell.scale.y <= 1);
+    assert.equal(shell.rotation.y, rotations[i]);
+    assert.equal(shell.renderOrder, 6);
+    assert.equal(shell.material.uniforms.uSeed.value, seeds[i]);
+    assert.equal(shell.material.uniforms.uColor.value.getHexString(), '8fd3ff');
+    assert.equal(shell.material.uniforms.uOpacity.value, state.fade * opacities[i]);
   }
+  const points = fx.root.children.find(node => node.isPoints && node.material.color.getHexString() === '8fd3ff');
+  assert.ok(points);
+  const position = points.geometry.attributes.position;
+  for (let i = 0; i < position.count; i++) {
+    const radius = Math.hypot(position.getX(i), position.getZ(i));
+    assert.ok(radius >= 0.3 - 1e-6 && radius <= 0.45 + 1e-6);
+    assert.ok(position.getY(i) >= 0 && position.getY(i) <= 1.2);
+  }
+  fx.update({ ...state, color: '#ff7733', sit: true }, 0.016);
+  for (const shell of shells) assert.equal(shell.material.uniforms.uColor.value.getHexString(), 'ff7733');
+  assert.equal(fx.root.getObjectByName('fx3d-aura').scale.y, 0.8);
+});
+
+test('lửa hộ thân dự phòng nút shell cũ, thiếu cả hai nút thì giữ ảnh 2D', async t => {
+  const { fx } = await realFx({ auraNode: 'shell' }); t.after(() => fx.dispose());
+  fx.update({ tier: 5 }); await settle();
+  assert.equal(fx.update({ tier: 5 }).aura, true);
+  assert.equal(fx.root.getObjectByName('fx3d-aura').children.length, 3);
+  const missing = await realFx({ auraNode: 'missing' }); t.after(() => missing.fx.dispose());
+  missing.fx.update({ tier: 5 }); await settle();
+  assert.equal(missing.fx.update({ tier: 5 }).aura, false);
 });
 
 test('dispose trước khi tải xong trả đủ tham chiếu và không gắn mô hình muộn', async () => {
@@ -574,7 +596,7 @@ test('dispose trước khi tải xong trả đủ tham chiếu và không gắn 
 
 test('tải quỷ lỗi rồi tải lại không trả nhầm tham chiếu của lượt sau', async t => {
   const [{ createFx3d }, { createAssets }, { demonPart }, THREE] = await Promise.all([
-    load(), loadAssets(), import('../public/js/world3d/fx3d/demon.mjs?v=4'), import('three')
+    load(), loadAssets(), import('../public/js/world3d/fx3d/demon.mjs?v=5'), import('three')
   ]);
   const asset = fakeAsset({ THREE });
   const disposed = watchDispose(asset.scene.getObjectByName('spirit').geometry);
@@ -690,7 +712,7 @@ test('thân quỷ có ảnh ghi chiều sâu bằng bản sao chung xương, m�
 });
 
 test('quỷ của mình đứng lệch sang trái ở chế độ side và trả được về cover', async t => {
-  const { SELF_DEMON } = await import('../public/js/world3d/fx3d/demon.mjs?v=4');
+  const { SELF_DEMON } = await import('../public/js/world3d/fx3d/demon.mjs?v=5');
   const previous = SELF_DEMON.mode;
   const { fx } = await realFx({ reducedMotion: true });
   t.after(() => { SELF_DEMON.mode = previous; fx.dispose(); });
@@ -713,7 +735,7 @@ test('quỷ của mình đứng lệch sang trái ở chế độ side và trả
 });
 
 test('quỷ của mình ngoái mặt về máy quay, người khác và lúc thiếu máy quay vẫn dùng neo cũ', async t => {
-  const { SELF_DEMON } = await import('../public/js/world3d/fx3d/demon.mjs?v=4');
+  const { SELF_DEMON } = await import('../public/js/world3d/fx3d/demon.mjs?v=5');
   const previous = SELF_DEMON.mode;
   assert.equal(previous, 'face');
   SELF_DEMON.mode = 'face';
@@ -735,6 +757,8 @@ test('quỷ của mình ngoái mặt về máy quay, người khác và lúc thi
   const demon = fx.root.getObjectByName('fx3d-demon'), head = demon.getObjectByName('head');
   const original = head.quaternion.clone();
   assert.ok(demon.position.distanceTo(new THREE.Vector3(0, 1.2, -0.55)) < 1e-6);
+  assert.equal(demon.scale.x, 1.1);
+  assert.equal(demon.getObjectByName('spirit').material.userData.uniforms.uAlpha.value, 1);
   const stand = globalThis.StandMath.selfStand(camera);
   fx.update(state, 0, { isSelf: true, camera, distance: 0.6 });
   assert.ok(demon.position.z > 0.3 && demon.position.x > 0.3);
@@ -759,13 +783,61 @@ test('quỷ của mình ngoái mặt về máy quay, người khác và lúc thi
   fx.update({ ...state, yaw: 1.2, sit: true }, 0, { isSelf: true, camera: worldCamera });
   assert.ok(demon.position.distanceTo(new THREE.Vector3(stand.x, stand.y - 0.35, stand.z)) < 1e-6);
   assert.ok(Math.abs(demon.rotation.y - stand.yaw) < 1e-6);
-  fx.update(state, 0, { isSelf: true, camera: host.group.position.clone() });
-  assert.ok(demon.position.distanceTo(new THREE.Vector3(0, 1.2, -0.55)) < 1e-6, 'máy quay sát chủ trả về neo cũ');
-  assert.ok(head.quaternion.angleTo(original) < 1e-6);
+  fx.update({ ...state, sit: true }, 0, { isSelf: true, camera: host.group.position.clone() });
+  assert.ok(demon.position.distanceTo(new THREE.Vector3(stand.x, stand.y - 0.35, stand.z)) < 1e-6, 'máy quay trùng chủ giữ chỗ đứng gần nhất');
+  assert.equal(demon.scale.x, globalThis.StandMath.SELF_STAND.scaleNear);
+  assert.equal(demon.getObjectByName('spirit').material.userData.uniforms.uAlpha.value, globalThis.StandMath.SELF_STAND.fadeMin);
+});
+
+test('máy quay sát chủ giữ chỗ đứng gần nhất, thu nhỏ và nhân độ mờ vào thân quỷ', async t => {
+  const { SELF_DEMON } = await import('../public/js/world3d/fx3d/demon.mjs?v=5');
+  const previous = SELF_DEMON.mode; SELF_DEMON.mode = 'face';
+  const { fx } = await realFx({ reducedMotion: true });
+  t.after(() => { SELF_DEMON.mode = previous; fx.dispose(); });
+  const O = globalThis.StandMath.SELF_STAND, state = { demon: { n: 4, alpha: 0.8 } };
+  fx.update(state); await settle();
+  const camera = { x: 0, y: 1.6, z: -5 };
+  fx.update(state, 0, { isSelf: true, camera });
+  const demon = fx.root.getObjectByName('fx3d-demon'), position = demon.position.clone();
+  const uniforms = demon.getObjectByName('spirit').material.userData.uniforms;
+  camera.z = 0; fx.update(state, 0, { isSelf: true, camera });
+  assert.ok(demon.position.distanceTo(position) < 1e-6);
+  assert.equal(demon.scale.x, O.scaleNear);
+  assert.equal(uniforms.uAlpha.value, O.fadeMin * state.demon.alpha);
+  camera.z = -0.3; fx.update(state, 0, { isSelf: true, camera });
+  assert.equal(demon.scale.x, O.scaleNear);
+  assert.equal(uniforms.uAlpha.value, O.fadeMin * state.demon.alpha);
+  camera.z = -0.7; fx.update(state, 0, { isSelf: true, camera });
+  assert.ok(uniforms.uAlpha.value > O.fadeMin * state.demon.alpha && uniforms.uAlpha.value < state.demon.alpha);
+  // k = 7/13, smooth = 1225/2197, fade = 1468/2197.
+  assert.ok(Math.abs(uniforms.uAlpha.value - 1468 / 2197 * state.demon.alpha) < 1e-12);
+});
+
+test('máy quay trùng chủ ngay khung đầu chỉ dùng neo nhỏ và mờ', async t => {
+  const { fx } = await realFx({ reducedMotion: true }); t.after(() => fx.dispose());
+  const state = { demon: { n: 4 } }, ctx = { isSelf: true, camera: { x: 0, y: 1.6, z: 0 } };
+  fx.update(state, 0, ctx); await settle(); fx.update(state, 0, ctx);
+  const demon = fx.root.getObjectByName('fx3d-demon'), O = globalThis.StandMath.SELF_STAND;
+  assert.equal(demon.scale.x, O.scaleNear);
+  assert.equal(demon.getObjectByName('spirit').material.userData.uniforms.uAlpha.value, O.fadeMin);
+});
+
+test('cỡ và độ mờ quỷ theo máy quay chuyển êm trong 0,3 giây, giảm chuyển động đặt thẳng', async t => {
+  const { fx } = await realFx(); t.after(() => fx.dispose());
+  const state = { demon: { n: 4 } }, camera = { x: 0, y: 1.6, z: -5 };
+  fx.update(state); await settle(); fx.update(state, 0, { isSelf: true, camera });
+  const demon = fx.root.getObjectByName('fx3d-demon'), O = globalThis.StandMath.SELF_STAND;
+  const uniforms = demon.getObjectByName('spirit').material.userData.uniforms;
+  camera.z = -0.3; fx.update(state, 0.3, { isSelf: true, camera });
+  assert.ok(Math.abs(demon.scale.x - (O.scaleNear + (O.scale - O.scaleNear) / Math.E)) < 1e-12);
+  assert.ok(Math.abs(uniforms.uAlpha.value - (O.fadeMin + (1 - O.fadeMin) / Math.E)) < 1e-12);
+  fx.setReducedMotion(true); fx.update(state, 0, { isSelf: true, camera });
+  assert.equal(demon.scale.x, O.scaleNear);
+  assert.equal(uniforms.uAlpha.value, O.fadeMin);
 });
 
 test('lưới thân bắt máy quay qua onBeforeRender sau khi đã tạo bản sao chiều sâu', async t => {
-  const { SELF_DEMON } = await import('../public/js/world3d/fx3d/demon.mjs?v=4');
+  const { SELF_DEMON } = await import('../public/js/world3d/fx3d/demon.mjs?v=5');
   const previous = SELF_DEMON.mode; SELF_DEMON.mode = 'face';
   const { fx, THREE } = await realFx({ reducedMotion: true });
   t.after(() => { SELF_DEMON.mode = previous; fx.dispose(); });
@@ -794,7 +866,7 @@ test('suất riêng ẩn đúng nhóm quỷ hoặc toàn bộ hào quang và đ�
   fx.root.traverse(node => { if (node.isPoints) assert.equal(node.visible, false); });
 });
 
-test('phần bị chặn suất chỉ được ẩn, không cập nhật, kể cả phần công đức', async t => {
+test('suất công đức độc lập với hào quang và tương thích bên gọi thiếu khóa merit', async t => {
   const [{ createFx3d, PARTS }, THREE] = await Promise.all([load(), import('three')]);
   const updates = {}, hidden = {};
   const parts = Object.fromEntries(PARTS.map(name => [name, () => ({
@@ -802,12 +874,17 @@ test('phần bị chặn suất chỉ được ẩn, không cập nhật, kể c
     hide() { hidden[name] = (hidden[name] || 0) + 1; }
   })]));
   const fx = createFx3d(makeHost(THREE), { parts }); t.after(() => fx.dispose());
-  fx.update({}, 0, { slots: { demon: true, aura: false } });
-  assert.deepEqual(updates, { demon: 1 });
+  fx.update({}, 0, { slots: { demon: true, aura: false, merit: true } });
+  assert.deepEqual(updates, { demon: 1, merit: 1 });
+  assert.deepEqual(hidden, { lotus: 1, aura: 1 });
+  fx.update({}, 0, { slots: { demon: true, aura: true, merit: false } });
+  assert.deepEqual(updates, { demon: 2, lotus: 1, aura: 1, merit: 1 });
   assert.deepEqual(hidden, { lotus: 1, aura: 1, merit: 1 });
-  fx.update({}, 0, { slots: { demon: false, aura: true } });
-  assert.deepEqual(updates, { demon: 1, lotus: 1, aura: 1, merit: 1 });
-  assert.equal(fx.covers.demon, false);
+  assert.equal(fx.covers.merit, false);
+  fx.update({}, 0, { slots: { demon: true, aura: false } });
+  assert.deepEqual(updates, { demon: 3, lotus: 1, aura: 1, merit: 2 });
+  assert.deepEqual(hidden, { lotus: 2, aura: 2, merit: 1 });
+  assert.equal(fx.covers.merit, true);
 });
 
 test('quỷ mờ 0,55 không ghi chiều sâu nhưng độ rõ 0,7 thì có', async t => {
@@ -862,12 +939,35 @@ test('vỏ khí giảm cháy trắng theo khoảng cách và ánh xạ tông tr�
   } finally { shell.dispose(); ribbon.dispose(); }
 });
 
-test('URL mô hình vòng hai đều có phiên bản chống bộ đệm cũ', async () => {
+test('lửa hộ thân dùng nhánh lưỡi lửa trộn thường, giới hạn độ đục và ánh xạ tông', async () => {
+  const [{ flameShellMaterial }, THREE] = await Promise.all([loadMaterials(), import('three')]);
+  const tongue = flameShellMaterial({ tongue: true });
+  try {
+    assert.deepEqual(tongue.defines, { FLAME_TONGUE: '' });
+    assert.equal(tongue.side, THREE.FrontSide);
+    assert.equal(tongue.blending, THREE.NormalBlending);
+    assert.notEqual(tongue.blending, THREE.AdditiveBlending);
+    assert.equal(tongue.depthWrite, false);
+    assert.equal(tongue.toneMapped, true);
+    const vertex = tongue.vertexShader.split('#ifdef FLAME_TONGUE');
+    assert.match(vertex[1], /vH = uv.y/);
+    assert.match(vertex[2], /\(n - 0\.3\) \* 0\.06/);
+    assert.match(tongue.fragmentShader, /#ifdef FLAME_TONGUE/);
+    assert.match(tongue.fragmentShader, /a = min\(a, 0\.85\)/);
+    assert.match(tongue.fragmentShader, /mix\(uColor, vec3\(1\.0\), 0\.08\)/);
+    assert.match(tongue.fragmentShader, /smoothstep\(0\.6, 1\.8, vDist\)/);
+    assert.match(tongue.fragmentShader, /pow\(abs\(dot\(normalize\(vN\), normalize\(vV\)\)\), 1\.2\)/);
+    assert.ok(tongue.fragmentShader.indexOf('#include <tonemapping_fragment>') < tongue.fragmentShader.indexOf('#include <colorspace_fragment>'));
+    assert.ok(!tongue.fragmentShader.includes('AdditiveBlending'));
+  } finally { tongue.dispose(); }
+});
+
+test('URL mô hình vòng ba đều có phiên bản chống bộ đệm cũ', async () => {
   const [{ DEMON_URL }, { LOTUS_URL }, { AURA_KIT_URL }] = await Promise.all([
-    import('../public/js/world3d/fx3d/demon.mjs?v=4'), import('../public/js/world3d/fx3d/lotus.mjs?v=3'),
-    import('../public/js/world3d/fx3d/aura.mjs?v=4')
+    import('../public/js/world3d/fx3d/demon.mjs?v=5'), import('../public/js/world3d/fx3d/lotus.mjs?v=4'),
+    import('../public/js/world3d/fx3d/aura.mjs?v=5')
   ]);
-  assert.equal(DEMON_URL[4], '/models/fx/demon-4.glb?v=2');
-  assert.equal(LOTUS_URL, '/models/fx/lotus.glb?v=2');
-  assert.equal(AURA_KIT_URL, '/models/fx/aura-kit.glb?v=2');
+  assert.equal(DEMON_URL[4], '/models/fx/demon-4.glb?v=3');
+  assert.equal(LOTUS_URL, '/models/fx/lotus.glb?v=3');
+  assert.equal(AURA_KIT_URL, '/models/fx/aura-kit.glb?v=3');
 });

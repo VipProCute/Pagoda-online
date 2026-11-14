@@ -26,10 +26,22 @@ H:\blender.exe -b --python-expr "import runpy; runpy.run_path(r'<repo>\tools\ble
 | Tiểu Quỷ | 1.200 | 120 KB |
 | Ác Quỷ | 2.400 | 200 KB |
 | Quỷ Vương | 3.000 | 240 KB |
-| Ma Vương (có ảnh bake) | 4.000 | 600 KB |
+| Ma Vương (có ảnh bake 1024 px, T-204) | 6.000 | 1.536 KB |
 | Đài sen | 1.200 | 60 KB |
 | Bộ hào quang đầy đủ | 1.500 | 90 KB |
-| Vỏ khí bản mẫu | 400 | thuộc bộ hào quang |
+| Lửa hộ thân (`flames`, T-204) | 1.200 | thuộc bộ hào quang |
+
+## Vòng hình 3 (T-204)
+
+Chạy thật (Điều phối, Blender 5.3): Ma Vương 6.000 tam giác (`demon_body` 5.424, `demon_flame` 576), `front_head_tris` 1.881, ba JPEG 1024×1024 (màu 165 KB chất lượng 90, phát sáng 89 KB chất lượng 90, pháp tuyến 486 KB chất lượng 97), `.glb` 1.184.020 byte; lửa hộ thân 1.056 tam giác, 33,7 KB; đài sen 1.200 tam giác, 40,4 KB. Ma Vương chạy khoảng 110 giây.
+
+- **Ma Vương** (`SPEC[4]`): `tri_limit` 6.000, `kb_limit` 1.536, `img` 1.024, `flame_tris` 640, `front_head_min` 1.800, lề UV 8 px. Phân bổ thật (`RESULT.triangle_allocation`): thân 2.000 + chia thêm mặt 902, ngón 600, vuốt 300, sừng lớn 468, sừng nhỏ 112, giáp vai 432, gai vai 144, vòng cổ tay 80, đuôi khói 142, gai lưng 60, tai 40, nanh/răng 128, lưỡi 16, lửa 576. `refine_head` chạy hai lượt, `smooth_low_head` sáu lượt (dịch tối đa 15 mm); sau đó `trim_body` lấy lại 600 tam giác ở thân (không đụng đầu/tay) cho giáp vai, sừng, vòng tay, đuôi để hết lộ mặt phẳng khi nhìn gần.
+- Bàn tay viết lại (`make_fingers`): lòng bàn tay hướng về người xem, năm ngón tỏa quạt trong mặt phẳng nhìn từ trước, ba đốt cong về trước; vuốt đen `#141012` dài, móc về trước. Mày thành gờ nêm dẹt liền trán chữ V, ba rãnh dọc giữa mày, sống mũi ngắn, mũi bè. Lòng miệng đỏ đen, chỉ quầng họng nhỏ phát sáng. Vân dung nham ở mặt còn khoảng 25%, giữ dày ở ngực/bụng/vai/cẳng tay; da sần giảm 45% ở thân, 60% ở mặt. Màu da đỏ rượu `#9a2a28`, đỉnh khối `#c24a36`, hốc `#3f0d0e`, AO tối thiểu 0,55; mắt `#ffd04a`.
+- Lửa vai: ba lưỡi Bézier mỗi bên, phình ở khoảng 30% rồi thon dài, trục chữ S, ngọn móc vào; 576 tam giác, vẫn gắn `chest`, UV như cũ.
+- **Lửa hộ thân** (`build_aura.py`, `build_flames`): bỏ vỏ kín `shell`. Nút/vật liệu `flames`: 9 lưỡi chính (cao 1,20 / 0,80 / 1,05 / 0,70 / 1,15 / 0,85 / 1,00 / 0,65 / 0,95 m) và 5 lưỡi phụ (0,35–0,55 m) mọc quanh chân, tiết diện elip 1 : 0,55 bản rộng theo tiếp tuyến, trục chữ S, xoắn chung 25–40°, chân chồng mép liền thành vòng. Cao nhất 1,20 m (vai nhân vật ~1,25 m), bán kính ngoài lớn nhất 0,38 m. UV `u` quanh lưỡi, glTF `v` = 0 ở gốc, 1 ở ngọn; mã game tô bằng nhánh `FLAME_TONGUE` của `flameShellMaterial`.
+- **Đài sen** (`build_lotus.py`): đầu cánh bầu, mũi ngắn 9% hơi vểnh, mép cuộn 24%. Tầng ngoài 18° → 34° (chóp 0,18 m), giữa 40° → 58° (0,24 m), trong 62° → 88° khum vào (0,30 m); rộng ~1,18 m. Ảnh xem thay ô nghiêng thứ hai bằng ô nhìn ngang 0°.
+
+Các mục T-203 bên dưới giữ để tra lịch sử; số đo mới nhất là mục này.
 | Bộ pháp tướng công đức | 3.000 | 180 KB |
 
 ## Đài sen và vỏ khí vòng 3 (T-203, phần B)

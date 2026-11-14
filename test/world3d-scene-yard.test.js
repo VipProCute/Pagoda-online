@@ -5,7 +5,7 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const ViewMath = require('../public/js/view-math');
 
-const dependencies = Promise.all([import('three'), import('../public/js/world3d/kit.mjs'), import('../public/js/world3d/scenes/yard.mjs?v=9')]);
+const dependencies = Promise.all([import('three'), import('../public/js/world3d/kit.mjs'), import('../public/js/world3d/scenes/yard.mjs?v=10')]);
 const size = ViewMath.SCENE_SIZE.yard;
 const hallSource = fs.readFileSync(require.resolve('../public/js/hall.js'), 'utf8');
 const tables = JSON.parse(JSON.stringify(vm.runInNewContext(hallSource.match(/const YARD_TABLES = (\[[\s\S]*?\n  \]);/)[1])));

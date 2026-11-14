@@ -144,12 +144,35 @@ test('xoay máy quay tám hướng vẫn giữ bán kính và quỷ ở nửa xa
   }
 });
 
-test('máy quay thiếu, không hữu hạn hoặc sát chủ không đổi neo quỷ', () => {
+test('máy quay thiếu, không hữu hạn hoặc trùng chủ không có chỗ đứng', () => {
   for (const camera of [undefined, null, {}, { x: NaN, z: 5 }, { x: 0, z: Infinity },
-    { x: Infinity, z: 0 }, { x: 0, z: 0 }, { x: 0, z: 0.59 }]) assert.equal(S.selfStand(camera), null);
+    { x: Infinity, z: 0 }, { x: 0, z: 0 }, { x: 0, z: 0.0000005 }]) assert.equal(S.selfStand(camera), null);
+  assert.equal(S.selfStand({ x: 0, z: 1e-6 }).close, true);
   assert.ok(S.selfStand({ x: 0, z: 0.6 }));
   const stand = S.selfStand({ x: 0, z: 5 }, { ...S.SELF_STAND, bodyTurn: 2, headMax: 0.25 });
   assert.equal(stand.head, -0.25);
+});
+
+test('máy quay sát chủ vẫn có chỗ đứng nhỏ và mờ dần theo khoảng cách', () => {
+  const O = S.SELF_STAND;
+  const close = S.selfStand({ x: 0, z: -0.3 });
+  assert.equal(close.scale, O.scaleNear);
+  assert.equal(close.close, true);
+  assert.equal(close.fade, O.fadeMin);
+  assert.equal(close.y, O.y + (O.scale - O.scaleNear) * O.lift - O.sink);
+  const half = S.selfStand({ x: 0, z: -0.5 }), farther = S.selfStand({ x: 0, z: -0.8 });
+  assert.ok(half.fade > O.fadeMin && half.fade < 1);
+  assert.ok(farther.fade > half.fade);
+  // 0,5 m: k = 3/13, smooth = 297/2197; 0,8 m: k = 9/13, smooth = 1701/2197.
+  assert.ok(Math.abs(half.fade - 772 / 2197) < 1e-12);
+  assert.ok(Math.abs(farther.fade - 1825 / 2197) < 1e-12);
+  for (const distance of [O.minCamera, 0.8, O.fadeFar, 5]) {
+    const stand = S.selfStand({ x: distance, z: 0 });
+    assert.ok(!stand.close);
+    if (distance >= O.fadeFar) assert.equal(stand.fade, 1);
+  }
+  const { fadeNear, fadeFar, fadeMin, ...legacy } = O;
+  assert.equal(S.selfStand({ x: 0.3, z: 0 }, legacy).fade, 1);
 });
 
 test('máy quay bị ép lại gần thì quỷ thu nhỏ và nâng lên, xa thì giữ cỡ đầy đủ', () => {
@@ -159,8 +182,15 @@ test('máy quay bị ép lại gần thì quỷ thu nhỏ và nâng lên, xa th�
   assert.equal(far.y, O.y);
   assert.ok(Math.abs(wall.scale - O.scaleNear) < 1e-12);
   assert.ok(mid.scale > wall.scale && mid.scale < far.scale);
-  // Mặt quỷ (khoảng 1,3 m trên thắt lưng theo cỡ quỷ) không tụt xuống dưới đầu chủ khi thu nhỏ.
-  for (const stand of [far, mid, wall]) assert.ok(stand.y + 1.3 * stand.scale > 1.9, `mặt quỷ ở ${stand.y + 1.3 * stand.scale}`);
+  // Mặt quỷ (khoảng 1,3 m trên thắt lưng theo cỡ quỷ) không tụt xuống dưới cổ chủ khi thu nhỏ.
+  // T-204 hạ lift 0,5, scaleNear 0,4: máy quay ở trên cao nhìn xuống nên mặt quỷ (đứng sau chủ 1,2 m) vẫn hiện trên đầu chủ,
+  // còn ở Sân đấu không lọt vào dưới bảng giao diện phía trên.
+  for (const stand of [far, mid, wall]) assert.ok(stand.y + 1.3 * stand.scale > 1.4, `mặt quỷ ở ${stand.y + 1.3 * stand.scale}`);
+  assert.ok(wall.y + 1.3 * wall.scale < 1.9, 'máy quay sát tường thì mặt quỷ hạ thấp hơn T-203');
+  // Máy quay sát thì quỷ lệch ngang sideNear (sang trái màn hình), xa thì về side.
+  assert.ok(Math.abs(Math.hypot(wall.x, wall.z) - Math.hypot(O.back, O.sideNear)) < 1e-12);
+  assert.ok(Math.abs(Math.hypot(far.x, far.z) - Math.hypot(O.back, O.side)) < 1e-12);
+  assert.ok(wall.x > far.x, 'máy quay sau lưng (z âm): trái màn hình là +x');
   // Đỉnh sừng (khoảng 1,85 m theo cỡ quỷ) khi máy quay sát tường thấp hơn lúc máy quay xa.
   assert.ok(wall.y + 1.85 * wall.scale < far.y + 1.85 * far.scale);
 });
@@ -174,8 +204,29 @@ test('suất từng phần giữ hào quang khi hết suất quỷ và luôn gi�
     { id: 'self', distance: Infinity, demon: true, aura: true }
   ];
   const result = S.fxSlots(list, 'self', 'low');
-  assert.deepEqual(result.get('both'), { demon: false, aura: true, slot: true });
-  assert.deepEqual(result.get('empty'), { demon: false, aura: false, slot: true });
-  assert.deepEqual(result.get('self'), { demon: true, aura: true, slot: true });
-  assert.deepEqual(S.fxSlots([{ id: 'self' }], 'self', 'low').get('self'), { demon: false, aura: false, slot: true });
+  assert.deepEqual(result.get('both'), { demon: false, aura: true, merit: false, slot: true });
+  assert.deepEqual(result.get('empty'), { demon: false, aura: false, merit: false, slot: true });
+  assert.deepEqual(result.get('self'), { demon: true, aura: true, merit: false, slot: true });
+  assert.deepEqual(S.fxSlots([{ id: 'self' }], 'self', 'low').get('self'), { demon: false, aura: false, merit: false, slot: true });
+});
+
+test('suất công đức độc lập giữ mình và hai người gần nhất ở mức Thấp', () => {
+  const list = Array.from({ length: 4 }, (_, i) => ({ id: 'p' + i, distance: i + 1, merit: true }));
+  list.push({ id: 'self', distance: Infinity, merit: true }, { id: 'empty', distance: 0 });
+  const result = S.fxSlots(list, 'self', 'low');
+  for (const id of ['self', 'p0', 'p1']) {
+    assert.deepEqual(result.get(id), { demon: false, aura: false, merit: true, slot: true });
+  }
+  for (const id of ['p2', 'p3']) {
+    assert.deepEqual(result.get(id), { demon: false, aura: false, merit: false, slot: false });
+  }
+  assert.deepEqual(result.get('empty'), { demon: false, aura: false, merit: false, slot: true });
+  assert.ok(Object.isFrozen(S.LIMITS.merit));
+});
+
+test('suất công đức mức Vừa có tám khách, mức Cao lọc ngoài 25 mét', () => {
+  const list = Array.from({ length: 30 }, (_, i) => ({ id: 'p' + i, distance: i + 1, merit: true }));
+  assert.equal(S.slots(list, 'self', 'medium', 'merit').size, 9);
+  const high = S.fxSlots(list, 'self', 'high');
+  for (let i = 0; i < list.length; i++) assert.equal(high.get('p' + i).merit, i < 25);
 });

@@ -86,7 +86,8 @@ def make_mesh(name, vertices, faces, colors=None, uvs=None, normals=None):
 
 
 def material(name, color, metallic=0.0, roughness=0.35, vertex_color=False, alpha=1.0, emission=False, glow=None):
-    mat = bpy.data.materials.new(name)
+    # Giữ đúng tên vật liệu khi chạy lại trong cùng phiên Blender.
+    mat = bpy.data.materials.get(name) or bpy.data.materials.new(name)
     mat.use_nodes = True
     mat.diffuse_color = rgb(color)[:3] + (alpha,)
     mat.use_backface_culling = False
@@ -265,9 +266,9 @@ def lerp3(first, second, amount):
 
 
 def build_petals(name, count, radius, length, tilt, phase, base_z, curl, cup, overlap, stagger=0.0):
-    """Viền giọt nước 16 đỉnh, vòng bụng 8 đỉnh và tâm: 32 tam giác mỗi cánh.
+    """Viền thìa bầu 16 đỉnh, vòng bụng 8 đỉnh và tâm: 32 tam giác mỗi cánh.
 
-    Chín mức dọc viền thay cho năm hàng gãy; bụng rộng nhất gần 52% chiều dài.
+    Bụng rộng nhất ở 57,5% chiều dài; vai bầu nối mũi ngắn ở 9% cuối cánh.
     Pháp tuyến lấy từ mặt khum liên tục theo chiều dài/ngang, không theo đường chéo lưới.
     """
     vertices, faces, colors, normals = [], [], [], []
@@ -277,9 +278,12 @@ def build_petals(name, count, radius, length, tilt, phase, base_z, curl, cup, ov
     slope, bend = math.radians(tilt), math.radians(curl)
     spacing = 2 * math.pi * (radius + 0.5 * length * math.cos(slope)) / count
     width = min(spacing * overlap, length / 1.7)
-    cup = min(cup, 0.16 * width)
-    belly = 1.1 / 2.1
-    outline_gain = 1 / (2 * belly ** 1.1 * (1 - belly))
+    cup = min(cup, 0.24 * width)
+    belly = 0.575
+    tip_length = 0.09
+    shoulder_cosine = math.cos(2 * math.pi / 16)
+    shoulder_u = belly + 0.5 * shoulder_cosine + (0.5 - belly) * shoulder_cosine ** 2
+    shoulder_scale = (1 - tip_length - belly) / (shoulder_u - belly)
 
     def surface(u, across_width):
         # Mặt khum độc lập với cách chia viền: pháp tuyến không gãy ở đường giữa hay chóp.
@@ -292,6 +296,9 @@ def build_petals(name, count, radius, length, tilt, phase, base_z, curl, cup, ov
         else:
             dist = radius + length * u * math.cos(slope)
             height = base_z + length * u * math.sin(slope)
+        # Chỉ mũi ngắn vểnh thêm vài mm; đạo hàm liên tục ở vai và chóp.
+        tip = max(0.0, min(1.0, (u - (1 - tip_length)) / tip_length))
+        height += length * 0.008 * tip ** 2 * (3 - 2 * tip)
         # Máng cong trơn qua đường giữa; gân chỉ tô màu, không tạo sống gấp hình học.
         envelope = math.sin(math.pi * u)
         lift = cup * across_width ** 2 * envelope
@@ -304,15 +311,20 @@ def build_petals(name, count, radius, length, tilt, phase, base_z, curl, cup, ov
         radial = Vector((math.cos(angle), math.sin(angle), 0))
         tangent = Vector((-radial.y, radial.x, 0))
         start = len(vertices)
-        # Hai vòng đồng tâm phủ mặt giọt nước; bụng bầu, hai cạnh cong lồi tới mũi.
+        # Giữ hai vòng và số đỉnh; hai vai bầu dừng ở 91%, chóp nối thành mũi ngắn.
         # Vòng trong giữ bụng phồng, không để một quạt lớn biến cánh thành phiến phẳng.
-        samples = [(0.5, 0.0, 0.0)]
+        samples = [(belly, 0.0, 0.0)]
         for scale, segments in ((0.55, 8), (1.0, 16)):
             for index in range(segments):
                 theta = 2 * math.pi * index / segments
-                u = 0.5 + 0.5 * scale * math.cos(theta)
-                # Viền ngoài tỷ lệ với u^1,1 × (1−u): bụng ở 52%, chóp nhọn mềm.
-                across_width = scale * math.sin(theta) * outline_gain * u ** 0.6 * math.sqrt(max(0.0, 1 - u))
+                cosine = math.cos(theta)
+                u = belly + scale * (0.5 * cosine + (0.5 - belly) * cosine ** 2)
+                if u > belly:
+                    u = belly + (u - belly) * shoulder_scale
+                if scale == 1.0 and index == 0:
+                    u = 1.0
+                # Vai vẫn bầu rộng trước đoạn mũi; không thu cả nửa trên thành gai.
+                across_width = scale * math.sin(theta)
                 samples.append((u, across_width, scale))
         for u, across_width, edge in samples:
             point = surface(u, across_width)
@@ -389,10 +401,12 @@ def main():
     pod_material = material('pod', '#ffffff', metallic=0.55, roughness=0.32, vertex_color=True, glow='#b07818')
     # Mỗi cánh 25 đỉnh, 32 tam giác: 512 + 384 + 256 + gương 48 = 1.200.
     # Gốc cánh lùi vào dưới gương sen và hạ sát đế để che kín khe tam giác tầng ngoài.
-    # Cánh dài hơn, tầng trong dựng 68° rồi khép tới 98°; vẫn cao khoảng 0,30 m.
-    objects = [build_petals('petals0', 16, 0.190, 0.49, 23, 0, -0.008, -14, 0.075, 1.75),
-               build_petals('petals1', 12, 0.205, 0.36, 45, 0.5, 0.004, -12, 0.080, 1.65),
-               build_petals('petals2', 8, 0.220, 0.29, 68, 2 / 3, 0.010, -30, 0.075, 1.55, stagger=2), build_pod()]
+    # Góc gốc → đầu: 18° → 34°, 40° → 58°, 62° → 88°; mép cuộn 24% bề rộng.
+    # Đường kính khoảng 1,18 m; chóp ba tầng cao 0,179 / 0,239 / 0,300 m.
+    # Pha 0° / 11,25° / 22,5° tránh trùng hướng giữa các tầng kề, lộ ba hàng cánh.
+    objects = [build_petals('petals0', 16, 0.215, 0.42, 18, 0, -0.008, -16, 0.075, 1.75),
+               build_petals('petals1', 12, 0.205, 0.31, 40, 0.375, 0.004, -18, 0.080, 1.65),
+               build_petals('petals2', 8, 0.220, 0.30, 62, 0.5, 0.010, -26, 0.075, 1.55), build_pod()]
     for obj in objects:
         obj.data.materials.append(pod_material if obj.name == 'pod' else petal_material)
     if 'views' in OUT:
@@ -401,8 +415,8 @@ def main():
         os.makedirs(directory, exist_ok=True)
         with tempfile.TemporaryDirectory(prefix='phap_tuong_views_') as temp:
             paths = []
-            # Hai góc nghiêng 30° (lệch nhẹ để thấy khác tầng), một góc ngang thấp 8°, một góc từ trên.
-            for index, (angle, elevation) in enumerate(((0, 30), (11, 30), (0, 8), (180, 90))):
+            # Thay góc nghiêng thứ hai bằng góc ngang đúng 0° để soi bụng cánh và dáng hoa.
+            for index, (angle, elevation) in enumerate(((0, 30), (11, 0), (0, 8), (180, 90))):
                 path = os.path.join(temp, str(index) + '.png')
                 distance = 0.0 if elevation >= 90 else 3.0
                 height = 3.0 if elevation >= 90 else 3.0 * math.tan(math.radians(elevation))

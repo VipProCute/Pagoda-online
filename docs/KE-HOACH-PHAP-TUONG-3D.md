@@ -55,6 +55,8 @@ Hành vi (đây là phần tạo cảm giác "stand"):
 
 ### 1.3 Hào quang bao phủ (9 bậc cúng dường)
 
+> T-204: vỏ khí kín trùm cao quá đầu che mặt quỷ và trông như lọ kính, nên đổi thành **lửa hộ thân**: 14 lưỡi lửa bốc từ chân, cao nhất 1,20 m (thấp hơn vai), tô theo màu bậc. Đoạn dưới là thiết kế ban đầu.
+
 Cốt lõi là **vỏ khí**: một lưới hình trứng ôm quanh người, vật liệu lửa trong suốt cộng sáng, đỉnh lưới bị đẩy lên theo nhiễu nên mép trên bập bùng như ngọn lửa. Nhìn từ hướng nào cũng thấy khí ôm lấy thân, chứ không còn là tấm ảnh sau lưng.
 
 | Bậc | Tên | Thành phần 3D (cộng dồn từ bậc dưới) |
@@ -135,9 +137,9 @@ Theo dây chuyền đã có ở `tools/blender/avatar/build.py` và `tools/blend
 | Tiểu Quỷ | ≤ 1.200 | ≤ 120 KB | |
 | Ác Quỷ | ≤ 2.400 | ≤ 200 KB | có cánh |
 | Quỷ Vương | ≤ 3.000 | ≤ 240 KB | |
-| Ma Vương | ≤ 6.000 | ≤ 1,5 MB | T-154: nới từ 300 KB vì nhúng 3 ảnh bake 512 px (màu, pháp tuyến, phát sáng); T-203: 4.000 tam giác, 565 KB (thêm TANGENT, pháp tuyến JPEG chất lượng 97). **T-204: chủ dự án duyệt nới lên 6.000 tam giác và ảnh bake 1024 px ngày 14/11** |
-| Đài sen | ≤ 1.200 | ≤ 60 KB | 3 biến thể chung lưới. T-154: nới từ 900 tam giác để cánh cong mượt; T-203: 1.200 tam giác, 40,4 KB. **Chờ chủ dự án xác nhận** |
-| Bộ hào quang (`aura-kit.glb`) | ≤ 1.500 tổng | ≤ 90 KB | vỏ khí, quang bối, vầng sáng, nguyên anh |
+| Ma Vương | ≤ 6.000 | ≤ 1,5 MB | T-154: nới từ 300 KB vì nhúng 3 ảnh bake 512 px (màu, pháp tuyến, phát sáng); T-203: 4.000 tam giác, 565 KB (thêm TANGENT, pháp tuyến JPEG chất lượng 97). **T-204: chủ dự án duyệt nới lên 6.000 tam giác và ảnh bake 1024 px ngày 14/11; chạy thật 6.000 tam giác (thân 5.424, lửa vai 576), 1.184.020 byte (~1,13 MB), ba JPEG 1024 px: màu 165 KB, pháp tuyến 486 KB, phát sáng 89 KB** |
+| Đài sen | ≤ 1.200 | ≤ 60 KB | 3 biến thể chung lưới. T-154: nới từ 900 tam giác để cánh cong mượt; T-203: 1.200 tam giác, 40,4 KB; T-204: 1.200 tam giác, 40,4 KB (tầng ngoài xòe 18°→34°). **Chờ chủ dự án xác nhận** |
+| Bộ hào quang (`aura-kit.glb`) | ≤ 1.500 tổng | ≤ 90 KB | vỏ khí, quang bối, vầng sáng, nguyên anh. T-204: lửa hộ thân `flames` thay vỏ khí kín, 1.056 tam giác, 33,7 KB, cao nhất 1,20 m |
 | Bộ pháp tướng (`merit-kit.glb`) | ≤ 3.000 tổng | ≤ 180 KB | 6 bậc |
 
 Tất cả nạp lười: chỉ tải khi trong cảnh có người đang mang hiệu ứng đó.
@@ -149,6 +151,8 @@ Suất 3D theo mức chất lượng (nhân vật ngoài suất dùng ảnh 2D n
 | Thấp | mình + 2 người gần nhất | mình + 2 | tắt | một lớp, không đẩy đỉnh |
 | Vừa | mình + 6 | mình + 8 | tắt | hai lớp |
 | Cao | mình + 12 | tất cả trong 25 m | bật | ba lớp + hạt (T-203: khớp mã `aura.mjs`) |
+
+T-204: pháp tướng công đức có suất riêng (`merit`, cùng số lượng như hào quang, mức Cao lọc 25 m), người có bậc công đức mà không có hào quang vẫn nhận suất. "Vỏ khí" từ T-204 là lửa hộ thân: ba lớp lưỡi lửa xoay so le, không lớp nào cao quá vai.
 
 Đích hiệu năng: 60 nhân vật trên màn, 10 người có quỷ, 10 người có hào quang, mức Thấp vẫn ≥ 30 khung hình/giây trên máy thử (số đo ghi trong bàn giao T-150).
 
