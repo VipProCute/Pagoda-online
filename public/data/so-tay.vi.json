@@ -154,6 +154,16 @@
           "Hết ván có hiệu ứng chiến thắng rồi mới hiện bảng kết quả.",
           "Giữa bàn cờ tướng và cờ úp luôn là một dòng sông.",
           "Muốn bàn đứng yên: bật \"Giảm chuyển động\" của máy hoặc tắt hiệu ứng ở Chánh điện."
+        ] },
+        { "type": "ul", "items": [
+          "Cờ vây và caro có 8 bộ đá để chọn ở nút \"Bộ đá\". Bàn cờ không đổi, chỉ quân của bạn đổi.",
+          "Đối thủ và người xem thấy bộ đá bạn chọn. Bấm \"Ẩn skin đối thủ\" nếu muốn nhìn theo kiểu mặc định."
+        ] },
+        { "type": "h", "text": "Mở khóa skin" },
+        { "type": "steps", "items": [
+          "Skin nào có ổ khóa thì bấm vào skin đó, rồi bấm \"Cúng dường để mở\".",
+          "Chuyển khoản cúng dường theo mã QR, giữ đúng số tiền và nội dung.",
+          "Chờ Ban điều hành xác nhận: skin tự mở và dùng mãi, không phải cúng dường lại."
         ] }
       ]
     },
