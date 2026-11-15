@@ -76,6 +76,43 @@ HÌNH ẢNH TRONG THƯ MỤC NÀY — NGUỒN GỐC VÀ GIẤY PHÉP
    phần dựng hình của tác giả mô hình, không thay cho quyền dùng nhân vật.
    Thiếu tệp hoặc tệp lỗi thì dùng nhân vật Obito dựng bằng mã (avatar.mjs).
 
+3e) Mô hình 3D NPC Tế Công, Vạn Lý Độc Hành, Tảo Địa Tăng
+   (public/models/npc/te-cong.glb, public/models/npc/van-ly.glb, public/models/npc/tao-dia.glb)
+   Thân người do chủ dự án tạo bằng công cụ AI Tripo (tệp gốc có nhãn AIGC của Tripo), gửi ngày 2026-11-15.
+   Dùng theo điều khoản của Tripo (https://www.tripo3d.ai/terms). Tệp gốc nằm ngoài repo.
+   tools/blender/npc/build.py giảm số mặt, gắn xương, hạ tay, bỏ ảnh kim loại/nhám và gắn đạo cụ ở mục 3f.
+   Không sửa tay: sửa script rồi chạy lại.
+   Thiếu tệp hoặc tệp lỗi thì dùng NPC dựng bằng mã (avatar.mjs). Bản 2D không đổi.
+
+3f) Mô hình tải từ Sketchfab, giấy phép CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/), tải ngày 2026-11-15.
+   Tất cả đều ĐÃ SỬA bởi tools/blender/npc/build.py: giảm số mặt, thu ảnh còn tối đa 1024 px, gắn xương,
+   đổi tư thế tay; riêng hai cô nương được nhuộm lại màu áo như ghi bên dưới. Tệp gốc nằm ngoài repo.
+   - Chổi của Tảo Địa Tăng (gộp trong public/models/npc/tao-dia.glb):
+     "Broom" của KOREA HERITAGE SERVICE [KHS] (https://sketchfab.com/KHS_Asset)
+     https://sketchfab.com/3d-models/broom-e4e936d4b5224d9a9533f49fb53a7008
+   - Đao của Vạn Lý Độc Hành (gộp trong public/models/npc/van-ly.glb):
+     "Chinese Dao from Song Dynasty (Sword)" của leeeck (https://sketchfab.com/leeeck)
+     https://sketchfab.com/3d-models/chinese-dao-from-song-dynasty-sword-e1bac7a95b2e4ffa8dafb2dca1c16cf3
+   - Cô Nương Đỏ (public/models/npc/co-nuong-do.glb): "Red Hanfu Dress" của ART & MODELING (https://sketchfab.com/Fadly.W)
+     https://sketchfab.com/3d-models/red-hanfu-dress-512ea97d592d4d0fac2b0ffce31c266b
+   - Tiểu Thư Mê Chùa (public/models/npc/co-nuong-lam.glb): "Traditional Chinese Hanfu dress" của
+     ART & MODELING (https://sketchfab.com/Fadly.W)
+     https://sketchfab.com/3d-models/traditional-chinese-hanfu-dress-2704256bc587491e80ab3109d1a0839f
+   - Cô Nương Hồng (public/models/npc/co-nuong-hong.glb): "Mai Shiranui - Chinese Qipao Edition" của
+     TopNotch Assets (https://sketchfab.com/Sxnneh),
+     sườn xám nhuộm từ xanh lam sang hồng sen.
+     https://sketchfab.com/3d-models/mai-shiranui-chinese-qipao-edition-afd72333b0154d40a1d5d9be85cad365
+     Nhân vật Mai Shiranui thuộc SNK (© SNK CORPORATION): giấy phép CC BY chỉ áp cho phần dựng hình,
+     không thay cho quyền dùng nhân vật (cùng lưu ý như Obito ở mục 3c, 3d).
+   - Cô Nương Du Xuân (public/models/npc/co-nuong-cam.glb): "Beautiful women in ancient China" của
+     noyou (https://sketchfab.com/799105734),
+     áo nhuộm từ trắng sang cam đào.
+     https://sketchfab.com/3d-models/beautiful-women-in-ancient-china-29d936ffd3c84dde9a3a69637c596363
+   - Thầy bói Tarot ở Sân chùa (public/models/npc/thay-boi-tarot.glb): "Crimson Empress" của
+     RYStudio (https://sketchfab.com/RYStudio). Đã cắt bỏ bệ, ngai, hoa, bình và nến, chỉ giữ người ngồi;
+     váy nhuộm từ đỏ sang tím; không gắn xương.
+     https://sketchfab.com/3d-models/crimson-empress-462607c36abb44b8b364d707f965a082
+
 4) Thêm meme của riêng bạn
    Chỉ cần thả ảnh (jpg, jpeg, png, webp, gif, avif) vào public/img/memes/ — máy chủ tự liệt kê và
    hiệu ứng chúc mừng sẽ bốc ngẫu nhiên cả ảnh mới. Nên dùng ảnh vuông ~720 px, dưới ~110 KB, và chỉ
