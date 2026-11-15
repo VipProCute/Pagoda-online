@@ -121,7 +121,7 @@ HÌNH ẢNH TRONG THƯ MỤC NÀY — NGUỒN GỐC VÀ GIẤY PHÉP
    Giấy phép: CC0 1.0 (https://polyhaven.com/license). Tệp nguồn KHÔNG nằm trong repo: tải về assets-src/
    bằng `node tools/blender/kydao/fetch-assets.js` theo danh sách tools/blender/kydao/assets.json.
    a) Sân v2 Cổ Mộc Lâm (T-207): public/img/kydao/fields2/forest-{chess,xiangqi}.webp và docs/ky-dai/anh/v2-forest.jpg
-      render bằng tools/blender/kydao/field2.py (hàm build_forest) từ các mô hình: fir_sapling, pine_sapling_small,
+      render bằng tools/blender/kydao/field2.py + tools/blender/kydao/fields/forest.py từ các mô hình: fir_sapling, pine_sapling_small,
       tree_stump_01, tree_stump_02, dead_tree_trunk, pine_roots, root_cluster_02, rock_moss_set_01, rock_moss_set_02,
       fern_02, shrub_02, shrub_03, shrub_04, periwinkle_plant, nettle_plant, dandelion_01, dry_branches_medium_01.
       Nền đất, phiến đá ô cờ, gờ, trụ đèn, nấm, lá rụng, đom đóm vẫn dựng bằng mã của dự án.
@@ -131,3 +131,18 @@ HÌNH ẢNH TRONG THƯ MỤC NÀY — NGUỒN GỐC VÀ GIẤY PHÉP
       trong atlas) lấy từ mô hình "Chess Set" (chess_set, tác giả Riley Queen). Mặt bàn cờ vua ghép từ texture
       oak_veneer_01 và american_walnut_veneer; mặt bàn cờ tướng từ cherry_veneer; đĩa quân cờ tướng (hình tự dựng
       bằng mã) phủ texture ash_veneer. classic.glb không nhúng ảnh nào.
+   c) Năm sân v2 khác (T-210: sông, băng, biển, sen, sa mạc): public/img/kydao/fields2/<mã>-{chess,xiangqi}.webp và docs/ky-dai/anh/v2-<mã>.jpg
+      render bằng tools/blender/kydao/field2.py + tools/blender/kydao/fields/<mã>.py. Đá, cây, cỏ, vỏ ốc là mô hình
+      Poly Haven; nước, băng, hoa sen, san hô, cọ, xương rồng vẫn dựng bằng mã của dự án.
+      - Trường Giang (river): dandelion_01, dead_tree_trunk_02, dry_branches_medium_01, fern_02,
+      grass_medium_02, periwinkle_plant, pine_roots, rock_moss_set_02, shrub_sorrel_01, stone_01, tree_stump_02.
+      - Băng Sơn (glacier): boulder_01, fir_sapling, moon_rock_02, moon_rock_05, pine_sapling_small, rock_07,
+      rock_09, rock_face_01, rock_face_02, stone_01.
+      - Long Cung (ocean): coast_rocks_05, lambis_shell, namaqualand_stones_01, rock_07, rock_09,
+      sand_rocks_small_01, stone_01.
+      - Liên Hoa Đài (lotus): anthurium_botany_01, calathea_orbifolia_01, flower_gazania, pachira_aquatica_01,
+      periwinkle_plant, rock_moss_set_01.
+      - Sa mạc (desert): cheiridopsis_succulent, crystalline_iceplant, dead_quiver_branch_01,
+      dead_quiver_branch_02, flower_empodium, flower_gazania, flower_ursinia, namaqualand_boulder_02,
+      namaqualand_boulder_03, namaqualand_boulder_05, namaqualand_boulder_06, namaqualand_boulders_01,
+      namaqualand_rocks_01, namaqualand_stones_01, quiver_tree_02, wild_rooibos_bush.

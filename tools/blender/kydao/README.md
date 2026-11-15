@@ -68,3 +68,13 @@ Tham số: `ONLY` (mặc định cả 8 bộ), `PREVIEW` (24 mẫu, không ghi `
 Đầu ra `public/img/kydao/stones/<id>.webp`: **256x128**, hai ô 128x128, nền trong suốt.
 - Ô trái = đá bên `a` (tối), ô phải = đá bên `b` (sáng). Nhìn thẳng từ trên xuống, đường kính **112 px**, tâm ô (64, 64); bóng đổ mềm lệch xuống dưới-phải, alpha tắt dần trước mép ô.
 - Vùng giữa (đường kính khoảng 60 px) phẳng màu để khắc dấu X/O; hoa văn dồn ra rìa. Mỗi atlas dưới 40 KB. Không sửa tay; sửa script rồi chạy lại.
+
+## Sân v2 ghép từ mô hình có sẵn (`field2.py`, `fields/`, T-207, T-210)
+
+Ảnh sân v2 (`public/img/kydao/fields2/<mã>-{chess,xiangqi}.webp`) render từ `field2.py`; phần dải cảnh của mỗi sân nằm ở một file riêng `fields/<mã>.py`, ghép từ mô hình quét thật của Poly Haven (CC0) hoặc mô hình tự tải đặt ở `assets-src/custom/`.
+
+- Hướng dẫn đầy đủ, kể cả cách thêm sân mới: [docs/ky-dai/HUONG-DAN-SAN-MOI.md](../../../docs/ky-dai/HUONG-DAN-SAN-MOI.md).
+- Tải nguồn: `node tools/blender/kydao/fetch-assets.js [mã sân ...]` (danh sách ở `assets.json`, ghi vào `assets-src/`, không commit).
+- Xem tên các phần trong nguồn: `blender -b --factory-startup -P tools/blender/kydao/list_assets.py -- <repo>` (ghi `assets-src/index.txt`).
+- Render thử trên Windows: `powershell -ExecutionPolicy Bypass -File tools/blender/kydao/thu-san.ps1 <mã sân> chess`; bản cuối: thêm `both final`.
+- Bàn và quân mặc định của bàn 3D: `classic.py` (T-208).
