@@ -81,12 +81,15 @@ function measure(root) {
   return box.isEmpty() ? null : { minY: box.min.y, height: box.max.y - box.min.y };
 }
 
-// Vật liệu gốc có thể là unlit hoặc kim loại: đổi sang vật liệu nhám có ánh sáng như khách, giữ ảnh màu và ảnh pháp tuyến.
+// Vật liệu gốc có thể là unlit hoặc kim loại: đổi sang vật liệu nhám có ánh sáng như khách, giữ ảnh màu, ảnh pháp tuyến
+// và cách trong suốt (opacity, alphaTest, depthWrite): lớp vốn ẩn bằng opacity 0 phải vẫn ẩn.
 function litCopy(material) {
   return new THREE.MeshStandardMaterial({
     name: material?.name || '', map: material?.map || null, normalMap: material?.normalMap || null,
+    alphaMap: material?.alphaMap || null, vertexColors: !!material?.vertexColors,
     color: material?.color || 0xffffff, side: material?.side ?? THREE.FrontSide,
-    transparent: !!material?.transparent, alphaTest: material?.alphaTest || 0, roughness: 0.92, metalness: 0
+    transparent: !!material?.transparent, opacity: material?.opacity ?? 1, alphaTest: material?.alphaTest || 0,
+    depthWrite: material?.depthWrite ?? true, roughness: 0.92, metalness: 0
   });
 }
 
@@ -129,7 +132,9 @@ export function attachNpcGlb(base, role, opts = {}, loader) {
     rig.add(holder);
     standIn.visible = false;
   }
-  loader(spec.url).then(asset => {
+  // Bộ nạp ném lỗi ngay (kể cả khi kiểm thử) cũng chỉ giữ thế thân, không làm hỏng việc tạo nhân vật.
+  // Mô hình chọn một lần theo vai và look lúc tạo; look của NPC cố định nên setLook không nạp lại.
+  Promise.resolve().then(() => loader(spec.url)).then(asset => {
     if (disposed || !asset?.scene) return;
     build(asset);
     update(lastState, 0);

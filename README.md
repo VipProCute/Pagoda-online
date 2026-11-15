@@ -318,6 +318,7 @@ Trận PK đang diễn ra, lời mời và hàng chờ xin xăm không phải d�
 |---|---|
 | `tools/blender/kydao/` | Dựng sân, quân, đá và tài nguyên mặc định; xem [hướng dẫn Blender](tools/blender/kydao/README.md). Sân mới làm theo [hướng dẫn riêng](docs/ky-dai/HUONG-DAN-SAN-MOI.md). |
 | `tools/blender/avatar/build.py` | Dựng nhân vật Blender, tóc và trang phục. |
+| `tools/blender/npc/build.py` | Dựng mô hình NPC 3D (`public/models/npc/`) từ tệp gốc ngoài repo: giảm mặt, gắn xương, gắn đạo cụ, nhuộm áo. Cách chạy ghi ở đầu script. |
 | `tools/blender/fx/` | Dựng bản mẫu Ma Vương, đài sen và hào quang; xem [cách chạy](tools/blender/fx/README.md). |
 | `tools/build_chants.py` | Dựng MP3 bài tụng và mốc chữ JSON bằng VieNeu-TTS; đầu vào kinh văn ở `public/js/chants.js`. |
 | `tools/build_blessing_voice.py` | Dựng các clip lời chúc mốc công đức. |

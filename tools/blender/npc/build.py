@@ -17,7 +17,7 @@ Bộ xương (tên dùng trong mã, .L là bên trái nhân vật = +X):
     chest → shoulder_L → arm_L → forearm_L → hand_L (bên phải tương tự _R)
     hips → thigh_L → shin_L → foot_L (bên phải tương tự _R)
 """
-import bpy, colorsys, math, os, re, sys
+import bpy, math, os, re, sys
 import numpy as np
 from mathutils import Matrix, Vector
 
@@ -50,7 +50,7 @@ SOURCES = {
     # Thầy bói Tarot ở Sân chùa: tượng "Crimson Empress" ngồi ngai, cắt bỏ bệ, ngai, hoa, bình và nến;
     # váy đỏ → tím Huế (da hồng nhạt, tóc cam đồng giữ nguyên). Ngồi yên nên không gắn xương.
     # Toạ độ cắt đo trên ảnh có lưới của tệp gốc (mặt nhìn -Y, mặt ghế ở z ≈ -0.13).
-    'thay-boi-tarot': dict(src=SF + 'lady-empress.glb', height=1.28, tris=18000, rig=False, img='WEBP', center=(0.0, 0.2),
+    'thay-boi-tarot': dict(src=SF + 'lady-empress.glb', height=1.2, tris=18000, rig=False, img='WEBP', center=(0.0, 0.2),
                            # chỉ nhuộm dưới cằm, trước đuôi tóc (tóc giữ nguyên), thêm phần váy sau mông
                            recolor_within=[(None, 0.24, 0.56), (None, 0.36, 0.06)],
                            cut=[dict(max=(None, None, -0.785)),                            # bệ
@@ -595,6 +595,8 @@ def build(name, preview=None, measure=None):
 
 if __name__ == '__main__':
     argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
+    if argv and argv[0] != 'all' and argv[0] not in SOURCES:
+        raise SystemExit('NPC: không có tên ' + argv[0] + ' trong SOURCES (dùng một tên có sẵn hoặc all)')
     names = [argv[0]] if argv and argv[0] in SOURCES else list(SOURCES)
     preview = argv[1] if len(argv) > 1 else None
     measure = argv[2] if len(argv) > 2 and argv[2] == 'measure' else None

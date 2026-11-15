@@ -9,7 +9,7 @@ import { npcModel, attachNpcGlb } from './npc-glb.mjs?v=2';
 // Bản dựng bằng mã luôn được tạo trước và là THẾ THÂN: nó giữ nhãn tên, bóng, hào quang, pháp tướng, quỷ theo sau.
 // Khi .glb nạp xong thì chỉ ẩn phần thân người (cây `hips` của bản mã) và hiện mô hình .glb tại cùng chỗ.
 // .glb lỗi hoặc 404 thì giữ nguyên thế thân, không ghi console. Vai NPC có trang phục riêng luôn dùng bản mã,
-// trừ NPC có mô hình riêng (npc-glb.mjs: Obito, Tế Công, Vạn Lý Độc Hành, Tảo Địa Tăng, các cô nương).
+// trừ NPC có mô hình riêng (npc-glb.mjs: Obito, Tế Công, Vạn Lý Độc Hành, Tảo Địa Tăng, các cô nương, thầy bói Tarot).
 // opts.assets (tùy chọn, để kiểm thử): { load(url) → Promise<{ scene, animations, clone? } | null> }.
 
 export const AVATAR_SWITCH_KEY = 'ta-avatar';

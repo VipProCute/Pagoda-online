@@ -331,6 +331,48 @@ test('Tế Công, Vạn Lý Độc Hành, Tảo Địa Tăng và cô nương dù
   }
 });
 
+test('thầy bói Tarot: tượng ngồi không xương, giữ độ trong suốt; bộ nạp ném lỗi ngay thì giữ thế thân', async t => {
+  withSwitch(t, 'blender');
+  const { makeAvatar } = await load();
+  const { READER_GLB } = await import('../public/js/world3d/npc-glb.mjs?v=2');
+  const THREE = await import('three');
+  const scene = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.6, 0.3), new THREE.MeshStandardMaterial({ name: 'than' }));
+  body.position.y = 0.3; body.name = 'body';
+  const hidden = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 0.1), new THREE.MeshStandardMaterial({ name: 'an', opacity: 0, alphaTest: 0.5 }));
+  hidden.name = 'an';
+  const veil = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 0.1), new THREE.MeshStandardMaterial({ name: 'voan', transparent: true, opacity: 0.6, depthWrite: false }));
+  veil.name = 'voan';
+  hidden.position.y = veil.position.y = 0.3;   // nằm trong thân để không đổi khung bao
+  scene.add(body, hidden, veil);
+  const log = [];
+  const avatar = makeAvatar({ g: 'nu', c: 4, h: 1 }, { role: 'reader', assets: { async load(url) { log.push(url); return { scene, animations: [] }; } },
+    reducedMotion: false, createCanvas: canvasFactory() });
+  await settle();
+  assert.deepEqual(log, [READER_GLB[4].url]);
+  const model = avatar.group.getObjectByName('npc-glb');
+  assert.ok(model);
+  avatar.update({ sit: 'bench' }, 0.1);
+  avatar.group.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(model.getObjectByName('body'));
+  assert.ok(Math.abs(box.max.y - box.min.y - READER_GLB[4].height) < 0.01, 'cao ' + (box.max.y - box.min.y));
+  const an = model.getObjectByName('an').material, voan = model.getObjectByName('voan').material;
+  assert.equal(an.opacity, 0, 'lớp ẩn vẫn ẩn');
+  assert.equal(an.alphaTest, 0.5);
+  assert.equal(voan.depthWrite, false, 'giữ cách ghi chiều sâu');
+  assert.equal(voan.opacity, 0.6);
+  avatar.dispose();
+  // Bộ nạp ném lỗi ngay: không ném ra ngoài, giữ thế thân, không ghi console.
+  const logs = [];
+  for (const name of ['log', 'warn', 'error']) t.mock.method(console, name, (...args) => logs.push(args));
+  const broken = makeAvatar({ g: 'nam', c: 9, h: 3 }, { role: 'beggar', assets: { load() { throw new Error('hỏng'); } }, createCanvas: canvasFactory() });
+  await settle();
+  assert.equal(broken.group.getObjectByName('npc-glb'), undefined);
+  assert.equal(stand(broken).visible, true);
+  broken.dispose();
+  assert.deepEqual(logs, []);
+});
+
 test('file .glb của Tế Công, Vạn Lý Độc Hành, Tảo Địa Tăng có bộ xương chung, đạo cụ và ghi nguồn', async () => {
   const { NPC_GLB, LADY_GLB } = await import('../public/js/world3d/npc-glb.mjs?v=2');
   const notice = fs.readFileSync(path.join(__dirname, '..', 'public', 'img', 'NOTICE.txt'), 'utf8');
