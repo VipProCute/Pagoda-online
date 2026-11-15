@@ -1,356 +1,259 @@
 # Chùa Tâm An · Đi chùa online
 
-Chánh điện trực tuyến cho nhiều người cùng lúc. Mỗi người vào chùa là một nhân vật mặc áo dài, có tên trên đầu, đi lại trong chánh điện và thấy nhau theo thời gian thực.
+Chùa Tâm An là không gian viếng chùa trực tuyến, có nhiều người cùng hiện diện theo thời gian thực.
+Bạn có thể lễ Phật, đọc kinh, trò chuyện, chơi cờ hoặc tìm hiểu võ học.
+Ứng dụng chạy bằng Node.js, Express và Socket.IO; trình duyệt dùng JavaScript thuần, Canvas 2D và Three.js.
+Đây là dự án cộng đồng. Máy chủ quyết định mọi thứ về công đức, tiền, giờ tu luyện và kết quả chơi.
 
-## Xác nhận cúng dường
+## Ảnh
 
-Cả `DONATION_MODE=test` và `DONATION_MODE=live` đều tạo mã VietQR thật từ `BANK_ID`, `BANK_ACCOUNT`, số tiền và nội dung giao dịch. Chế độ `test` tự ghi nhận sau 10 giây; `live` chờ đối soát/xác nhận. Giao diện người chơi và phần thưởng giống nhau. Các bản ghi tự xác nhận vẫn giữ nguồn `auto`, `paidAmount=0` khi chưa đối soát; số liệu ngân hàng đã đối soát được lưu riêng, không suy ra việc nhận tiền chỉ từ một QR được tạo.
+![Bàn cờ mặc định](docs/ky-dai/anh/classic-xem-nhanh.jpg)
+Bản xem nhanh tài nguyên bàn và quân mặc định; atlas quân 2D chưa bật trong game.
 
-Hoàn thành tu luyện nhanh không giới hạn lượt mỗi ngày. Mọi trận PK áp dụng pháp tướng, quỷ, hào quang cúng dường và cảnh giới nội công. Mỗi cấp sau cấp 1 cộng 4% lực đánh, 1,5% giảm sát thương nhận và 4 nội lực tối đa. Nộ cộng 0,3% lực đánh mỗi điểm, tiêu hao ở đòn công kế tiếp, chung trần cộng dồn 50% với Kim Chung và buff tăng sát thương.
+![Sân Đại Ngàn](docs/ky-dai/anh/v2-forest.jpg)
+Ảnh sân Đại Ngàn trong bộ sân Kỳ Đài v2.
 
-## Tính năng
+![Bàn cờ 3D](docs/ky-dai/anh/ban-3d-san-v2.jpg)
+Bàn cờ 3D dùng ảnh nửa sân v2.
 
-| Nhóm | Có gì |
+![Pháp Tướng 3D](docs/phap-tuong/anh/game-ta-fx3d-bat.jpg)
+Pháp Tướng 3D trong game (bản đang hoàn thiện).
+
+## Có gì trong chùa
+
+| Nơi / nhóm | Nội dung và trạng thái |
 |---|---|
-| Chánh điện | Ba tôn tượng, bàn thờ, bát hương, nến, đèn lồng, tủ Tàng Kinh Các. Chạm sàn (hoặc phím mũi tên / WASD) để đi lại. Chạm bát hương để thắp nhang, chạm tượng để vái lạy, chạm tủ kinh để bước vào Tàng Kinh Các. |
-| Nhân vật | Tên hoặc pháp danh, giới tính, 4 kiểu tóc (có khăn vấn), 12 màu áo dài (có áo tràng lam, áo tràng nâu). |
-| Lễ Phật | Thắp 1 hoặc 3 nén nhang kèm lời nguyện (nhang cháy 30 phút, khói bay, ai cũng thấy). Dâng hoa sen, hoa hồng, đèn dầu, mâm ngũ quả (hiện lên bàn thờ). Thả tim. Vái lạy (nhân vật cúi người). Gõ mõ. Thỉnh chuông (cả chánh điện cùng nghe). |
-| Tụng kinh chung | Bát Nhã Tâm Kinh, Chú Đại Bi, Kinh Dược Sư (Chú Dược Sư), Niệm Phật A Di Đà, Niệm Quán Thế Âm, Chuông mõ ngồi thiền. Giọng VieNeu-TTS v3 Turbo đọc liền câu, mõ và chuông theo nghi thức (vào mõ, kết mõ). Mọi người nghe cùng một chữ (đồng bộ theo giờ máy chủ), chữ sáng lên theo tiếng mõ. Người vào muộn nghe đúng đoạn đang tụng. |
-| Tàng Kinh Các | Một cảnh đi lại được như sân chùa (chạm tủ kinh ở chánh điện hoặc nút Tàng Kinh Các ở thanh đổi map, hoặc thẻ ở tab Khám phá): cửa sổ trăng nhìn ra rừng trúc, Kệ kinh, kệ Võ học, lư trầm và **8 bồ đoàn**. Chạm bồ đoàn để đi tới ngồi thiền; ngồi rồi chọn công pháp để **tu luyện nội công ngay trên bồ đoàn**, linh khí xoáy quanh người theo màu công pháp và ai trong Tàng Kinh Các cũng thấy. Mỗi bồ đoàn một người; đi chỗ khác là đứng dậy, phiên tu vẫn chạy. Chạm kệ Võ học để sang Võ Học Các học chiêu. Kệ kinh: Dịch Cân Kinh (đủ 12 thức, 59 hình minh họa, lời thơ gốc kèm phiên âm Hán Việt), Cửu Âm Chân Kinh, Quỳ Hoa Bảo Điển, Bát Nhã Tâm Kinh. Đọc theo chương, mục lục, đổi cỡ chữ, nền giấy / nền tối, nhớ chỗ đọc dở. Ai đang đọc thì có biểu tượng sách cạnh tên. |
-| Nói chuyện | Nói chuyện bằng giọng như đi chùa thật: đứng gần nghe rõ, xa nghe nhỏ dần, người bên trái nghe ở tai trái. Đang tụng kinh thì tiếng nói chuyện tự nhỏ lại. Tắt tiếng từng người; ban điều hành khóa mic 10 phút. |
-| Cộng đồng | Chat chung (bong bóng chat hiện trên đầu nhân vật), tường lời nguyện có nút “Tùy hỷ”, báo cáo tin nhắn. |
-| Công đức | Điểm công đức cá nhân (hôm nay / tất cả) và bảng công đức hôm nay. Có thể đăng nhập Google để giữ điểm khi đổi thiết bị. Tính từ nhang, hoa, mõ, tim, vái lạy, tụng kinh và cúng dường (1.000đ = 1 điểm). Nói tục trong chat bị trừ theo 5 mức. Công đức cao hiện **pháp tướng** sau lưng (6 mốc), công đức âm thì có **quỷ** theo sau (4 dạng). |
-| Hiệu ứng mốc | Đạt 100, 300, 500, 888, 999 rồi mỗi 1.000 công đức trong ngày thì hiện lời chúc bằng giọng nữ kèm meme chọn ngẫu nhiên, hào quang vàng xoay quanh meme và cánh sen rơi. Mốc 666 thì hù một cái bằng mặt quỷ rồi hào quang hiện lên trấn an. Có công tắc tắt trong mục Công đức. |
-| Cúng dường | Tạo mã VietQR có sẵn số tiền và mã đối soát. Tiền vào thẳng tài khoản của chùa. Tự xác nhận qua webhook SePay, hoặc ban điều hành xác nhận tay. Xác nhận xong: chánh điện đọc thông báo bằng giọng nữ VieNeu, người cúng dường được **hào quang 9 cảnh giới** (cộng dồn). |
-| An toàn | Chặn tin có số tài khoản, số điện thoại, đường link (chống lừa đảo giả danh chùa). Che từ tục. Giới hạn tần suất. Tên “Ban điều hành / Admin / Trụ trì…” chỉ dành cho quản trị. |
-| Quản trị | `/admin.html`: xác nhận/hủy lượt cúng dường, xem ai đang có hào quang, ẩn tin nhắn và lời nguyện (thấy cả số công đức bị trừ), gửi thông báo vào chánh điện. |
-| Võ Học Các | Nơi **tu luyện nội công** và **học chiêu**, tách khỏi chánh điện. 6 công pháp (Tĩnh Tâm Quyết, Kim Cương / Phi Yến / Nhu Thủy Tâm Pháp, Cửu Âm Tâm Kinh, Vô Cực Chân Kinh): bắt đầu rồi đóng web cũng được, hết giờ máy chủ tự ghi nhận. 15 chiêu thuộc 3 nhánh Cương / Tốc / Nhu, không khóa phái: học đủ điều kiện (cấp nội công + tâm đắc) là học được cả ba nhánh. Có thể cúng dường để hoàn thành phiên ngay (Ban điều hành xác nhận thủ công). |
-| Sân đấu | Nơi **duy nhất** luận võ 1 đấu 1, người chơi tự ra sân. Sân là một võ đường đi lại được như sân chùa (cổng Luận Võ Đường, võ đài có thái cực, giá binh khí, trống trận, mộc nhân); trên đầu mỗi người có nhãn rảnh / đang đấu / tạm nghỉ và cấp nội công, **chạm vào một người để mời luận võ** (hoặc mở Danh sách). Mời, nhận lời, chọn 4 chiêu, rồi mỗi lượt hai bên **chọn kín cùng lúc**, máy chủ lật chiêu và giải kết quả (có xác suất né / đỡ). Mọi trận đều áp dụng pháp tướng, quỷ ám, hào quang và cảnh giới nội công. Chánh điện không có đánh nhau. |
-| Chế độ 3D & góc nhìn | 2D mặc định, chuyển đổi 3D/2D bằng nút ở góc trên phải khung cảnh (lưu trình duyệt). Hai góc nhìn: góc 1 (ngang tầm mắt) và góc 3 (sau lưng, phím tắt V). 4 cảnh hỗ trợ 3D (Chánh điện, Sân chùa, Tàng Kinh Các, Sân đấu). Tự dò cấu hình đồ họa (Thấp / Vừa / Cao), tự hạ mức khi tụt khung hình; trận PK luôn giữ 2D góc nhìn thứ ba. |
-| Khác | Lịch âm và đếm ngược đến Rằm / Mùng Một, cài lên màn hình điện thoại (PWA). |
+| Chánh điện | Lễ Phật, vái lạy, thắp nhang kèm lời nguyện, dâng lễ, gõ mõ, thỉnh chuông và tụng kinh đồng bộ theo giờ máy chủ. Người vào muộn nghe đúng đoạn đang tụng. |
+| Sân chùa | Đi lại, gặp NPC, xin xăm và ngồi tại bốn bàn đá Kỳ Đạo. Thanh đổi map nối Chánh điện, Sân chùa, Tàng Kinh Các và Sân đấu. |
+| Tàng Kinh Các | Đọc kinh theo chương, đổi cỡ chữ, nền sáng / tối và nhớ chỗ đọc. Có tám bồ đoàn để ngồi thiền và chọn phiên tu luyện nội công. |
+| Kỳ Đạo | Danh mục gồm Cờ vua, Cờ tướng, Cờ tướng úp, Cờ vây và Caro. Máy chủ kiểm nước đi, đồng hồ, kết quả và Elo; ván cờ không cộng công đức. |
+| Kỳ Đài | Bàn 2D và bàn 3D; cờ vua, cờ tướng, cờ úp có lãnh địa nửa sân và bộ quân. Cờ vây, caro có bộ đá riêng; có hiệu ứng khai mở, phong cấp và kết thúc ván. |
+| Võ Học Các | Sáu công pháp, 15 chiêu thuộc Cương / Tốc / Nhu, tu luyện nội công và luyện độ thành thạo chiêu. Phiên tu vẫn chạy khi đóng trang; hoàn thành ngay qua cúng dường không giới hạn lượt mỗi ngày. |
+| Sân đấu | Luận võ tự nguyện 1 đấu 1 (mời ngay trong cảnh; có chặn đối thủ và chế độ không làm phiền), chọn bốn chiêu, mỗi lượt hai bên chọn kín cùng lúc. Máy chủ giải lượt; trận không cược công đức, có ghi thắng / thua / hòa. |
+| Bói toán | Xin xăm có hàng chờ và giới hạn từ máy chủ; tarot có 78 lá theo tám chủ đề. Tử Vi mới có bộ máy an sao và dữ liệu luận giải; giao diện lá số T-057 chưa xong. |
+| Danh hiệu và Bảng Vàng | Bậc chiến tích luận võ (9 bậc theo thắng / hòa) hiện ở Sân đấu và Võ Học Các. Danh hiệu mùa đã có bộ tính nhưng máy chủ chưa phát; hiển thị trên nhân vật và bia Bảng Vàng chưa xong. |
+| Cơ duyên | Tảo Địa Tăng thỉnh thoảng xuất hiện ở Tàng Kinh Các trong 2 phút và truyền thừa cho người gặp; ba NPC cơ duyên ở Chánh điện, Sân chùa và Tàng Kinh Các. Mọi lần xuất hiện do máy chủ quyết định. |
+| Chế độ 3D và góc nhìn | 2D là mặc định; nút `3D` / `2D` ở góc cảnh đổi sang không gian 3D dựng bằng Three.js, có góc nhìn thứ nhất và thứ ba (phím `V`). Bàn cờ cũng có bản 3D xoay được. Phần thế giới 3D còn đang hoàn thiện. |
+| Pháp Tướng 3D | Trong chế độ 3D, quỷ hộ thân, đài sen và lửa hộ thân hiện bằng mô hình 3D (bản đang hoàn thiện, bật sẵn). Chưa đủ bốn quỷ, chín bậc hào quang và sáu pháp tướng bằng lưới 3D; phần chưa có vẫn dùng hình 2D. |
+| Nói chuyện bằng giọng | WebRTC cho tiếng nói theo khoảng cách và hướng trái / phải, tối đa tám người gần nhất. Máy chủ chùa chuyển tín hiệu kết nối, không ghi âm; có tắt tiếng từng người và khóa mic quản trị. |
+| Chat và tường lời nguyện | Chat chung, bong bóng trên nhân vật, lời nguyện và nút Tùy hỷ. Lịch sử chat chỉ hiện tin trong 24 giờ gần nhất, tối đa 512 tin. |
+| Công đức và hiệu ứng mốc | Điểm hôm nay theo giờ Việt Nam, tổng điểm, bảng công đức hôm nay, sáu pháp tướng và bốn dạng quỷ. Mốc ngày có lời chúc, meme và hiệu ứng 666; người dùng có thể tắt hiệu ứng hoặc riêng phần hù. |
+| Cúng dường VietQR | Tạo QR có số tiền và mã đối soát; xác nhận bằng SePay hoặc quản trị trong chế độ thật. Có hào quang chín cảnh giới, thông báo giọng đọc và mở khóa skin khi cửa hàng được bật. |
+| An toàn và kiểm duyệt | Lọc tên, tin nhắn, lời nguyện; chặn link và dãy số chống giả danh. Có che từ tục, trừ công đức, báo cáo và giới hạn tần suất / kết nối. |
+| Trang quản trị | Trang `public/admin.html`, mở bằng địa chỉ `/admin.html`: duyệt cúng dường, kiểm duyệt nội dung, thông báo, sao lưu JSON và cấu hình cửa hàng skin. Cần `ADMIN_KEY`. |
+| PWA, lịch âm và Sổ tay | Có manifest để cài ứng dụng, lịch âm và đếm ngược Rằm / Mùng Một. Nút `?` mở Sổ tay trong game. |
 
-## Các "nơi" của chùa
+Kệ kinh có Dịch Cân Kinh, Cửu Âm Chân Kinh, Quỳ Hoa Bảo Điển, Bát Nhã Tâm Kinh, Chú Đại Bi và Kinh Dược Sư.
+Bài tụng gồm Bát Nhã Tâm Kinh, Chú Đại Bi, Kinh Dược Sư / Chú Dược Sư, Niệm Phật A Di Đà, Niệm Quán Thế Âm Bồ Tát và Chuông mõ ngồi thiền.
 
-Mỗi nơi một màn hình riêng; dùng thanh đổi map ở góc trên cảnh (Chánh điện · Sân chùa · Tàng Kinh Các · Sân đấu; nút của nơi đang đứng sáng màu vàng) để sang nơi khác, nút "Về chánh điện" để quay lại từ Võ Học Các. Xin xăm, xem tử vi, tarot, ngồi thiền, đọc kinh: chạm vật trong cảnh (hũ xăm trên bàn thờ, bàn thầy bói, bồ đoàn, kệ kinh), không có nút riêng.
+Một số phần còn đang hoàn thiện; tiến độ từng việc ghi ở [task.md](task.md). Các file kế hoạch trong `docs/` chứa cả việc chưa làm, không phải danh sách tính năng đã phát hành.
 
-| Nơi | Dùng để | Ghi chú |
-|---|---|---|
-| Chánh điện | Cúng, thắp nhang, tụng kinh, trò chuyện | Không có đánh nhau, không ai bị mời đấu ở đây |
-| Võ Học Các | Tu luyện, học chiêu, chọn bộ 4 chiêu | `public/js/dojo.js` |
-| Sân đấu | Sân đi lại được, chạm người để mời, luận võ | `public/js/arena.js`; mời được cả từ chánh điện qua hộp người chơi, trận chỉ diễn ra ở Sân đấu. Sân vẽ bằng chung bộ vẽ của chánh điện (`Hall.attach` lên khung của Sân đấu, cảnh `arena`) |
-
-Trong chùa còn có các **cảnh** dùng chung một khung vẽ: chánh điện, sân chùa, Tàng Kinh Các (`SCENES` trong `server.js`, vẽ ở `public/js/hall.js`). Bồ đoàn: `LIB_SEATS` (phải khớp giữa `server.js` và `hall.js`), sự kiện `sit` / `stand` / `psit`; bảng tọa thiền ở `public/js/meditate.js`.
-
-Người đang ở nơi khác không hiện trong chánh điện. Thêm nơi mới (ví dụ coi bói tử vi, tarot) thì đăng ký thêm một nơi trong `PLACES` của `server.js` và `Places.register` ở `public/js/app.js`, không đụng chánh điện. Chi tiết luật chơi và giao thức: [docs/VO-HOC.md](docs/VO-HOC.md), [docs/VO-HOC-GIAO-THUC.md](docs/VO-HOC-GIAO-THUC.md), số liệu cân bằng: [docs/VO-HOC-CAN-BANG.md](docs/VO-HOC-CAN-BANG.md).
-
-## Chế độ 3D và góc nhìn
-
-Bên cạnh giao diện 2D truyền thống, Chùa Tâm An hỗ trợ không gian 3D tương tác theo thời gian thực (xây dựng trên nền Three.js 0.187.0).
-
-- **Chuyển đổi 2D / 3D**: 2D vẫn là chế độ mặc định. Ở góc trên bên phải khung cảnh có nút **"3D"** để chuyển sang 3D (khi đang ở 3D, nút đổi thành **"2D"** để trở về). Trình duyệt tự lưu lựa chọn của bạn vào `localStorage` (khóa `ta-view`).
-- **Hai góc nhìn (phím `V`)**:
-  - **Góc nhìn thứ ba (Góc 3)**: Mặc định khi vào 3D. Máy quay đặt phía sau lưng nhân vật, nhìn thấy toàn thân cùng hào quang, pháp tướng hoặc quỷ theo sau (nếu có).
-  - **Góc nhìn thứ nhất (Góc 1)**: Máy quay đặt ngang tầm mắt nhân vật, không hiện thân mình, tầm nhìn bao quát toàn bộ điện thờ và khuôn viên.
-  - Bấm nút **"Góc 1 · V"** / **"Góc 3 · V"** trên thanh điều khiển hoặc bấm phím **`V`** trên bàn phím để chuyển đổi nhanh giữa hai góc nhìn.
-- **Cách điều khiển**:
-  - **Di chuyển**: Bấm các phím `W`, `A`, `S`, `D` hoặc phím mũi tên. Bạn cũng có thể bấm hoặc chạm trực tiếp xuống mặt sàn để nhân vật tự đi tới điểm chạm (raycast).
-  - **Xoay hướng nhìn**: Bấm giữ chuột trái và kéo (hoặc vuốt ngón tay trên màn hình cảm ứng).
-  - **Thu phóng**: Cuộn con lăn chuột hoặc chụm hai ngón tay trên màn hình để phóng to / thu nhỏ khoảng cách máy quay (ở góc nhìn thứ ba).
-  - **Cần điều khiển ảo trên di động**: Khi mở trên điện thoại hoặc máy tính bảng ở chế độ 3D, màn hình sẽ hiển thị cần ảo giúp bạn di chuyển mượt mà bằng một tay.
-- **Bốn cảnh hỗ trợ 3D**:
-  - **Chánh điện**: Ba tôn tượng, bàn thờ trang nghiêm, bát hương tỏa khói, nến lung linh và đèn lồng. Tôn tượng Phật ở giữa mang ảnh mặt meme quen thuộc (`/img/fx/phat-nhay-tuong-dau.webp`) như bản 2D.
-  - **Sân chùa**: Khuôn viên rợp bóng cây, lối đi lát gạch và các bàn đá Kỳ Đạo.
-  - **Tàng Kinh Các**: Không gian tĩnh lặng, các kệ kinh sách cổ, đèn dầu và 8 bồ đoàn để ngồi thiền tu luyện nội công.
-  - **Sân đấu**: Khu vực võ đường rộng rãi với võ đài thái cực, giá binh khí, trống trận và mộc nhân.
-  - *Lưu ý về Luận võ (PK)*: Trận so chiêu PK 1 đấu 1 luôn diễn ra trên sàn đấu 2D góc nhìn thứ ba quen thuộc nhằm đảm bảo nhịp chọn chiêu đồng thời công bằng và chuẩn xác; nút chuyển đổi góc nhìn sẽ tự động ẩn đi khi bạn bước vào trận đấu.
-- **Hiệu năng & đồ họa tự thích ứng**:
-  - Ba mức chất lượng: **Thấp** (Low, không đổ bóng, tắt hiệu ứng nặng), **Vừa** (Medium) và **Cao** (High, bóng đổ mềm, hiệu ứng hạt khói nhang).
-  - Trình duyệt tự nhận diện năng lực đồ họa GPU (`public/js/gfx-detect.js`). Thiết bị di động luôn được ưu tiên mức Thấp để máy mát và tiết kiệm pin.
-  - Hệ thống tự động theo dõi số khung hình trên giây (FPS); nếu bị tụt khung hình liên tục (dưới 30 FPS trong 3 giây), game sẽ tự động hạ cấu hình xuống mức thấp hơn (`quality.mjs`).
-  - Luôn tôn trọng tùy chọn hệ thống: nếu bạn bật chế độ "Giảm chuyển động" (`prefers-reduced-motion`) trên máy, hiệu ứng lắc lư bước đi và hạt sương khói sẽ tự động tắt.
-- **Bàn cờ 3D & quân cờ mới**: Module bàn cờ 3D (`board3d.mjs`) và bộ quân cờ vẽ lại (`kydao-draw.js`) đã tích hợp chính thức vào game (có nút "Bàn 3D" trong bảng cờ), hỗ trợ đầy đủ skin nửa sân và mô hình quân cờ 3D tiện tròn.
-- **Lãnh địa và skin quân (Kỳ Đài)**:
-  - Áp dụng cho cờ vua, cờ tướng và cờ úp.
-  - Trong bảng cờ có nút "Lãnh địa": chọn "Sân của bạn" và "Quân của bạn", bấm "Khai mở" để đổi nửa sân của mình; cả bàn (đối thủ và người xem) thấy khẩu hiệu và nửa sân đổi.
-  - 8 sân (Hỏa Diệm Sơn, Trường Giang, Đại Ngàn, Băng Sơn, Long Cung, Liên Hoa Đài, Lôi Vân Đỉnh, Sa Mạc Lưu Sa) và 8 bộ quân (Dung Nham, Ngọc Bích, Mộc Linh, Băng Tinh, San Hô, Đồng Cổ, Lôi Thạch, Sa Thạch).
-  - Skin quân tự áp khi vào ván. Có nút "Ẩn skin đối thủ" để xem theo bàn cờ mặc định.
-  - Mỗi người khai mở sân tối đa 1 lần mỗi 20 giây (cooldown). Mọi skin hiện miễn phí, lựa chọn được lưu trên trình duyệt.
-  - Cờ vua: Tốt phong cấp thì bàn chấn động, các quân khác nảy lên. Hết ván (cả 5 môn) có hiệu ứng chiến thắng rồi mới hiện bảng kết quả.
-  - Giữa bàn cờ tướng và cờ úp là một dòng sông nước chảy (cả bàn 2D và 3D), không phụ thuộc skin.
-  - Tắt hiệu ứng: bật "giảm chuyển động" của máy hoặc tắt hiệu ứng ở Chánh điện (công tắc lưu `ta-fx`) thì bàn cờ không rung, sông đứng yên.
-- **Bộ đá cho cờ vây và caro**:
-  - Ở cờ vây và caro, nút trong bảng cờ đổi thành "Bộ đá". Có 8 bộ: Tinh Hà, Lâm Tuyền, Bích Hải, Dung Nham, Băng Phách, Liên Tử, Lôi Châu, Kim Sa.
-  - Chỉ đổi quân đá của mình; bàn không đổi, không có nút "Khai mở". Người xem và đối thủ thấy bộ đá bạn chọn, có thể bấm "Ẩn skin đối thủ" để nhìn theo kiểu mặc định.
-- **Mở khóa skin**:
-  - Mặc định mọi skin miễn phí. Ban điều hành bật thu tiền và đặt mức trong `/admin.html` (khối "Cửa hàng skin bàn cờ").
-  - Khi bật, skin chưa mở bị gỡ khỏi các ván đang chơi ngay. Người chơi bấm skin đang khóa, cúng dường theo mã QR; khoản được duyệt thì tự mở đúng skin đó và giữ vĩnh viễn (mỗi skin mở riêng, quyền theo tài khoản).
-  - Duyệt qua đúng đường cúng dường thường: Ban điều hành xác nhận, hoặc webhook SePay khi nhận đủ tiền. Với `DONATION_MODE=test` khoản tự xác nhận sau ít giây.
-- **Các trang thử nghiệm độc lập**:
-  - `/world3d-test.html`: Kiểm tra tổng thể thế giới 3D.
-  - `/world3d-kit.html`: Bộ khối mẫu vật liệu và cấu kiện kiến trúc chùa.
-  - `/world3d-avatar.html`: Thử nghiệm mô hình nhân vật, trang phục, tóc, bước đi và hào quang. Nhân vật dựng bằng Blender là mặc định trong giao diện 3D; nút "Người cũ" (khóa `localStorage["ta-avatar"] = "code"`) đổi về dáng dựng bằng mã.
-  - `/world3d-board.html`: Thử nghiệm bàn cờ 3D tương tác có skin.
-  - `/world3d-scene-hall.html`: Cảnh Chánh điện 3D.
-  - `/world3d-scene-yard.html`: Cảnh Sân chùa 3D.
-  - `/world3d-scene-library.html`: Cảnh Tàng Kinh Các 3D.
-  - `/world3d-scene-arena.html`: Cảnh Sân đấu 3D.
-  - `/kydao-pieces-test.html`: Thử nghiệm hiển thị bộ quân cờ Kỳ Đạo vẽ mới.
-  - `/kydao-kydai-test.html`: Bảng cờ Kỳ Đài thật với máy chủ giả (skin nửa sân, phong cấp, chiến thắng).
-  - `/kydao-fx-test.html`: Hiệu ứng 2D Kỳ Đạo (khai mở lãnh địa, phong cấp rung bàn, chiến thắng).
-  - `/kydao-skins-test.html`: Danh mục và tài nguyên 8 skin sân, 8 skin quân.
-
-## Lưu trữ bền bằng PostgreSQL (Neon)
-
-Mặc định ứng dụng lưu mọi thứ vào một file JSON, và trên Render Free file này **mất mỗi lần khởi động lại hoặc deploy**. Đặt biến `DATABASE_URL` (chuỗi kết nối PostgreSQL, ví dụ của Neon) thì dữ liệu được ghi nền vào PostgreSQL; nếu CSDL còn trống mà có file JSON cũ thì tự nhập một lần. Cách làm từng bước: [docs/NEON.md](docs/NEON.md). Công cụ nhập / xác minh / xuất: `node tools/db-migrate.js`.
-
-## Bài tụng: giọng, mõ và chuông
-
-Mỗi bài tụng là một file MP3 dựng sẵn trong `public/audio/chants/` (giọng + mõ + chuông) kèm file JSON ghi mốc từng chữ. Khi có người khởi tụng, mọi trình duyệt phát cùng một file và tự chỉnh về đúng vị trí theo giờ máy chủ, nên cả chánh điện nghe cùng một chữ; chữ trên màn hình sáng theo tiếng.
-
-- **Giọng:** do máy tổng hợp bằng [VieNeu-TTS v3 Turbo](https://huggingface.co/pnnbao-ump/VieNeu-TTS-v3-Turbo) (Apache-2.0, tác giả Phạm Nguyễn Ngọc Bảo), nhân bản âm sắc (`--ref-mode speaker`) từ 60 giây đầu một bản đọc giọng nam do chủ dự án cung cấp; đọc **liền từng câu**. Đây là giọng tổng hợp chứ không phải bản thu âm thật, có thể đọc sai hoặc thiếu rõ một số từ Hán Việt. Đo bằng Whisper (không gợi ý lời) trên 10 dòng đầu Chú Đại Bi, giọng này nhận ra 48% số chữ, hơn giọng sẵn có “Thiền Tâm Đức” (36%) và hơn khi chép cả cách đọc của mẫu (39%); thần chú phiên âm vốn khó nhận, nên vẫn cần nghe lại và chỉnh khi cần.
-- **Mõ** (theo hướng dẫn sử dụng chuông mõ của các đạo tràng): mõ gõ đúng lúc từng chữ cất lên, nương theo người tụng. Vào mõ: chữ 1 chưa gõ, chữ 2 gõ, chữ 3 không gõ, từ chữ 4 gõ đều. Thần chú nhanh hơn; niệm danh hiệu nhanh dần đều. Kết thúc lơi dần, hai tiếng mõ áp chót dính liền, tiếng cuối rời ra.
-- **Chuông:** `public/audio/bell.mp3`. Một tiếng khai kinh, ba tiếng kết; cũng dùng cho nút “Thỉnh chuông”.
-
-Dựng lại (đổi giọng, sửa kinh văn trong `public/js/chants.js`), chạy được trên CPU:
-
-```bash
-python -m venv .venv && . .venv/bin/activate && pip install vieneu librosa soundfile audiotsm faster-whisper "onnxruntime==1.22.1"
-```
-
-```bash
-python tools/build_chants.py --voice "Thiền Tâm Đức"
-```
-
-Nhân bản giọng (chỉ làm khi người được nhân bản đồng ý):
-
-```bash
-python tools/build_chants.py --ref-audio /duong/dan/ngoai/repo/giong_mau.mp3 --ref-seconds 60
-```
-
-Mặc định dùng 60 giây đầu của file mẫu: âm sắc tính trên cả 60 giây, còn cách nhả chữ lấy từ khoảng 8 giây nói rõ nhất trong đó (VieNeu chỉ nhận tối đa 8 giây cho phần này). Nên chọn file một người nói rõ, ít ồn, không nhạc nền. File mẫu là dữ liệu cá nhân: để **ngoài** repo, không commit, không tải lên dịch vụ nào (công cụ từ chối đường dẫn nằm trong repo; trong MP3/JSON chỉ ghi nhãn “nhân bản từ giọng mẫu #xxxxxxxx”, không có tên hay đường dẫn). Mỗi lần dựng lại ra giọng hơi khác vì lấy mẫu ngẫu nhiên, nên nghe lại, nhất là các câu Hán Việt và chỗ vào mõ. Không có `--ref-audio` thì dùng giọng sẵn có “Thiền Tâm Đức”.
-
-Giới hạn: VieNeu được huấn luyện để đọc, không phải để tụng, nên giọng nghe như đọc kinh chậm rãi hơn là xướng tụng. Muốn giọng tụng thật nhất, hãy thu âm chư tăng chùa đối tác (có sự đồng ý) rồi thay file MP3, giữ cùng định dạng JSON. Giọng hiện tại trầm (khoảng 97 Hz, giọng sẵn có “Thiền Tâm Đức” khoảng 103 Hz); file mẫu là giọng kể chuyện nên chỉ lấy âm sắc, cách đọc theo mô hình cho đỡ kịch tính.
-
-## Tàng Kinh Các
-
-Mỗi bộ kinh là một file Markdown trong `public/kinh/`, danh sách ở `public/kinh/index.json`. Thêm kinh mới: thêm một file `.md` và một dòng trong `index.json` (`id`, `title`, `han`, `sub`, `desc`, `file`, `cover` là `nghe` / `huyen` / `son` / `lam`, thêm `chant` nếu muốn có nút khởi tụng chung).
-
-Cú pháp trong file kinh: `# Tên chương` (mỗi chương một trang, có mục lục), `##`, `###` tiêu đề nhỏ, `![chú thích](thư-mục/ảnh.png)` hình, `> dòng` đoạn kệ giữ nguyên từng dòng, `- mục` danh sách, `**đậm**`, `*nghiêng*`.
-
-- **Dịch Cân Kinh**: chép từ tài liệu của Trần Đại Sỹ (sưu tầm từ ttvnol.com) do chủ dự án cung cấp, giữ thứ tự chữ và hình. Hình trong `public/kinh/dich-can-kinh/`. Lời thơ chữ Hán trong các hình “Nguyên bản” được chép lại kèm phiên âm Hán Việt.
-- **Cửu Âm Chân Kinh**, **Quỳ Hoa Bảo Điển**: sách võ công hư cấu trong tiểu thuyết Kim Dung, ngoài đời không có toàn văn. Tiểu thuyết còn bản quyền nên Tàng Kinh Các không chép nguyên văn; nội dung là bài tự viết: lai lịch, các môn võ, câu khẩu quyết, lời bàn nơi cửa Phật, và chương 77 Đạo Đức Kinh (nguồn gốc thật của câu tổng cương Cửu Âm).
-- **Bát Nhã Tâm Kinh**: bản phiên âm Hán Việt, có nút khởi tụng chung.
-- **Chú Đại Bi**: khai chú và 84 câu, có nút khởi tụng chung (bài tụng `daibi`, câu 81–84 tụng ba lần).
-- **Kinh Dược Sư**: toàn văn để đọc; nút khởi tụng chung mở bài tụng ngắn `duocsu` (khai kinh, Chú Dược Sư ba biến, niệm danh hiệu Đức Dược Sư).
-
-Nên hỏi ý kiến người giữ bản quyền tài liệu Trần Đại Sỹ trước khi phát hành rộng.
-
-## Nói chuyện bằng giọng
-
-Bấm **Nói chuyện** rồi cho phép micro. Tiếng nói đi thẳng giữa các trình duyệt (WebRTC); máy chủ chỉ chuyển lời mời kết nối, không nghe và không ghi âm. Mỗi máy nối với tối đa 8 người gần nhất đang bật nói chuyện, nên chánh điện đông vẫn chạy được. Không cho phép micro thì vẫn nghe được mọi người.
-
-Trang phải mở bằng **https** thì trình duyệt mới cho dùng micro (Render có sẵn https).
-
-**TURN (nên có khi chạy thật):** hai máy ở mạng 4G hoặc mạng công ty thường không nối thẳng được với nhau, cần một máy chủ chuyển tiếp TURN. Chọn một trong hai:
-
-- Cloudflare TURN (có gói miễn phí): tạo TURN key trong trang Cloudflare (Realtime → TURN), rồi đặt `CF_TURN_KEY_ID` và `CF_TURN_API_TOKEN`. Máy chủ chùa tự xin thông tin đăng nhập tạm (24 giờ) cho trình duyệt.
-- TURN tự dựng (coturn) hoặc dịch vụ khác: đặt `TURN_URLS` (cách nhau bằng dấu phẩy), `TURN_USERNAME`, `TURN_CREDENTIAL`. Lưu ý: cách này lộ tên đăng nhập TURN cho khách.
-
-Không đặt gì thì chỉ dùng STUN công cộng: chạy tốt khi hai người cùng mạng hoặc mạng nhà thông thường.
-
-## Hào quang cúng dường (9 cảnh giới)
-
-Khi nhà chùa **xác nhận đã nhận tiền** (admin bấm Xác nhận, hoặc SePay báo), nhân vật của người cúng dường tỏa hào quang quanh thân:
-
-| Cảnh giới | Từ | Sáng | Hiệu ứng |
-|---|---|---|---|
-| 1. Luyện Khí | 20.000đ | 5 phút | Khí lành quấn quanh thân |
-| 2. Trúc Cơ | 50.000đ | 6 phút | Đứng trên đài sen vàng |
-| 3. Kim Đan | 100.000đ | 7 phút | Kim đan nơi đan điền, vầng sáng viền cánh sen sau đầu |
-| 4. Nguyên Anh | 200.000đ | 8 phút | Nguyên anh bay vòng, tia sáng xoay |
-| 5. Hóa Thần | 500.000đ | 9 phút | Thần hỏa xanh bốc lên quanh thân |
-| 6. Luyện Hư | 1.000.000đ | 10 phút | Quang bối hư không đầy sao sau lưng |
-| 7. Hợp Thể | 2.000.000đ | 11 phút | Ngũ hành châu xoay quanh |
-| 8. Đại Thừa | 5.000.000đ | 12 phút | Cột sáng từ trời, quang bối kim quang, sen hồng nở, cánh sen rơi |
-| 9. Độ Kiếp | 10.000.000đ | 13 phút | Lôi kiếp giáng xuống, vòng ngũ sắc, sen pha lê ngũ sắc |
-
-Cộng dồn: còn hào quang thì số tiền mới cộng vào số cũ (3 lần 20.000đ = 60.000đ, lên Trúc Cơ). Mỗi lần cúng dường, hào quang sáng lại từ đầu theo thời gian của cảnh giới hiện tại; hết giờ thì tắt và cộng dồn về 0. Ẩn danh, hoặc bỏ chọn “Hiện hào quang”, thì không hiện. Sửa mốc trong `public/js/aura.js`.
-
-Đài sen (vàng, hồng, pha lê), vầng sáng sau đầu và quang bối (tím, vàng kim) là hình thiết kế trên Canva, nằm trong `public/img/fx/aura/`; dựng lại từ ảnh PNG xuất từ Canva bằng `python3 -I tools/fx/prepare_aura_assets.py lotus.png halo.png mandorla.png` (cần Pillow, numpy). Các hiệu ứng còn lại (sợi khí, tia sáng, thần hỏa, nguyên anh, ngũ hành châu, cánh sen rơi, lôi kiếp) vẽ bằng mã trong `public/js/hall.js`. Hình chưa tải xong thì trình duyệt tạm vẽ bằng mã.
-
-## Thông báo cúng dường bằng giọng nữ VieNeu
-
-Mỗi lần xác nhận cúng dường, chánh điện thỉnh một tiếng chuông rồi đọc: tên người cúng dường, số tiền (đọc bằng chữ), và cảnh giới hào quang mới nếu vừa đột phá. Ví dụ: “Nam mô A Di Đà Phật. Chánh điện xin tùy hỷ công đức Phật tử Diệu Liên, vừa cúng dường sáu mươi nghìn đồng. Hào quang bừng sáng! Diệu Liên đã đột phá cảnh giới Trúc Cơ.”
-
-Giọng đọc do máy chủ đọc của VieNeu-TTS (`apps.openai_speech`, có sẵn trong gói `vieneu`) tạo ra, mặc định giọng nữ **Mai Anh** (giọng Bắc, kiểu đọc tin tức). Các giọng nữ khác: Ngọc Huyền, Trúc Ly, Đoan Trang, Ngọc Linh, Quỳnh Anh (Bắc); Ngọc Trân (Trung); Thùy Dung, Thục Đoan, Mỹ Duyên, Kim Thanh (Nam). Đặt bằng `TTS_VOICE`.
-
-Bật máy chủ đọc (cùng máy với chùa, hoặc một máy khác):
-
-```bash
-pip install vieneu fastapi uvicorn
-```
-
-```bash
-VIENEU_BACKEND=onnx PORT=8000 python -m apps.openai_speech
-```
-
-Rồi đặt `TTS_URL=http://127.0.0.1:8000` cho máy chủ chùa (thêm `TTS_API_KEY` nếu máy chủ đọc đặt `VIENEU_API_KEY`). Có `ffmpeg` thì gửi MP3 cho nhẹ, không có thì gửi WAV. Thư mục `tts/` có sẵn Dockerfile để chạy máy chủ đọc trên Docker hoặc Hugging Face Spaces (xem `tts/README.md`).
-
-Chưa đặt `TTS_URL` (ví dụ đang chạy Render miễn phí) hoặc máy chủ đọc lỗi thì trình duyệt tự đọc bằng giọng tiếng Việt có sẵn trên máy, kèm tiếng chuông và băng chữ.
-
-## Công đức, pháp tướng và quỷ
-
-Công đức tính trên **tổng điểm** (tất cả). Bảng đầy đủ xem ở tab Công đức → “Luật công đức, pháp tướng và quỷ”.
-
-**Được cộng:** thắp nhang +10, cùng tụng đến hết bài +15, dâng lễ +5, khởi tụng +5, thỉnh chuông +3, vái lạy +2, gõ mõ / thả tim / tùy hỷ +1, **cúng dường +1 cho mỗi 1.000đ** đã xác nhận.
-
-**Bị trừ khi chat hoặc viết lời nguyện tục tĩu** (không áp dụng cho nói chuyện bằng giọng). Luật ở `lib/moderation.js`:
-
-| Mức | Trừ | Loại |
-|---|---|---|
-| 1. Lời thô | −5 | chửi thề nhẹ, lời cộc cằn |
-| 2. Xúc phạm | −15 | mắng chửi, hạ nhục người khác |
-| 3. Tục tĩu | −30 | từ thô tục, chửi thề viết tắt, lời dâm ô |
-| 4. Chửi cha mẹ, trù ẻo | −60 | chửi đến cha mẹ, tổ tiên, mong người khác chết |
-| 5. Báng bổ Tam Bảo | −100 | lời tục đi kèm danh hiệu Phật, Bồ Tát, chư Tăng, nhà chùa |
-
-Nhiều từ trong một tin thì cộng dồn (mỗi từ tính tối đa 3 lần). Viết HOA gần hết (gào thét) nhân 1,5. Tái phạm trong 10 phút nhân thêm 0,5 mỗi lần, tối đa nhân 3. Một tin trừ tối đa 300. Bắt cả kiểu gõ không dấu (“dit me”), kéo dài chữ (“đụuuu”), chen dấu chấm (“đ.m”); không bắt nhầm “chim cút”, “đi ngủ”, “con chó nhà tôi”. Người bị trừ thấy số công đức bị trừ bay lên trên đầu, mọi người cũng thấy.
-
-**Pháp tướng công đức** (vẽ sau lưng, còn mãi khi đủ điểm; từ 1.000 trở lên thì xoay):
-
-| Mốc | Pháp tướng |
+| Danh mục Kỳ Đài | Các lựa chọn trong mã |
 |---|---|
-| 100 | Linh Quang Hoàn: vòng linh quang vàng sau đầu, kết ngọc |
-| 500 | Thanh Liên Bảo Quan: vương miện sen pha lê xanh ngọc |
-| 1.000 | Kim Diễm Song Dực: đôi cánh lửa vàng, vòng phù văn xoay |
-| 5.000 | Vạn Kiếm Quy Tông: bánh xe kiếm bạch kim xoay |
-| 10.000 | Kim Long Pháp Tướng: pháp luân hoa văn vàng son, hai vòng xoay ngược, cánh lửa son |
-| 50.000 | Cửu Tiêu Thánh Luân: mặt trời gai vàng xoay, cánh ngũ sắc |
+| Tám sân | Hỏa Diệm Sơn, Trường Giang, Đại Ngàn, Băng Sơn, Long Cung, Liên Hoa Đài, Lôi Vân Đỉnh, Sa Mạc Lưu Sa. |
+| Tám bộ quân | Dung Nham, Ngọc Bích, Mộc Linh, Băng Tinh, San Hô, Đồng Cổ, Lôi Thạch, Sa Thạch. |
+| Tám bộ đá | Tinh Hà, Lâm Tuyền, Bích Hải, Dung Nham, Băng Phách, Liên Tử, Lôi Châu, Kim Sa. |
 
-Pháp tướng (vật sau lưng, lâu dài) và hào quang cúng dường (ánh sáng quanh thân, vài phút) đi cùng nhau được: khi có cả hai, ngọc và viền pháp tướng nhuộm theo màu cảnh giới hào quang và có thêm một quầng sáng cộng hưởng.
+Trong bảng cờ, chọn `Lãnh địa` để đổi nửa sân và quân; mỗi lần khai mở cách nhau ít nhất 20 giây.
+Cờ vây và caro dùng nút `Bộ đá`, không đổi sân. Có nút `Ẩn skin đối thủ`.
+Skin mặc định miễn phí. Quản trị có thể bật khóa và đặt giá từng mục; quyền mở được giữ theo tài khoản sau khi khoản cúng dường được duyệt.
+Bàn 3D mặc định nạp mô hình quân và mặt bàn; lỗi tài nguyên thì dùng hình dựng bằng mã. Bàn 2D mặc định vẫn giữ cách vẽ cũ.
 
-**Quỷ theo sau khi công đức âm:** dưới 0 thì Tiểu Quỷ hiện mờ, rõ hẳn ở −100; −200 thành Ác Quỷ (sừng, cánh dơi, nanh vuốt); −500 thành Quỷ Vương (vương miện sừng, lửa tím đen); −1.000 thành Ma Vương (khổng lồ ba mắt, đứng sừng sững sau lưng). Làm việc thiện để công đức về trên 0 thì quỷ tan. Sửa mốc trong `public/js/merit.js`.
-
-Hình 4 con quỷ vẽ trên Canva (trang 4–7 của thiết kế “Hiệu ứng Chùa Tâm An — hào quang & quỷ”), tách nền thành `public/img/fx/demon-1.webp` … `demon-4.webp` bằng `python3 -I tools/fx/prepare_demon_sprites.py quy1.png quy2.png quy3.png quy4.png` (cần Pillow và numpy; công cụ in ra vị trí mắt để chép vào `DEMON_ART` trong `public/js/hall.js`). Trong chánh điện quỷ có viền sáng đỏ (Quỷ Vương viền tím), quầng lửa, lửa bốc, tàn lửa bay và mắt rực thỉnh thoảng chớp. Thiếu ảnh thì tự vẽ hình cũ bằng code.
-
-Máy chủ phát sự kiện `pm` (`{ id, mt, up }`) mỗi khi hình pháp tướng / quỷ của ai đó đổi; `up: true` nghĩa là vừa lên mốc pháp tướng, dùng được cho hiệu ứng chúc mừng.
-
-## Hiệu ứng mốc công đức
-
-Khi công đức **hôm nay** (số ở thẻ “Công đức” trên đầu trang) chạm các mốc dưới đây, trình duyệt của người đạt mốc hiện hiệu ứng chúc mừng. Không ai khác thấy.
-
-| Mốc | Hiệu ứng |
+| Công đức | Quy tắc hiện hành |
 |---|---|
-| 100, 300, 500 | Lời chúc bằng giọng nữ (“Chúc bạn một ngày bình an…”) kèm một meme ngẫu nhiên. Sau meme là vòng hào quang vàng (vòng cánh sen, tia sáng) nở ra rồi xoay chậm; cánh sen và hoa giấy rơi nhẹ. |
-| 666 | Hù: mặt quỷ sừng cong, mắt vàng rực phóng ra chiếm màn hình khoảng 1,4 giây (một lần chớp đỏ, sóng lửa tỏa ra, tàn lửa bay, viền đỏ thở, rung màn hình, tiếng hù, mặt dồn tới hai nhịp như tim đập), rồi mờ đi; hào quang vàng nở ra sau thẻ trấn an “Hù bạn thôi! A Di Đà Phật, chúc bạn bình an 🙏”. |
-| 888, 999, 1.000, 2.000, 3.000… | Bản lớn: tiêu đề vàng to, hào quang to hơn với thêm một vòng phụ xoay ngược và tia sáng đậm hơn, nhiều hoa giấy hơn, cũng có giọng chúc và meme. |
+| Cộng điểm | Nhang +10; cùng tụng hết bài +15; dâng lễ và khởi tụng +5; chuông +3; vái lạy +2; mõ, tim và Tùy hỷ +1. Cúng dường đã xác nhận: mỗi 1.000 đ được một điểm. |
+| Trừ điểm | Lời thô, xúc phạm, tục tĩu, chửi cha mẹ / trù ẻo, báng bổ có mức gốc lần lượt 5, 15, 30, 60, 100. Có cộng dồn và tăng khi tái phạm; tối đa 300 điểm một tin, theo `lib/moderation.js`. |
+| Pháp tướng | Tổng điểm đạt 100 / 500 / 1.000 / 5.000 / 10.000 / 50.000 mở lần lượt Linh Quang Hoàn, Thanh Liên Bảo Quan, Kim Diễm Song Dực, Vạn Kiếm Quy Tông, Kim Long Pháp Tướng, Cửu Tiêu Thánh Luân. |
+| Quỷ | Công đức âm hiện Tiểu Quỷ; từ −200 là Ác Quỷ, −500 là Quỷ Vương, −1.000 là Ma Vương. Mốc đặc biệt đúng 666 tổng điểm cũng có Ma Vương. |
+| Mốc trong ngày | 100, 300, 500, 666, 888, 999 rồi mỗi 1.000 điểm. Máy chủ chọn mốc; tải lại trang không phát lại mốc cũ. |
 
-**Cách tính.** Máy chủ quyết định, không phải trình duyệt. Mốc tính khi một lần cộng đưa công đức hôm nay từ dưới mốc lên bằng hoặc quá mốc (mỗi lần cộng là 1 đến 15 điểm nên có thể nhảy qua đúng con số). Một lần cộng bước qua nhiều mốc thì chỉ hiện một: 666 được ưu tiên, còn lại lấy mốc cao nhất. Tải lại trang hay vào lại chùa khi đã có 700 công đức không chiếu lại mốc cũ. Công đức “hôm nay” tính lại mỗi ngày theo giờ Việt Nam, nên mốc cũng vậy. Đang có một hiệu ứng (hay tab đang ẩn) thì mốc mới xếp hàng chờ: tối đa một lượt, 666 được ưu tiên hơn mọi mốc khác. Lượt chờ quá 60 giây (tab bị ẩn lâu) thì không chiếu nữa, kể cả 666, chỉ hiện dòng báo nhỏ “Bạn đã đạt N công đức”.
+Trong chế độ 3D: nút `3D` / `2D` đổi chế độ, phím `V` đổi góc nhìn; dùng WASD / mũi tên hoặc chạm sàn để đi.
+Kéo để xoay, cuộn / chụm để thu phóng ở góc thứ ba; điện thoại có cần ảo. Trận PK vẫn dùng sàn 2D.
+Nhân vật Blender là mặc định trong lớp 3D; nút `Người cũ` đổi về dáng dựng bằng mã. Đặt `localStorage['ta-fx3d'] = '0'` rồi tải lại để tắt bản nháp Pháp Tướng 3D.
+Hiệu ứng tôn trọng `prefers-reduced-motion`; trong tab Công đức có công tắc hiệu ứng mốc và phần hù 666.
 
-**Kho meme.** Thả ảnh `.jpg .jpeg .png .webp .gif .avif` vào `public/img/memes/` là tự có, không cần sửa mã (tối đa 200 ảnh, ảnh vuông khoảng 720px đẹp nhất). Máy chủ đọc lại thư mục sau tối đa 30 giây, người chơi nhận danh sách mới khi vào chùa hoặc tải lại trang. Mỗi lần chọn ngẫu nhiên và không lặp lại ảnh vừa hiện. Ảnh lỗi thì bỏ qua, hết ảnh thì thẻ chỉ còn chữ. Nên đặt tên file không dấu và ngắn: tên có byte lỗi mã hóa hay dài quá (địa chỉ từ 300 ký tự) sẽ bị bỏ qua. Bộ meme có 15 thẻ vẽ tay và 18 thẻ `anh-*.jpg` làm từ ảnh chụp có giấy phép tự do (CC0, public domain, CC BY); tên tác giả và nguồn từng ảnh nằm ở `public/img/PHOTO-CREDITS.txt`, thêm ảnh CC BY mới thì ghi tiếp vào đó. Mặt quỷ của mốc 666 là `public/img/devil.webp` (thiếu hay hỏng thì dùng bản vẽ cũ `public/img/devil.svg`, rồi tới biểu tượng 😈), hình hào quang là `public/img/fx/halo.webp` (thiếu thì chỉ còn tia sáng vẽ bằng CSS).
+## Chạy thử trên máy
 
-**Hình từ Canva.** Hào quang và mặt quỷ được tạo bằng công cụ tạo ảnh AI của Canva, đặt trong thiết kế Canva “Hiệu ứng Chùa Tâm An — hào quang & quỷ” (trang 2 và 3) rồi xuất PNG. Muốn đổi hình: sửa hoặc thay ảnh trong thiết kế đó (giữ hào quang trên nền đen, cỡ vuông; mặt quỷ khổ dọc 3:4, mắt ở khoảng 40% chiều cao), xuất hai trang thành PNG, rồi chạy `python3 -I tools/fx/prepare_canva_assets.py halo.png devil.png` (cần Pillow và numpy). Công cụ đổi nền đen của hào quang thành trong suốt và nén cả hai sang WebP.
+`package.json` yêu cầu Node.js từ 18. Nên dùng Node.js 22 như Render và Docker; `start:env` cần Node có hỗ trợ `--env-file`.
+Chạy trong thư mục gốc repo bằng PowerShell:
 
-**Giọng chúc.** Bốn câu chúc giọng nữ (VieNeu-TTS v3 Turbo, giọng “Trúc Ly”) đã có sẵn trong `public/audio/blessings/`, kèm `manifest.json`; tạo lại bằng `tools/build_blessing_voice.py`. Muốn thêm câu hay đổi giọng thì sửa `manifest.json` (lưu UTF-8, có BOM cũng được; file lỗi thì máy chủ ghi một dòng cảnh báo vào log và trình duyệt đọc bằng giọng máy):
-
-```json
-{ "lines": [
-  { "file": "binh-an-1.mp3", "text": "Chúc bạn một ngày bình an." },
-  { "file": "binh-an-2.mp3", "text": "A Di Đà Phật. Chúc bạn một ngày mới an lành." }
-] }
-```
-
-Mỗi lần hiện, trình duyệt chọn ngẫu nhiên một dòng, phát file và hiện đúng câu `text` bên dưới meme. `file` chỉ là tên file thường (`.mp3 .ogg .m4a .wav`, chỉ gồm chữ không dấu, số, `.`, `-`, `_`, không có dấu `/`), máy chủ bỏ qua dòng sai hoặc file không tồn tại. Không có file giọng nào (hay file không tải được) thì trình duyệt tự đọc bằng `speechSynthesis` (tiếng Việt, chỉ nhận giọng nữ như HoaiMy, Linh, Google tiếng Việt; giọng nam như An, NamMinh bị loại); máy không có giọng nữ tiếng Việt hay giọng không lên tiếng thì chỉ còn tiếng chuông ting nhẹ. Nút tắt tiếng trên đầu trang tắt mọi âm thanh của hiệu ứng, kể cả giọng đọc.
-
-**Xem thử.** Mở `http://localhost:3000/?celebrate=100` (hoặc `300`, `999`, `2000`…): hiệu ứng chạy một lần sau khi vào chùa mà không cần đủ công đức. Riêng `?celebrate=666` có hộp hỏi xác nhận trước khi hù (từ chối thì chỉ hiện thẻ chúc mừng), để liên kết gửi cho người khác không tự hù họ. Hoặc gõ `Celebrate.test(666)` trong console của trình duyệt.
-
-**Tắt hiệu ứng.** Vào tab **Công đức**, thẻ **Hiệu ứng** có hai ô, lưu ngay trên máy (`localStorage`: `ta-fx`, `ta-scare`):
-
-- “Hiệu ứng chúc mừng ở các mốc công đức”: tắt thì chỉ còn dòng thông báo nhỏ “Bạn đạt N công đức”, kể cả mốc 666.
-- “Cho phép hù ở mốc 666”: tắt thì mốc 666 hiện lời chúc bình thường thay cho mặt quỷ.
-
-Người bật chế độ giảm chuyển động của hệ điều hành (`prefers-reduced-motion`) không bị rung, phóng to, chớp, sóng lửa hay hạt bay: hình chỉ mờ hiện, hào quang đứng yên không xoay, mặt quỷ hiện mờ 0,2 giây không chớp đỏ. Chạm vào màn hình hoặc nhấn Esc để đóng sớm, nút × luôn đóng được. Chạm lên màn hình chỉ đóng khi trước đó đã ngừng chạm khoảng 0,9 giây (và sau 0,7 giây đầu), để người đang gõ mõ liên tục không lỡ tay tắt mất lời chúc; mỗi cú chạm bị bỏ qua làm đồng hồ này tính lại. Tab không lọt ra các nút phía sau lớp phủ. Điện thoại xoay ngang (màn thấp) thì thẻ xếp thành hàng, meme bên trái, chữ bên phải.
-
-Nguồn và giấy phép của ảnh, mặt quỷ, giọng đọc ghi trong `public/img/NOTICE.txt` và `public/audio/NOTICE.txt`.
-
-## Chạy trên máy
-
-Cần Node.js 18 trở lên.
-
-```bash
-npm install
-```
-
-```bash
+```powershell
+npm ci
 npm start
 ```
 
-Mở http://localhost:3000. Muốn dùng file cấu hình: `cp .env.example .env`, sửa `.env`, rồi chạy `npm run start:env`.
+Mở `http://localhost:3000`. Dùng `npm run dev` để tự khởi động lại khi sửa mã.
+Muốn dùng cấu hình riêng, sao chép và sửa file mẫu trước khi chạy:
 
-## Cấu hình (biến môi trường)
+```powershell
+Copy-Item .env.example .env
+npm run start:env
+```
 
-| Biến | Ý nghĩa |
+Để thử nhanh tu luyện và PK, đặt biến cho phiên PowerShell rồi khởi động máy chủ:
+
+```powershell
+$env:CULTIVATION_TIME_SCALE = '0.001'
+$env:PK_TIME_SCALE = '0.05'
+$env:MARTIAL_SWEEP_MS = '15000'
+$env:DONATION_MODE = 'test'
+npm start
+```
+
+## Cấu hình
+
+Biến được đọc khi khởi động. File [.env.example](.env.example) là mẫu; không commit `.env`, chuỗi kết nối hoặc khóa bí mật.
+Mặc định dưới đây lấy từ mã, có thể khác giá trị được điền sẵn trong `render.yaml` hoặc file mẫu.
+
+**Máy chủ và tính năng**
+
+| Biến | Ý nghĩa | Mặc định trong mã |
+|---|---|---|
+| `PORT` | Cổng HTTP. | `3000` |
+| `SITE_NAME` | Tên chùa, được lọc và giới hạn độ dài. | Chùa Tâm An |
+| `INCENSE_MINUTES` | Số phút nhang cháy, tối thiểu một phút. | `30` |
+| `MAX_PLAYERS` | Giới hạn người chơi. | `300` |
+| `MAX_CONN_PER_IP` | Giới hạn kết nối mỗi IP. | `8` |
+| `TRUST_PROXY` | Tin một tầng proxy; đặt `0` khi chạy trực tiếp. | Bật, một tầng |
+| `MARTIAL_ENABLED` | Đặt `0` để tắt võ học và PK. | Bật |
+| `PK_ENABLED` | Đặt `0` để tắt riêng PK; cần võ học bật. | Bật theo võ học |
+| `PK_MAX_MATCHES` | Số trận PK đồng thời tối đa. | `20` |
+| `PK_BUFF_SCALE` | Hệ số buff pháp tướng / quỷ / hào quang, từ 0 đến 1. | `0.15` |
+| `KYDAO_ENABLED` | Đặt `0` để tắt Kỳ Đạo. | Bật |
+| `KYDAO_MAX_GAMES` | Số ván cờ đồng thời tối đa, tính cả bàn trong. | `12` |
+
+**Dữ liệu: file JSON hoặc PostgreSQL**
+
+| Biến | Ý nghĩa | Mặc định trong mã |
+|---|---|---|
+| `DATA_FILE` | Đường dẫn file JSON; cũng là nguồn nhập cũ khi dùng PostgreSQL. | File `db.json` trong `data/`, được tạo khi ghi |
+| `DATABASE_URL` | Chuỗi kết nối PostgreSQL; có giá trị thì chọn PostgreSQL. | Trống, dùng JSON |
+| `PG_FLUSH_MS` | Nhịp ghi nền PostgreSQL, mili giây; giá trị hợp lệ từ 200. | `10000` |
+| `PG_SSL` | `0` tắt SSL cục bộ; `no-verify` mã hóa nhưng bỏ kiểm chứng chứng chỉ. | Theo chuỗi kết nối; `require` được nâng thành `verify-full` |
+| `PG_IMPORT_JSON` | Đặt `0` để tắt tự nhập JSON khi cơ sở dữ liệu trống. | Bật |
+
+**Cúng dường, SePay và giọng thông báo**
+
+| Biến | Ý nghĩa | Mặc định trong mã |
+|---|---|---|
+| `DONATION_MODE` | Chỉ `live` chờ xác nhận thật; các giá trị khác là thử nghiệm. | `test` |
+| `BANK_ID` | Mã ngân hàng VietQR. | Trống |
+| `BANK_ACCOUNT` | Tài khoản nhận; cần cả biến này và mã ngân hàng để bật QR. | Trống |
+| `BANK_ACCOUNT_NAME` | Tên chủ tài khoản trên QR. | Trống |
+| `BANK_LABEL` | Tên ngân hàng hiển thị. | Theo `BANK_ID` |
+| `FUNDS` | Quỹ cách nhau bằng `;`, tối đa tám; thêm `\|mục tiêu` sau tên quỹ. | Tùy nhà chùa sử dụng |
+| `SEPAY_API_KEY` | Khóa xác thực webhook SePay. | Trống, không bật webhook |
+| `SPEEDUP_ENABLED` | Đặt `0` để tắt hoàn thành tu luyện ngay; cần võ học và QR bật. | Bật khi đủ điều kiện |
+| `TTS_URL` | Địa chỉ máy chủ VieNeu đọc thông báo. | Trống, trình duyệt tự đọc |
+| `TTS_VOICE` | Giọng của máy chủ đọc. | `Mai Anh` |
+| `TTS_API_KEY` | Khóa truy cập máy chủ đọc, nếu cần. | Trống |
+| `TTS_TIMEOUT` | Thời gian chờ TTS, giây; tối thiểu năm giây. | `45` |
+| `FFMPEG_PATH` | Lệnh hoặc đường dẫn ffmpeg để nén giọng đọc sang MP3. | `ffmpeg` |
+
+**Đăng nhập Google**
+
+| Biến | Ý nghĩa | Mặc định trong mã |
+|---|---|---|
+| `GOOGLE_CLIENT_ID` | OAuth Client ID loại Web application. | Chưa đặt |
+| `GOOGLE_CLIENT_SECRET` | Khóa của OAuth client. | Chưa đặt |
+| `AUTH_ORIGIN` | Địa chỉ gốc HTTPS, không có `/` cuối; cho phép HTTP localhost khi thử. | Chưa đặt |
+
+Cần đủ ba biến mới bật Google. Đăng ký redirect URI đúng địa chỉ gốc cộng `/api/auth/google/callback`; ứng dụng Google ở chế độ Testing cần thêm tài khoản thử.
+Khi bật đăng nhập, võ học, luận võ và ván cờ xếp hạng (tính Elo) yêu cầu tài khoản; khách vẫn chơi được ván cờ không xếp hạng. Khách vẫn viếng chùa; dữ liệu công đức khách được gộp vào tài khoản một lần khi đăng nhập.
+Tên và trang phục vẫn chọn theo thiết bị. Đừng xóa dữ liệu trình duyệt nếu đang giữ công đức bằng tài khoản khách.
+
+**TURN và WebRTC**
+
+| Biến | Ý nghĩa | Mặc định trong mã |
+|---|---|---|
+| `VOICE` | Đặt `0` để tắt nói chuyện bằng giọng. | Bật |
+| `VOICE_MAX` | Số người tối đa bật nói chuyện cùng lúc. | Theo `MAX_PLAYERS` |
+| `STUN_URLS` | Danh sách STUN, cách nhau bằng dấu phẩy. | `stun:stun.l.google.com:19302,stun:stun.cloudflare.com:3478` |
+| `TURN_URLS` | Danh sách TURN tự dựng / dịch vụ khác, cách nhau bằng dấu phẩy. | Trống |
+| `TURN_USERNAME` | Tên đăng nhập TURN tĩnh. | Trống |
+| `TURN_CREDENTIAL` | Mật khẩu TURN tĩnh, được gửi cho trình duyệt để kết nối. | Trống |
+| `CF_TURN_KEY_ID` | Mã khóa Cloudflare TURN. | Trống |
+| `CF_TURN_API_TOKEN` | Token để máy chủ xin thông tin TURN tạm. | Trống |
+
+Micro cần HTTPS khi đưa lên mạng. TURN giúp kết nối qua 4G hoặc mạng công ty; chọn Cloudflare TURN hoặc bộ biến TURN tĩnh.
+Không cấu hình TURN thì chỉ dùng STUN công cộng. Người không cho phép micro vẫn có thể nghe.
+
+**Quản trị**
+
+| Biến | Ý nghĩa | Mặc định trong mã |
+|---|---|---|
+| `ADMIN_KEY` | Khóa quản trị cho `/admin.html` và API quản trị. | Trống, vô hiệu hóa quyền quản trị |
+
+**Tốc độ thử nghiệm**
+
+| Biến | Ý nghĩa | Mặc định trong mã |
+|---|---|---|
+| `CULTIVATION_TIME_SCALE` | Nhân thời gian phiên tu; thử bằng `0.001`. | `1` |
+| `PK_TIME_SCALE` | Nhân các mốc giờ PK; thử bằng `0.05`. | `1` |
+| `MARTIAL_SWEEP_MS` | Nhịp quét võ học, mili giây; tối thiểu 100. | `15000` |
+| `KYDAO_TIME_SCALE` | Nhân các mốc giờ ván cờ; thử bằng `0.05`. | `1` |
+
+## Cúng dường hoạt động thế nào
+
+Chỉ cấu hình tài khoản ngân hàng của chùa khi có sự đồng ý của nhà chùa.
+Cả `test` và `live` đều tạo VietQR thật theo tài khoản được cấu hình. Mã phải được ghi bền bằng `await store.flush()` trước khi trả QR.
+Tạo QR chưa chứng minh ngân hàng đã nhận tiền.
+
+| Trường hợp | Cách ghi nhận |
 |---|---|
-| `ADMIN_KEY` | Mã đăng nhập `/admin.html`. Để trống thì tắt trang quản trị. |
-| `SITE_NAME` | Tên chùa hiển thị. |
-| `BANK_ID`, `BANK_ACCOUNT`, `BANK_ACCOUNT_NAME`, `BANK_LABEL` | Tài khoản nhận tịnh tài (mã ngân hàng theo VietQR, ví dụ `MB`, `VCB`, `TCB`, `ACB`, `BIDV`). Để trống thì tắt cúng dường tịnh tài, chỉ còn phẩm vật tượng trưng. |
-| `FUNDS` | Các quỹ, cách nhau bằng `;`. Thêm `|mục tiêu` để hiện thanh tiến độ. Ví dụ: `Tu sửa chánh điện|300000000;Bếp cơm từ thiện` |
-| `SEPAY_API_KEY` | Bật tự xác nhận tiền vào qua SePay. |
-| `INCENSE_MINUTES` | Thời gian một nén nhang cháy, mặc định 30. |
-| `MAX_PLAYERS`, `MAX_CONN_PER_IP` | Giới hạn số người và số kết nối mỗi mạng. |
-| `DATA_FILE` | Nơi lưu dữ liệu, mặc định `data/db.json`. |
-| `TRUST_PROXY` | Đặt `0` nếu không chạy sau proxy (nginx, Render…). |
-| `DATABASE_URL` | Chuỗi kết nối PostgreSQL (Neon). Có thì lưu vào PostgreSQL thay cho file JSON. `PG_FLUSH_MS` (mặc định 10000) là nhịp ghi nền, `PG_SSL=0` tắt SSL khi chạy cục bộ, `PG_IMPORT_JSON=0` tắt tự nhập file JSON cũ. |
-| `MARTIAL_ENABLED`, `PK_ENABLED` | Đặt `0` để tắt cả Võ Học Các và Sân đấu, hoặc chỉ Sân đấu. `PK_MAX_MATCHES` (mặc định 20) là số trận cùng lúc tối đa; `PK_BUFF_SCALE` (mặc định 0,15) là hệ số buff của phòng có buff. |
-| `KYDAO_ENABLED`, `KYDAO_MAX_GAMES`, `KYDAO_TIME_SCALE` | Kỳ Đạo (bàn cờ ở Sân chùa). Đặt `KYDAO_ENABLED=0` để tắt (mọi `kd:*` trả "Bàn cờ chưa mở."). `KYDAO_MAX_GAMES` (mặc định 12) là số ván cùng lúc tối đa, tính cả "bàn trong". `KYDAO_TIME_SCALE` (mặc định 1) nhân mọi mốc giờ để thử nhanh, ví dụ 0.05. Ván cờ không cộng công đức. |
-| `SPEEDUP_ENABLED` | Cúng dường để hoàn thành tu luyện ngay (cần bật cúng dường tịnh tài). `0` để tắt; không giới hạn số lần hoàn thành nhanh mỗi ngày. |
-| `VOICE` | Đặt `0` để tắt nói chuyện bằng giọng. `VOICE_MAX`: số người tối đa bật nói chuyện cùng lúc (mặc định 150). |
-| `CF_TURN_KEY_ID`, `CF_TURN_API_TOKEN` | TURN của Cloudflare cho nói chuyện bằng giọng qua 4G / mạng công ty. |
-| `TURN_URLS`, `TURN_USERNAME`, `TURN_CREDENTIAL` | TURN tự dựng (coturn…). `STUN_URLS` để đổi máy chủ STUN. |
-| `TTS_URL` | Địa chỉ máy chủ đọc VieNeu (`python -m apps.openai_speech`). Để trống thì trình duyệt tự đọc thông báo. |
-| `TTS_VOICE`, `TTS_API_KEY`, `TTS_TIMEOUT` | Giọng đọc (mặc định `Mai Anh`), khóa của máy chủ đọc, thời gian chờ (giây, mặc định 45). |
+| `DONATION_MODE=test` | Tự ghi nhận sau 10 giây; lưu `mode: 'test'`, nguồn `auto` và `paidAmount=0`. Tách số thử khỏi tiền đã đối soát. |
+| `DONATION_MODE=live` | Ban điều hành đối chiếu rồi xác nhận, hoặc webhook SePay đã xác thực báo giao dịch có mã khớp và đủ tiền. |
+| Hoàn thành tu luyện ngay | Khoản `purpose: 'speedup'` không tự xác nhận theo ngân hàng. Trong chế độ thật, Ban điều hành phải duyệt; thông báo ngân hàng chỉ được ghi nhận để kiểm tra. |
+| Gọi xác nhận lặp | Mọi nơi gọi `confirmDonation` chỉ xác nhận khoản đang chờ, nên không phát thưởng hai lần. Bản ghi đã xác nhận không bị xóa; khoản chờ quá 24 giờ thì hết hạn. |
+| Mở skin | Khoản `purpose: 'skin'` được duyệt qua luồng cúng dường; quyền mở đúng skin được lưu bền theo tài khoản. |
 
-**Chỉ điền tài khoản ngân hàng đứng tên nhà chùa, khi đã có văn bản đồng ý của nhà chùa.**
+Trong SePay, cấu hình webhook nhận tiền vào tại đường dẫn `/api/webhooks/sepay`, dùng chứng thực API Key khớp `SEPAY_API_KEY`.
+Giữ nguyên mã `CD` kèm sáu ký tự trong nội dung chuyển khoản. Chưa dùng SePay thì duyệt sau khi đối chiếu sao kê tại `/admin.html`.
+Hào quang có chín bậc theo `public/js/aura.js`:
 
-## Bật đăng nhập Google
+| Cảnh giới hào quang | Từ | Thời gian |
+|---|---|---|
+| Luyện Khí | 20.000 đ | 5 phút |
+| Trúc Cơ | 50.000 đ | 6 phút |
+| Kim Đan | 100.000 đ | 7 phút |
+| Nguyên Anh | 200.000 đ | 8 phút |
+| Hóa Thần | 500.000 đ | 9 phút |
+| Luyện Hư | 1.000.000 đ | 10 phút |
+| Hợp Thể | 2.000.000 đ | 11 phút |
+| Đại Thừa | 5.000.000 đ | 12 phút |
+| Độ Kiếp | 10.000.000 đ | 13 phút |
 
-1. Trong [Google Cloud Console](https://console.cloud.google.com/auth/clients), cấu hình màn hình đồng ý và tạo OAuth Client ID loại **Web application**.
-2. Thêm **Authorized redirect URI** khớp chính xác với địa chỉ trang, ví dụ `https://chuataman.vn/api/auth/google/callback`. Khi chạy thử trên máy, đăng ký `http://localhost:3000/api/auth/google/callback`.
-3. Đặt `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` và `AUTH_ORIGIN` trong cấu hình máy chủ. `AUTH_ORIGIN` là địa chỉ gốc, ví dụ `https://chuataman.vn`, không có dấu `/` ở cuối. Khởi động lại máy chủ.
-4. Nếu ứng dụng Google ở chế độ **Testing**, thêm tài khoản dùng thử trong mục **Audience**.
+Khoản mới cộng dồn khi hào quang còn hạn và làm mới thời gian; hết hạn thì số cộng dồn về không. Có tùy chọn ẩn danh và không hiện hào quang.
+Thông báo có chuông và giọng VieNeu nếu cấu hình TTS; khi thiếu hoặc lỗi dịch vụ đọc, trình duyệt dùng giọng sẵn có. Xem [máy chủ đọc](tts/README.md).
 
-Khách vẫn vào chánh điện như trước, nhưng **tu luyện, Võ Học Các và Sân đấu chỉ dành cho tài khoản đã đăng nhập**, và những gì khách tích chỉ nằm trên trình duyệt đó. Đăng nhập thì công đức, tịnh tài đã cúng dường, hào quang, nội công, chiêu đã học, thắng thua được lưu theo tài khoản (xem [docs/VO-HOC.md](docs/VO-HOC.md)). Khi đăng nhập, công đức khách còn gắn với trình duyệt đó được chuyển vào tài khoản một lần. Khoản cúng dường tạo trước khi đăng nhập vẫn cộng điểm vào tài khoản sau khi được xác nhận. Điểm hôm nay tính theo giờ Việt Nam. Tên hiển thị và trang phục vẫn do người dùng chọn trên mỗi thiết bị. Máy chủ chỉ lưu mã định danh tài khoản đã băm và phiên của ứng dụng.
+## Triển khai
 
-**Lưu trữ khi triển khai:** ứng dụng dùng file JSON trên một máy chủ. Đặt `DATA_FILE` trên ổ đĩa bền vững để giữ điểm qua các lần khởi động lại hoặc triển khai. Nếu đã có dữ liệu, sao lưu và chuyển file `db.json` hiện có sang ổ mới trước khi đổi `DATA_FILE`.
+| Cách | Thiết lập trong repo |
+|---|---|
+| Render | Tạo Blueprint từ [render.yaml](render.yaml): Node 22, `npm ci --omit=dev`, chạy trực tiếp `node server.js`, kiểm tra `/healthz`. `ADMIN_KEY` được tạo ngẫu nhiên; điền các biến còn trống và chọn đúng chế độ cúng dường. |
+| Docker | [Dockerfile](Dockerfile) dùng Node 22 Alpine, có ffmpeg và chạy bằng người dùng `node`. Gắn volume để giữ file JSON. |
+| VPS | Cài phụ thuộc production, cấu hình `.env`, chạy một tiến trình bằng pm2 và đặt nginx phía trước. Bật HTTPS để dùng micro. |
+| PostgreSQL Neon | Đặt `DATABASE_URL`; xem [docs/NEON.md](docs/NEON.md) để nhập dữ liệu, kiểm tra kết nối, sao lưu và xử lý sự cố. |
 
-## Đưa lên mạng trong ngày
+Render Free dùng ổ đĩa tạm, có thể ngủ khi không hoạt động; file JSON không bền qua deploy / khởi động lại.
+Dùng PostgreSQL hoặc ổ bền và đặt `DATA_FILE` vào đó. Trước khi đổi nơi lưu, sao lưu rồi chuyển dữ liệu cũ.
+Không chạy nhiều bản máy chủ độc lập để chia tải: trạng thái hoạt động vẫn ở RAM của một tiến trình.
 
-### Cách 1: Render (nhanh nhất, không cần máy chủ riêng)
-
-1. Đăng nhập https://render.com bằng GitHub.
-2. Chọn **New → Blueprint**, chọn repo này. Render đọc `render.yaml` và tạo dịch vụ web.
-3. Điền các biến còn trống: `BANK_ACCOUNT` (số tài khoản), `BANK_ACCOUNT_NAME` (tên chủ tài khoản, viết hoa không dấu, ví dụ `NGUYEN VAN A`), `SEPAY_API_KEY` nếu dùng. Ngân hàng đã đặt sẵn là Vietcombank (`BANK_ID=970436`). `ADMIN_KEY` được tạo ngẫu nhiên, xem trong tab Environment.
-4. Đợi build xong, mở địa chỉ `https://chua-tam-an.onrender.com` (hoặc tên Render cấp).
-
-Lưu ý: gói miễn phí của Render ngủ sau 15 phút không có ai và không giữ file dữ liệu khi khởi động lại. Khi chạy thật, nâng lên gói trả phí và gắn **Disk** (đặt `DATA_FILE=/var/data/db.json`), hoặc dùng cách 2.
-
-### Cách 2: VPS tại Việt Nam (Ubuntu)
-
-```bash
-git clone https://github.com/VipProCute/pagoda-online.git && cd pagoda-online
+```powershell
+docker build -t chua-tam-an .
+docker run -d -p 3000:3000 --env-file .env -v chua-data:/app/data chua-tam-an
 ```
 
-```bash
-npm ci --omit=dev && cp .env.example .env
+Trên VPS đã có repo và Node, dùng các lệnh sau; pm2 và nginx cần được cài trên máy chủ:
+
+```text
+npm ci --omit=dev
+pm2 start server.js --name chua --node-args="--env-file=.env"
+pm2 save
+pm2 startup
 ```
 
-Sửa `.env`, rồi chạy bằng pm2:
-
-```bash
-sudo npm i -g pm2 && pm2 start "npm run start:env" --name chua && pm2 save && pm2 startup
-```
-
-nginx (cần đủ các dòng `Upgrade` để chat thời gian thực hoạt động):
+Ví dụ cấu hình nginx từ cách triển khai VPS; thay tên miền bằng tên miền của chùa:
 
 ```nginx
 server {
@@ -367,97 +270,105 @@ server {
 }
 ```
 
-Bật HTTPS bằng `sudo certbot --nginx`.
+Bật HTTPS bằng `sudo certbot --nginx` khi đã cài certbot và trỏ tên miền. Giữ các dòng nâng cấp WebSocket cho Socket.IO.
+Theo dõi `/healthz`, nhất là `db` và `dbOk`; tải sao lưu JSON từ trang quản trị trước mỗi lần chuyển dữ liệu.
+Render chạy Node trực tiếp để nhận tín hiệu tắt và ghi nốt dữ liệu.
 
-### Cách 3: Docker
+## Kiến trúc trong một phút
 
-```bash
-docker build -t chua-tam-an . && docker run -d -p 3000:3000 --env-file .env -v chua-data:/app/data chua-tam-an
+- Không có bước build ứng dụng; máy chủ dùng Node.js CommonJS, Express 5 và Socket.IO 4.
+- Một tiến trình giữ trạng thái trong RAM; `store.save()` ghi nền ra JSON hoặc PostgreSQL. JSON đợi bốn giây, PostgreSQL mặc định 10 giây.
+- Việc liên quan tiền và đăng nhập chờ ghi bền trước khi trả kết quả; máy chủ tắt bình thường cũng cố ghi nốt dữ liệu.
+- JavaScript thuần được nạp theo thứ tự bằng thẻ `script` trong `public/index.html`, không dùng bundler.
+- Canvas 2D ở `public/js/hall.js`; Three.js chạy hoàn toàn trong trình duyệt, máy chủ chỉ phục vụ file tĩnh cho phần 3D.
+- Module 3D nạp khi cần bằng `import()`; Three.js cài qua npm, được phục vụ tại `/vendor/three/`.
+- `PLACES` gồm `hall`, `dojo`, `arena`; `SCENES` gồm `hall`, `yard`, `library`. Sân đấu là nơi riêng, dù dùng chung bộ vẽ cảnh.
+- Logic võ học, PK và luật cờ được tách khỏi giao diện. Máy chủ kiểm lại thời gian, quyền và hành động từ người chơi.
+
+```text
+server.js             HTTP, socket, timer và điều phối
+lib/                  lưu trữ, đăng nhập, kiểm duyệt, võ học, PK, Kỳ Đạo
+public/js/            ứng dụng và các module giao diện / luật dùng chung
+  world3d/            Three.js, cảnh, nhân vật, bàn cờ và hiệu ứng 3D
+public/models/        mô hình GLB nhân vật, bàn cờ và hiệu ứng
+tools/                kiểm tra, mô phỏng, dựng và chuyển đổi tài nguyên
+test/                 test thuần và đầu-cuối
+docs/                 hướng dẫn, giao thức, kế hoạch và bản đồ mã
 ```
 
-## Tự xác nhận cúng dường bằng SePay
+Chi tiết tại [bản đồ kiến trúc](docs/agents/ARCHITECTURE.md); tra theo symbol trong mã vì tài liệu kế hoạch có thể chậm cập nhật trạng thái.
+Trận PK đang diễn ra, lời mời và hàng chờ xin xăm không phải dữ liệu bền qua khởi động lại.
 
-1. Tạo tài khoản https://sepay.vn, liên kết tài khoản ngân hàng của chùa.
-2. Vào **Tích hợp Webhooks → Thêm webhook**:
-   - URL: `https://<tên-miền>/api/webhooks/sepay`
-   - Kiểu chứng thực: **API Key**, điền một chuỗi bí mật. Đặt cùng chuỗi đó vào `SEPAY_API_KEY`.
-   - Chỉ nhận tiền vào.
-3. Mỗi lượt cúng dường có mã dạng `CD8F3K2Q` trong nội dung chuyển khoản. Khi SePay báo có giao dịch chứa mã này và đủ số tiền, trang tự chuyển sang “Tùy hỷ công đức” và cập nhật bảng công đức.
+## Kiểm thử và công cụ
 
-Chưa dùng SePay thì ban điều hành đối chiếu sao kê rồi bấm **Xác nhận** trong `/admin.html`.
+| Việc | Lệnh / cách dùng |
+|---|---|
+| Kiểm cú pháp | `npm run check`; tự quét `server.js`, `lib/`, `public/js/`, `tools/`, `test/`. |
+| Toàn bộ test | `npm test`; dùng `node:test`, chạy tuần tự. Test đầu-cuối tự bật máy chủ trên cổng trống và dùng dữ liệu tạm. |
+| Một file | `node --test test/pk-engine.test.js`; có thể thêm `--test-name-pattern` trước tên file để lọc ca. |
+| Mô phỏng PK | `npm run sim -- roundrobin --games 2000 --seed 1`; dùng cùng engine với máy chủ. |
+| Harness thủ công | `node tools/ui-harness/serve.js`; mở đường dẫn `/harness/dojo/index.html`, `/harness/arena/index.html` hoặc `/harness/kydao/index.html` trên cổng 4173. |
+| Kiểm giao diện | `node tools/ui-harness/dojo/test.js` hoặc `node tools/ui-harness/kydao/ui-check.js` tự bật máy chủ tĩnh. Sân đấu: mở `node tools/ui-harness/serve.js 4174` trước, rồi ở cửa sổ khác chạy `node tools/ui-harness/arena/ui-check.js`; cần Playwright cài riêng. |
+| Đầu-cuối bàn cờ | `node tools/ui-harness/kydao/e2e-real.js`; dùng máy chủ thật và hai trình duyệt. |
+| Test PostgreSQL | Đặt `TEST_DATABASE_URL`, chạy `npm test`; mặc định `postgres://pagoda:pagoda@127.0.0.1:5432/pagoda_test`, không nối được thì bỏ qua các ca PG. |
+| Nhập / xuất dữ liệu | `node --env-file=.env tools/db-migrate.js import`, `verify`, `export` hoặc `stats`; xem hướng dẫn Neon trước khi nhập. |
+| Xem hiệu ứng mốc | Mở `http://localhost:3000/?celebrate=100`, thay bằng `666` hoặc `2000`; bản thử 666 hỏi trước khi hù. |
 
-## Quản trị
+| Công cụ tài nguyên | Công dụng |
+|---|---|
+| `tools/blender/kydao/` | Dựng sân, quân, đá và tài nguyên mặc định; xem [hướng dẫn Blender](tools/blender/kydao/README.md). Sân mới làm theo [hướng dẫn riêng](docs/ky-dai/HUONG-DAN-SAN-MOI.md). |
+| `tools/blender/avatar/build.py` | Dựng nhân vật Blender, tóc và trang phục. |
+| `tools/blender/fx/` | Dựng bản mẫu Ma Vương, đài sen và hào quang; xem [cách chạy](tools/blender/fx/README.md). |
+| `tools/build_chants.py` | Dựng MP3 bài tụng và mốc chữ JSON bằng VieNeu-TTS; đầu vào kinh văn ở `public/js/chants.js`. |
+| `tools/build_blessing_voice.py` | Dựng các clip lời chúc mốc công đức. |
+| `tools/fx/` và `tools/memes/` | Chuyển ảnh hiệu ứng từ PNG sang WebP và dựng thẻ meme. |
 
-Mở `/admin.html`, nhập `ADMIN_KEY`. Sau đó mở trang chính và vào chánh điện: tên bạn có huy hiệu Ban điều hành, được ẩn tin nhắn và dừng khóa tụng.
+Bài tụng có sẵn giọng tổng hợp, mõ và chuông; không cần chạy TTS khi người chơi cùng tụng. Giọng tổng hợp có thể đọc sai chữ Hán Việt, cần nghe lại khi dựng.
+Cài công cụ dựng bài trên môi trường Python riêng: `pip install vieneu librosa soundfile audiotsm faster-whisper "onnxruntime==1.22.1"`.
+Ví dụ dựng bài bằng giọng có sẵn: `python tools/build_chants.py --voice "Thiền Tâm Đức"`.
+Nhân bản bằng tùy chọn `--ref-audio`, mặc định lấy 60 giây đầu; dùng `--ref-seconds` để đổi. Cần sự đồng ý; file mẫu phải nằm ngoài repo, không commit hoặc tải lên dịch vụ khác. Không sửa tay MP3 / JSON hay ảnh WebP sinh ra, hãy sửa đầu vào và chạy lại công cụ.
+Thêm kinh bằng Markdown và mục trong `public/kinh/index.json`; có chương, mục lục, kệ, ảnh và định dạng chữ cơ bản.
+Thêm meme vào `public/img/memes/`; máy chủ đọc lại danh mục, nhưng phải ghi nguồn và giấy phép trước khi dùng.
 
-## Cấu trúc mã
+## Tài nguyên và giấy phép
 
-```
-server.js              máy chủ: Express + Socket.IO, toàn bộ luật chơi và API
-lib/moderation.js      lọc tin nhắn, tên, số tài khoản, link; luật trừ công đức khi nói tục
-lib/announce.js        soạn câu thông báo cúng dường, gọi máy chủ đọc VieNeu
-lib/store.js           lưu dữ liệu ra file JSON
-public/index.html      trang chánh điện
-lib/store.js           kho dữ liệu: file JSON hoặc PostgreSQL (store-pg.js, store-sections.js), nhập / xuất ở tools/db-migrate.js
-lib/martial/service.js tu luyện, học chiêu, bộ chiêu, hoàn thành ngay (logic thuần, có test)
-lib/pk/engine.js       luật luận võ so chiêu đồng thời (thuần, dùng chung với tools/pk-sim)
-lib/pk/manager.js      sân đấu: người ở sân, lời mời, sảnh, vòng lượt, giờ, vào lại
-lib/pk/buffs.js        buff pháp tướng / quỷ / hào quang cho phòng có buff; rules.js, rng.js
-public/js/martial.js   3 nhánh, 15 chiêu, 6 công pháp, cấp nội công (dùng chung máy chủ và trình duyệt)
-public/js/places.js    chuyển giữa các nơi (chánh điện, Võ Học Các, Sân đấu); dojo.js, arena.js là giao diện hai nơi sau
-public/js/hall.js      vẽ chánh điện, sân chùa, Tàng Kinh Các, Sân đấu, nhân vật (Canvas 2D); Hall.view3d là cầu nối với thế giới 3D
-public/js/view3d-ui.js thanh điều khiển 3D (nút 3D/2D, đổi góc nhìn Góc 1/3)
-public/js/view-math.js chuyển đổi toạ độ sàn 2D ↔ thế giới 3D (SCENE_SIZE), toán máy quay và raycast (UMD)
-public/js/gfx-detect.js nhận diện phần cứng GPU và phân loại mức đồ họa ban đầu
-public/js/world3d/     thế giới 3D (Three.js 0.187.0 từ /vendor/three/, ES module .mjs, nạp lười bằng import())
-  index.mjs            World3D: khởi tạo cảnh, vòng lặp vẽ, nạp cảnh và đồng bộ thực thể
-  kit.mjs              bộ khối kiến trúc và vật thể 3D (cột, tường, ngói, đèn lồng, bồ đoàn, bàn đá...)
-  avatar.mjs           nhân vật 3D (nam/nữ, 12 màu áo, 4 kiểu tóc), NPC, hoạt ảnh bước đi, hào quang
-  quality.mjs          quản lý 3 mức đồ họa (Thấp/Vừa/Cao), theo dõi FPS và tự hạ mức khi giật lag
-  camera.mjs           máy quay góc nhìn 1 và 3, làm mượt chuyển động, thu phóng
-  input.mjs            xử lý phím WASD, chạm sàn raycast, kéo xoay, chụm zoom, cần ảo trên di động
-  board3d.mjs          bàn cờ 3D cho Kỳ Đạo
-  board-assets.mjs     nạp tài nguyên mô hình quân cờ 3D (.glb) và vật liệu skin
-  scenes/hall.mjs      cấu trúc 3D Chánh điện (tượng Phật mặt meme, bàn thờ, nến, bát hương)
-  scenes/yard.mjs      cấu trúc 3D Sân chùa (cây cối, bàn đá, lối đi)
-  scenes/library.mjs   cấu trúc 3D Tàng Kinh Các (kệ kinh, 8 bồ đoàn, đèn dầu)
-  scenes/arena.mjs     cấu trúc 3D Sân đấu (võ đài, giá binh khí, mộc nhân)
-public/js/kydao-skins.js danh mục 8 sân, 8 bộ quân, khẩu hiệu (dùng chung Node, Canvas, Three.js)
-public/js/kydao-fx.js  hiệu ứng 2D Kỳ Đạo (khai mở lãnh địa, chấn động phong cấp, chiến thắng)
-public/js/kydao-draw.js vẽ quân cờ Kỳ Đạo chi tiết, mặt sân và dòng sông
-public/js/meditate.js  bảng tọa thiền trên bồ đoàn ở Tàng Kinh Các (chọn công pháp, đếm giờ phiên tu)
-public/js/voice.js     nói chuyện bằng giọng (WebRTC, nghe theo khoảng cách)
-public/js/library.js   Tàng Kinh Các: kệ kinh và trang đọc
-public/js/aura.js      9 cảnh giới hào quang cúng dường (dùng chung máy chủ và trình duyệt)
-public/js/merit.js     6 pháp tướng công đức và 4 dạng quỷ (dùng chung)
-public/kinh/           kinh trong Tàng Kinh Các (Markdown + hình)
-tts/                   Dockerfile chạy máy chủ đọc VieNeu
-public/js/audio.js     phát bài tụng đồng bộ, chuông, mõ, clip lời chúc, tiếng hù (Web Audio)
-public/js/celebrate.js hiệu ứng chúc mừng ở mốc công đức (meme, giọng chúc, hù 666)
-public/css/celebrate.css giao diện của hiệu ứng trên
-public/js/chants.js    kinh văn các bài tụng (đầu vào của tools/build_chants.py)
-public/audio/          bài tụng dựng sẵn (chants/), tiếng chuông (bell.mp3)
-public/audio/blessings/ giọng chúc (4 file mp3 + manifest.json)
-public/img/memes/      kho meme (thả ảnh vào là tự có), nguồn ảnh ở public/img/PHOTO-CREDITS.txt
-public/img/devil.webp  mặt quỷ mốc 666 (Canva), devil.svg là bản dự phòng
-public/img/fx/halo.webp hào quang công đức (Canva)
-public/img/fx/demon-*.webp 4 con quỷ theo sau người công đức âm (Canva)
-tools/fx/prepare_demon_sprites.py tách nền xám của 4 con quỷ thành ảnh trong suốt
-tools/fx/prepare_canva_assets.py chuyển PNG xuất từ Canva thành ảnh web
-tools/blender/kydao/   script Blender dựng mô hình quân cờ (.glb) và render mặt sân (.webp)
-tools/blender/kydao/stones.py dựng 8 bộ đá cờ vây và caro
-public/img/kydao/stones/ ảnh 8 bộ đá (.webp, hai ô: bên đi trước và bên đi sau)
-lib/kydao/shop.js      cửa hàng skin: khóa, giá, quyền sở hữu (logic thuần)
-tools/build_chants.py  dựng bài tụng bằng VieNeu-TTS
-tools/build_blessing_voice.py dựng giọng chúc (giọng nữ) bằng VieNeu-TTS
-public/js/lunar.js     lịch âm
-public/js/app.js       kết nối và giao diện
-public/admin.html      trang quản trị
-```
+Mã nguồn **chưa khai báo giấy phép cho phép sử dụng lại**: không có file `LICENSE`, `package.json` ghi `UNLICENSED` và `private: true`.
+Tài nguyên có giấy phép riêng; không suy từ giấy phép của một ảnh sang toàn bộ dự án.
 
-## Việc nên làm tiếp
+| Loại | Nguồn và điều kiện |
+|---|---|
+| Ảnh, mô hình, hiệu ứng | [public/img/NOTICE.txt](public/img/NOTICE.txt); gồm tài nguyên tự dựng, Canva và nguồn Poly Haven CC0. |
+| Ảnh chụp làm meme | [public/img/PHOTO-CREDITS.txt](public/img/PHOTO-CREDITS.txt); giữ ghi công cho ảnh CC BY. |
+| Âm thanh | [public/audio/NOTICE.txt](public/audio/NOTICE.txt); giọng VieNeu dùng mô hình Apache-2.0, nhạc và tiếng chuông có nguồn riêng. |
+| Kinh văn và hình minh họa | [public/kinh/NOTICE.txt](public/kinh/NOTICE.txt); bản dịch Kinh Dược Sư có CC BY-SA 4.0. |
+| Thư viện và nội dung bói toán | [public/data/NOTICE.txt](public/data/NOTICE.txt); Three.js theo MIT, lời tarot và tử vi do dự án viết. |
 
-- Thu âm bài tụng thật của chư tăng chùa đối tác, thay giọng mô phỏng.
-- Chuyển dữ liệu sang Redis khi đông người (nhiều máy chủ); PostgreSQL đã có (xem trên).
-- Chia phòng “Chánh điện 1, 2…” khi quá 300 người.
-- Hỏi luật sư về giấy phép mạng xã hội (Nghị định 147/2024/NĐ-CP) và bảo vệ dữ liệu cá nhân trước khi mở rộng.
+Không thêm tài nguyên còn bản quyền khi chưa có quyền sử dụng. NOTICE hiện còn ghi việc cần xác minh quyền dùng Obito, tiếng chuông và tài liệu Dịch Cân Kinh trước khi phát hành rộng.
+Giấy phép của mô hình do người khác dựng không tự bao gồm quyền với nhân vật, logo hoặc tác phẩm gốc.
+
+## Tài liệu chi tiết
+
+| Tài liệu | Đọc khi cần |
+|---|---|
+| [Hướng dẫn nâng cấp](docs/HUONG-DAN-NANG-CAP.md) | Muốn đổi X thì sửa ở đâu, công thức từng loại nâng cấp, danh sách kiểm trước khi merge. |
+| [Lưu trữ Neon](docs/NEON.md) | Cấu hình PostgreSQL, nhập / xuất, sao lưu và xử lý lỗi. |
+| [Võ học](docs/VO-HOC.md) | Tu luyện, chiêu thức và luật luận võ; kiểm số liệu hiện hành trong mã. |
+| [Giao thức võ học](docs/VO-HOC-GIAO-THUC.md) | Payload, lưu trữ và hợp đồng giao diện. |
+| [Cân bằng võ học](docs/VO-HOC-CAN-BANG.md) | Số liệu, mô phỏng và quyết định cân bằng. |
+| [Giao thức Kỳ Đạo](docs/KY-DAO-GIAO-THUC.md) | Năm môn cờ, Elo, socket, skin và lưu ván. |
+| [Kế hoạch Kỳ Đài](docs/KE-HOACH-KY-DAI.md) | Thiết kế skin và hợp đồng tài nguyên; trạng thái xem thêm bảng việc. |
+| [Làm sân mới](docs/ky-dai/HUONG-DAN-SAN-MOI.md) | Dựng sân bằng Blender, dùng mô hình nguồn và kiểm độ rõ bàn cờ. |
+| [Kế hoạch 3D](docs/KE-HOACH-3D.md) | Kiến trúc lớp vẽ 3D và phần còn chờ soát. |
+| [Kế hoạch Pháp Tướng 3D](docs/KE-HOACH-PHAP-TUONG-3D.md) | Bản mẫu, ngân sách mô hình và các bước chưa hoàn thành. |
+| [Tử Vi quy ước](docs/TU-VI-QUY-UOC.md) | Bảng sao và khác biệt trường phái; còn thiếu đối chiếu với hai công cụ Việt. |
+| [Bản đồ mã](docs/agents/ARCHITECTURE.md) | Module, dữ liệu và các điểm phải sửa đồng bộ. |
+| [Gói ngữ cảnh](docs/agents/CONTEXT-PACKS.md) | Chọn đúng nhóm file trước khi làm việc. |
+| [Điều phối agent](docs/agents/ORCHESTRATION.md) | Phân thẻ, vùng sửa và báo cáo bàn giao. |
+
+## Đóng góp
+
+Đọc [AGENTS.md](AGENTS.md), thẻ trong [task.md](task.md) và gói ngữ cảnh trước khi sửa.
+Một thẻ việc, một nhánh, một PR; giữ đúng phạm vi và các điểm phải đồng bộ.
+Chạy `npm run check` và test của phần thay đổi; chạy toàn bộ test khi đụng máy chủ, lưu trữ, PK hoặc giao thức.
+Viết tài liệu, chú thích và chữ giao diện bằng tiếng Việt có dấu; giữ định danh mã bằng tiếng Anh.
+Ghi nguồn và giấy phép tài nguyên, giữ bí mật ngoài Git, cập nhật tài liệu cùng mã.
