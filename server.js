@@ -53,6 +53,8 @@ const SITE_NAME = clean(process.env.SITE_NAME || 'Chùa Tâm An', 60);
 const INCENSE_MINUTES = Math.max(1, Number(process.env.INCENSE_MINUTES) || 30);
 const MAX_PLAYERS = Number(process.env.MAX_PLAYERS) || 300;
 const MAX_CONN_PER_IP = Number(process.env.MAX_CONN_PER_IP) || 8;
+const CHAT_HISTORY = { maxAgeMs: 24 * 60 * 60 * 1000, maxMessages: 512 };
+const CHAT_MODERATION_BUFFER = 250;
 const SEPAY_API_KEY = process.env.SEPAY_API_KEY || '';
 const BANK = {
   id: (process.env.BANK_ID || '').trim(),
@@ -388,6 +390,7 @@ function clientConfig() {
     donation: DONATION_ENABLED ? { mode: DONATION_TEST ? 'test' : 'live', bank: BANK.label, account: BANK.account, accountName: BANK.name, funds: FUNDS.map(f => ({ id: f.id, name: f.name })) } : null,
     tracks: TRACKS,
     kinds: KINDS,
+    chatHistory: CHAT_HISTORY,
     voice: VOICE_ENABLED,
     tts: announce.enabled,
     martial: { enabled: MARTIAL_ENABLED, pk: PK_ENABLED, speedup: SPEEDUP_ENABLED, loginRequired: auth.enabled },
@@ -665,17 +668,34 @@ function sparReady() {
   }
 }
 const voiceCount = () => { let n = 0; for (const p of players.values()) if (p.v) n++; return n; };
-function sys(text) {
-  const m = { id: store.nextId(), pid: 0, name: '', c: 0, text, t: now(), sys: true };
-  db.chat.push(m); if (db.chat.length > 250) db.chat.splice(0, db.chat.length - 250);
+function recentChat(serverTime) {
+  const cutoff = serverTime - CHAT_HISTORY.maxAgeMs;
+  return db.chat.filter(m => !m.hidden && m.t >= cutoff).slice(-CHAT_HISTORY.maxMessages).map(publicMsg);
+}
+function appendChat(m) {
+  db.chat.push(m);
+  const moderationStart = db.chat.length - CHAT_MODERATION_BUFFER;
+  if (moderationStart > CHAT_HISTORY.maxMessages) {
+    // Giữ đủ tin còn hiển thị và cửa sổ gần nhất để quản trị xem cả tin đã ẩn.
+    let visible = 0;
+    const kept = [];
+    for (let i = db.chat.length - 1; i >= 0; i--) {
+      const msg = db.chat[i];
+      if (!msg.hidden) visible++;
+      if (i >= moderationStart || (!msg.hidden && visible <= CHAT_HISTORY.maxMessages)) kept.push(msg);
+    }
+    db.chat = kept.reverse();
+  }
+  store.save();
   io.emit('chat', publicMsg(m));
+}
+function sys(text) {
+  appendChat({ id: store.nextId(), pid: 0, name: '', c: 0, text, t: now(), sys: true });
 }
 function postChat(p, text, pen) {
   const m = { id: store.nextId(), pid: p.id || 0, uid: p.uid, name: p.name, c: p.look ? p.look.c : p.c, text, t: now(), mod: !!p.mod };
   if (pen) m.pen = pen;
-  db.chat.push(m); if (db.chat.length > 250) db.chat.splice(0, db.chat.length - 250);
-  store.save();
-  io.emit('chat', publicMsg(m));
+  appendChat(m);
 }
 function hideMessage(id) {
   const m = db.chat.find(x => x.id === id);
@@ -950,11 +970,12 @@ io.on('connection', socket => {
     players.set(p.id, p);
     socket.data.pid = p.id;
     rollDay(); bump('visits');
+    const serverTime = now();
     ack({
-      ok: true, you: p.id, uid: session ? undefined : uid, serverTime: now(), config: clientConfig(),
+      ok: true, you: p.id, uid: session ? undefined : uid, serverTime, config: clientConfig(),
       auth: { enabled: auth.enabled, signedIn: Boolean(session) },
       players: [...players.values()].map(publicPlayer),
-      chat: db.chat.filter(m => !m.hidden).slice(-60).map(publicMsg),
+      chat: recentChat(serverTime),
       prayers: db.prayers.filter(x => !x.hidden).slice(-40).map(publicPrayer),
       incense: activeIncense().slice(-60),
       today: db.today, total: db.total, online: players.size,
