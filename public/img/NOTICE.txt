@@ -66,6 +66,16 @@ HÌNH ẢNH TRONG THƯ MỤC NÀY — NGUỒN GỐC VÀ GIẤY PHÉP
    bằng nhân vật tự thiết kế trước khi phát hành rộng hay dùng cho mục đích thương mại.
    Thiếu ảnh hoặc ảnh lỗi thì hall.js tự vẽ nhân vật áo dài thường thay thế.
 
+3d) Mô hình 3D NPC Obito trong Tàng Kinh Các 3D (public/models/npc/obito.glb)
+   "Tobi" của Cyrone (https://sketchfab.com/Cyrone), tải từ
+   https://sketchfab.com/3d-models/tobi-6409872a1ca5462bbabd13180a88f085
+   Giấy phép của mô hình: CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/). Dùng nguyên tệp,
+   chỉ đổi tên. Khi hiện trong game, mã (public/js/world3d/npc-glb.mjs) phóng to, ẩn quả bom đất sét,
+   đổi vật liệu sang có ánh sáng và xoay xương cho dáng đi; tệp gốc không bị sửa.
+   Nhân vật vẫn thuộc Naruto (© Masashi Kishimoto / Shueisha) như mục 3c: giấy phép CC BY chỉ áp cho
+   phần dựng hình của tác giả mô hình, không thay cho quyền dùng nhân vật.
+   Thiếu tệp hoặc tệp lỗi thì dùng nhân vật Obito dựng bằng mã (avatar.mjs).
+
 4) Thêm meme của riêng bạn
    Chỉ cần thả ảnh (jpg, jpeg, png, webp, gif, avif) vào public/img/memes/ — máy chủ tự liệt kê và
    hiệu ứng chúc mừng sẽ bốc ngẫu nhiên cả ảnh mới. Nên dùng ảnh vuông ~720 px, dưới ~110 KB, và chỉ

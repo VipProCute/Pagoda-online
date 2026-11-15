@@ -127,6 +127,7 @@
 | T-204 | Vòng hình 3 Pháp Tướng 3D: nới ngân sách Ma Vương (6.000 tam giác, ảnh 1024 px), lửa hộ thân thay vỏ khí, sửa lỗi máy quay sát 👤 duyệt (chặn T-145 → T-149) | ✅ Xong (bản nháp, hình chưa đạt) | P0 | CORE + HALL + KYDAI | Claude Opus 5.5 điều phối, gpt-6.1-sol thực thi |
 | T-205 | Bật Pháp Tướng 3D mặc định cho người chơi (bản vòng 3), tắt bằng `ta-fx3d`='0' 👤 chủ dự án bảo bật 14/11 "chơi tạm" | ✅ Xong | P0 | CORE + HALL | Claude Fable 5.2 |
 | T-206 | Lịch sử chat chỉ hiện tin trong 24 giờ gần nhất và tối đa 512 tin (máy chủ lọc khi khách vào, giao diện tự bỏ tin cũ) 👤 chủ dự án yêu cầu 15/11 | ✅ Xong | P1 | CORE | GPT (viết) · Claude Sonnet 5.5 (đưa vào main, kiểm) |
+| T-207 | NPC Obito 3D dùng mô hình `tobi.glb` của chủ dự án (CC BY 4.0, Cyrone); bản 2D giữ nguyên 👤 chủ dự án yêu cầu 15/11 | 🟣 Chờ soát | P2 | CORE + HALL | Claude Opus 5.5 |
 | T-152 | (Tùy chọn) Chụp lại ảnh 2D từ mô hình 3D | ⚪ Hộp thư đến 👤 | P3 | CORE + HALL | — |
 | T-153 | Nghiệm thu chéo đợt Pháp Tướng 3D | ⏳ T-151 | P1 | CORE + HALL | — (gợi ý: gemini-4-argon-high soát hình, gpt-6.1-sol soát mã) |
 | T-160 | Danh mục 8 bộ đá cho cờ vây và caro (`STONES`), `kd:skin` nhận theo môn | ✅ Xong · PR #64 | P1 | CORE + KYDAO + KYDAI | gpt-6.1-terra |
@@ -1797,6 +1798,13 @@ Thiết kế, hợp đồng mã, ngân sách và định tuyến mô hình: [doc
 - **Đổi gì**: `server.js` thêm `CHAT_HISTORY` (24 giờ, 512 tin) gửi cho giao diện qua `config.chatHistory`; khi khách vào, `recentChat()` lọc tin quá 24 giờ và tin đã ẩn rồi lấy 512 tin mới nhất (trước đây 60). `appendChat()` thay cho hai chỗ `db.chat.push` cũ (trần 250): giữ đủ 512 tin còn hiển thị cộng 250 tin gần nhất (kể cả tin đã ẩn) để Ban điều hành vẫn xem được. `public/js/app.js` thêm `pruneChat()`: bỏ tin quá 24 giờ (hẹn giờ đúng lúc tin cũ nhất hết hạn) và tin vượt 512; thay trần 150 tin cũ. Tăng `?v=` của app.js.
 - **Không đổi**: giao thức socket, rate limit, bộ lọc `lib/moderation.js`, trang quản trị (vẫn xem 150 tin gần nhất). Tin quá 24 giờ chỉ bị ẩn khỏi khách, chưa xoá khỏi dữ liệu cho đến khi vượt trần ở `appendChat()`.
 - **Kiểm**: `npm run check` sạch; `test/chat-history.test.js` (2 test, logic thuần) và `test/e2e-chat-history.test.js` (2 test, máy chủ thật) đạt.
+
+### T-207 · NPC Obito 3D dùng mô hình .glb của chủ dự án
+- **Trạng thái**: 🟣 Chờ soát · chủ dự án gửi `tobi.glb` 15/11 · **Ưu tiên**: P2 · **Gói ngữ cảnh**: CORE + HALL
+- **Người làm**: Claude Opus 5.5 · **Nhánh**: claude/obito-npc-model-replacement-77ecb5
+- **Đổi gì**: thêm `public/models/npc/obito.glb` ("Tobi" của Cyrone trên Sketchfab, CC BY 4.0, dùng nguyên tệp; ghi nguồn ở `public/img/NOTICE.txt` mục 3d). Mô-đun mới `public/js/world3d/npc-glb.mjs`: `createGlbAvatar` gặp vai có trong `NPC_GLB` (hiện chỉ `obito`) thì nạp mô hình, phóng cho cao 1,62 m, ẩn quả bom đất sét, đổi vật liệu unlit sang có ánh sáng, hạ hai tay, tự xoay xương chân, tay và vạt áo khi đi (mô hình không có clip). Bản dựng bằng mã vẫn giữ nhãn tên, bong bóng, bóng chân; `.glb` lỗi thì giữ Obito bản mã; `ta-avatar = 'code'` thì không tải. Bản 2D không đổi. Tăng `?v=` dây chuyền avatar-glb (9), scenes arena/yard (12), world3d/index (15), view3d-ui.js (14).
+- **Kiểm**: `npm run check` sạch; `npm test` 1109 test, 1106 đạt, 0 trượt, 3 bỏ qua (PostgreSQL). Thêm 3 test ở `test/world3d-avatar-glb.test.js`. Xem game thật ở Tàng Kinh Các 3D: Obito hiện đúng cỡ, đi lại được, chạm vào vẫn mở hội thoại, không lỗi console.
+- **Còn mở**: mô hình 0,98 MB (chỉ tải khi vào Tàng Kinh Các 3D); khi đi vạt áo trước hở thấy quần; chưa có dáng vái/ngồi riêng (dùng xoay xương đơn giản). Nhân vật vẫn có bản quyền Naruto như mục 3c của NOTICE.
 ---
 
 ## Hộp thư đến (ý tưởng, chưa đủ để giao)

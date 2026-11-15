@@ -6,7 +6,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const MODELS = path.join(__dirname, '..', 'public', 'models', 'avatar');
-const load = () => import('../public/js/world3d/avatar-glb.mjs?v=8');
+const load = () => import('../public/js/world3d/avatar-glb.mjs?v=9');
 const settle = async () => { for (let i = 0; i < 6; i++) await new Promise(resolve => setImmediate(resolve)); };
 
 function canvasFactory() {
@@ -175,7 +175,7 @@ test('vai NPC đặc biệt và look npcFashion luôn dùng bản mã', async t 
   withSwitch(t, 'blender');
   const { makeAvatar } = await load();
   const assets = await fakeAssets();
-  for (const role of ['beggar', 'wanderer', 'obito', 'sweeper', 'fortune', 'reader']) {
+  for (const role of ['beggar', 'wanderer', 'sweeper', 'fortune', 'reader']) {
     const avatar = makeAvatar({ g: 'nam', c: 0, h: 0 }, { role, assets, createCanvas: canvasFactory() });
     await settle();
     assert.equal(glb(avatar), undefined, role);
@@ -187,6 +187,89 @@ test('vai NPC đặc biệt và look npcFashion luôn dùng bản mã', async t 
   assert.equal(glb(fashion), undefined);
   assert.deepEqual(assets.log, []);
   fashion.dispose();
+});
+
+// Mô hình Obito giả: xương mang tên như sau GLTFLoader, thân cao 0,18 m, một quả bom phải ẩn.
+async function fakeObito(log = []) {
+  const THREE = await import('three');
+  const scene = new THREE.Group();
+  const names = ['pelvis_03', 'spine_lower_04', 'spine_upper_05', 'head_neck_upper_07', 'arm_right_shoulder_028', 'arm_left_shoulder_047',
+    'arm_right_elbow_029', 'arm_left_elbow_048', 'leg_right_thigh_090', 'leg_left_thigh_094', 'leg_right_knee_091', 'leg_left_knee_095'];
+  for (const name of names) { const bone = new THREE.Bone(); bone.name = name; scene.add(bone); }
+  const body = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.18, 0.04), new THREE.MeshBasicMaterial({ name: 'Material46' }));
+  body.position.y = 0.09; body.name = 'Object_6';
+  const bomb = new THREE.Mesh(new THREE.SphereGeometry(0.01), new THREE.MeshBasicMaterial({ name: '-Bomb' }));
+  bomb.name = 'Object_21';
+  scene.add(body, bomb);
+  return { log, async load(url) { log.push(url); return { scene, animations: [] }; } };
+}
+
+test('NPC Obito dùng mô hình .glb riêng: ẩn thế thân, cao 1,62 m, bỏ quả bom, xương chân tay động khi đi', async t => {
+  withSwitch(t, 'blender');
+  const { makeAvatar } = await load();
+  const { NPC_GLB } = await import('../public/js/world3d/npc-glb.mjs?v=1');
+  const THREE = await import('three');
+  const assets = await fakeObito();
+  const avatar = makeAvatar({ g: 'nam', c: 11, h: 2 }, { role: 'obito', assets, reducedMotion: false, createCanvas: canvasFactory() });
+  await settle();
+  assert.deepEqual(assets.log, [NPC_GLB.obito.url]);
+  const model = avatar.group.getObjectByName('npc-glb');
+  assert.ok(model, 'đã gắn mô hình');
+  assert.equal(stand(avatar).visible, false);
+  avatar.update({ walking: false }, 0);
+  avatar.group.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(model.getObjectByName('Object_6'));
+  assert.ok(Math.abs(box.max.y - box.min.y - 1.62) < 0.01, 'chiều cao ' + (box.max.y - box.min.y));
+  assert.ok(Math.abs(box.min.y) < 0.01, 'chân chạm đất');
+  assert.equal(model.getObjectByName('Object_21').visible, false, 'quả bom bị ẩn');
+  assert.equal(model.getObjectByName('Object_6').material.type, 'MeshStandardMaterial', 'vật liệu có ánh sáng');
+  const thigh = model.getObjectByName('leg_right_thigh_090');
+  avatar.update({ walking: true }, 0.05);
+  const a = thigh.quaternion.clone();
+  avatar.update({ walking: true }, 0.1);
+  assert.notDeepEqual(thigh.quaternion.toArray(), a.toArray(), 'chân đung đưa khi đi');
+  avatar.update({ walking: true, reducedMotion: true }, 0.1);
+  assert.ok(Math.abs(thigh.quaternion.x) < 1e-9, 'giảm chuyển động thì đứng thẳng');
+  // nhãn tên và bong bóng vẫn ở bản mã
+  avatar.update({ name: 'Obito', bubble: 'Mặt nạ này không che được tâm đâu.' }, 0);
+  avatar.dispose();
+  assert.equal(avatar.group.getObjectByName('npc-glb'), undefined);
+});
+
+test('NPC Obito: .glb lỗi thì giữ thế thân, không ghi console; công tắc bản mã thì không tải', async t => {
+  withSwitch(t, 'blender');
+  const { makeAvatar } = await load();
+  const logs = [];
+  for (const name of ['log', 'warn', 'error']) t.mock.method(console, name, (...args) => logs.push(args));
+  for (const fail of [async () => null, async () => { throw new Error('404'); }]) {
+    const avatar = makeAvatar({ g: 'nam', c: 11, h: 2 }, { role: 'obito', assets: { load: fail }, createCanvas: canvasFactory() });
+    await settle();
+    avatar.update({ walking: true }, 0.05);
+    assert.equal(avatar.group.getObjectByName('npc-glb'), undefined);
+    assert.equal(stand(avatar).visible, true);
+    avatar.dispose();
+  }
+  assert.deepEqual(logs, []);
+  withSwitch(t, 'code');
+  const assets = await fakeObito();
+  const code = makeAvatar({ g: 'nam', c: 11, h: 2 }, { role: 'obito', assets, createCanvas: canvasFactory() });
+  await settle();
+  assert.deepEqual(assets.log, []);
+  code.dispose();
+});
+
+test('file obito.glb có đủ xương, vật liệu bom và ghi nguồn CC-BY', () => {
+  const buf = fs.readFileSync(path.join(__dirname, '..', 'public', 'models', 'npc', 'obito.glb'));
+  assert.equal(buf.toString('latin1', 0, 4), 'glTF');
+  const json = JSON.parse(buf.toString('utf8', 20, 20 + buf.readUInt32LE(12)));
+  const names = json.nodes.map(node => node.name.toLowerCase());
+  for (const bone of ['leg right thigh', 'leg left thigh', 'arm right shoulder', 'arm left shoulder', 'spine lower', 'head neck upper']) {
+    assert.ok(names.some(name => name.startsWith(bone)), bone);
+  }
+  assert.ok(json.materials.some(material => /bomb/i.test(material.name)));
+  assert.match(json.asset.extras.license, /CC-BY-4\.0/);
+  const notice = fs.readFileSync(path.join(__dirname, '..', 'public', 'img', 'NOTICE.txt'), 'utf8');
+  assert.match(notice, /models\/npc\/obito\.glb/);
 });
 
 test('setLook sang npcFashion khi .glb còn đang tải: bỏ kết quả tải, giữ thế thân; trở lại thì nạp mô hình', async t => {
