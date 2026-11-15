@@ -19,7 +19,7 @@ xoay (0,0,π): mép trên ảnh là y=0, mép dưới ảnh là y=5,5 (phía ng�
 Mọi số ngẫu nhiên đi qua random.Random('field2:volcano') và mathutils.noise với độ lệch cố định.
 Làm việc trong cảnh riêng 'KyDaiV2', không đụng cảnh khác, không lưu .blend.
 """
-import bpy, bmesh, json, math, os, random, time
+import bpy, bmesh, json, math, os, random, sys, time
 import numpy as np
 from mathutils import Matrix, Vector, noise
 
@@ -30,6 +30,16 @@ PREVIEW = globals().get('PREVIEW', True)
 ROUND = globals().get('ROUND', 0)
 SAMPLES = globals().get('SAMPLES')
 CHECK_MARKERS = globals().get('CHECK_MARKERS', False)     # 4 khối đỏ kiểm toạ độ (chỉ để thử)
+_ARGV = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
+if not REPO and _ARGV:
+    # Chạy không giao diện: blender -b --factory-startup -P field2.py -- <repo> <sân|all> [chess|xiangqi|both] [prev|final] [thư mục ảnh thử]
+    REPO = _ARGV[0]
+    FIELD = _ARGV[1] if len(_ARGV) > 1 else FIELD
+    VARIANT = _ARGV[2] if len(_ARGV) > 2 else VARIANT
+    PREVIEW = not (len(_ARGV) > 3 and _ARGV[3] == 'final')
+    # ảnh thử: thư mục truyền vào, mặc định assets-src/prev/<sân> (không commit)
+    globals()['SCRATCH'] = _ARGV[4] if len(_ARGV) > 4 else os.path.join(REPO, 'assets-src', 'prev', FIELD)
+    os.makedirs(globals()['SCRATCH'], exist_ok=True)
 if not REPO:
     raise SystemExit('Thiếu REPO')
 
@@ -643,7 +653,8 @@ def make_scene():
             if d.users == 0:               # dữ liệu mồ côi do các lần chạy trước để lại
                 coll.remove(d)
     sc = bpy.data.scenes.new(SCENE)
-    bpy.context.window.scene = sc
+    if bpy.context.window:                 # chạy không giao diện (-b) thì không có cửa sổ
+        bpy.context.window.scene = sc
     return sc
 
 
@@ -1175,105 +1186,111 @@ def mushroom(b, cap, x, y, z, r, rng):
     cap.ico((x, y, z + r * 1.5), r, 2, (1, 1, 0.5), 0.0, rng, smooth=True)
 
 
-def build_forest(ctx):
-    sc, rng = ctx.sc, ctx.rng
-    # gốc cổ thụ rỗng ở góc sau trái: hốc sáng đom đóm
-    bark = B('stump', basalt_material('bark', '#4e3a26', 0.9, bump=2.2))
-    glow = B('stump_glow', glow_material('hollow', '#a8d83a', 1.1))
-    sx, sy, _ = W(-4.95, 4.95)
-    bark.lathe([(0.8, -0.3), (0.66, 0.02), (0.54, 0.22), (0.5, 0.52), (0.47, 0.66), (0.39, 0.64), (0.33, 0.46), (0.0, 0.42)],
-               22, (sx, sy, 0), True, cap=False, jitter=0.12, seedv=2.1)
-    glow.lathe([(0.0, 0.47), (0.3, 0.47)], 18, (sx, sy, 0), True, cap=True)
-    for k in range(7):
-        a = 2 * math.pi * k / 7 + 0.3
-        d = Vector((math.cos(a), math.sin(a), 0))
-        p0 = Vector((sx, sy, 0.2)) + d * 0.42
-        p1 = Vector((sx, sy, 0.02)) + d * 0.95
-        p2 = Vector((sx, sy, -0.12)) + d * 1.35
-        limb(bark, p0, p1, 0.14, 0.09, 6)
-        limb(bark, p1, p2, 0.09, 0.015, 6)
-    bark.finish(sc)
-    glow.finish(sc)
-    ctx.light(-4.95, 4.95, 0.9, '#c8ff70', 22.0, 0.2)
-    # tảng đá phủ rêu + nấm ở góc sau phải
-    moss = B('mossrock', basalt_material('mossrock', '#4c6a34', 0.9, bump=2.0))
-    mx, my, _ = W(4.95, 4.9)
-    moss.ico((mx, my, 0.05), 0.6, 3, (1.15, 1.0, 0.85), 0.28, rng, rot=rzm(0.7), seedv=4.0, smooth=True)
-    moss.ico((mx + 0.5, my - 0.2, 0.0), 0.32, 3, (1.1, 0.9, 0.7), 0.3, rng, seedv=9.0, smooth=True)
-    moss.finish(sc)
-    cap = B('caps_red', basalt_material('cap_red', '#b8402a', 0.5))
-    capg = B('caps_glow', gem_material('cap_glow', '#7fe8d0', 1.4, 0.3))
-    stem = B('stems', basalt_material('stem', '#e8e0c8', 0.7))
-    for k in range(5):
-        a = rng.uniform(0, 6.28)
-        rr = rng.uniform(0.0, 0.32)
-        mushroom(stem, cap if k % 2 else capg, mx + rr * math.cos(a), my + rr * math.sin(a), 0.5, rng.uniform(0.07, 0.12), rng)
-    ctx.light(4.95, 4.9, 0.9, '#7fe8d0', 12.0, 0.2)
-    # miếu thổ thần gỗ ở giữa dải sau
-    wood = B('shrine_wood', basalt_material('shrine_wood', '#7a3e2a', 0.7, bump=1.6))
-    roof = B('shrine_roof', basalt_material('shrine_roof', '#5d6e3e', 0.9, bump=2.2))
-    base = B('shrine_base', basalt_material('shrine_base', '#6a6a5a', 0.8))
-    x, y, _ = W(0.0, 5.0)
-    base.box((x - 0.55, y - 0.45, -0.2), (x + 0.55, y + 0.45, 0.08), bevel=0.03, seg=1, flat_big=False)
-    for dx in (-0.36, 0.36):
-        for dy in (-0.28, 0.28):
-            wood.box((x + dx - 0.04, y + dy - 0.04, 0.08), (x + dx + 0.04, y + dy + 0.04, 0.5), flat_big=False)
-    wood.box((x - 0.34, y - 0.26, 0.08), (x + 0.34, y + 0.26, 0.44), bevel=0.01, seg=1, flat_big=False)
-    door = B('shrine_door', glow_material('shrine_door', '#ffcf80', 2.5))
-    door.box((x - 0.1, y - 0.28, 0.1), (x + 0.1, y - 0.255, 0.36))
-    door.finish(sc)
-    roof.cone((x, y, 0.5), 0.72, 0.1, 0.3, 4, rzm(math.pi / 4))
-    wood.box((x - 0.14, y - 0.04, 0.78), (x + 0.14, y + 0.04, 0.84), flat_big=False)
-    wood.finish(sc)
-    roof.finish(sc)
-    base.finish(sc)
-    ctx.light(0.0, 4.8, 0.7, '#ffd9a0', 8.0, 0.15)
-    # dương xỉ
-    fr = B('ferns', basalt_material('fern', '#3f7a2c', 0.8, bump=0.6))
-    for (u, v) in ((-4.6, 0.7), (-5.2, 2.0), (-4.65, 3.3), (-3.6, 5.1), (-2.6, 4.85), (2.4, 4.9), (3.4, 5.15), (4.7, 3.8), (5.25, 2.4),
-                   (4.6, 0.9), (-5.3, 0.4), (5.3, 0.4), (-1.5, 5.25), (1.5, 5.25)):
+class Kit:
+    """Mô hình nguồn bên thứ ba: Poly Haven (CC0) ở assets-src/polyhaven, tải bằng fetch-assets.js; hoặc mô hình
+    tự tải đặt ở assets-src/custom, gọi bằng mã `custom:<tên file>`. Cách dùng: docs/ky-dai/HUONG-DAN-SAN-MOI.md.
+
+    Mỗi gói glTF nạp một lần; lưới được đưa về toạ độ thế giới rồi dùng chung cho mọi bản đặt trong cảnh."""
+
+    def __init__(self, ctx):
+        self.ctx, self.parts, self.n, self.mats = ctx, {}, 0, set()
+
+    def load(self, aid):
+        if aid in self.parts:
+            return self.parts[aid]
+        if aid.startswith('custom:'):               # mô hình tự tải: assets-src/custom/<tên file .glb/.gltf/.fbx/.obj>
+            if aid[7:] != os.path.basename(aid[7:]) or aid[7:] in ('', '.', '..'):
+                raise SystemExit('Tên mô hình tự tải không hợp lệ (chỉ là tên file trong assets-src/custom): %s' % aid)
+            path = os.path.join(REPO, 'assets-src', 'custom', aid[7:])
+            if not os.path.exists(path):
+                raise SystemExit('Thiếu mô hình tự tải: đặt file vào assets-src/custom/%s' % aid[7:])
+        else:
+            path = os.path.join(REPO, 'assets-src', 'polyhaven', aid, aid + '.gltf')
+            if not os.path.exists(path):
+                raise SystemExit('Thiếu mô hình nguồn %s: chạy node tools/blender/kydao/fetch-assets.js' % aid)
+        before = set(bpy.data.objects)
+        ext = os.path.splitext(path)[1].lower()
+        if ext == '.fbx':
+            bpy.ops.import_scene.fbx(filepath=path)
+        elif ext == '.obj':
+            bpy.ops.wm.obj_import(filepath=path)
+        else:
+            bpy.ops.import_scene.gltf(filepath=path)
+        bpy.context.view_layer.update()
+        found = {}
+        for ob in [o for o in bpy.data.objects if o not in before]:
+            if ob.type == 'MESH':
+                me = ob.data.copy()                 # bản riêng: glTF có thể dùng chung một lưới cho nhiều nút
+                me.transform(ob.matrix_world)
+                co = np.empty(len(me.vertices) * 3, dtype=np.float32)
+                me.vertices.foreach_get('co', co)
+                co = co.reshape(-1, 3)
+                found[ob.name] = (me, co.min(axis=0), co.max(axis=0))
+                self.mats.update(m for m in me.materials if m)
+            bpy.data.objects.remove(ob, do_unlink=True)
+        self.parts[aid] = found
+        return found
+
+    def names(self, aid):
+        return sorted(self.load(aid))
+
+    def put(self, aid, part, u, v, size, rot=0.0, sink=0.0, tilt=(0.0, 0.0), z=None):
+        """Đặt một bản tại toạ độ ảnh (u, v); `size` là bề ngang lớn nhất tính theo ô cờ. Trả object."""
+        parts = self.load(aid)
+        key = part if part in parts else next((k for k in sorted(parts) if k.endswith(part)), None)
+        if key is None:
+            raise SystemExit('Không thấy phần %s trong %s: %s' % (part, aid, sorted(parts)))
+        me, lo, hi = parts[key]
+        s = size / float(max(hi[0] - lo[0], hi[1] - lo[1]))
         x, y, _ = W(u, v)
-        fern(fr, x, y, max(ctx.tz(u, v), -0.05), rng)
-    fr.finish(sc)
-    # nấm nhỏ rải
-    st2 = B('stems2', basalt_material('stem2', '#e8e0c8', 0.7))
-    cp2 = B('caps2', basalt_material('cap2', '#c8782a', 0.5))
-    for (u, v) in ((-4.5, 1.6), (-4.55, 3.9), (-3.0, 5.25), (3.0, 4.85), (4.55, 2.0), (4.5, 4.2), (-2.0, 4.8), (1.0, 5.3)):
-        x, y, _ = W(u, v)
-        for k in range(3):
-            mushroom(st2, cp2, x + rng.uniform(-0.15, 0.15), y + rng.uniform(-0.15, 0.15), max(ctx.tz(u, v), -0.05), rng.uniform(0.04, 0.08), rng)
-    st2.finish(sc)
-    cp2.finish(sc)
-    stem.finish(sc)
-    cap.finish(sc)
-    capg.finish(sc)
-    # đá nhỏ phủ rêu + lá rụng
-    rk = B('rocks', basalt_material('rock_m', '#5f6e50', 0.85, bump=1.6))
-    for (u, v, r) in ((-4.7, 1.2, 0.26), (-5.35, 3.0, 0.3), (-3.3, 5.0, 0.2), (3.0, 5.2, 0.22), (5.3, 1.4, 0.3), (4.65, 3.0, 0.2)):
-        x, y, _ = W(u, v)
-        rk.ico((x, y, max(ctx.tz(u, v), -0.1) + r * 0.2), r, 3, (1.2, 1.0, 0.65), 0.3, rng, rot=rzm(rng.uniform(0, 6)), seedv=u * 2.7, smooth=True)
-    rk.finish(sc)
-    lv = [B('leaves%d' % i, basalt_material('leaf%d' % i, hx, 0.7)) for i, hx in enumerate(('#c07a2a', '#d0a038', '#8a4a22'))]
-    for k in range(46):
-        u, v = rng.uniform(-5.4, 5.4), rng.uniform(0.1, 5.4)
-        if not ctx.free(u, v, 0.1):
+        zz = (max(self.ctx.tz(u, v), -0.1) if z is None else z) - sink
+        self.n += 1
+        ob = bpy.data.objects.new('kit_%s_%d' % (key, self.n), me)
+        ob.matrix_world = (Matrix.Translation((x, y, zz)) @ rot_xyz(tilt[0], tilt[1], rot) @ Matrix.Diagonal((s, s, s, 1))
+                           @ Matrix.Translation((-(lo[0] + hi[0]) / 2, -(lo[1] + hi[1]) / 2, 0.0)))
+        self.ctx.sc.collection.objects.link(ob)
+        return ob
+
+    def scatter(self, aid, count, size, where, margin=0.0, sink=0.0, tilt=0.0):
+        """Rải `count` bản (chọn ngẫu nhiên giữa các biến thể) trong dải cảnh; `where(u, v)` lọc chỗ đặt."""
+        rng, names, k, tries = self.ctx.rng, self.names(aid), 0, 0
+        while k < count and tries < count * 40:
+            tries += 1
+            u, v = rng.uniform(-5.6, 5.6), rng.uniform(0.05, 5.6)
+            if not self.ctx.free(u, v, margin) or not where(u, v):
+                continue
+            self.put(aid, rng.choice(names), u, v, rng.uniform(*size), rng.uniform(0, 6.283), sink,
+                     (rng.uniform(-tilt, tilt), rng.uniform(-tilt, tilt)))
+            k += 1
+
+
+def tune_materials(mats, sat=1.0, val=1.0):
+    """Chỉnh độ rực và độ sáng màu gốc của vật liệu nhập từ glTF (ảnh quét thật thường xỉn hơn cảnh dựng bằng mã)."""
+    for m in mats:
+        if not m.node_tree or m.get('kd_tuned'):
             continue
-        x, y, _ = W(u, v)
-        lv[k % 3].ico((x, y, max(ctx.tz(u, v), -0.05) + 0.03), 0.08, 1, (1.0, 0.55, 0.1), rot=rzm(rng.uniform(0, 6)), smooth=True)
-    for b in lv:
-        b.finish(sc)
-    ctx.motes('#d8ff70', 30.0, 38, 0.2, 0.8, 0.016, 0.034, 'fireflies')
+        nt = m.node_tree
+        bsdf = next((n for n in nt.nodes if n.type == 'BSDF_PRINCIPLED'), None)
+        if bsdf is None or not bsdf.inputs['Base Color'].is_linked:
+            continue
+        src = bsdf.inputs['Base Color'].links[0].from_socket
+        hsv = nt.nodes.new('ShaderNodeHueSaturation')
+        hsv.inputs['Saturation'].default_value = sat
+        hsv.inputs['Value'].default_value = val
+        nt.links.new(src, hsv.inputs['Color'])
+        nt.links.new(hsv.outputs['Color'], bsdf.inputs['Base Color'])
+        m['kd_tuned'] = True
 
 
 FIELDS['forest'] = dict(
-    world=('#a8cf92', 0.7), sun=('#ffe9b8', 3.0, 60), glare=(1.0, 0.15, 0.4), exposure=0.1,
+    world=('#a8cf92', 0.9), sun=('#ffe9b8', 3.4, 60), glare=(1.0, 0.15, 0.4), exposure=0.1,
     ground=lambda: ground_material('terrain', 'moss', '#1f3a1c', '#4f7a30', '#93b552', bump=1.4),
     liquid=lambda: water_material('pond', '#5a8a62', '#0f2a1e', alpha=0.8, ripple=0.3, scale=2.0), liquid_z=-0.18,
     T=dict(off=0.2, amp=0.6, freq=0.6, lo=-0.25, hi=0.4, cap=0.28, depth=-0.6, rim=0.06,
            carve=[('ell', 3.0, 5.05, 0.9, 0.5)], flat=[(-4.95, 4.95, 0.9), (4.95, 4.9, 0.8)], flat_h=0.05),
     slab=('#a9b890', '#4a3322', None), under=('#3f7a3c', 0.5), plinth='#76805e', ledge='#7a6a50',
     groove=('#9acd50', 0.35), pillar='#7a6448', bowl='#2a2018', fire=('#d8ff70', 5.0), top='orb',
-    xq='#80805e', bank=('#26361a', '#5a8a38', 'fine'), build=build_forest)
+    xq='#80805e', bank=('#26361a', '#5a8a38', 'fine'), build=None)     # build: tools/blender/kydao/fields/forest.py
 
 # ───────────────────────── chủ đề: Băng Hà (glacier) ─────────────────────────
 def crystal(b, x, y, z, r, h, tx, ty, seg=6):
@@ -1810,6 +1827,8 @@ def measure(path, w, h):
 def render_variant(code, variant):
     t0 = time.time()
     cfg = FIELDS[code]
+    if not callable(cfg.get('build')):
+        raise SystemExit('Sân %s chưa có hàm dựng: thiếu tools/blender/kydao/fields/%s.py' % (code, code))
     globals()['GLARE'] = cfg['glare']
     globals()['CAUSTIC_ON'] = bool(cfg.get('caustic'))
     sc = make_scene()
@@ -1853,7 +1872,7 @@ def render_variant(code, variant):
         sc.render.image_settings.quality = 84
     sc.render.filepath = path
     t1 = time.time()
-    bpy.ops.render.render(write_still=True)
+    bpy.ops.render.render(write_still=True, scene=sc.name)
     t2 = time.time()
     kb = round(os.path.getsize(path) / 1024, 1)
     if not PREVIEW:
@@ -1885,4 +1904,19 @@ def main():
     return res
 
 
+# ───────────────────────── sân viết thành file riêng ─────────────────────────
+def load_field_files():
+    """Chạy mọi file tools/blender/kydao/fields/<mã>.py trong không gian tên này: file tự gán FIELDS[<mã>]['build']
+    (hoặc thêm hẳn một mục FIELDS mới). Tên file bắt đầu bằng '_' thì bỏ qua. Xem docs/ky-dai/HUONG-DAN-SAN-MOI.md."""
+    d = os.path.join(REPO, 'tools', 'blender', 'kydao', 'fields')
+    for name in sorted(os.listdir(d)) if os.path.isdir(d) else []:
+        if name.endswith('.py') and not name.startswith('_'):
+            path = os.path.join(d, name)
+            with open(path, encoding='utf-8') as f:
+                exec(compile(f.read(), path, 'exec'), globals())
+
+
+load_field_files()
 result = main()
+if _ARGV:
+    print('RESULT ' + json.dumps(result))

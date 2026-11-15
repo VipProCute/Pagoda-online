@@ -87,8 +87,12 @@ Bàn 3D có `board.playFx(kind, opts)` cùng tên hiệu ứng, toạ độ theo
 | Ảnh xem trước | `public/img/kydao/thumbs/<kind>-<id>.webp` (256×160) | ≤ 14 KB |
 | Mô hình nửa sân 3D | `public/models/kydao/fields/<id>.glb` (đồ trang trí quanh mép nửa bàn; gốc toạ độ ở tâm bàn, +Y lên, mép người chơi về −Z; bàn rộng 8 đơn vị) | ≤ 6.000 tam giác, ≤ 250 KB |
 | Mô hình bộ quân 3D | `public/models/kydao/pieces/<id>.glb` (nút tên `K,Q,R,B,N,P`, `disc`; đáy ở Y=0, cao tối đa 1,6) | ≤ 9.000 tam giác cả bộ, ≤ 300 KB |
+| Mô hình quân mặc định (T-208) | `public/models/kydao/pieces/classic.glb` (nút `K Q R B N P disc`, vật liệu `body`) | Vua cao 1,58; rộng ≤ 0,88; đáy Y=0; 8.321 tam giác, 199 KB |
+| Atlas quân mặc định (T-208, **chưa bật trong game**) | `public/img/kydao/pieces2d/classic.webp` (896×256, ô 128, hai hàng a/b) | Cột `K Q R B N P disc`, disc không chữ |
+| Mặt bàn cờ vua mặc định (T-208) | `public/img/kydao/boards/chess.webp` (1024×1024) | Đúng 8×8 ô, trên-trái sáng, không khung/chữ |
+| Mặt bàn cờ tướng/úp mặc định (T-208) | `public/img/kydao/boards/xiangqi.webp` (1152×1280) | Gỗ sáng, không lưới/sông |
 
-Mọi tài nguyên nạp lười khi người chơi thật sự bật skin. Ghi nguồn vào `public/img/NOTICE.txt`.
+Skin nạp lười khi người chơi thật sự bật skin; riêng bộ mặc định (T-209, cờ `defaultAssets`) nạp khi mở **bàn 3D**, thiếu thì lùi về hình vẽ bằng mã. **Bàn 2D mặc định vẫn vẽ bằng mã**: chủ dự án xem bản atlas ngày 15/11 và chọn giữ bản cũ; `KydaoDraw.draw` vẫn nhận `defaultAssets` nhưng `kydao-ui.js` không bật. Bốn file này sinh từ `tools/blender/kydao/classic.py` (nguồn Poly Haven CC0, xem `tools/blender/kydao/assets.json`). Ghi nguồn vào `public/img/NOTICE.txt`.
 
 ## 5. Chia đợt và phân công
 
@@ -118,7 +122,7 @@ Mọi tài nguyên nạp lười khi người chơi thật sự bật skin. Ghi 
 
 ## 6. Rủi ro
 
-- **Hiệu năng điện thoại**: `.glb` và ảnh chỉ nạp khi bật skin; mức đồ họa Thấp bỏ hạt và bóng.
+- **Hiệu năng điện thoại**: skin nạp lười; bộ mặc định (T-209, cờ `defaultAssets`) nạp khi mở bàn 3D (khoảng 360 KB cho cờ vua), trong lúc chờ hoặc thiếu file vẫn vẽ bằng mã; ảnh mặt bàn cập nhật texture sẵn có. Mức đồ họa Thấp bỏ hạt và bóng.
 - **Đọc thế cờ**: xem K5. Điểm đánh dấu nước vừa đi, ô được chọn, ô bị chiếu luôn vẽ **trên** skin.
 - **Một Blender duy nhất**: việc Blender chạy nối tiếp trong phiên điều phối, không giao song song.
 - **Nhân vật 3D từ Blender**: nhân vật hiện dựng bằng mã, 492 tam giác, 60 người trên màn. Phải làm bản mẫu và đo trước (T-120), không thay hàng loạt.

@@ -64,9 +64,9 @@
   <script src="/js/kydao/xiangqi.js?v=1"></script>
   <script src="/js/kydao/go.js?v=1"></script>
   <script src="/js/kydao/gomoku.js?v=1"></script>
-  <script src="/js/kydao-skins.js?v=4"></script>
+  <script src="/js/kydao-skins.js?v=5"></script>
   <script type="module">
-    import { createBoard3D } from '/js/world3d/board3d.mjs?v=7';
+    import { createBoard3D } from '/js/world3d/board3d.mjs?v=8';
 
     const SKINS = window.KydaoSkins;
     const SIDES = { chess: { a: 'Trắng', b: 'Đen' }, xiangqi: { a: 'Đỏ', b: 'Đen' }, jieqi: { a: 'Đỏ', b: 'Đen' }, go: { a: 'Đen', b: 'Trắng' }, gomoku: { a: 'X', b: 'O' } };
@@ -109,7 +109,7 @@
       const draw = () => view.setState({ game, ...(game === 'jieqi' ? mod.view(state) : state), last, flip, vi, selected, skins });
       const memory = () => { const s = view.stats(); return s.geometries + ' hình, ' + s.textures + ' texture'; };
       try {
-        view = createBoard3D({ canvas, game, skins: SKINS, quality: qualityEl.value }); views.push(view);
+        view = createBoard3D({ canvas, game, skins: SKINS, quality: qualityEl.value, defaultAssets: new URLSearchParams(location.search).get('default') === '1' }); views.push(view); // ?default=1: bàn và quân mặc định từ tài nguyên (T-209)
         view.onPick(name => { selected = name; status.textContent = 'Ô vừa chạm: ' + name; draw(); });
         button('Đi thử một nước', () => {
           if (step === moves.length) { status.textContent = 'Đã hết chuỗi nước thử. Xin bấm Khai cuộc.'; return; }
