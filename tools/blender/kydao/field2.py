@@ -643,7 +643,8 @@ def make_scene():
             if d.users == 0:               # dữ liệu mồ côi do các lần chạy trước để lại
                 coll.remove(d)
     sc = bpy.data.scenes.new(SCENE)
-    bpy.context.window.scene = sc
+    if bpy.context.window:                 # chạy không giao diện (-b) thì không có cửa sổ
+        bpy.context.window.scene = sc
     return sc
 
 
@@ -1175,98 +1176,173 @@ def mushroom(b, cap, x, y, z, r, rng):
     cap.ico((x, y, z + r * 1.5), r, 2, (1, 1, 0.5), 0.0, rng, smooth=True)
 
 
-def build_forest(ctx):
-    sc, rng = ctx.sc, ctx.rng
-    # gốc cổ thụ rỗng ở góc sau trái: hốc sáng đom đóm
-    bark = B('stump', basalt_material('bark', '#4e3a26', 0.9, bump=2.2))
-    glow = B('stump_glow', glow_material('hollow', '#a8d83a', 1.1))
-    sx, sy, _ = W(-4.95, 4.95)
-    bark.lathe([(0.8, -0.3), (0.66, 0.02), (0.54, 0.22), (0.5, 0.52), (0.47, 0.66), (0.39, 0.64), (0.33, 0.46), (0.0, 0.42)],
-               22, (sx, sy, 0), True, cap=False, jitter=0.12, seedv=2.1)
-    glow.lathe([(0.0, 0.47), (0.3, 0.47)], 18, (sx, sy, 0), True, cap=True)
-    for k in range(7):
-        a = 2 * math.pi * k / 7 + 0.3
-        d = Vector((math.cos(a), math.sin(a), 0))
-        p0 = Vector((sx, sy, 0.2)) + d * 0.42
-        p1 = Vector((sx, sy, 0.02)) + d * 0.95
-        p2 = Vector((sx, sy, -0.12)) + d * 1.35
-        limb(bark, p0, p1, 0.14, 0.09, 6)
-        limb(bark, p1, p2, 0.09, 0.015, 6)
-    bark.finish(sc)
-    glow.finish(sc)
-    ctx.light(-4.95, 4.95, 0.9, '#c8ff70', 22.0, 0.2)
-    # tảng đá phủ rêu + nấm ở góc sau phải
-    moss = B('mossrock', basalt_material('mossrock', '#4c6a34', 0.9, bump=2.0))
-    mx, my, _ = W(4.95, 4.9)
-    moss.ico((mx, my, 0.05), 0.6, 3, (1.15, 1.0, 0.85), 0.28, rng, rot=rzm(0.7), seedv=4.0, smooth=True)
-    moss.ico((mx + 0.5, my - 0.2, 0.0), 0.32, 3, (1.1, 0.9, 0.7), 0.3, rng, seedv=9.0, smooth=True)
-    moss.finish(sc)
-    cap = B('caps_red', basalt_material('cap_red', '#b8402a', 0.5))
-    capg = B('caps_glow', gem_material('cap_glow', '#7fe8d0', 1.4, 0.3))
-    stem = B('stems', basalt_material('stem', '#e8e0c8', 0.7))
-    for k in range(5):
-        a = rng.uniform(0, 6.28)
-        rr = rng.uniform(0.0, 0.32)
-        mushroom(stem, cap if k % 2 else capg, mx + rr * math.cos(a), my + rr * math.sin(a), 0.5, rng.uniform(0.07, 0.12), rng)
-    ctx.light(4.95, 4.9, 0.9, '#7fe8d0', 12.0, 0.2)
-    # miếu thổ thần gỗ ở giữa dải sau
-    wood = B('shrine_wood', basalt_material('shrine_wood', '#7a3e2a', 0.7, bump=1.6))
-    roof = B('shrine_roof', basalt_material('shrine_roof', '#5d6e3e', 0.9, bump=2.2))
-    base = B('shrine_base', basalt_material('shrine_base', '#6a6a5a', 0.8))
-    x, y, _ = W(0.0, 5.0)
-    base.box((x - 0.55, y - 0.45, -0.2), (x + 0.55, y + 0.45, 0.08), bevel=0.03, seg=1, flat_big=False)
-    for dx in (-0.36, 0.36):
-        for dy in (-0.28, 0.28):
-            wood.box((x + dx - 0.04, y + dy - 0.04, 0.08), (x + dx + 0.04, y + dy + 0.04, 0.5), flat_big=False)
-    wood.box((x - 0.34, y - 0.26, 0.08), (x + 0.34, y + 0.26, 0.44), bevel=0.01, seg=1, flat_big=False)
-    door = B('shrine_door', glow_material('shrine_door', '#ffcf80', 2.5))
-    door.box((x - 0.1, y - 0.28, 0.1), (x + 0.1, y - 0.255, 0.36))
-    door.finish(sc)
-    roof.cone((x, y, 0.5), 0.72, 0.1, 0.3, 4, rzm(math.pi / 4))
-    wood.box((x - 0.14, y - 0.04, 0.78), (x + 0.14, y + 0.04, 0.84), flat_big=False)
-    wood.finish(sc)
-    roof.finish(sc)
-    base.finish(sc)
-    ctx.light(0.0, 4.8, 0.7, '#ffd9a0', 8.0, 0.15)
-    # dương xỉ
-    fr = B('ferns', basalt_material('fern', '#3f7a2c', 0.8, bump=0.6))
-    for (u, v) in ((-4.6, 0.7), (-5.2, 2.0), (-4.65, 3.3), (-3.6, 5.1), (-2.6, 4.85), (2.4, 4.9), (3.4, 5.15), (4.7, 3.8), (5.25, 2.4),
-                   (4.6, 0.9), (-5.3, 0.4), (5.3, 0.4), (-1.5, 5.25), (1.5, 5.25)):
+class Kit:
+    """Mô hình nguồn bên thứ ba (Poly Haven, CC0) ở assets-src/polyhaven, tải bằng fetch-assets.js.
+
+    Mỗi gói glTF nạp một lần; lưới được đưa về toạ độ thế giới rồi dùng chung cho mọi bản đặt trong cảnh."""
+
+    def __init__(self, ctx):
+        self.ctx, self.parts, self.n, self.mats = ctx, {}, 0, set()
+
+    def load(self, aid):
+        if aid in self.parts:
+            return self.parts[aid]
+        path = os.path.join(REPO, 'assets-src', 'polyhaven', aid, aid + '.gltf')
+        if not os.path.exists(path):
+            raise SystemExit('Thiếu mô hình nguồn %s: chạy node tools/blender/kydao/fetch-assets.js' % aid)
+        before = set(bpy.data.objects)
+        bpy.ops.import_scene.gltf(filepath=path)
+        bpy.context.view_layer.update()
+        found = {}
+        for ob in [o for o in bpy.data.objects if o not in before]:
+            if ob.type == 'MESH':
+                me = ob.data.copy()                 # bản riêng: glTF có thể dùng chung một lưới cho nhiều nút
+                me.transform(ob.matrix_world)
+                co = np.empty(len(me.vertices) * 3, dtype=np.float32)
+                me.vertices.foreach_get('co', co)
+                co = co.reshape(-1, 3)
+                found[ob.name] = (me, co.min(axis=0), co.max(axis=0))
+                self.mats.update(m for m in me.materials if m)
+            bpy.data.objects.remove(ob, do_unlink=True)
+        self.parts[aid] = found
+        return found
+
+    def names(self, aid):
+        return sorted(self.load(aid))
+
+    def put(self, aid, part, u, v, size, rot=0.0, sink=0.0, tilt=(0.0, 0.0), z=None):
+        """Đặt một bản tại toạ độ ảnh (u, v); `size` là bề ngang lớn nhất tính theo ô cờ. Trả object."""
+        parts = self.load(aid)
+        key = part if part in parts else next((k for k in sorted(parts) if k.endswith(part)), None)
+        if key is None:
+            raise SystemExit('Không thấy phần %s trong %s: %s' % (part, aid, sorted(parts)))
+        me, lo, hi = parts[key]
+        s = size / float(max(hi[0] - lo[0], hi[1] - lo[1]))
         x, y, _ = W(u, v)
-        fern(fr, x, y, max(ctx.tz(u, v), -0.05), rng)
-    fr.finish(sc)
-    # nấm nhỏ rải
+        zz = (max(self.ctx.tz(u, v), -0.1) if z is None else z) - sink
+        self.n += 1
+        ob = bpy.data.objects.new('kit_%s_%d' % (key, self.n), me)
+        ob.matrix_world = (Matrix.Translation((x, y, zz)) @ rot_xyz(tilt[0], tilt[1], rot) @ Matrix.Diagonal((s, s, s, 1))
+                           @ Matrix.Translation((-(lo[0] + hi[0]) / 2, -(lo[1] + hi[1]) / 2, 0.0)))
+        self.ctx.sc.collection.objects.link(ob)
+        return ob
+
+    def scatter(self, aid, count, size, where, margin=0.0, sink=0.0, tilt=0.0):
+        """Rải `count` bản (chọn ngẫu nhiên giữa các biến thể) trong dải cảnh; `where(u, v)` lọc chỗ đặt."""
+        rng, names, k, tries = self.ctx.rng, self.names(aid), 0, 0
+        while k < count and tries < count * 40:
+            tries += 1
+            u, v = rng.uniform(-5.6, 5.6), rng.uniform(0.05, 5.6)
+            if not self.ctx.free(u, v, margin) or not where(u, v):
+                continue
+            self.put(aid, rng.choice(names), u, v, rng.uniform(*size), rng.uniform(0, 6.283), sink,
+                     (rng.uniform(-tilt, tilt), rng.uniform(-tilt, tilt)))
+            k += 1
+
+
+def tune_materials(mats, sat=1.0, val=1.0):
+    """Chỉnh độ rực và độ sáng màu gốc của vật liệu nhập từ glTF (ảnh quét thật thường xỉn hơn cảnh dựng bằng mã)."""
+    for m in mats:
+        if not m.node_tree or m.get('kd_tuned'):
+            continue
+        nt = m.node_tree
+        bsdf = next((n for n in nt.nodes if n.type == 'BSDF_PRINCIPLED'), None)
+        if bsdf is None or not bsdf.inputs['Base Color'].is_linked:
+            continue
+        src = bsdf.inputs['Base Color'].links[0].from_socket
+        hsv = nt.nodes.new('ShaderNodeHueSaturation')
+        hsv.inputs['Saturation'].default_value = sat
+        hsv.inputs['Value'].default_value = val
+        nt.links.new(src, hsv.inputs['Color'])
+        nt.links.new(hsv.outputs['Color'], bsdf.inputs['Base Color'])
+        m['kd_tuned'] = True
+
+
+def build_forest(ctx):
+    """Cổ Mộc Lâm (T-207): cây, gốc, đá rêu, dương xỉ, hoa cỏ là mô hình quét thật của Poly Haven ghép quanh bàn.
+
+    Mặt trời chiếu từ góc trái-trên ảnh, nên cây non cao hơn đặt ở mép phải: bóng đổ ra ngoài, không phủ ô cờ."""
+    sc, rng = ctx.sc, ctx.rng
+    kit = Kit(ctx)
+    # ── góc sau trái: gốc cổ thụ phủ rêu, rễ bò ra hai phía, hốc sáng đom đóm
+    kit.put('tree_stump_01', 'tree_stump_01', -4.95, 4.95, 1.7, rot=0.6)
+    kit.put('pine_roots', 'pine_roots_a', -3.75, 5.2, 1.5, rot=0.15, sink=0.02)
+    kit.put('root_cluster_02', '_d', -5.25, 3.95, 0.95, rot=1.45, sink=0.01)
+    glow = B('stump_glow', glow_material('hollow', '#a8d83a', 1.3))
+    gx, gy, _ = W(-5.0, 5.0)
+    glow.ico((gx, gy, 0.36), 0.11, 2, (1, 1, 0.4), smooth=True)
+    glow.finish(sc)
+    ctx.light(-5.0, 5.0, 0.9, '#c8ff70', 16.0, 0.2)
+    # ── góc sau phải: cụm đá rêu
+    kit.put('rock_moss_set_02', 'rock11', 4.95, 4.95, 1.05, rot=2.2, sink=0.08)
+    kit.put('rock_moss_set_02', 'rock08', 5.35, 4.3, 0.6, rot=0.4, sink=0.03)
+    kit.put('rock_moss_set_02', 'rock12', 4.35, 5.3, 0.55, rot=4.0, sink=0.03)
+    ctx.light(4.95, 4.9, 0.9, '#7fe8d0', 8.0, 0.2)
+    # ── dải sau: thân cây đổ nằm giữa, cành khô, đá quanh vũng nước
+    kit.put('dead_tree_trunk', 'dead_tree_trunk', -0.35, 5.12, 3.0, rot=0.1, sink=0.03)
+    kit.put('dry_branches_medium_01', '_a', 1.55, 5.25, 0.8, rot=1.2)
+    kit.put('dry_branches_medium_01', '_b', -2.3, 4.85, 0.6, rot=2.6)
+    kit.put('rock_moss_set_02', 'rock09', 2.2, 5.3, 0.5, rot=1.0, sink=0.04)
+    kit.put('rock_moss_set_01', 'rock03', 3.75, 5.38, 0.5, rot=2.0, sink=0.1)
+    kit.put('tree_stump_02', 'tree_stump_02', 1.0, 5.4, 0.7, rot=3.3, sink=0.02)
+    # ── dải trái: chỉ cây non thấp (bóng ngắn), đá, rễ
+    kit.put('fir_sapling', '_c', -5.2, 0.8, 1.05, rot=0.5)
+    kit.put('pine_sapling_small', '_c', -5.2, 2.75, 1.0, rot=2.0)
+    kit.put('shrub_02', '_b', -5.4, 1.75, 0.7, rot=1.0, sink=0.1)
+    kit.put('rock_moss_set_02', 'rock07', -5.2, 3.45, 0.55, rot=5.0, sink=0.03)
+    kit.put('rock_moss_set_01', 'rock06', -4.95, 0.2, 0.5, rot=0.7, sink=0.12)
+    kit.put('pine_roots', 'pine_roots_b', -5.0, 1.3, 1.0, rot=1.75, sink=0.02)
+    # ── dải phải: cây non cao hơn, bụi, đá
+    kit.put('pine_sapling_small', '_a', 5.2, 0.85, 1.25, rot=4.0)
+    kit.put('fir_sapling', '_a', 5.2, 3.35, 1.3, rot=1.3)
+    kit.put('fir_sapling', '_b', 5.35, 2.1, 0.95, rot=3.1)
+    kit.put('shrub_02', '_d', 5.45, 1.45, 0.75, rot=2.0, sink=0.1)
+    kit.put('rock_moss_set_02', 'rock13', 4.95, 2.6, 0.55, rot=3.4, sink=0.08)
+    kit.put('rock_moss_set_01', 'rock01', 5.0, 0.2, 0.5, rot=1.9, sink=0.12)
+    kit.put('root_cluster_02', '_f', 4.9, 3.95, 0.8, rot=0.3, sink=0.01)
+    # ── thảm thực vật rải quanh: dương xỉ, cây bụi nhỏ, hoa dừa cạn tím, bồ công anh vàng, tầm ma, rễ con
+    strip = lambda u, v: not (2.3 < u < 3.7 and v > 4.6)          # chừa vũng nước
+    kit.scatter('fern_02', 30, (0.6, 0.95), strip)
+    kit.scatter('shrub_03', 22, (0.22, 0.34), strip)
+    kit.scatter('periwinkle_plant', 20, (0.3, 0.45), strip)
+    kit.scatter('dandelion_01', 18, (0.22, 0.32), strip)
+    kit.scatter('nettle_plant', 12, (0.2, 0.3), strip)
+    kit.scatter('shrub_04', 8, (0.4, 0.6), strip)
+    for part in ('_b', '_c', '_e', '_g', '_h'):
+        for _ in range(2):
+            u, v = rng.choice(((-1, rng.uniform(0.3, 4.4)), (1, rng.uniform(0.3, 4.4)), (0, 0)))
+            if u:
+                kit.put('root_cluster_02', part, u * rng.uniform(4.7, 5.3), v, rng.uniform(0.3, 0.5), rng.uniform(0, 6.283))
+            else:
+                kit.put('root_cluster_02', part, rng.uniform(-4.2, 2.0), rng.uniform(4.75, 5.4), rng.uniform(0.3, 0.5), rng.uniform(0, 6.283))
+    tune_materials(kit.mats, 1.2, 1.7)
+    # ── nấm nhỏ (dựng bằng mã) cho điểm màu ấm
     st2 = B('stems2', basalt_material('stem2', '#e8e0c8', 0.7))
-    cp2 = B('caps2', basalt_material('cap2', '#c8782a', 0.5))
-    for (u, v) in ((-4.5, 1.6), (-4.55, 3.9), (-3.0, 5.25), (3.0, 4.85), (4.55, 2.0), (4.5, 4.2), (-2.0, 4.8), (1.0, 5.3)):
+    cp2 = B('caps2', basalt_material('cap2', '#d8662a', 0.5))
+    capg = B('caps_glow', gem_material('cap_glow', '#7fe8d0', 1.4, 0.3))
+    for i, (u, v) in enumerate(((-4.6, 1.9), (-4.7, 4.3), (-2.9, 5.35), (3.9, 4.75), (4.65, 1.7), (4.6, 4.35), (-1.4, 4.8), (0.4, 4.78))):
         x, y, _ = W(u, v)
         for k in range(3):
-            mushroom(st2, cp2, x + rng.uniform(-0.15, 0.15), y + rng.uniform(-0.15, 0.15), max(ctx.tz(u, v), -0.05), rng.uniform(0.04, 0.08), rng)
+            mushroom(st2, capg if i % 4 == 3 else cp2, x + rng.uniform(-0.13, 0.13), y + rng.uniform(-0.13, 0.13),
+                     max(ctx.tz(u, v), -0.05), rng.uniform(0.035, 0.065), rng)
     st2.finish(sc)
     cp2.finish(sc)
-    stem.finish(sc)
-    cap.finish(sc)
     capg.finish(sc)
-    # đá nhỏ phủ rêu + lá rụng
-    rk = B('rocks', basalt_material('rock_m', '#5f6e50', 0.85, bump=1.6))
-    for (u, v, r) in ((-4.7, 1.2, 0.26), (-5.35, 3.0, 0.3), (-3.3, 5.0, 0.2), (3.0, 5.2, 0.22), (5.3, 1.4, 0.3), (4.65, 3.0, 0.2)):
-        x, y, _ = W(u, v)
-        rk.ico((x, y, max(ctx.tz(u, v), -0.1) + r * 0.2), r, 3, (1.2, 1.0, 0.65), 0.3, rng, rot=rzm(rng.uniform(0, 6)), seedv=u * 2.7, smooth=True)
-    rk.finish(sc)
+    # ── lá rụng + đom đóm
     lv = [B('leaves%d' % i, basalt_material('leaf%d' % i, hx, 0.7)) for i, hx in enumerate(('#c07a2a', '#d0a038', '#8a4a22'))]
-    for k in range(46):
+    for k in range(40):
         u, v = rng.uniform(-5.4, 5.4), rng.uniform(0.1, 5.4)
         if not ctx.free(u, v, 0.1):
             continue
         x, y, _ = W(u, v)
-        lv[k % 3].ico((x, y, max(ctx.tz(u, v), -0.05) + 0.03), 0.08, 1, (1.0, 0.55, 0.1), rot=rzm(rng.uniform(0, 6)), smooth=True)
+        lv[k % 3].ico((x, y, max(ctx.tz(u, v), -0.05) + 0.03), 0.06, 1, (1.0, 0.55, 0.1), rot=rzm(rng.uniform(0, 6)), smooth=True)
     for b in lv:
         b.finish(sc)
-    ctx.motes('#d8ff70', 30.0, 38, 0.2, 0.8, 0.016, 0.034, 'fireflies')
+    ctx.motes('#d8ff70', 30.0, 30, 0.2, 0.9, 0.014, 0.03, 'fireflies')
 
 
 FIELDS['forest'] = dict(
-    world=('#a8cf92', 0.7), sun=('#ffe9b8', 3.0, 60), glare=(1.0, 0.15, 0.4), exposure=0.1,
+    world=('#a8cf92', 0.9), sun=('#ffe9b8', 3.4, 60), glare=(1.0, 0.15, 0.4), exposure=0.1,
     ground=lambda: ground_material('terrain', 'moss', '#1f3a1c', '#4f7a30', '#93b552', bump=1.4),
     liquid=lambda: water_material('pond', '#5a8a62', '#0f2a1e', alpha=0.8, ripple=0.3, scale=2.0), liquid_z=-0.18,
     T=dict(off=0.2, amp=0.6, freq=0.6, lo=-0.25, hi=0.4, cap=0.28, depth=-0.6, rim=0.06,
@@ -1853,7 +1929,7 @@ def render_variant(code, variant):
         sc.render.image_settings.quality = 84
     sc.render.filepath = path
     t1 = time.time()
-    bpy.ops.render.render(write_still=True)
+    bpy.ops.render.render(write_still=True, scene=sc.name)
     t2 = time.time()
     kb = round(os.path.getsize(path) / 1024, 1)
     if not PREVIEW:

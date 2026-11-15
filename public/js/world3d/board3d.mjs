@@ -264,7 +264,7 @@ export function fieldTones(palette, chess) {
   return { light, dark: darkRaw, ground, vein, frame: ground, line, rim, glow };
 }
 
-/** createBoard3D({canvas, game, skins, quality, assets, models}) →
+/** createBoard3D({canvas, game, skins, quality, assets, models, fieldImages, defaultAssets}) →
  *   setState(o), onPick(fn), setFlip, resize, dispose, playFx(kind, opts), stopFx(kind?), setQuality(q), stats().
  * o suit KydaoDraw.draw; vây thêm size, caro nhận board hoặc cells của luật (hàng trên trước).
  * o.skins = { a:{field,pieces}, b:{field,pieces} } theo danh mục KydaoSkins (mã lạ bỏ qua, thiếu = mặc định).
@@ -272,9 +272,10 @@ export function fieldTones(palette, chess) {
  * assets: thay bộ nạp mô hình và ảnh (test; cần loadModel/instantiate và loadImage); models:false thì không bao giờ nạp .glb.
  * fieldImages (mặc định true): nửa sân có skin dùng ảnh sân v2 (KydaoSkins.fieldImage2) làm mặt sân kèm dải cảnh;
  * ảnh 404 hoặc fieldImages:false thì giữ cách cũ (lớp phủ palette + đồ trang trí).
- * Mặc định vẽ hoàn toàn bằng mã; chỉ nạp .glb (qua board-assets.mjs) khi có skin. Tài nguyên GPU dùng chung trong mỗi bàn.
+ * Mặc định vẽ bằng mã; defaultAssets:true nạp thêm ảnh mặt bàn và .glb quân mặc định.
+ * Skin vẫn nạp lười qua board-assets.mjs. Tài nguyên GPU dùng chung trong mỗi bàn.
  */
-export function createBoard3D({ canvas, game, skins: catalogInput, quality: qualityInput, assets, models = true, fieldImages = true }) {
+export function createBoard3D({ canvas, game, skins: catalogInput, quality: qualityInput, assets, models = true, fieldImages = true, defaultAssets = false }) {
   let layout = boardLayout(game), state = {}, previous = [], pieces = new Map(), captured = [];
   let flip = false, pick = () => {}, stopped = false, frame = 0, drag = null, pinching = false;
   let yaw = 0.16, elevation = 0.93, zoom = 1, width = 0, height = 0, vi = null;
@@ -285,6 +286,8 @@ export function createBoard3D({ canvas, game, skins: catalogInput, quality: qual
   const NO_SKIN = Object.freeze({ field: null, pieces: null });
   let skins = { a: NO_SKIN, b: NO_SKIN };
   const halves = { a: null, b: null }, pieceSkins = new Map(), effects = new Set();
+  let defaultModel = null, defaultModelAsked = false, boardGeneration = 0;
+  const defaultModelResources = new Set();
   let retired = [], sceneMargin = 0, labels = null, aftermath = null, shake = { x: 0, y: 0 }, shaken = false, assetsPromise = null;
   const media = window.matchMedia('(prefers-reduced-motion: reduce)');
   // Người chơi tắt hiệu ứng (localStorage 'ta-fx' = '0') thì coi như giảm chuyển động.
@@ -352,19 +355,24 @@ export function createBoard3D({ canvas, game, skins: catalogInput, quality: qual
   const WOOD = { light: '#ecd5a4', dark: '#886044', vein: 'rgba(75,39,13,.07)', line: '#654522', text: '#71502e', frameOuter: '#e2bb72', frameInner: '#58361f', label: '#f5dfaf' };
   function boardTexture() {
     const { w, d } = boardSize(layout);
-    return texture(1536, Math.round(1536 * d / w), (ctx, tw, th) => {
-      ctx.scale(tw / w, th / d); ctx.translate(w / 2, d / 2);
-      paintFace(ctx, w, d, { ...WOOD, ground: layout.chess ? '#9b683e' : '#e9c48a', river: true });
-    });
+    return texture(1536, Math.round(1536 * d / w), paintBoardTexture);
+  }
+  function paintBoardTexture(ctx, tw, th, face) {
+    const { w, d } = boardSize(layout);
+    ctx.save(); ctx.scale(tw / w, th / d); ctx.translate(w / 2, d / 2);
+    paintFace(ctx, w, d, { ...WOOD, ground: layout.chess ? '#9b683e' : '#e9c48a', river: true, face });
+    ctx.restore();
   }
   /** Vẽ mặt bàn trong toạ độ bàn (x ngang, "y" của canvas = z của bàn). Nửa sân dùng lại hàm này, phần ngoài canvas tự bị cắt. */
   function paintFace(ctx, w, d, k, pattern) {
-    ctx.fillStyle = k.ground; ctx.fillRect(-w / 2, -d / 2, w, d);
-    if (layout.chess) for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
+    if (k.face && !layout.chess) ctx.drawImage(k.face, -w / 2, -d / 2, w, d);
+    else { ctx.fillStyle = k.ground; ctx.fillRect(-w / 2, -d / 2, w, d); }
+    if (k.face && layout.chess) ctx.drawImage(k.face, -4, -4, 8, 8);
+    else if (layout.chess) for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
       ctx.fillStyle = (c + r) % 2 ? k.light : k.dark; ctx.fillRect(c - 4, 3 - r, 1, 1);
     }
     ctx.lineWidth = 0.012;
-    for (let i = 0; i < 220; i++) {
+    for (let i = 0; !k.face && i < 220; i++) {
       const z = -d / 2 + d * i / 220;
       ctx.strokeStyle = k.vein; ctx.beginPath(); ctx.moveTo(-w / 2, z);
       ctx.bezierCurveTo(-w / 6, z + Math.sin(i) * 0.08, w / 6, z - 0.04, w / 2, z); ctx.stroke();
@@ -466,12 +474,24 @@ export function createBoard3D({ canvas, game, skins: catalogInput, quality: qual
   }
 
   function rebuildBoard() {
+    const generation = ++boardGeneration;
     for (const m of [slab, trim, surface]) if (m) { board.remove(m); resources.delete(m.geometry); m.geometry.dispose(); }
     const { w, d } = boardSize(layout);
     slab = mesh(new THREE.BoxGeometry(w + 0.25, 0.32, d + 0.25), wood, board, 0, -0.22);
     trim = mesh(new THREE.BoxGeometry(w + 0.12, 0.045, d + 0.12), brass, board, 0, -0.043);
     if (boardMaterial) { resources.delete(boardMaterial.map); boardMaterial.map.dispose(); resources.delete(boardMaterial); boardMaterial.dispose(); }
     boardMaterial = material('#ffffff', 0.48, { map: boardTexture() });
+    const url = defaultAssets && fieldImages && catalog && typeof catalog.defaultBoardImage === 'function' ? catalog.defaultBoardImage(layout.game) : null;
+    if (url) {
+      const map = boardMaterial.map;
+      imageApi().then(api => api && api.loadImage ? api.loadImage(url) : null).then(img => {
+        if (!img || stopped || generation !== boardGeneration) return;
+        const c = map.image;
+        paintBoardTexture(c.getContext('2d'), c.width, c.height, img);
+        map.needsUpdate = true; requestRender();
+      }).catch(() => {});
+    }
+    loadDefaultModel();
     surface = mesh(new THREE.PlaneGeometry(w, d), boardMaterial, board);
     surface.rotation.x = -Math.PI / 2; surface.castShadow = false;
     buildRiver();
@@ -735,6 +755,43 @@ export function createBoard3D({ canvas, game, skins: catalogInput, quality: qual
       refreshVisuals(); requestRender();
     }).catch(() => {});
   }
+  function loadDefaultModel() {
+    if (!defaultAssets || layout.stones || defaultModelAsked || !catalog || typeof catalog.defaultPiecesModel !== 'function') return;
+    defaultModelAsked = true;
+    loadAsset(catalog.defaultPiecesModel()).then(got => {
+      if (!got || stopped) return;
+      const parts = new Map(), owner = { res: defaultModelResources };
+      for (const name of ['K', 'Q', 'R', 'B', 'N', 'P', 'disc']) {
+        const node = got.root.getObjectByName(name);
+        if (node) { const part = fitPart(got.api, node, owner); if (part) parts.set(name, part); }
+      }
+      if (!parts.size) return;
+      defaultModel = { parts };
+      for (const id of templates.keys()) if (id.endsWith(':')) templates.delete(id);
+      refreshVisuals(); requestRender();
+    }).catch(() => {});
+  }
+  function defaultModelPiece(ch) {
+    const part = defaultModel && defaultModel.parts.get(layout.chess ? ch.toUpperCase() : 'disc');
+    if (!part) return null;
+    const inner = part.clone(true), side = sideOf(ch);
+    inner.traverse(o => {
+      if (!o.isMesh) return;
+      o.material = layout.chess ? (side === 'a' ? ivory : ebony) : diskWood;
+      o.castShadow = true; o.receiveShadow = true;
+    });
+    if (side === 'a') inner.rotation.y = Math.PI;
+    const g = new THREE.Group(); g.add(inner);
+    if (!layout.chess) {
+      const ink = side === 'a' ? '#992e24' : '#302a20';
+      const map = diskFaceTexture(ch, { ring: ink, ink, shade: '#fff1c8' });
+      const mat = material('#ffffff', 0.42, { map, transparent: true, depthWrite: false });
+      const face = new THREE.Mesh(faceGeometry(), mat), size = Math.min(0.8, part.userData.radius * 2 * 0.94);
+      face.scale.set(size / 0.8, size / 0.8, 1); face.rotation.x = -Math.PI / 2; face.position.y = part.userData.top + 0.004;
+      face.userData.role = 'face'; g.add(face);
+    }
+    return g;
+  }
   function pruneSkins() {
     const used = new Set([skinKey(skins.a.pieces), skinKey(skins.b.pieces)]);
     for (const [id, s] of pieceSkins) if (!used.has(id)) {
@@ -745,7 +802,7 @@ export function createBoard3D({ canvas, game, skins: catalogInput, quality: qual
   }
   function visualId(ch) {
     const s = pieceSkinOf(ch);
-    return layout.game + ':' + ch + ':' + !!state.vi + ':' + (s ? s.id + (s.model ? '+m' : '') + (s.img ? '+i' : '') : '');
+    return layout.game + ':' + ch + ':' + !!state.vi + ':' + (s ? s.id + (s.model ? '+m' : '') + (s.img ? '+i' : '') : defaultModel && !layout.stones ? '+classic' : '');
   }
 
   function template(ch) {
@@ -761,7 +818,7 @@ export function createBoard3D({ canvas, game, skins: catalogInput, quality: qual
     return { id, group: templates.get(id).clone(true) };
   }
   function baseTemplate(ch) {
-    const id = layout.game + ':' + ch + ':' + !!state.vi + ':';
+    const id = layout.game + ':' + ch + ':' + !!state.vi + ':' + (defaultModel && !layout.stones ? '+classic' : '');
     if (!templates.has(id)) {
       let g;
       if (layout.stones) {
@@ -774,7 +831,7 @@ export function createBoard3D({ canvas, game, skins: catalogInput, quality: qual
           }
           else ring(g, 0.17, 0.289, mat, 0.022);
         }
-      } else g = layout.chess ? chessPiece(ch) : diskPiece(ch);
+      } else g = defaultModelPiece(ch) || (layout.chess ? chessPiece(ch) : diskPiece(ch));
       templates.set(id, g);
     }
     return templates.get(id);
@@ -1514,7 +1571,8 @@ export function createBoard3D({ canvas, game, skins: catalogInput, quality: qual
     /** Số hình và texture đang nằm trên GPU (renderer.info.memory), để kiểm rò rỉ khi đổi skin. */
     stats() {
       const m = (renderer.info && renderer.info.memory) || {};
-      return { geometries: m.geometries | 0, textures: m.textures | 0, pieceSkins: pieceSkins.size, halves: +!!halves.a + +!!halves.b, effects: effects.size, fieldImages: +!!(halves.a && halves.a.v2) + +!!(halves.b && halves.b.v2) };
+      // Khi tắt cờ, giữ nguyên các trường thống kê cũ cho bên gọi và test hiện có.
+      return { geometries: m.geometries | 0, textures: m.textures | 0, pieceSkins: pieceSkins.size, ...(defaultAssets ? { defaultModel: +!!defaultModel } : {}), halves: +!!halves.a + +!!halves.b, effects: effects.size, fieldImages: +!!(halves.a && halves.a.v2) + +!!(halves.b && halves.b.v2) };
     },
     dispose() {
       if (stopped) return; stopped = true; cancelAnimationFrame(frame); observer.disconnect();
@@ -1523,6 +1581,8 @@ export function createBoard3D({ canvas, game, skins: catalogInput, quality: qual
       flushRetired();
       for (const s of pieceSkins.values()) for (const r of s.res) r.dispose();
       pieceSkins.clear();
+      for (const r of defaultModelResources) r.dispose();
+      defaultModelResources.clear(); defaultModel = null;
       for (const [name, fn] of Object.entries(events)) canvas.removeEventListener(name, fn);
       for (const id of pointers.keys()) if (canvas.hasPointerCapture(id)) canvas.releasePointerCapture(id);
       pointers.clear(); media.removeEventListener('change', requestRender);

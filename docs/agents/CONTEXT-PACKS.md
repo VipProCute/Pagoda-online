@@ -166,7 +166,7 @@
 - **Đọc kỹ**: `docs/KE-HOACH-KY-DAI.md` (§3 quyết định, §4 hợp đồng); `public/js/kydao-skins.js` (danh mục, do điều phối giữ).
 - **Tra khi cần**: `public/js/kydao-draw.js` (`draw`, `layout`, `cellXY`), `public/js/kydao-ui.js` (`redraw`, `handleMoved`, `showResult`, `toggleBoard3D`), `public/js/world3d/board3d.mjs` (`setState`, `transitionPieces`), `public/js/celebrate.js` + `public/css/celebrate.css` (khuôn hạt và giảm chuyển động), `tools/blender/kydao/`.
 - **Test**: `test/kydao-*.test.js`; trang thử `public/kydao-fx-test.html`, `public/kydao-pieces-test.html`, `public/world3d-board.html`.
-- **Bẫy**: client chỉ gửi **mã** skin, không gửi chữ; skin không được làm khó đọc thế cờ (dấu nước đi luôn vẽ trên skin); cờ úp: mọi quân úp một bên phải giống hệt nhau; thiếu `.glb`/`.webp` thì lùi về `palette`, không được hỏng bàn; không sửa tay file trong `public/img/kydao/` và `public/models/kydao/` (sinh từ Blender); mọi hiệu ứng có bản giảm chuyển động.
+- **Bẫy**: client chỉ gửi **mã** skin, không gửi chữ; skin không được làm khó đọc thế cờ (dấu nước đi luôn vẽ trên skin); cờ úp: mọi quân úp một bên phải giống hệt nhau; thiếu `.glb`/`.webp` thì lùi về `palette`, không được hỏng bàn; không sửa tay file trong `public/img/kydao/` và `public/models/kydao/` (sinh từ Blender); mọi hiệu ứng có bản giảm chuyển động; bàn 3D mặc định nạp mặt bàn và quân từ file (cờ `defaultAssets`, T-209), bàn 2D mặc định vẫn vẽ bằng mã; hình vẽ bằng mã là đường lùi và phải luôn chạy được.
 
 ## `RANK` · Danh hiệu, Bảng Vàng, màn đối đầu
 

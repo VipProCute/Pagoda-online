@@ -127,6 +127,9 @@
 | T-204 | Vòng hình 3 Pháp Tướng 3D: nới ngân sách Ma Vương (6.000 tam giác, ảnh 1024 px), lửa hộ thân thay vỏ khí, sửa lỗi máy quay sát 👤 duyệt (chặn T-145 → T-149) | ✅ Xong (bản nháp, hình chưa đạt) | P0 | CORE + HALL + KYDAI | Claude Opus 5.5 điều phối, gpt-6.1-sol thực thi |
 | T-205 | Bật Pháp Tướng 3D mặc định cho người chơi (bản vòng 3), tắt bằng `ta-fx3d`='0' 👤 chủ dự án bảo bật 14/11 "chơi tạm" | ✅ Xong | P0 | CORE + HALL | Claude Fable 5.2 |
 | T-206 | Lịch sử chat chỉ hiện tin trong 24 giờ gần nhất và tối đa 512 tin (máy chủ lọc khi khách vào, giao diện tự bỏ tin cũ) 👤 chủ dự án yêu cầu 15/11 | ✅ Xong | P1 | CORE | GPT (viết) · Claude Sonnet 5.5 (đưa vào main, kiểm) |
+| T-207 | Sân v2 Cổ Mộc Lâm dựng lại bằng mô hình quét thật Poly Haven (CC0): cây non, gốc, đá rêu, dương xỉ, hoa cỏ 👤 chủ dự án yêu cầu 15/11 | 🟡 Chờ nghiệm thu và 👤 duyệt hình | P1 | KYDAI | Claude Fable 5.2 |
+| T-208 | Tài nguyên bàn và quân mặc định từ nguồn CC0 (quân cờ vua 3D, atlas 2D, mặt bàn gỗ cờ vua và cờ tướng) 👤 chủ dự án yêu cầu 15/11 | 🟡 Chờ nghiệm thu và 👤 duyệt hình | P1 | KYDAI | Claude Fable 5.2 (gpt-6.1-terra không ghi được file) |
+| T-209 | Bàn 3D mặc định nạp mặt bàn và quân từ tài nguyên (cờ `defaultAssets`), hình vẽ bằng mã làm đường lùi; bàn 2D giữ bản cũ theo ý 👤 | 🟡 Chờ nghiệm thu | P1 | KYDAI | gpt-6.1-sol (thực thi), Claude Fable 5.2 (điều phối, kiểm) |
 | T-152 | (Tùy chọn) Chụp lại ảnh 2D từ mô hình 3D | ⚪ Hộp thư đến 👤 | P3 | CORE + HALL | — |
 | T-153 | Nghiệm thu chéo đợt Pháp Tướng 3D | ⏳ T-151 | P1 | CORE + HALL | — (gợi ý: gemini-4-argon-high soát hình, gpt-6.1-sol soát mã) |
 | T-160 | Danh mục 8 bộ đá cho cờ vây và caro (`STONES`), `kd:skin` nhận theo môn | ✅ Xong · PR #64 | P1 | CORE + KYDAO + KYDAI | gpt-6.1-terra |
@@ -1797,6 +1800,28 @@ Thiết kế, hợp đồng mã, ngân sách và định tuyến mô hình: [doc
 - **Đổi gì**: `server.js` thêm `CHAT_HISTORY` (24 giờ, 512 tin) gửi cho giao diện qua `config.chatHistory`; khi khách vào, `recentChat()` lọc tin quá 24 giờ và tin đã ẩn rồi lấy 512 tin mới nhất (trước đây 60). `appendChat()` thay cho hai chỗ `db.chat.push` cũ (trần 250): giữ đủ 512 tin còn hiển thị cộng 250 tin gần nhất (kể cả tin đã ẩn) để Ban điều hành vẫn xem được. `public/js/app.js` thêm `pruneChat()`: bỏ tin quá 24 giờ (hẹn giờ đúng lúc tin cũ nhất hết hạn) và tin vượt 512; thay trần 150 tin cũ. Tăng `?v=` của app.js.
 - **Không đổi**: giao thức socket, rate limit, bộ lọc `lib/moderation.js`, trang quản trị (vẫn xem 150 tin gần nhất). Tin quá 24 giờ chỉ bị ẩn khỏi khách, chưa xoá khỏi dữ liệu cho đến khi vượt trần ở `appendChat()`.
 - **Kiểm**: `npm run check` sạch; `test/chat-history.test.js` (2 test, logic thuần) và `test/e2e-chat-history.test.js` (2 test, máy chủ thật) đạt.
+### T-207 · Sân v2 Cổ Mộc Lâm dựng lại bằng mô hình quét thật (Poly Haven, CC0)
+- **Trạng thái**: 🟡 Chờ nghiệm thu độc lập và 👤 duyệt hình · chủ dự án yêu cầu 15/11 ("thử dựng lại lãnh địa rừng bằng model tải về") · **Ưu tiên**: P1 · **Gói ngữ cảnh**: KYDAI
+- **Người làm**: Claude Fable 5.2 · **Nhánh**: claude/3d-model-format-ad851a
+- **Đổi gì**: `tools/blender/kydao/field2.py` thêm lớp `Kit` (nạp glTF nguồn, đặt và rải mô hình theo toạ độ ảnh) và `tune_materials`; `build_forest` viết lại: gốc cổ thụ, thân cây đổ, rễ, đá rêu, cây thông và linh sam non, dương xỉ, bụi, hoa dừa cạn, bồ công anh là mô hình Poly Haven; nền đất, phiến ô cờ, gờ, trụ đèn, nấm, lá rụng, đom đóm vẫn dựng bằng mã. `make_scene` và lệnh render chạy được không giao diện (`blender -b`). Thêm `tools/blender/kydao/fetch-assets.js` + `assets.json` (tải nguồn về `assets-src/`, đã thêm vào `.gitignore`).
+- **Kết quả**: `public/img/kydao/fields2/forest-chess.webp` 207 KB, `forest-xiangqi.webp` 187 KB (giới hạn 255 KB), 96 mẫu, 1408×704; `docs/ky-dai/anh/v2-forest.jpg`. Nguồn và giấy phép ghi ở `public/img/NOTICE.txt` mục 9a.
+- **Không đổi**: mã trình duyệt, giao thức, `forest.glb` (đồ trang trí 3D kiểu cũ, chỉ dùng khi thiếu ảnh v2), 7 sân còn lại.
+- **Còn mở**: bàn 3D vẫn dùng ảnh phẳng cho dải cảnh (chưa có cây 3D thật quanh bàn); 7 sân khác chưa làm theo cách này; cần tải lại nguồn (khoảng 110 MB) mới dựng lại được ảnh.
+
+### T-208 · Tài nguyên bàn và quân mặc định từ nguồn CC0
+- **Trạng thái**: 🟡 Chờ nghiệm thu độc lập và 👤 duyệt hình · chủ dự án yêu cầu 15/11 · **Ưu tiên**: P1 · **Gói ngữ cảnh**: KYDAI
+- **Người làm**: giao gpt-6.1-terra theo [docs/ky-dai/T-208-DAC-TA-TAI-NGUYEN-MAC-DINH.md](docs/ky-dai/T-208-DAC-TA-TAI-NGUYEN-MAC-DINH.md) nhưng công cụ vá của Codex CLI lỗi, không ghi được file; Claude Fable 5.2 tự viết · **Nhánh**: claude/3d-model-format-ad851a
+- **Đổi gì**: `tools/blender/kydao/classic.py` (mới) sinh `public/models/kydao/pieces/classic.glb` (7 nút, 8.321 tam giác, 199 KB, không nhúng ảnh), `public/img/kydao/pieces2d/classic.webp` (50 KB), `public/img/kydao/boards/chess.webp` (156 KB), `boards/xiangqi.webp` (110 KB), `docs/ky-dai/anh/classic-xem-nhanh.jpg`. Quân cờ vua lấy từ mô hình "Chess Set" của Poly Haven; mặt bàn ghép từ vân gỗ sồi, óc chó, anh đào; đĩa cờ tướng tự dựng, phủ vân gỗ tần bì. Nguồn ghi ở NOTICE mục 9b.
+- **Lệch đặc tả**: vua cao 1,58 (không phải 1,50); mặt bàn ghép bằng numpy, không render Cycles.
+- **Còn mở**: cờ tướng chưa có mô hình bàn/quân bên thứ ba (Sketchfab cần đăng nhập mới tải được); atlas 2D `classic.webp` đã sinh nhưng game chưa dùng (xem T-209).
+
+### T-209 · Bàn 3D mặc định nạp mặt bàn và quân từ tài nguyên
+- **Trạng thái**: 🟡 Chờ nghiệm thu độc lập · chủ dự án yêu cầu 15/11 · **Ưu tiên**: P1 · **Gói ngữ cảnh**: KYDAI
+- **Người làm**: gpt-6.1-sol thực thi theo [docs/ky-dai/T-209-DAC-TA-NAP-MAC-DINH.md](docs/ky-dai/T-209-DAC-TA-NAP-MAC-DINH.md); Claude Fable 5.2 điều phối, chạy test, sửa phép so chuỗi lệnh vẽ trong test mới · **Nhánh**: claude/3d-model-format-ad851a
+- **Đổi gì**: `kydao-skins.js` thêm `defaultPiecesAtlas`, `defaultPiecesModel`, `defaultBoardImage` (không thêm mục vào `PIECES`); `board3d.mjs` thêm tham số `defaultAssets` (mặc định tắt): vẽ ảnh mặt bàn vào đúng canvas texture sẵn có, nạp `classic.glb` qua `loadAsset` (tôn trọng `models:false`), vật liệu ngà/mun/gỗ đĩa như cũ; `kydao-draw.js` nhận `defaultAssets` cho atlas và ảnh mặt bàn; `kydao-ui.js` bật `defaultAssets` **chỉ cho bàn 3D**; `world3d-board.html?default=1` để xem thử; tăng `?v=`.
+- **Quyết định 👤 15/11**: xem bản 2D mới và chọn **giữ bản 2D mặc định cũ** (vẽ bằng mã). Đường mã 2D với `defaultAssets` còn trong `kydao-draw.js` và có test, nhưng không bật.
+- **Kiểm**: `npm run check` sạch (194 file); `test/kydao-default-assets.test.js` 13 test đạt; `npm test` 1.119 test, 1.116 đạt, 0 trượt, 3 bỏ qua (2 PostgreSQL, 1 perft sâu). Nghiệm thu độc lập (Claude Opus, 15/11): được commit sau khi sửa; đã sửa dòng `views.push` ở `world3d-board.html`, `?v=` các trang thử, kiểm `res.ok` trong `fetch-assets.js`, thông báo lỗi của `Kit.put`. Đã xem `world3d-board.html?default=1` trên trình duyệt: cờ vua và cờ tướng lên hình đúng. **Chưa chạy** ui-harness Kỳ Đạo (cần Playwright), chưa đo trên điện thoại, chưa có lượt nghiệm thu độc lập.
+
 ---
 
 ## Hộp thư đến (ý tưởng, chưa đủ để giao)

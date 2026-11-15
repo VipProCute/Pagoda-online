@@ -116,3 +116,18 @@ HÌNH ẢNH TRONG THƯ MỤC NÀY — NGUỒN GỐC VÀ GIẤY PHÉP
    Tự dựng bằng Blender (Cycles) từ script tools/blender/kydao/stones.py (chất liệu sinh bằng node thủ tục,
    không dùng ảnh hay mô hình của bên thứ ba), là tác phẩm gốc của dự án. Không sửa tay: sửa script rồi chạy lại.
    Giấy phép: CC0 1.0 như mục 1.
+
+9) Mô hình và texture quét thật của Poly Haven (https://polyhaven.com) dùng làm NGUỒN cho ảnh Kỳ Đài
+   Giấy phép: CC0 1.0 (https://polyhaven.com/license). Tệp nguồn KHÔNG nằm trong repo: tải về assets-src/
+   bằng `node tools/blender/kydao/fetch-assets.js` theo danh sách tools/blender/kydao/assets.json.
+   a) Sân v2 Cổ Mộc Lâm (T-207): public/img/kydao/fields2/forest-{chess,xiangqi}.webp và docs/ky-dai/anh/v2-forest.jpg
+      render bằng tools/blender/kydao/field2.py (hàm build_forest) từ các mô hình: fir_sapling, pine_sapling_small,
+      tree_stump_01, tree_stump_02, dead_tree_trunk, pine_roots, root_cluster_02, rock_moss_set_01, rock_moss_set_02,
+      fern_02, shrub_02, shrub_03, shrub_04, periwinkle_plant, nettle_plant, dandelion_01, dry_branches_medium_01.
+      Nền đất, phiến đá ô cờ, gờ, trụ đèn, nấm, lá rụng, đom đóm vẫn dựng bằng mã của dự án.
+   b) Bàn và quân mặc định (T-208): public/models/kydao/pieces/classic.glb, public/img/kydao/pieces2d/classic.webp,
+      public/img/kydao/boards/{chess,xiangqi}.webp và docs/ky-dai/anh/classic-xem-nhanh.jpg
+      sinh bằng tools/blender/kydao/classic.py. Sáu quân cờ vua (hình khối trong .glb đã giảm lưới, và ảnh render
+      trong atlas) lấy từ mô hình "Chess Set" (chess_set, tác giả Riley Queen). Mặt bàn cờ vua ghép từ texture
+      oak_veneer_01 và american_walnut_veneer; mặt bàn cờ tướng từ cherry_veneer; đĩa quân cờ tướng (hình tự dựng
+      bằng mã) phủ texture ash_veneer. classic.glb không nhúng ảnh nào.

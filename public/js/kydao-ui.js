@@ -408,12 +408,12 @@
     const panel = ui, session = S, token = {};
     panel.boardLoad = token; panel.boardBtn.disabled = true; panel.boardBtn.textContent = 'Đang mở…';
     try {
-      const { createBoard3D } = await import('/js/world3d/board3d.mjs?v=7');
+      const { createBoard3D } = await import('/js/world3d/board3d.mjs?v=8');
       if (ui !== panel || S !== session || panel.boardLoad !== token) return;
       panel.canvas3d = h('canvas', { class: 'kd-canvas', tabindex: '0', 'aria-label': 'Bàn cờ 3D. Kéo hoặc dùng phím mũi tên để xoay; cuộn để thu phóng.' });
       panel.canvas3d.style.width = panel.canvas._w + 'px'; panel.canvas3d.style.height = panel.canvas._h + 'px';
       panel.canvas.style.display = 'none'; panel.viewport.prepend(panel.canvas3d);
-      panel.board3d = createBoard3D({ canvas: panel.canvas3d, game: S.game });
+      panel.board3d = createBoard3D({ canvas: panel.canvas3d, game: S.game, defaultAssets: true });
       panel.board3d.onPick(onSquare);
       panel.canvas3d.addEventListener('webglcontextlost', e => {
         e.preventDefault();
@@ -655,13 +655,14 @@
       checkSq: S.inCheck && !S.over ? kingSquare(S, sessionTurn(S)) : null, vi
     };
     options.time = riverTime;
+    // Bàn 2D mặc định giữ hình vẽ bằng mã (chủ dự án chọn 15/11: đẹp hơn bản atlas); chỉ bàn 3D bật defaultAssets.
+    options.onAsset = onAsset;
     if (root.KydaoSkins && root.KydaoSkins.supportsPieces(S.game)) {
       const foe = S.you === 'a' ? 'b' : S.you === 'b' ? 'a' : null;
       const blank = { field: null, pieces: null };
       // Ẩn skin đối thủ: đưa thẳng skin mặc định cho bên đó, nên bàn 2D và bàn 3D đều theo.
       options.skins = { a: hideFoe && foe === 'a' ? blank : S.skins.a, b: hideFoe && foe === 'b' ? blank : S.skins.b };
       options.jolt = S.jolt || null;
-      options.onAsset = onAsset;
     }
     if (ui.board3d) ui.board3d.setState(options);
     else geom = root.KydaoDraw.draw(ui.canvas.getContext('2d'), options);
