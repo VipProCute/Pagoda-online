@@ -1,6 +1,6 @@
 'use strict';
 
-import { makeAvatar } from '../avatar-glb.mjs?v=8';
+import { makeAvatar } from '../avatar-glb.mjs?v=9';
 
 /* Cùng hợp đồng build/update/pick/bounds/dispose với hall.mjs.
  * state: { daylight: boolean | 0..1,
@@ -179,7 +179,8 @@ export function build({ THREE, kit, quality = 'medium', reduceMotion = false, si
     const x = 0.5 + (index ? 0.3 : -0.3) / (2 * (0.36 + 0.28 * 0.26));
     const [wx, wz] = world(x, 0.26), node = new THREE.Group(); node.name = 'reader-' + id;
     node.userData.pick = { kind: 'reader', id }; node.position.set(wx, 0, wz); group.add(node);
-    const avatar = makeAvatar({ g: 'nam', c: index ? 4 : 9, h: 2 }, { role: 'reader', reducedMotion: reduceMotion });
+    // Thầy Tử Vi (nam, áo nâu) dựng bằng mã; thầy bói Tarot (nữ, áo tím) dùng mô hình ngồi riêng (npc-glb.mjs, READER_GLB).
+    const avatar = makeAvatar(index ? { g: 'nu', c: 4, h: 1 } : { g: 'nam', c: 9, h: 2 }, { role: 'reader', reducedMotion: reduceMotion });
     avatar.group.position.z = -0.34; node.add(avatar.group); readers.push(avatar);
     avatar.update({ sit: 'bench', reducedMotion: reduceMotion }, 0);
     box(node, dark, 0, 0.64, 0.28, 1.45, 0.12, 0.85);

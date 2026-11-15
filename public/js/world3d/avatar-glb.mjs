@@ -2,12 +2,14 @@
 
 import * as THREE from 'three';
 import { createAvatar, AVATAR_COLORS } from './avatar.mjs?v=9';
+import { npcModel, attachNpcGlb } from './npc-glb.mjs?v=2';
 
 // Nhân vật dựng bằng Blender (T-120/T-130) là MẶC ĐỊNH (T-177). Đổi về nhân vật cũ dựng bằng mã: localStorage['ta-avatar'] = 'code'.
 // createGlbAvatar trả CÙNG giao diện với createAvatar: { group, update(state, dt), setLook(look), dispose() }.
 // Bản dựng bằng mã luôn được tạo trước và là THẾ THÂN: nó giữ nhãn tên, bóng, hào quang, pháp tướng, quỷ theo sau.
 // Khi .glb nạp xong thì chỉ ẩn phần thân người (cây `hips` của bản mã) và hiện mô hình .glb tại cùng chỗ.
-// .glb lỗi hoặc 404 thì giữ nguyên thế thân, không ghi console. Vai NPC có trang phục riêng luôn dùng bản mã.
+// .glb lỗi hoặc 404 thì giữ nguyên thế thân, không ghi console. Vai NPC có trang phục riêng luôn dùng bản mã,
+// trừ NPC có mô hình riêng (npc-glb.mjs: Obito, Tế Công, Vạn Lý Độc Hành, Tảo Địa Tăng, các cô nương, thầy bói Tarot).
 // opts.assets (tùy chọn, để kiểm thử): { load(url) → Promise<{ scene, animations, clone? } | null> }.
 
 export const AVATAR_SWITCH_KEY = 'ta-avatar';
@@ -56,7 +58,8 @@ const defaultAssets = {
 
 export function createGlbAvatar(initialLook = {}, opts = {}) {
   const base = createAvatar(initialLook, opts);
-  if (opts.role) return base;                      // vai đặc biệt: luôn là bản mã (role không đổi theo thời gian)
+  // Vai đặc biệt (role không đổi theo thời gian): NPC có .glb riêng thì gắn mô hình đó, còn lại luôn là bản mã.
+  if (opts.role) return npcModel(opts.role, initialLook) ? attachNpcGlb(base, opts.role, opts, url => Promise.resolve((opts.assets || defaultAssets).load(url))) : base;
   const { group } = base;
   const rig = group.getObjectByName('body');
   const standIn = rig?.children.find(node => node.name === 'hips');

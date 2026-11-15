@@ -6,7 +6,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const MODELS = path.join(__dirname, '..', 'public', 'models', 'avatar');
-const load = () => import('../public/js/world3d/avatar-glb.mjs?v=8');
+const load = () => import('../public/js/world3d/avatar-glb.mjs?v=9');
 const settle = async () => { for (let i = 0; i < 6; i++) await new Promise(resolve => setImmediate(resolve)); };
 
 function canvasFactory() {
@@ -171,11 +171,11 @@ test('bộ nạp trả null hoặc ném lỗi: giữ thế thân, không ghi con
   assert.deepEqual(logs, []);
 });
 
-test('vai NPC đặc biệt và look npcFashion luôn dùng bản mã', async t => {
+test('vai NPC không có mô hình riêng và look npcFashion không vai luôn dùng bản mã', async t => {
   withSwitch(t, 'blender');
   const { makeAvatar } = await load();
   const assets = await fakeAssets();
-  for (const role of ['beggar', 'wanderer', 'obito', 'sweeper', 'fortune', 'reader']) {
+  for (const role of ['fortune', 'reader', 'visitor', 'sword', 'toString', '__proto__']) {
     const avatar = makeAvatar({ g: 'nam', c: 0, h: 0 }, { role, assets, createCanvas: canvasFactory() });
     await settle();
     assert.equal(glb(avatar), undefined, role);
@@ -187,6 +187,212 @@ test('vai NPC đặc biệt và look npcFashion luôn dùng bản mã', async t 
   assert.equal(glb(fashion), undefined);
   assert.deepEqual(assets.log, []);
   fashion.dispose();
+});
+
+// Mô hình Obito giả: xương mang tên như sau GLTFLoader, thân cao 0,18 m, một quả bom phải ẩn.
+async function fakeObito(log = []) {
+  const THREE = await import('three');
+  const scene = new THREE.Group();
+  const names = ['pelvis_03', 'spine_lower_04', 'spine_upper_05', 'head_neck_upper_07', 'arm_right_shoulder_028', 'arm_left_shoulder_047',
+    'arm_right_elbow_029', 'arm_left_elbow_048', 'leg_right_thigh_090', 'leg_left_thigh_094', 'leg_right_knee_091', 'leg_left_knee_095'];
+  for (const name of names) { const bone = new THREE.Bone(); bone.name = name; scene.add(bone); }
+  const body = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.18, 0.04), new THREE.MeshBasicMaterial({ name: 'Material46' }));
+  body.position.y = 0.09; body.name = 'Object_6';
+  const bomb = new THREE.Mesh(new THREE.SphereGeometry(0.01), new THREE.MeshBasicMaterial({ name: '-Bomb' }));
+  bomb.name = 'Object_21';
+  scene.add(body, bomb);
+  return { log, async load(url) { log.push(url); return { scene, animations: [] }; } };
+}
+
+test('NPC Obito dùng mô hình .glb riêng: ẩn thế thân, cao 1,62 m, bỏ quả bom, xương chân tay động khi đi', async t => {
+  withSwitch(t, 'blender');
+  const { makeAvatar } = await load();
+  const { NPC_GLB } = await import('../public/js/world3d/npc-glb.mjs?v=2');
+  const THREE = await import('three');
+  const assets = await fakeObito();
+  const avatar = makeAvatar({ g: 'nam', c: 11, h: 2 }, { role: 'obito', assets, reducedMotion: false, createCanvas: canvasFactory() });
+  await settle();
+  assert.deepEqual(assets.log, [NPC_GLB.obito.url]);
+  const model = avatar.group.getObjectByName('npc-glb');
+  assert.ok(model, 'đã gắn mô hình');
+  assert.equal(stand(avatar).visible, false);
+  avatar.update({ walking: false }, 0);
+  avatar.group.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(model.getObjectByName('Object_6'));
+  assert.ok(Math.abs(box.max.y - box.min.y - 1.62) < 0.01, 'chiều cao ' + (box.max.y - box.min.y));
+  assert.ok(Math.abs(box.min.y) < 0.01, 'chân chạm đất');
+  assert.equal(model.getObjectByName('Object_21').visible, false, 'quả bom bị ẩn');
+  assert.equal(model.getObjectByName('Object_6').material.type, 'MeshStandardMaterial', 'vật liệu có ánh sáng');
+  const thigh = model.getObjectByName('leg_right_thigh_090');
+  avatar.update({ walking: true }, 0.05);
+  const a = thigh.quaternion.clone();
+  avatar.update({ walking: true }, 0.1);
+  assert.notDeepEqual(thigh.quaternion.toArray(), a.toArray(), 'chân đung đưa khi đi');
+  avatar.update({ walking: true, reducedMotion: true }, 0.1);
+  assert.ok(Math.abs(thigh.quaternion.x) < 1e-9, 'giảm chuyển động thì đứng thẳng');
+  // nhãn tên và bong bóng vẫn ở bản mã
+  avatar.update({ name: 'Obito', bubble: 'Mặt nạ này không che được tâm đâu.' }, 0);
+  avatar.dispose();
+  assert.equal(avatar.group.getObjectByName('npc-glb'), undefined);
+});
+
+test('NPC Obito: .glb lỗi thì giữ thế thân, không ghi console; công tắc bản mã thì không tải', async t => {
+  withSwitch(t, 'blender');
+  const { makeAvatar } = await load();
+  const logs = [];
+  for (const name of ['log', 'warn', 'error']) t.mock.method(console, name, (...args) => logs.push(args));
+  for (const fail of [async () => null, async () => { throw new Error('404'); }]) {
+    const avatar = makeAvatar({ g: 'nam', c: 11, h: 2 }, { role: 'obito', assets: { load: fail }, createCanvas: canvasFactory() });
+    await settle();
+    avatar.update({ walking: true }, 0.05);
+    assert.equal(avatar.group.getObjectByName('npc-glb'), undefined);
+    assert.equal(stand(avatar).visible, true);
+    avatar.dispose();
+  }
+  assert.deepEqual(logs, []);
+  withSwitch(t, 'code');
+  const assets = await fakeObito();
+  const code = makeAvatar({ g: 'nam', c: 11, h: 2 }, { role: 'obito', assets, createCanvas: canvasFactory() });
+  await settle();
+  assert.deepEqual(assets.log, []);
+  code.dispose();
+});
+
+test('file obito.glb có đủ xương, vật liệu bom và ghi nguồn CC-BY', () => {
+  const buf = fs.readFileSync(path.join(__dirname, '..', 'public', 'models', 'npc', 'obito.glb'));
+  assert.equal(buf.toString('latin1', 0, 4), 'glTF');
+  const json = JSON.parse(buf.toString('utf8', 20, 20 + buf.readUInt32LE(12)));
+  const names = json.nodes.map(node => node.name.toLowerCase());
+  for (const bone of ['leg right thigh', 'leg left thigh', 'arm right shoulder', 'arm left shoulder', 'spine lower', 'head neck upper']) {
+    assert.ok(names.some(name => name.startsWith(bone)), bone);
+  }
+  assert.ok(json.materials.some(material => /bomb/i.test(material.name)));
+  assert.match(json.asset.extras.license, /CC-BY-4\.0/);
+  const notice = fs.readFileSync(path.join(__dirname, '..', 'public', 'img', 'NOTICE.txt'), 'utf8');
+  assert.match(notice, /models\/npc\/obito\.glb/);
+});
+
+// Mô hình NPC giả theo bộ xương chung của tools/blender/npc/build.py: thân cao 0,5 m.
+async function fakeNpc(log = []) {
+  const THREE = await import('three');
+  const scene = new THREE.Group();
+  for (const name of ['hips', 'spine', 'chest', 'neck', 'head', 'arm_L', 'arm_R', 'forearm_L', 'forearm_R', 'thigh_L', 'thigh_R', 'shin_L', 'shin_R']) {
+    const bone = new THREE.Bone(); bone.name = name; scene.add(bone);
+  }
+  const body = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.5, 0.1), new THREE.MeshStandardMaterial({ name: 'tripo', metalness: 1 }));
+  body.position.y = 0.3; body.name = 'body';
+  scene.add(body);
+  return { log, async load(url) { log.push(url); return { scene, animations: [] }; } };
+}
+
+test('Tế Công, Vạn Lý Độc Hành, Tảo Địa Tăng và cô nương dùng mô hình riêng; cô nương chọn theo màu áo', async t => {
+  withSwitch(t, 'blender');
+  const { makeAvatar } = await load();
+  const { NPC_GLB, LADY_GLB, npcModel } = await import('../public/js/world3d/npc-glb.mjs?v=2');
+  const THREE = await import('three');
+  assert.equal(npcModel('fortune'), null);
+  assert.equal(npcModel('__proto__'), null);
+  assert.equal(npcModel('lady', { c: 0 }), LADY_GLB[0]);
+  assert.equal(npcModel('lady', { c: 7 }), LADY_GLB[7]);
+  assert.ok(npcModel('lady', { c: 11 }), 'màu lạ vẫn có mô hình');
+  assert.equal(new Set(Object.values(LADY_GLB).map(spec => spec.url)).size, 4, 'bốn cô bốn mô hình');
+  assert.match(npcModel('reader', { c: 4 }).url, /thay-boi-tarot\.glb/, 'thầy bói Tarot áo tím');
+  assert.equal(npcModel('reader', { c: 9 }), null, 'thầy Tử Vi vẫn là bản mã');
+  const cases = [['beggar', { g: 'nam', c: 9, h: 3 }, NPC_GLB.beggar], ['wanderer', { g: 'nam', c: 11, h: 3 }, NPC_GLB.wanderer],
+    ['sweeper', { g: 'nam', c: 8, h: 2 }, NPC_GLB.sweeper], ['lady', { g: 'nu', c: 2, h: 0, npcFashion: true }, LADY_GLB[2]],
+    ['lady', { g: 'nu', c: 5, h: 1 }, LADY_GLB[5]]];
+  for (const [role, look, spec] of cases) {
+    const assets = await fakeNpc();
+    const avatar = makeAvatar(look, { role, assets, reducedMotion: false, createCanvas: canvasFactory() });
+    await settle();
+    assert.deepEqual(assets.log, [spec.url], role);
+    const model = avatar.group.getObjectByName('npc-glb');
+    assert.ok(model, role);
+    assert.equal(stand(avatar).visible, false, role);
+    avatar.update({}, 0);
+    avatar.group.updateMatrixWorld(true);
+    const mesh = model.getObjectByName('body');
+    const box = new THREE.Box3().setFromObject(mesh);
+    assert.ok(Math.abs(box.max.y - box.min.y - spec.height) < 0.01, role + ' cao ' + (box.max.y - box.min.y));
+    assert.equal(mesh.material.metalness, 0, 'vật liệu nhám, không kim loại');
+    const thighR = model.getObjectByName('thigh_R'), armR = model.getObjectByName('arm_R'), armL = model.getObjectByName('arm_L');
+    // Đi tới lúc sin = 1: chân phải ra sau (quay +X), tay trái ra sau (quay +Z), tay phải cầm đạo cụ thì đánh nhẹ hơn tay trái.
+    avatar.update({ walking: true }, Math.PI / 32);
+    avatar.update({ walking: true }, Math.PI / 32);
+    assert.ok(thighR.quaternion.x > 0.05, role + ' chân phải ra sau');
+    assert.ok(armL.quaternion.z > 0.01, role + ' tay trái đánh');
+    if (spec.hold) assert.ok(armR.quaternion.z < armL.quaternion.z / 2, role + ' tay cầm đạo cụ đánh nhẹ');
+    avatar.update({ walking: false, bow: 1 }, 0);
+    assert.ok(model.getObjectByName('spine').quaternion.x > 0.2, role + ' vái thì cúi');
+    avatar.update({ walking: true, reducedMotion: true }, 0.1);
+    assert.ok(Math.abs(thighR.quaternion.x) < 1e-9, role + ' giảm chuyển động thì đứng thẳng');
+    avatar.dispose();
+    assert.equal(avatar.group.getObjectByName('npc-glb'), undefined);
+  }
+});
+
+test('thầy bói Tarot: tượng ngồi không xương, giữ độ trong suốt; bộ nạp ném lỗi ngay thì giữ thế thân', async t => {
+  withSwitch(t, 'blender');
+  const { makeAvatar } = await load();
+  const { READER_GLB } = await import('../public/js/world3d/npc-glb.mjs?v=2');
+  const THREE = await import('three');
+  const scene = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.6, 0.3), new THREE.MeshStandardMaterial({ name: 'than' }));
+  body.position.y = 0.3; body.name = 'body';
+  const hidden = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 0.1), new THREE.MeshStandardMaterial({ name: 'an', opacity: 0, alphaTest: 0.5 }));
+  hidden.name = 'an';
+  const veil = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 0.1), new THREE.MeshStandardMaterial({ name: 'voan', transparent: true, opacity: 0.6, depthWrite: false }));
+  veil.name = 'voan';
+  hidden.position.y = veil.position.y = 0.3;   // nằm trong thân để không đổi khung bao
+  scene.add(body, hidden, veil);
+  const log = [];
+  const avatar = makeAvatar({ g: 'nu', c: 4, h: 1 }, { role: 'reader', assets: { async load(url) { log.push(url); return { scene, animations: [] }; } },
+    reducedMotion: false, createCanvas: canvasFactory() });
+  await settle();
+  assert.deepEqual(log, [READER_GLB[4].url]);
+  const model = avatar.group.getObjectByName('npc-glb');
+  assert.ok(model);
+  avatar.update({ sit: 'bench' }, 0.1);
+  avatar.group.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(model.getObjectByName('body'));
+  assert.ok(Math.abs(box.max.y - box.min.y - READER_GLB[4].height) < 0.01, 'cao ' + (box.max.y - box.min.y));
+  const an = model.getObjectByName('an').material, voan = model.getObjectByName('voan').material;
+  assert.equal(an.opacity, 0, 'lớp ẩn vẫn ẩn');
+  assert.equal(an.alphaTest, 0.5);
+  assert.equal(voan.depthWrite, false, 'giữ cách ghi chiều sâu');
+  assert.equal(voan.opacity, 0.6);
+  avatar.dispose();
+  // Bộ nạp ném lỗi ngay: không ném ra ngoài, giữ thế thân, không ghi console.
+  const logs = [];
+  for (const name of ['log', 'warn', 'error']) t.mock.method(console, name, (...args) => logs.push(args));
+  const broken = makeAvatar({ g: 'nam', c: 9, h: 3 }, { role: 'beggar', assets: { load() { throw new Error('hỏng'); } }, createCanvas: canvasFactory() });
+  await settle();
+  assert.equal(broken.group.getObjectByName('npc-glb'), undefined);
+  assert.equal(stand(broken).visible, true);
+  broken.dispose();
+  assert.deepEqual(logs, []);
+});
+
+test('file .glb của Tế Công, Vạn Lý Độc Hành, Tảo Địa Tăng có bộ xương chung, đạo cụ và ghi nguồn', async () => {
+  const { NPC_GLB, LADY_GLB } = await import('../public/js/world3d/npc-glb.mjs?v=2');
+  const notice = fs.readFileSync(path.join(__dirname, '..', 'public', 'img', 'NOTICE.txt'), 'utf8');
+  const specs = [NPC_GLB.beggar, NPC_GLB.wanderer, NPC_GLB.sweeper, ...Object.values(LADY_GLB)];
+  for (const spec of specs) {
+    const file = path.basename(spec.url.split('?')[0]);
+    const buf = fs.readFileSync(path.join(__dirname, '..', 'public', 'models', 'npc', file));
+    assert.equal(buf.toString('latin1', 0, 4), 'glTF', file);
+    assert.ok(buf.length < 1.6e6, file + ' nặng ' + buf.length);
+    const json = JSON.parse(buf.toString('utf8', 20, 20 + buf.readUInt32LE(12)));
+    const names = new Set(json.nodes.map(node => node.name));
+    for (const bone of ['spine', 'chest', 'head', 'arm_L', 'arm_R', 'thigh_L', 'thigh_R', 'shin_L', 'shin_R']) assert.ok(names.has(bone), file + ' thiếu ' + bone);
+    assert.equal(json.skins?.length, 1, file);
+    if (spec === NPC_GLB.wanderer || spec === NPC_GLB.sweeper) assert.ok(names.has('prop'), file + ' có đạo cụ');
+    assert.ok(notice.includes('models/npc/' + file), file + ' ghi nguồn trong NOTICE.txt');
+  }
+  // Thầy bói Tarot: tượng ngồi, không xương.
+  const tarot = fs.readFileSync(path.join(__dirname, '..', 'public', 'models', 'npc', 'thay-boi-tarot.glb'));
+  assert.ok(tarot.length < 1.6e6, 'thay-boi-tarot.glb nặng ' + tarot.length);
+  assert.ok(notice.includes('models/npc/thay-boi-tarot.glb'), 'thầy bói Tarot ghi nguồn');
 });
 
 test('setLook sang npcFashion khi .glb còn đang tải: bỏ kết quả tải, giữ thế thân; trở lại thì nạp mô hình', async t => {
