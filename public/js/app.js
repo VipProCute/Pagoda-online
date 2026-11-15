@@ -312,7 +312,7 @@
       const rtt = t1 - t0, off = st - (t0 + t1) / 2;
       if (!best || rtt < best.rtt) best = { rtt, off };
     }
-    if (best) { offset = best.off; Hall.setOffset(offset); }
+    if (best) { offset = best.off; Hall.setOffset(offset); pruneChat(); }
   }
   function join() {
     socket.emit('join', { name: myName, look, uid, adminKey: store.get('ta-admin') || undefined }, r => {
@@ -556,7 +556,7 @@
     if (!offset) { offset = r.serverTime - Date.now(); Hall.setOffset(offset); }
     $('#siteName').textContent = cfg.siteName; document.title = cfg.siteName + ' · Đi chùa online';
     Hall.setMe(me); Hall.setPlayers(r.players); Hall.setSweeper(r.sweeper); Hall.setIncense(r.incense); fortune.reset(r.fortuneQueue);
-    $('#feed').textContent = ''; r.chat.forEach(addMsg); scrollFeed(true);
+    $('#feed').textContent = ''; r.chat.forEach(addMsg); pruneChat(); scrollFeed(true);
     renderPrayers(r.prayers); renderBoard(r.board); renderDonations(r.donations, r.funds);
     setStats(r.today, r.online); setMerit(r.merit);
     setChant(r.chant);
@@ -636,8 +636,15 @@
   socket.on('voice:kicked', d => { Voice.forceMute(); voiceUI(); toast(d.text); });
   socket.on('pu', d => Hall.updatePlayer(d));
   socket.on('p', arr => Hall.positions(arr));
-  socket.on('chat', m => { addMsg(m); scrollFeed(); if (!m.sys && m.pid) Hall.bubble(m.pid, m.text); });
-  socket.on('chat:hide', d => { const el = $(`#feed [data-id="${d.id}"]`); if (el) el.remove(); });
+  socket.on('chat', m => {
+    if (!joined) return;
+    addMsg(m); pruneChat(); scrollFeed();
+    if (!m.sys && m.pid) Hall.bubble(m.pid, m.text);
+  });
+  socket.on('chat:hide', d => {
+    const el = $(`#feed [data-id="${d.id}"]`);
+    if (el) { el.remove(); pruneChat(); }
+  });
   socket.on('ticker', d => ticker(d.text));
   socket.on('notice', d => toast(d.text));
   socket.on('emote', d => {
@@ -678,13 +685,31 @@
   });
 
   /* ---------- chat ---------- */
+  let chatExpiryTimer;
+  function pruneChat() {
+    const limits = cfg?.chatHistory;
+    if (!limits) return;
+    clearTimeout(chatExpiryTimer);
+    const feed = $('#feed');
+    const cutoff = serverNow() - limits.maxAgeMs;
+    while (feed.firstElementChild && Number(feed.firstElementChild.dataset.time) < cutoff) {
+      feed.firstElementChild.remove();
+    }
+    while (feed.childElementCount > limits.maxMessages) feed.firstElementChild.remove();
+    if (feed.firstElementChild) {
+      const remaining = Number(feed.firstElementChild.dataset.time) - cutoff;
+      chatExpiryTimer = setTimeout(pruneChat, Math.floor(remaining) + 1);
+    }
+  }
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) pruneChat(); });
   function scrollFeed(force) { const f = $('#feed'); if (force || f.scrollHeight - f.scrollTop - f.clientHeight < 120) f.scrollTop = f.scrollHeight; }
   function addMsg(m) {
     const feed = $('#feed');
+    const el = document.createElement('div'); el.dataset.id = m.id; el.dataset.time = m.t;
     if (m.sys) {
-      const s = document.createElement('div'); s.className = 'sysmsg'; s.dataset.id = m.id; s.textContent = m.text; feed.appendChild(s);
+      el.className = 'sysmsg'; el.textContent = m.text;
     } else {
-      const el = document.createElement('div'); el.className = 'msg' + (m.pid === me ? ' me' : ''); el.dataset.id = m.id;
+      el.className = 'msg' + (m.pid === me ? ' me' : '');
       const dot = document.createElement('span'); dot.className = 'dot'; dot.style.background = (Hall.COLORS[m.c] || Hall.COLORS[0]).c;
       const body = document.createElement('div');
       const meta = document.createElement('div'); meta.className = 'meta';
@@ -705,9 +730,8 @@
         }
         el.appendChild(tools);
       }
-      feed.appendChild(el);
     }
-    while (feed.children.length > 150) feed.firstChild.remove();
+    feed.appendChild(el);
   }
   const isMod = () => { const p = Hall.player(me); return !!(p && p.mod); };
   function sendChat(text) {
@@ -725,7 +749,7 @@
   function showTab(name) {
     $$('.tabs [role=tab]').forEach(t => t.setAttribute('aria-selected', String(t.dataset.tab === name)));
     ['chat', 'prayers', 'merit', 'places'].forEach(n => { $('#pane-' + n).hidden = n !== name; });
-    if (name === 'chat') scrollFeed(true);
+    if (name === 'chat') { pruneChat(); scrollFeed(true); }
   }
   $$('.tabs [role=tab]').forEach(t => t.addEventListener('click', () => showTab(t.dataset.tab)));
   $('#meritPill').addEventListener('click', () => showTab('merit'));
