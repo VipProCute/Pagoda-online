@@ -1,6 +1,6 @@
 /*
  * Kỳ Đạo · Vẽ bàn cờ bằng Canvas 2D: vua, tướng/úp, vây 9/13/19, caro 15×15.
- * Quân cờ vua vẽ bằng mã (không dùng ký tự ♔, không có tệp ảnh nên không cần ghi NOTICE).
+ * Quân cờ vua mặc định vẽ bằng mã; defaultAssets bật atlas, thiếu ảnh thì giữ hình vẽ bằng mã.
  * Phần hình học (layout, squareAt, cellXY, nameOf, parseSq) thuần, chạy được trong Node để test.
  *
  * Quy ước toạ độ logic: col 0.. từ cột a; row 0.. tính từ phía bên 'a' (Trắng/Đỏ).
@@ -352,6 +352,9 @@
   const ATLAS_T = 1.12, ATLAS_BASE = 118 / 128, ATLAS_FOOT = 0.44;
   /** Ảnh atlas của skin quân nếu đã tải xong, ngược lại null (vẽ vector). */
   function atlasImage(skin, onAsset) { return skin && skin.atlas ? loadImage(skin.atlas, onAsset) : null; }
+  function pieceAtlas(skin, sk, dflt) {
+    return skin ? atlasImage(skin, sk && sk.onAsset) : dflt ? loadImage(dflt.atlas, dflt.onAsset) : null;
+  }
   function paintAtlasCell(ctx, img, col, row, dx, dy, T) {
     ctx.drawImage(img, col * ATLAS_CELL, row * ATLAS_CELL, ATLAS_CELL, ATLAS_CELL, dx, dy, T, T);
   }
@@ -367,7 +370,7 @@
     if (!rendering && ctx.canvas && ctx.canvas.ownerDocument && ctx.getTransform) {
       const scale = Math.max(1, Math.abs(ctx.getTransform().a));
       const pixels = Math.ceil(size * 1.4 * scale);
-      const key = ch + ':' + pixels + ':' + size + (skin ? ':' + skin.id : '');
+      const key = ch + ':' + pixels + ':' + size + (skin ? ':' + skin.id : atlas ? ':classic' : '');
       const cache = drawChessPiece.cache || (drawChessPiece.cache = new Map());
       if (!cache.has(key)) {
         if (cache.size >= 96) cache.clear();
@@ -479,12 +482,13 @@
   }
 
   function drawXiangqiPiece(ctx, cx, cy, cell, ch, vi, rendering, skin, atlas) {
-    if (atlas && skin && skin.c) {
+    if (atlas && (!skin || skin.c)) {
       // Thân tròn 108px của ô disc khớp đường kính quân vector (0,86·ô); chữ vẽ lên trên.
       const T = cell * 0.86 * ATLAS_CELL / 108, red = ch === ch.toUpperCase(), t = ch.toLowerCase();
       ctx.save();
       paintAtlasCell(ctx, atlas, ATLAS_COL.disc, red ? 0 : 1, cx - T / 2, cy - T / 2, T);
-      drawXiangqiLabel(ctx, cx, cy, cell, t, red, vi, t === 'x', skin.c, readableOn(skin.c.base, skin.c.accent, 4.5));
+      const sc = skin && skin.c;
+      drawXiangqiLabel(ctx, cx, cy, cell, t, red, vi, t === 'x', sc, sc ? readableOn(sc.base, sc.accent, 4.5) : red ? '#9e2420' : '#211d18');
       ctx.restore();
       return;
     }
@@ -579,7 +583,7 @@
     return used;
   }
 
-  function drawChessBoard(ctx, g, flip, sk) {
+  function drawChessBoard(ctx, g, flip, sk, dflt) {
     const mg = g.margin || 0;
     if (mg > 0) {
       // Dải cảnh của nửa không có skin: màu gỗ sẫm để không lộ nền trong suốt.
@@ -589,7 +593,15 @@
         ctx.fillRect(g.ox - mg * g.cell, h.rotated ? g.oy - mg * g.cell : g.oy + 4 * g.cell, (8 + 2 * mg) * g.cell, (4 + mg) * g.cell);
       }
     }
-    for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
+    const img = dflt ? loadImage(dflt.board, dflt.onAsset) : null;
+    // Ô trên-trái là a8 (hoặc h1 khi quay): tổng cột + hàng lẻ, luôn sáng.
+    const topCol = flip ? 7 : 0, topRow = flip ? 0 : 7;
+    const topColor = (topCol + topRow) % 2 === 0 ? '#b58863' : '#f0d9b5';
+    const face = img && topColor === '#f0d9b5' ? img : null;
+    if (face) {
+      const p = cellXY(g, topCol, topRow, flip);
+      ctx.drawImage(face, p.x - g.cell / 2, p.y - g.cell / 2, 8 * g.cell, 8 * g.cell);
+    } else for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
       const p = cellXY(g, c, r, flip);
       ctx.fillStyle = (c + r) % 2 === 0 ? '#b58863' : '#f0d9b5'; // ô a1 là ô sẫm
       ctx.fillRect(p.x - g.cell / 2, p.y - g.cell / 2, g.cell, g.cell);
@@ -604,7 +616,7 @@
     }
     // Vân mảnh liên tục trên các ô, không che nhãn hay nước đi.
     ctx.strokeStyle = 'rgba(93,53,25,.09)'; ctx.lineWidth = Math.max(0.45, g.cell * 0.009);
-    for (let i = 0; i < 32; i++) {
+    for (let i = 0; !face && i < 32; i++) {
       const y = g.oy + g.cell * (i + 0.45) / 4;
       const bend = Math.sin(i * 2.3) * g.cell * 0.09;
       ctx.beginPath(); ctx.moveTo(g.ox, y);
@@ -695,7 +707,7 @@
   }
 
   /** Phần nền tĩnh của bàn cờ tướng/úp: mọi thứ vẽ trước dòng sông (gỗ, vân, khung, ảnh sân, lớp phủ, lưới). */
-  function drawXiangqiStatic(ctx, g, flip, sk) {
+  function drawXiangqiStatic(ctx, g, flip, sk, dflt) {
     const m = g.cell * 0.6;
     const mg = g.margin > 0 ? g.margin : 0, mv = mg > 0 ? mg : 0.6;
     const destOf = h => (h.rotated ? { x: g.ox - mv * g.cell, y: g.oy - mv * g.cell, w: (8 + 2 * mv) * g.cell, h: (4 + mv) * g.cell }
@@ -708,14 +720,18 @@
         ctx.fillStyle = '#2a1c12'; ctx.fillRect(d.x, d.y, d.w, d.h);
       }
     }
-    const wood = ctx.createLinearGradient(0, g.oy - m, g.w, g.oy + g.cell * 9 + m);
-    wood.addColorStop(0, '#f5db9f'); wood.addColorStop(0.5, '#e9c88b'); wood.addColorStop(1, '#cca363');
-    ctx.fillStyle = wood;
-    ctx.fillRect(g.ox - m, g.oy - m, g.cell * 8 + m * 2, g.cell * 9 + m * 2);
+    const img = dflt ? loadImage(dflt.board, dflt.onAsset) : null;
+    if (img) ctx.drawImage(img, g.ox - m, g.oy - m, g.cell * 8 + m * 2, g.cell * 9 + m * 2);
+    else {
+      const wood = ctx.createLinearGradient(0, g.oy - m, g.w, g.oy + g.cell * 9 + m);
+      wood.addColorStop(0, '#f5db9f'); wood.addColorStop(0.5, '#e9c88b'); wood.addColorStop(1, '#cca363');
+      ctx.fillStyle = wood;
+      ctx.fillRect(g.ox - m, g.oy - m, g.cell * 8 + m * 2, g.cell * 9 + m * 2);
+    }
     ctx.save();
     ctx.beginPath(); ctx.rect(g.ox - m, g.oy - m, g.cell * 8 + m * 2, g.cell * 9 + m * 2); ctx.clip();
     ctx.lineWidth = Math.max(0.45, g.cell * 0.009); ctx.strokeStyle = 'rgba(111,67,24,.1)';
-    for (let i = 0; i < 40; i++) {
+    for (let i = 0; !img && i < 40; i++) {
       const y = g.oy - m + g.cell * (i + 0.5) * 0.255;
       const bend = Math.sin(i * 1.7) * g.cell * 0.13;
       ctx.beginPath(); ctx.moveTo(g.ox - m, y);
@@ -769,25 +785,25 @@
       }
     }
   }
-  function drawXiangqiBoard(ctx, g, flip, vi, sk, t) {
-    drawXiangqiStatic(ctx, g, flip, sk);
+  function drawXiangqiBoard(ctx, g, flip, vi, sk, t, dflt) {
+    drawXiangqiStatic(ctx, g, flip, sk, dflt);
     drawRiver(ctx, g, flip, vi, t);
   }
 
   /* Đệm nền tĩnh cờ tướng/úp khi sông đang chảy (chỉ trình duyệt thật): một canvas phụ duy nhất. */
   let BOARD_CACHE = null;   // { key, canvas }
-  function boardCacheKey(o, sk) {
+  function boardCacheKey(o, sk, dflt) {
     const side = s => {
       const f = sk && sk[s].field;
       return f ? [f.id, imageState(f.src2), imageState(f.src)].join('~') : '-';
     };
-    return [o.game, o.w, o.h, o.dpr || 1, o.flip ? 1 : 0, o.vi ? 1 : 0, o.margin || 0, o.size || 0, side('a'), side('b')].join('|');
+    return [o.game, o.w, o.h, o.dpr || 1, o.flip ? 1 : 0, o.vi ? 1 : 0, o.margin || 0, o.size || 0, side('a'), side('b'), o.defaultAssets && dflt ? imageState(dflt.board) : '-'].join('|');
   }
   /** Vẽ nền tĩnh qua đệm; trả false nếu không dùng được đệm (khi đó bên gọi chạy đường cũ). */
-  function drawXiangqiCached(ctx, g, o, sk) {
+  function drawXiangqiCached(ctx, g, o, sk, dflt) {
     if (typeof document === 'undefined' || typeof o.time !== 'number' || !(o.w > 0) || !(o.h > 0)) return false;
     const dpr = o.dpr || 1;
-    let key = boardCacheKey(o, sk);
+    let key = boardCacheKey(o, sk, dflt);
     if (!BOARD_CACHE || BOARD_CACHE.key !== key) {
       let cv = null;
       try { cv = document.createElement('canvas'); } catch (_) { cv = null; }
@@ -795,8 +811,8 @@
       if (!cx) return false;
       cv.width = Math.max(1, Math.round(o.w * dpr)); cv.height = Math.max(1, Math.round(o.h * dpr));
       cx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      drawXiangqiStatic(cx, g, !!o.flip, sk);
-      key = boardCacheKey(o, sk);   // trạng thái ảnh có thể đổi ngay khi vừa yêu cầu tải
+      drawXiangqiStatic(cx, g, !!o.flip, sk, dflt);
+      key = boardCacheKey(o, sk, dflt);   // trạng thái ảnh có thể đổi ngay khi vừa yêu cầu tải
       BOARD_CACHE = { key, canvas: cv };
     }
     ctx.drawImage(BOARD_CACHE.canvas, 0, 0, o.w, o.h);
@@ -809,6 +825,7 @@
    *   skins: { a:{field,pieces}, b:{…} }   (tuỳ chọn; chỉ cờ vua/tướng/úp)
    *   hideSkins: { a, b }                  (bên nào true thì vẽ mặc định)
    *   jolt: { 'e4':{dx,dy} } | (x, y) => {dx,dy}   (độ lệch tạm của quân, px CSS)
+   *   defaultAssets: boolean              (tuỳ chọn; mặc định tắt, nạp tài nguyên mặc định)
    *   onAsset: () => void                  (gọi khi ảnh nửa sân tải xong, để vẽ lại)
    *   catalog: KydaoSkins                  (tuỳ chọn; mặc định global KydaoSkins) }
    * Trả về hình học (layout) dùng để đổi chạm → ô.
@@ -899,12 +916,15 @@
     ctx.clearRect(0, 0, o.w, o.h);
     // Skin chỉ dành cho cờ vua / cờ tướng / cờ úp; không có o.skins thì vẽ y như cũ.
     const sk = isGrid(o.game) ? null : resolveSkins(o);
+    const cat = o.catalog || (typeof KydaoSkins !== 'undefined' ? KydaoSkins : null);
+    const dflt = o.defaultAssets && cat && typeof cat.defaultPiecesAtlas === 'function' && !isGrid(o.game)
+      ? { atlas: cat.defaultPiecesAtlas(), board: cat.defaultBoardImage(o.game), onAsset: o.onAsset } : null;
     const stoneSkins = isGrid(o.game) ? resolveStoneSkins(o) : null;
     const skinMark = hasField(sk);
     if (isGrid(o.game)) drawGridBoard(ctx, g, flip);
-    else if (chess) drawChessBoard(ctx, g, flip, sk);
-    else if (drawXiangqiCached(ctx, g, o, sk)) drawRiver(ctx, g, flip, !!o.vi, o.time);
-    else drawXiangqiBoard(ctx, g, flip, !!o.vi, sk, o.time);
+    else if (chess) drawChessBoard(ctx, g, flip, sk, dflt);
+    else if (drawXiangqiCached(ctx, g, o, sk, dflt)) drawRiver(ctx, g, flip, !!o.vi, o.time);
+    else drawXiangqiBoard(ctx, g, flip, !!o.vi, sk, o.time, dflt);
     const at = name => { const q = parseSq(o.game, name, o.size); return q ? cellXY(g, q.col, q.row, flip) : null; };
     const mark = (name, style) => {
       const p = at(name); if (!p) return;
@@ -945,7 +965,7 @@
       const j = o.jolt ? joltAt(nameOf(o.game, c, r), p) : null;
       if (j) p = { x: p.x + j.dx, y: p.y + j.dy };
       const pieceSkin = sk && !isGrid(o.game) ? sk[sideOfChar(ch)].pieces : null;
-      const atlasImg = atlasImage(pieceSkin, sk && sk.onAsset);
+      const atlasImg = pieceAtlas(pieceSkin, sk, dflt);
       if (isGrid(o.game)) drawStone(ctx, p, g.cell, ch, o.game, stoneSkins ? stoneSkins[ch] : null, stoneSkins && stoneSkins.onAsset);
       else if (chess) drawChessPiece(ctx, p.x, p.y, g.cell * 0.92, ch, false, pieceSkin, atlasImg);
       else {

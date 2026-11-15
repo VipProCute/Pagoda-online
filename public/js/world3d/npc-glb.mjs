@@ -3,11 +3,11 @@
 import * as THREE from 'three';
 
 // NPC có mô hình .glb riêng ở bản 3D (bản 2D không đổi):
-//   Obito (T-207) · Tế Công = Lão Ăn Mày, Vạn Lý Độc Hành, Tảo Địa Tăng, bốn cô nương (T-208).
+//   Obito (T-212) · Tế Công = Lão Ăn Mày, Vạn Lý Độc Hành, Tảo Địa Tăng, bốn cô nương, thầy bói Tarot (T-213).
 // Bản dựng bằng mã vẫn là THẾ THÂN: giữ nhãn tên, bong bóng lời, bóng chân; .glb nạp xong thì ẩn cây `hips` của bản mã.
 // Mô hình không có clip chuyển động: đi, thở, vái, nói đều xoay xương bằng mã, giảm chuyển động thì đứng yên.
 // .glb lỗi hoặc 404 thì giữ nguyên thế thân, không ghi console.
-// Mô hình T-208 dựng bằng tools/blender/npc/build.py (bộ xương chung `npc`), không sửa tay tệp .glb.
+// Mô hình T-213 dựng bằng tools/blender/npc/build.py (bộ xương chung `npc`), không sửa tay tệp .glb.
 
 const NPC_DIR = '/models/npc/';
 const model = (file, v, extra) => Object.freeze({ url: NPC_DIR + file + '.glb?v=' + v, rig: 'npc', arm: 0, stride: 0.38, ...extra });

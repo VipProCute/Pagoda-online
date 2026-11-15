@@ -1,4 +1,4 @@
-"""Chùa Tâm An · dựng mô hình NPC 3D từ tệp .glb gốc (thẻ T-208).
+"""Chùa Tâm An · dựng mô hình NPC 3D từ tệp .glb gốc (thẻ T-213).
 
 Tệp gốc (Tripo, Sketchfab…) thường là một khối lưới tĩnh rất nặng, đứng chữ T hoặc chữ A, không có xương.
 Script này: nhập tệp gốc → gộp lưới → giảm số mặt → đặt cao đúng, chân chạm đất, mặt nhìn về -Y (= +Z của glTF)

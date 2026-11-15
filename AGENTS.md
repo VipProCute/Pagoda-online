@@ -2,7 +2,7 @@
 
 > Đây là **nguồn duy nhất** cho quy tắc làm việc của agent (Codex, Claude Code, Cursor…). `CLAUDE.md` chỉ import file này rồi thêm vài ghi chú riêng cho Claude. Sửa quy tắc thì sửa ở đây.
 >
-> Thứ tự đọc khi nhận việc: **file này → [task.md](task.md) (thẻ việc của bạn) → gói ngữ cảnh ghi trong thẻ ở [docs/agents/CONTEXT-PACKS.md](docs/agents/CONTEXT-PACKS.md)**. Không đọc cả repo: chỉ đọc đúng gói được giao. Bản đồ mã đầy đủ: [docs/agents/ARCHITECTURE.md](docs/agents/ARCHITECTURE.md). Quy trình điều phối nhiều agent: [docs/agents/ORCHESTRATION.md](docs/agents/ORCHESTRATION.md).
+> Thứ tự đọc khi nhận việc: **file này → [task.md](task.md) (thẻ việc của bạn) → gói ngữ cảnh ghi trong thẻ ở [docs/agents/CONTEXT-PACKS.md](docs/agents/CONTEXT-PACKS.md)**. Không đọc cả repo: chỉ đọc đúng gói được giao. Bản đồ mã đầy đủ: [docs/agents/ARCHITECTURE.md](docs/agents/ARCHITECTURE.md). Công thức cho từng loại nâng cấp ("muốn đổi X thì sửa ở đâu"): [docs/HUONG-DAN-NANG-CAP.md](docs/HUONG-DAN-NANG-CAP.md). Quy trình điều phối nhiều agent: [docs/agents/ORCHESTRATION.md](docs/agents/ORCHESTRATION.md).
 
 ## 1. Dự án trong 5 dòng
 
@@ -24,6 +24,7 @@
 | Test PostgreSQL | đặt `TEST_DATABASE_URL` (mặc định `postgres://pagoda:pagoda@127.0.0.1:5432/pagoda_test`); không kết nối được thì tự `skip` |
 | Mô phỏng cân bằng PK | `npm run sim -- roundrobin --games 2000 --seed 1` (xem `tools/pk-sim/index.js`) |
 | Kiểm giao diện Võ Học Các / Sân đấu | `tools/ui-harness/` (server giả, cần Playwright cài riêng, xem CONTEXT-PACKS → gói `PK`) |
+| Dựng tài nguyên Kỳ Đài (sân, bàn và quân mặc định) | tải nguồn: `node tools/blender/kydao/fetch-assets.js [nhóm]` · render thử một sân: `powershell -ExecutionPolicy Bypass -File tools/blender/kydao/thu-san.ps1 <mã sân> chess` · cách làm: [docs/ky-dai/HUONG-DAN-SAN-MOI.md](docs/ky-dai/HUONG-DAN-SAN-MOI.md) |
 | Xem thử hiệu ứng mốc | `http://localhost:3000/?celebrate=100` (hoặc `666`, `2000`) |
 
 Thử nhanh trên máy: `CULTIVATION_TIME_SCALE=0.001`, `PK_TIME_SCALE=0.05`, `MARTIAL_SWEEP_MS=15000`, `DONATION_MODE=test` (mặc định).
@@ -62,7 +63,8 @@ Thử nhanh trên máy: `CULTIVATION_TIME_SCALE=0.001`, `PK_TIME_SCALE=0.05`, `M
 
 - Repo ở `I:\AnhTu\Side_Project\Pagoda-online`. Shell mặc định là **PowerShell 5.1**: `Get-Content` không có `-Encoding utf8` sẽ làm hỏng dấu tiếng Việt (file không BOM). Dùng công cụ Read của agent, hoặc `Get-Content -Encoding utf8`; ghi file bằng công cụ Write/Edit, không dùng `Set-Content` mặc định.
 - Node trên máy có thể mới hơn production (đã thấy v25); production là Node 22. Không dùng API chỉ có ở Node > 22.
-- Không có `gh` CLI. Thao tác GitHub (PR, xoá nhánh) để chủ dự án làm hoặc hỏi trước.
+- Có `gh` CLI (đã đăng nhập, kiểm ngày 2026-11-15). Vẫn chỉ mở PR, merge, xoá nhánh khi chủ dự án bảo.
+- Blender 5.3 ở `H:\blender.exe`, không nằm trên PATH; chạy không giao diện được (`-b --factory-startup -P <script> -- <tham số>`).
 - Không có PostgreSQL cục bộ thì các test PG tự bỏ qua; ghi rõ điều đó trong báo cáo.
 
 ## 6. Định nghĩa "xong" (Definition of Done)

@@ -107,5 +107,12 @@
     return ok ? '/img/kydao/thumbs/' + kind + '-' + id + '.webp' : null;
   }
 
-  return { GAMES, STONE_GAMES, FIELDS, PIECES, STONES, supports, supportsPieces, piecesTable, normalize, field, pieces, stones, stonesAtlas, fieldImage, fieldImage2, crest, piecesAtlas, fieldModel, piecesModel, thumb };
+  /** Tài nguyên của bàn và quân MẶC ĐỊNH (chưa chọn skin); thiếu file thì giao diện lùi về hình vẽ bằng mã. */
+  function defaultPiecesAtlas() { return '/img/kydao/pieces2d/classic.webp'; }
+  function defaultPiecesModel() { return '/models/kydao/pieces/classic.glb'; }
+  function defaultBoardImage(game) {
+    return game === 'chess' ? '/img/kydao/boards/chess.webp' : game === 'xiangqi' || game === 'jieqi' ? '/img/kydao/boards/xiangqi.webp' : null;
+  }
+
+  return { defaultPiecesAtlas, defaultPiecesModel, defaultBoardImage, GAMES, STONE_GAMES, FIELDS, PIECES, STONES, supports, supportsPieces, piecesTable, normalize, field, pieces, stones, stonesAtlas, fieldImage, fieldImage2, crest, piecesAtlas, fieldModel, piecesModel, thumb };
 });
