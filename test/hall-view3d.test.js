@@ -67,6 +67,22 @@ test('snapshot 3D có đủ trạng thái, đóng băng sâu và không sao ché
   assert.equal(state.scene, 'hall', 'bản chụp cũ giữ nguyên sau khi đổi cảnh');
 });
 
+test('người ngồi bàn đá ở Sân chùa quay mặt vào bàn trong snapshot 3D', () => {
+  const f = hallFixture(), H = f.H;
+  H.setScene('yard'); H.setMe(7);
+  H.setTables([{ table: 1, status: 'waiting', game: 'chess', seats: [{ pid: 7 }, { pid: 8 }] }]);
+  const table = H.view3d.snapshot().tables[0];
+  H.setPlayers(table.seats.map(([x, z], i) => ({ id: 7 + i, name: 'Kỳ thủ ' + i, scene: 'yard', x, z, look: { g: 'nam', c: 1, h: 1 } })));
+  f.step(2);
+  const state = H.view3d.snapshot();
+  state.players.forEach((p, i) => {
+    const [sx, sz] = table.seats[i];
+    assert.equal(p.onTable, true); assert.equal(p.sit, 'bench');
+    assert.ok(Math.abs(p.yaw - Math.atan2((table.x - sx) * 1.6, table.z - sz)) < 1e-9, 'ghế ' + i + ' nhìn vào bàn');
+  });
+  assert.ok(Math.abs(Math.abs(state.players[0].yaw - state.players[1].yaw) - Math.PI) < 0.5, 'hai kỳ thủ ngồi đối mặt');
+});
+
 test('snapshot giữ đúng sáu pháp tướng, bốn quỷ, 666, Obito và giờ hết hào quang của 2D', () => {
   const f = hallFixture(), H = f.H, now = 1800000000000;
   f.step(); f.setClock(now);

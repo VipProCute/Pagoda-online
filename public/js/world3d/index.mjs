@@ -153,7 +153,10 @@ function schedule(world) {
     try {
       world.input?.update(time);
       const state = world.getState();
-      world.content.update?.({ ...state, view: world.ctx.view }, dt);
+      // Người ngồi bàn đá đã do updatePeople vẽ (đủ ngoại hình, tên, pháp tướng):
+      // không đưa occupants cho cảnh, kẻo cảnh dựng thêm một hình nhân trùng chỗ.
+      const tables = Array.isArray(state.tables) ? state.tables.map(t => ({ ...t, occupants: null })) : state.tables;
+      world.content.update?.({ ...state, tables, view: world.ctx.view }, dt);
       if (world.sceneName !== 'test') {
         updatePeople(world, state, dt);
         world.rig.update(state, world.content);

@@ -2066,9 +2066,12 @@
       // NPC trả lời dùng giờ máy chủ; lời tự nói và chat dùng đồng hồ hoạt ảnh.
       const bubbleAge = p.bubble ? (p.bubble.t > 1e11 ? now : time) - p.bubble.t : Infinity;
       const tag = scene === 'arena' && tagger ? tagger(p.id) : null;
+      // Ngồi bàn đá thì quay mặt vào bàn, không giữ hướng lúc bước tới ghế.
+      const tb = p.onTable ? seatIndex.get(p.id) : null, tp = tb ? YARD_TABLES[tb.id - 1] : null;
       return {
         id: p.id, name: p.name, look: { g: p.look.g, c: p.look.c, h: p.look.h, npcFashion: !!p.look.npcFashion },
-        x: p.dx, z: p.dz, dx: p.dx, dz: p.dz, yaw: p.viewYaw ?? (p.front ? 0 : Math.PI), front: p.front,
+        x: p.dx, z: p.dz, dx: p.dx, dz: p.dz, front: p.front,
+        yaw: tp ? Math.atan2((tp.x - tb.x) * 1.6, tp.z - tb.z) : p.viewYaw ?? (p.front ? 0 : Math.PI),
         walking: !!p.walking, seated: !!p.seated, onTable: !!p.onTable,
         sit: p.seated ? (p.onTable ? 'bench' : p.sit) : -1, bow: bowAge >= 0 && bowAge < 1 ? Math.sin(Math.PI * bowAge) : 0,
         aura, meritRank: root.MERIT && p.mt !== 666 ? root.MERIT.rankOf(p.mt) : 0,
