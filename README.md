@@ -122,6 +122,8 @@ Mặc định dưới đây lấy từ mã, có thể khác giá trị được 
 | `PK_BUFF_SCALE` | Hệ số buff pháp tướng / quỷ / hào quang, từ 0 đến 1. | `0.15` |
 | `KYDAO_ENABLED` | Đặt `0` để tắt Kỳ Đạo. | Bật |
 | `KYDAO_MAX_GAMES` | Số ván cờ đồng thời tối đa, tính cả bàn trong. | `12` |
+| `TITLES_ENABLED` | Đặt `0` để tắt danh hiệu: không tính, không phát `ptt` / `titles` / ticker. | Bật |
+| `TITLE_MIN_MERIT_TOTAL`, `TITLE_MIN_MERIT_SEASON`, `TITLE_MIN_PK_GAMES`, `TITLE_MIN_PK_SEASON_GAMES`, `TITLE_MIN_GAMES`, `TITLE_ACTIVE_DAYS` | Ngưỡng để giữ danh hiệu (xem `lib/records.js`); chùa ít người có thể hạ xuống. | `1000`, `100`, `10`, `3`, `20`, `30` |
 
 **Dữ liệu: file JSON hoặc PostgreSQL**
 
@@ -192,6 +194,7 @@ Không cấu hình TURN thì chỉ dùng STUN công cộng. Người không cho 
 | `CULTIVATION_TIME_SCALE` | Nhân thời gian phiên tu; thử bằng `0.001`. | `1` |
 | `PK_TIME_SCALE` | Nhân các mốc giờ PK; thử bằng `0.05`. | `1` |
 | `MARTIAL_SWEEP_MS` | Nhịp quét võ học, mili giây; tối thiểu 100. | `15000` |
+| `TITLES_SWEEP_MS` | Nhịp tính lại danh hiệu, mili giây; tối thiểu 200 (chỉ hạ để thử). | `60000` |
 | `KYDAO_TIME_SCALE` | Nhân các mốc giờ ván cờ; thử bằng `0.05`. | `1` |
 
 ## Cúng dường hoạt động thế nào

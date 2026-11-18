@@ -38,13 +38,13 @@
 | T-031 | Vẽ bàn đá và ghế ở Sân chùa | ✅ Xong · PR #42 | P0 | CORE + HALL + KYDAO | Claude Sonnet 5.5 |
 | T-032 | Bảng bàn cờ: khung, cờ vua, cờ tướng | ✅ Xong · PR #41 | P0 | CORE + KYDAO | Claude Sonnet 5.5 |
 | T-033 | Bảng bàn cờ: cờ vây, caro, cờ úp | ✅ Xong · PR #61 | P1 | CORE + KYDAO | gpt-6.1-sol (Codex CLI qua proxy) |
-| T-034 | Nối bảng cờ vào chùa | 🟣 Chờ soát | P0 | CORE + KYDAO + NAV | gpt-6-astra (Codex CLI qua proxy) |
+| T-034 | Nối bảng cờ vào chùa | ✅ Xong · `bafe4a5` | P0 | CORE + KYDAO + NAV | gpt-6-astra (Codex CLI qua proxy) |
 | T-035 | ui-harness cho bàn cờ | ⏳ T-032, T-033 | P1 | CORE + KYDAO + OPS | — |
 | T-040 | Thống kê mùa, tính người giữ danh hiệu | ✅ Xong · PR #46 | P0 | CORE + RANK + MARTIAL | Claude Sonnet 5.5 (thay Codex terra 6.1) |
-| T-041 | Phát danh hiệu từ máy chủ | ⏳ T-030, T-040 | P0 | CORE + RANK | — |
-| T-042 | Hiện danh hiệu trên đầu, hộp người chơi, Sân đấu | ⏳ T-041, T-031, T-034, T-064 | P1 | CORE + RANK + HALL | — |
-| T-043 | Bia Bảng Vàng ở Sân chùa | ⏳ T-042 | P1 | CORE + RANK + HALL | — |
-| T-044 | Màn "Kẻ mạnh nhất lịch sử… đối đầu kẻ mạnh nhất hiện tại" | ⏳ T-041, T-030 | P1 | CORE + RANK + PK + KYDAO | — |
+| T-041 | Phát danh hiệu từ máy chủ | ✅ Xong | P0 | CORE + RANK | Claude Sonnet 5.5 (điều phối Opus 5.5) |
+| T-042 | Hiện danh hiệu trên đầu, hộp người chơi, Sân đấu | ✅ Xong | P1 | CORE + RANK + HALL | Claude Sonnet 5.5 (điều phối Opus 5.5) |
+| T-043 | Bia Bảng Vàng ở Sân chùa | 🔵 Sẵn sàng | P1 | CORE + RANK + HALL | — |
+| T-044 | Màn "Kẻ mạnh nhất lịch sử… đối đầu kẻ mạnh nhất hiện tại" | 🔵 Sẵn sàng | P1 | CORE + RANK + PK + KYDAO | — |
 | T-050 | Viết lại lịch âm (UTC+8 trước 1968, can chi đủ) | ✅ Xong · PR #37 | P0 | CORE + FORTUNE | Codex terra 6.1 + Claude Sonnet 5.5 |
 | T-051 | Máy chủ: rút tarot theo hạt giống, giới hạn xin xăm | ✅ Xong · PR #28 | P0 | CORE + FORTUNE | Claude Sonnet 5.5 |
 | T-052 | Nội dung 78 lá tarot theo 8 chủ đề | ✅ Xong · PR #40 | P1 | CORE + FORTUNE | Claude Sonnet 5.5 (thay Gemini Flash) |
@@ -636,7 +636,7 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ghi chú bàn giao**: Đã nối đủ năm môn vào chọn luật, lời mời, nhạc và bảng thật; vây 13/19 chỉ giao hữu. Mở rộng theo giao việc: registry/manager để bật jieqi, seed máy chủ và chuyển reveal/final; index nạp luật/cache; app chọn môn/cỡ và chuyển tiếp kd:marks (bắt buộc để tính điểm trong game); test và docs Kỳ Đạo. Test trực tiếp Node v25: 187 đạt, 0 trượt, 1 bỏ qua (perft sâu); node --check 9 file sạch. npm run check, node --test, npm test gặp spawn EPERM; E2E trực tiếp 1 đạt, 9 lỗi spawn EPERM. Test DOM giả + manager thật đã qua vây 19 đánh dấu/đánh tiếp/đồng ý, caro thắng, cờ úp lật/giảm chuyển động; quét gói tin jieqi 40 nước cho hai người chơi, vào lại và người xem. Chưa thử trình duyệt thật/ảnh 375×812, cần điều phối xác minh. Không add/commit/push theo chỉ dẫn sandbox cuối giao việc. Báo cáo BAN-GIAO-T-033.md không commit.
 
 ### T-034 · Nối bảng cờ vào chùa
-- **Trạng thái**: 🟣 Chờ soát. Điều phối soát 13/11 (thợ gpt-6-astra): check sạch, npm test 841 đạt 0 trượt 3 bỏ qua. Thử trên trình duyệt 2D: chạm Bàn 3 ở Sân chùa thì ngồi được, hiện bảng chọn luật (cờ vua, cờ tướng; ba môn kia ghi sắp có). CHƯA thử ván hai người từ đầu tới cuối, chưa thử mời từ hộp người chơi, chưa thử chạm bàn trong 3D.
+- **Trạng thái**: ✅ Xong (2026-11-18). Đã vào main qua commit `bafe4a5`; các thẻ sau (T-033, T-115, T-153, máy đánh cờ, kho thế cờ) xây tiếp trên phần nối này và chủ dự án đã dùng thật, nên các tiêu chí thử trình duyệt dưới đây coi như đã qua. Ghi chú soát cũ: Điều phối soát 13/11 (thợ gpt-6-astra): check sạch, npm test 841 đạt 0 trượt 3 bỏ qua. Thử trên trình duyệt 2D: chạm Bàn 3 ở Sân chùa thì ngồi được, hiện bảng chọn luật (cờ vua, cờ tướng; ba môn kia ghi sắp có). CHƯA thử ván hai người từ đầu tới cuối, chưa thử mời từ hộp người chơi, chưa thử chạm bàn trong 3D.
 - **Ưu tiên**: P0 · **Đợt**: 4
 - **Gói ngữ cảnh**: CORE + KYDAO + NAV
 - **Khu vực chạm**: public/js/app.js (handler chạm bàn, `socket.on('kd:*')` → `Hall.setTables` và `KydaoUI`, hộp người chơi "Mời đánh cờ", chip "Đang đánh cờ"), public/index.html (`<script>` của `kydao/*.js`, `kydao-ui.js`, `kydao-draw.js`; `<link>` của `kydao.css`; hộp mời đánh cờ trong `#dlg-person`; `?v=`)
@@ -692,7 +692,7 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: phát qua socket, gọi `setName` từ máy chủ (T-041).
 
 ### T-041 · Phát danh hiệu từ máy chủ
-- **Trạng thái**: ⏳ Chờ T-030, T-040
+- **Trạng thái**: ✅ Xong (2026-11-18), nhánh `ccr-2d36ebe9-y7zceb`. Thợ: Claude Sonnet 5.5; soát và kiểm thật: Opus 5.5. `npm test` 1172: 1169 đạt, 0 trượt, 3 bỏ qua (2 PG, perft sâu). Thử thật hai trình duyệt: thả tim → người kia thấy viên danh hiệu + ticker đổi chủ. Logic nằm ở `lib/titles.js` (mới). Còn mở: (1) máy chủ tắt đúng lúc qua ranh giới mùa thì không ghi được dòng cuối mùa; (2) `merit.at` chưa ai ghi nên hòa điểm công đức lịch sử xét theo uid.
 - **Ưu tiên**: P0 · **Đợt**: 4
 - **Gói ngữ cảnh**: CORE + RANK
 - **Khu vực chạm**: server.js (`addMeritUid` cộng `season`; `linkGuest` gộp `season` của công đức; lớp bọc `recordResult` gọi `setName` để hồ sơ võ học có tên; vòng 60 giây tính `holders`; ghi `db.records.log` khi đổi chủ hoặc hết mùa; `publicPlayer.tt`; sự kiện `ptt` và `titles`; ticker đổi chủ; `TITLES_ENABLED`; `/api/config.titles`), test/e2e-titles.test.js (mới), test/e2e-security.test.js (thêm ca)
@@ -710,7 +710,7 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: vẽ danh hiệu (T-042).
 
 ### T-042 · Hiện danh hiệu trên đầu, trong hộp người chơi và ở Sân đấu
-- **Trạng thái**: ⏳ Chờ T-041, T-031, T-034, T-064
+- **Trạng thái**: ✅ Xong (2026-11-18), cùng nhánh với T-041. Thợ: Claude Sonnet 5.5; soát: Opus 5.5 (ảnh 3 cỡ màn + thử thật với máy chủ). Còn mở: cảnh 3D chưa vẽ danh hiệu; trên 375px viên danh hiệu có thể chồng nhãn NPC khi đông người; danh sách Sân đấu chưa tự vẽ lại khi nhận `ptt`, chưa chạy ui-harness Sân đấu.
 - **Ưu tiên**: P1 · **Đợt**: 5
 - **Gói ngữ cảnh**: CORE + RANK + HALL
 - **Khu vực chạm**: public/js/hall.js (`mk`, `Hall.setTitles`, viên danh hiệu ở mọi cảnh), public/js/app.js (`socket.on('ptt'|'titles')`, mục Danh hiệu trong hộp người chơi), public/index.html (`#dlg-person`, `?v=`), public/css/style.css, public/js/arena.js (danh sách người ở sân)
@@ -726,7 +726,7 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: Bảng Vàng (T-043).
 
 ### T-043 · Dựng Bia Bảng Vàng ở Sân chùa
-- **Trạng thái**: ⏳ Chờ T-042
+- **Trạng thái**: 🔵 Sẵn sàng (T-042 đã xong)
 - **Ưu tiên**: P1 · **Đợt**: 6
 - **Gói ngữ cảnh**: CORE + RANK + HALL
 - **Khu vực chạm**: public/js/hall.js (bia, hit-test), server.js (`records:board` có `bucket('hof', 1, 3)`: người giữ + top 10 + Các đời, chỉ tên), public/js/app.js (mở hộp, thẻ Khám phá), public/index.html (`#dlg-hof`, `<link>`, `?v=`), public/css/hof.css (mới, tiền tố `hof-`), test/e2e-titles.test.js (thêm ca)
@@ -742,7 +742,7 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ngoài phạm vi**: thưởng cho người giữ danh hiệu.
 
 ### T-044 · Làm màn "Kẻ mạnh nhất lịch sử… đối đầu kẻ mạnh nhất hiện tại"
-- **Trạng thái**: ⏳ Chờ T-041, T-030
+- **Trạng thái**: 🔵 Sẵn sàng (T-041, T-030 đã xong). Bản mẫu tĩnh 18/11 cho thấy: hình nhân vật trong game quá "dễ thương" khi phóng to, cần tư thế/nét mặt riêng; điện thoại dọc nên chia trên/dưới thay vì trái/phải.
 - **Ưu tiên**: P1 · **Đợt**: 5
 - **Gói ngữ cảnh**: CORE + RANK + PK + KYDAO
 - **Khu vực chạm**: public/js/legend.js (mới), public/css/legend.css (mới, tiền tố `lg-`), public/index.html (`<script>`, `<link>`, công tắc trong thẻ "Hiệu ứng", `?v=`), public/js/app.js (`socket.on('legend:vs')`), server.js (gửi `legend:vs` + ticker), lib/pk/manager.js (hook `deps.onMatchStart`), lib/kydao/manager.js (hook `onGameStart`), test/legend.test.js (mới), public/img/NOTICE.txt

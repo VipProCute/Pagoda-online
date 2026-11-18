@@ -98,7 +98,8 @@ Ack chuẩn: `{ ok:true, … }` hoặc `{ ok:false, reason, code? }`. Sự kiệ
 
 | Nhóm | Sự kiện |
 |---|---|
-| Người chơi | `pj`, `pl`, `p` (lô vị trí, volatile, ×1000), `pu`, `pscene`, `psit`, `prd`, `pv`, `pplace`, `pm` |
+| Người chơi | `pj`, `pl`, `p` (lô vị trí, volatile, ×1000), `pu`, `pscene`, `psit`, `prd`, `pv`, `pplace`, `pm`, `ptt` (`{ id, tt }`: mã danh hiệu đổi) |
+| Danh hiệu (`lib/titles.js`, `TITLES_ENABLED`) | `titles` (`{ mã: { name, v } }`, khi đổi và khi vào chùa; không uid), `ptt`; `publicPlayer.tt`; sổ `db.records.log` |
 | Công đức | `merit`, `milestone`, `penalty`, `penalty:me`, `stats`, `board`, `ticker`, `notice` |
 | Nội dung | `chat`, `chat:hide`, `prayer`, `prayer:n`, `prayer:hide`, `incense`, `offer`, `emote`, `bell`, `chant` |
 | Cúng dường | `donation`, `donation:ok`, `aura`, `aura:me`, `announce` |

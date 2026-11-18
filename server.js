@@ -19,7 +19,9 @@ const MARTIAL = require('./public/js/martial');
 const ACTORS = require('./public/js/actors');     // đường đi lang thang của NPC cơ duyên (dùng chung với trình duyệt)
 const { createMartialService } = require('./lib/martial/service');
 const { createSweeper } = require('./lib/sweeper');
-const { mergeMartialGuest, mergeKydaoGuest, donatedBy } = require('./lib/account');
+const { mergeMartialGuest, mergeKydaoGuest, donatedBy, mergeMeritSeason } = require('./lib/account');
+const Records = require('./lib/records');
+const { createTitles } = require('./lib/titles');
 const { createArenaManager } = require('./lib/pk/manager');
 const { createKydaoManager } = require('./lib/kydao/manager');
 const { createShop } = require('./lib/kydao/shop');
@@ -90,6 +92,9 @@ const SPEEDUP_ENABLED = MARTIAL_ENABLED && DONATION_ENABLED && process.env.SPEED
 const SPEEDUP_PER_DAY = null; // không giới hạn lượt hoàn thành tu luyện mỗi ngày
 const CULTIVATION_TIME_SCALE = Number(process.env.CULTIVATION_TIME_SCALE) > 0 ? Number(process.env.CULTIVATION_TIME_SCALE) : 1;   // chỉ để thử: 0.001 = nhanh gấp nghìn lần
 const MARTIAL_SWEEP_MS = Math.max(100, Number(process.env.MARTIAL_SWEEP_MS) || 15000);
+/* ----- Danh hiệu (KH §6, T-041): TITLES_ENABLED=0 thì không tính và không phát gì; ngưỡng đọc từ TITLE_MIN_* (lib/records.js) ----- */
+const TITLES_ENABLED = process.env.TITLES_ENABLED !== '0';
+const TITLES_SWEEP_MS = Math.max(200, Number(process.env.TITLES_SWEEP_MS) || 60000);   // chu kỳ tính lại; chỉ hạ thấp để thử
 const PLACES = ['hall', 'dojo', 'arena'];     // thêm nơi mới (ví dụ coi bói, tarot) ở đây và đăng ký phía trình duyệt
 // Cảnh trong chùa (cùng một khung vẽ): chánh điện, sân chùa, Tàng Kinh Các. Mỗi cảnh có chỗ đứng khi mới bước vào.
 const SCENES = { hall: [0.5, 0.8], yard: [0.5, 0.8], library: [0.5, 0.9] };
@@ -193,8 +198,12 @@ function addMeritUid(uid, name, n, calm) {
   let m = db.merit[uid];
   if (!m) m = db.merit[uid] = { name, total: 0, today: 0, day: d };
   if (m.day !== d) { m.day = d; m.today = 0; }
+  const t = now(), seasonKey = Records.seasonKey(t);
+  if (!m.season || m.season.key !== seasonKey) m.season = { key: seasonKey, v: 0, at: t };   // sang mùa mới (tháng âm lịch): đặt lại lười như today/day
   const before = m.total, beforeToday = m.today;
   m.name = name; m.total += n; m.today += n;
+  m.season.v = Math.max(0, m.season.v + n);
+  if (n > 0) m.season.at = t;       // mốc lần cuối điểm mùa tăng (hòa điểm thì ai đạt trước giữ danh hiệu)
   store.save();
   const hit = n > 0 ? crossed(beforeToday, m.today, calm) : null;
   for (const p of players.values()) {
@@ -258,6 +267,8 @@ function linkGuest(guest, uid) {
       today: (to?.day === day ? to.today : 0) + (from.day === day ? from.today : 0),
       day
     };
+    const season = mergeMeritSeason(to?.season, from.season);
+    if (season) db.merit[uid].season = season;
     delete db.merit[guest];
   }
   const t = now();
@@ -277,6 +288,7 @@ function linkGuest(guest, uid) {
   const undoKydao = mergeKydaoGuest(db, guest, uid);
   const undoShop = shop.mergeGuest(guest, uid);     // skin đã mở của khách theo về tài khoản (hợp, giữ mốc sớm hơn)
   db.linkedGuests[guest] = uid;
+  titlesSoon();
   return () => {
     undoShop();
     if (undoKydao) undoKydao();
@@ -295,6 +307,26 @@ function linkGuest(guest, uid) {
   };
 }
 const accountOf = uid => db.linkedGuests[uid] || uid;
+// Danh hiệu: ảnh chụp người giữ nằm trong RAM (lib/titles.js); chỉ mã và tên đi ra client, không bao giờ có uid.
+const titles = createTitles({
+  db, now: () => now(), newId: () => store.nextId(), enabled: TITLES_ENABLED,
+  isAccount: uid => !auth.enabled || String(uid).startsWith('google:'),     // bật Google thì khách chưa đăng nhập không giữ danh hiệu công đức
+  save: () => store.save(),
+  emit: {
+    ticker: text => io.emit('ticker', { text }),
+    titles: snap => io.emit('titles', snap),
+    ptt: (uid, codes) => { for (const q of players.values()) if (accountOf(q.uid) === uid) io.emit('ptt', { id: q.id, tt: codes }); }
+  }
+});
+function titlesTick() {
+  try { titles.recompute(); } catch (e) { console.error('[titles] recompute:', e && e.stack || e); }
+}
+// Có kết quả trận / ván xếp hạng: tính lại sớm, gộp các lần gọi dồn trong 1,5 giây.
+let titlesSoonTimer = null;
+function titlesSoon() {
+  if (!TITLES_ENABLED || titlesSoonTimer) return;
+  titlesSoonTimer = setTimeout(() => { titlesSoonTimer = null; titlesTick(); }, 1500);
+}
 function auraOf(uid) {
   const a = db.auras[uid];
   return a && a.tier && a.until > now() ? { t: a.tier, until: a.until } : 0;
@@ -405,7 +437,8 @@ function clientConfig() {
     voice: VOICE_ENABLED,
     tts: announce.enabled,
     martial: { enabled: MARTIAL_ENABLED, pk: PK_ENABLED, speedup: SPEEDUP_ENABLED, loginRequired: auth.enabled },
-    kydao: { enabled: KYDAO_ENABLED, loginRequired: auth.enabled, shop: { on: shop.publicConfig().on } }
+    kydao: { enabled: KYDAO_ENABLED, loginRequired: auth.enabled, shop: { on: shop.publicConfig().on } },
+    titles: { enabled: TITLES_ENABLED, names: Object.fromEntries(Object.entries(Records.TITLES).map(([code, x]) => [code, x.name])), priority: Records.priority }
   };
 }
 
@@ -664,7 +697,7 @@ auth.mount(app, {
   }
 });
 
-const publicPlayer = p => ({ id: p.id, name: p.name, look: p.look, x: +p.x.toFixed(3), z: +p.z.toFixed(3), mod: p.mod, scene: p.scene || 'hall', v: p.v || 0, rd: p.rd || '', au: auraOf(p.uid), mt: meritTotal(p.uid), at: p.place && p.place !== 'hall' ? p.place : undefined, sit: p.sit >= 0 ? p.sit : undefined, cm: p.sit >= 0 && p.cm ? p.cm : undefined });
+const publicPlayer = p => ({ id: p.id, name: p.name, look: p.look, x: +p.x.toFixed(3), z: +p.z.toFixed(3), mod: p.mod, scene: p.scene || 'hall', v: p.v || 0, rd: p.rd || '', au: auraOf(p.uid), mt: meritTotal(p.uid), tt: titles.codesOf(accountOf(p.uid)), at: p.place && p.place !== 'hall' ? p.place : undefined, sit: p.sit >= 0 ? p.sit : undefined, cm: p.sit >= 0 && p.cm ? p.cm : undefined });
 const voiceRoomOf = p => p.place && p.place !== 'hall' ? p.place : p.scene || 'hall';
 // Lời mời gặp ở Sân đấu: cả hai tự đồng ý, rồi dùng quy trình mời PK hiện có.
 const sparOffers = new Map();
@@ -911,6 +944,7 @@ function kdSaveGame(rec) {
     for (const side of [rec.a, rec.b]) if (!kdBadKey(side.uid) && kdOwn(kd.ratings, side.uid)) kd.ratings[side.uid].name = side.name;
   }
   kd.games.push({ ...rec, id: store.nextId() });
+  if (rec.rated) titlesSoon();
   if (kd.games.length > 500) kd.games.splice(0, kd.games.length - 500);
   store.save();
 }
@@ -995,6 +1029,7 @@ io.on('connection', socket => {
       funds: fundsSummary(), chant, fortuneQueue: fortuneQueue.snapshot(), sweeper: sweeper.current()
     });
     pushShopState(p);
+    if (TITLES_ENABLED) socket.emit('titles', titles.snapshot());
     socket.broadcast.emit('pj', publicPlayer(p));
     if (players.size <= 80) socket.broadcast.emit('ticker', { text: `${p.name} vừa vào chánh điện` });
   });
@@ -1673,6 +1708,7 @@ setInterval(() => {
     for (const u of martial.sweep()) { emitToUid(u.uid, 'tu:update', u.update); syncCult(u.uid); }
   } catch (e) { console.error('[martial] sweep:', e && e.stack || e); }
 }, MARTIAL_SWEEP_MS);
+if (TITLES_ENABLED) setInterval(titlesTick, TITLES_SWEEP_MS);
 }
 
 let closing = false;
@@ -1710,7 +1746,16 @@ async function main() {
     isOnline: uid => { for (const q of players.values()) if (q.uid === uid) return true; return false; },
     fighterOf: uid => martial.pkIdentity(uid),
     buffInputsOf,
-    recordResult: (uid, r) => martial.recordResult(uid, r),
+    recordResult: (uid, r) => {
+      const res = martial.recordResult(uid, r);
+      // hồ sơ võ học cần tên gần nhất để Bảng Vàng hiện được khi người đó vắng
+      let nm = '';
+      for (const q of players.values()) if (q.uid === uid) { nm = q.name; break; }
+      if (!nm) nm = (db.merit[accountOf(uid)] || {}).name || '';
+      if (nm) martial.setName(uid, nm);
+      titlesSoon();
+      return res;
+    },
     recordBotResult: (uid, r) => martial.recordBotResult(uid, r),
     setActiveMatch: (uid, id) => { martial.profile(uid, true).activeMatch = id; store.save(); },
     getActiveMatch: uid => { const pr = martial.profile(uid, false); return pr ? pr.activeMatch || null : null; },
@@ -1733,6 +1778,7 @@ async function main() {
     config: { enabled: KYDAO_ENABLED, maxGames: KYDAO_MAX_GAMES, timeScale: KYDAO_TIME_SCALE }
   });
   for (const d of db.donations) scheduleTestDonation(d);
+  titlesTick();     // lần tính đầu chỉ ghi nhận, không phát ticker
   startLoops();
   server.listen(PORT, () => {
     console.log(`${SITE_NAME} đang chạy tại http://localhost:${PORT}`);
