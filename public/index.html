@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600&family=Cormorant+Garamond:wght@500;600;700&display=swap">
-<link rel="stylesheet" href="/css/style.css?v=tarot1">
+<link rel="stylesheet" href="/css/style.css?v=kd-local1">
 <link rel="stylesheet" href="/css/celebrate.css">
 <link rel="stylesheet" href="/css/account.css?v=vohoc5">
 <link rel="stylesheet" href="/css/places.css?v=lephat1">
@@ -449,6 +449,27 @@
     </fieldset>
     <p id="kd-lobby-note" class="hint"></p>
     <div class="dlg-foot"><button type="button" class="btn" id="kd-stand">Rời bàn</button><button type="button" class="btn" id="kd-setup">Chọn luật</button><button type="button" class="btn gold" id="kd-ready">Sẵn sàng</button><button type="button" class="btn gold" id="kd-invite-send" hidden>Gửi lời mời</button></div>
+    <div class="dlg-foot kd-solo-row" id="kd-solo-row" hidden><span class="hint">Chưa có người ngồi cùng?</span><button type="button" class="btn" id="kd-ai-open">Đánh với máy</button><button type="button" class="btn" id="kd-puzzle-open">Giải thế cờ</button></div>
+  </div>
+</dialog>
+<dialog class="dlg" id="dlg-kd-ai" aria-labelledby="kd-ai-title">
+  <div class="dlg-body">
+    <div class="dlg-head"><div><h2 id="kd-ai-title">Đối cờ với Ngọa Long Kỳ Sư</h2><p>Kỳ thủ máy, chơi ngay trên thiết bị của bạn: không tính Elo, không cộng công đức.</p></div><button type="button" class="x" data-close aria-label="Đóng">×</button></div>
+    <fieldset id="kd-ai-form">
+      <legend>Môn cờ</legend>
+      <div class="choices"><label class="chipr"><input type="radio" name="kd-ai-game" value="chess" checked><span>Cờ vua</span></label><label class="chipr"><input type="radio" name="kd-ai-game" value="xiangqi"><span>Cờ tướng</span></label></div>
+      <div class="choices" aria-label="Sức cờ của kỳ sư"><label class="chipr"><input type="radio" name="kd-ai-level" value="1"><span>Sơ cơ</span></label><label class="chipr"><input type="radio" name="kd-ai-level" value="2" checked><span>Trung cơ</span></label><label class="chipr"><input type="radio" name="kd-ai-level" value="3"><span>Cao cơ</span></label></div>
+      <div class="choices" aria-label="Bên cầm quân"><label class="chipr"><input type="radio" name="kd-ai-side" value="a" checked><span>Đi trước</span></label><label class="chipr"><input type="radio" name="kd-ai-side" value="b"><span>Đi sau</span></label><label class="chipr"><input type="radio" name="kd-ai-side" value="random"><span>Ngẫu nhiên</span></label></div>
+    </fieldset>
+    <div class="dlg-foot"><button type="button" class="btn" data-close>Thôi</button><button type="button" class="btn gold" id="kd-ai-start">Bắt đầu</button></div>
+  </div>
+</dialog>
+<dialog class="dlg" id="dlg-kd-puzzle" aria-labelledby="kd-puzzle-title">
+  <div class="dlg-body">
+    <div class="dlg-head"><div><h2 id="kd-puzzle-title">Giải thế cờ</h2><p>Chọn một nhóm đề. Đi sai thì được thử lại; bí thì bấm Gợi ý hoặc Xem lời giải.</p></div><button type="button" class="x" data-close aria-label="Đóng">×</button></div>
+    <div class="choices" id="kd-puzzle-games"><label class="chipr"><input type="radio" name="kd-puzzle-game" value="chess" checked><span>Cờ vua</span></label><label class="chipr"><input type="radio" name="kd-puzzle-game" value="xiangqi"><span>Cờ tướng</span></label></div>
+    <div class="kd-puzzle-list" id="kd-puzzle-list" role="list"></div>
+    <p class="hint" id="kd-puzzle-note" role="status"></p>
   </div>
 </dialog>
 <dialog class="dlg" id="dlg-kd-invite" aria-labelledby="kd-invite-title">
@@ -547,8 +568,8 @@
 <script src="/js/aura.js"></script>
 <script src="/js/merit.js?v=npc2"></script>
 <script src="/js/celebrate.js"></script>
-<script src="/js/actors.js?v=npc1"></script>
-<script src="/js/hall.js?v=view3d3"></script>
+<script src="/js/actors.js?v=npc2"></script>
+<script src="/js/hall.js?v=npc-pk1"></script>
 <script src="/js/mapbar.js?v=mapbar1"></script>
 <script src="/js/tarot.js?v=tarot2"></script>
 <script src="/js/fortune.js?v=tarot1"></script>
@@ -558,12 +579,12 @@
 <script src="/js/places.js?v=vohoc6"></script>
 <script src="/js/meditate.js?v=vohoc5"></script>
 <script src="/js/dojo.js?v=chu-vhc2"></script>
-<script src="/js/arena.js?v=view3d1"></script>
+<script src="/js/arena.js?v=npc-pk1"></script>
 <script src="/js/guide.js?v=sotay3"></script>
 <script src="/js/view-math.js?v=2"></script>
 <script src="/js/stand-math.js?v=3"></script>
 <script src="/js/gfx-detect.js?v=1"></script>
-<script src="/js/view3d-ui.js?v=15"></script>
+<script src="/js/view3d-ui.js?v=16"></script>
 <script src="/js/kydao/chess.js?v=1"></script>
 <script src="/js/kydao/xiangqi.js?v=1"></script>
 <script src="/js/kydao/go.js?v=1"></script>
@@ -571,7 +592,8 @@
 <script src="/js/kydao-skins.js?v=5"></script>
 <script src="/js/kydao-fx.js?v=5"></script>
 <script src="/js/kydao-draw.js?v=stones2"></script>
-<script src="/js/kydao-ui.js?v=shop2"></script>
-<script src="/js/app.js?v=five-games1-kydai2-t180-chat24h"></script>
+<script src="/js/kydao-ui.js?v=local1"></script>
+<script src="/js/kydao-local.js?v=1"></script>
+<script src="/js/app.js?v=npc-pk1-kd-local1"></script>
 </body>
 </html>

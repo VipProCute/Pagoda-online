@@ -106,7 +106,9 @@
       this.x = this.dx = p.x; this.z = this.dz = p.z;
     }
     get isNpc() { return true; }
-    menu() { return ['talk']; }
+    // NPC luận võ (Hắc Phong Ma Khách, đi khắp chùa) có thêm nút Thách đấu
+    // Ngọa Long Kỳ Sư (đánh cờ với máy) có thêm nút Đánh cờ
+    menu() { return this.npc.pk ? ['talk', 'challenge'] : this.npc.kydao ? ['talk', 'kydao'] : ['talk']; }
     /** Đứng lại một lúc (có người đang tới trò chuyện). */
     hold(ms, now) { this.holdUntil = Math.max(this.holdUntil, now + ms); }
     /** still: đứng yên khung này (giảm chuyển động). Lúc đứng thì đồng hồ riêng lùi lại, đi tiếp đúng chỗ vừa dừng. */

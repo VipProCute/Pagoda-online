@@ -112,6 +112,13 @@ HÌNH ẢNH TRONG THƯ MỤC NÀY — NGUỒN GỐC VÀ GIẤY PHÉP
      RYStudio (https://sketchfab.com/RYStudio). Đã cắt bỏ bệ, ngai, hoa, bình và nến, chỉ giữ người ngồi;
      váy nhuộm từ đỏ sang tím; không gắn xương.
      https://sketchfab.com/3d-models/crimson-empress-462607c36abb44b8b364d707f965a082
+   - Ngọa Long Kỳ Sư, NPC đánh cờ (public/models/npc/ngoa-long.glb, khi đã dựng): "Zhuge Liang_ Armoured"
+     của kitkeat (https://sketchfab.com/kitkeat), CC BY 4.0; giảm số mặt, gắn xương, hạ tay bằng
+     tools/blender/npc/build.py.
+     https://sketchfab.com/3d-models/zhuge-liang--armoured-b19802a899504eb799fb18d59f4b5ac3
+     Lưu ý: trang mô hình ghi "Inspiration from a character in Dynasty Warrior, Zhuge Liang". Gia Cát Lượng là
+     nhân vật lịch sử, nhưng thiết kế lấy cảm hứng từ game của Koei Tecmo; giấy phép CC BY của mô hình không thay
+     cho quyền với thiết kế nhân vật đó (cùng lưu ý như Obito ở mục 3c, 3d). Cần xác minh trước khi phát hành rộng.
 
 4) Thêm meme của riêng bạn
    Chỉ cần thả ảnh (jpg, jpeg, png, webp, gif, avif) vào public/img/memes/ — máy chủ tự liệt kê và

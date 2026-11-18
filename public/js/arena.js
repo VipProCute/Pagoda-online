@@ -27,11 +27,17 @@
     left: n => `${n} đã rời sân.`
   };
   const DEF_LOOK = { c: 0, g: 'nu', h: 0 };
+  // NPC luận võ Hắc Phong Ma Khách (đi lang thang khắp chùa; gặp thì bấm Thách đấu, app.js gọi Arena.openNpc)
+  const NPC_LEVELS = [
+    { id: 1, name: 'Thử chiêu', desc: 'Ra chiêu tùy hứng, bộ chiêu nhập môn. Hợp để làm quen luật.' },
+    { id: 2, name: 'Luận võ', desc: 'Tính từng lượt, thành thạo bằng mức trung bình của bạn.' },
+    { id: 3, name: 'Toàn lực', desc: 'Đọc thế trận, khó đoán; thành thạo bằng chiêu giỏi nhất của bạn.' }
+  ];
 
   const S = {
     host: null, sock: null, el: null, ui: null, mounted: false, visible: false, connected: true,
     players: new Map(), rows: new Map(), dnd: false, dndBusy: false, invites: [], out: null, lastMode: 'buff',
-    screen: 'roster', m: null, tick: 0, raf: 0, last: 0, pt: [], stage: null, fx: [], hold: { you: null, op: null }, floats: 0,
+    screen: 'roster', m: null, npcLevel: 2, tick: 0, raf: 0, last: 0, pt: [], stage: null, fx: [], hold: { you: null, op: null }, floats: 0,
     dlg: { pid: 0, blockPid: 0 }
   };
 
@@ -680,7 +686,7 @@
     r.empty = h('div', 'ar-empty');
     r.empty.appendChild(svgIcon('ar-empty-i', '<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 9.5h.01M16 9.5h.01M8.5 15.5c1-1.2 2.2-1.8 3.5-1.8s2.5.6 3.5 1.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>', 28));
     r.emptyT = h('b', null, 'Sân đang vắng.');
-    r.emptyS = h('span', null, 'Chưa có đạo hữu nào ra luận võ. Bạn cứ chờ một lát hoặc rủ bạn bè cùng ra sân. Có người vào là thấy ngay.');
+    r.emptyS = h('span', null, 'Chưa có đạo hữu nào ra luận võ. Bạn cứ chờ một lát, hoặc đi tìm Hắc Phong Ma Khách đang lang thang trong chùa để thách đấu. Có người vào là thấy ngay.');
     add(r.empty, r.emptyT, r.emptyS);
     add(msgs, r.resume, r.login, r.out, r.empty);
     // ngăn kéo danh sách
@@ -740,6 +746,19 @@
     add(d1.foot, blk, later, send); add(d1.body, fs, d1.warn, d1.foot);
     d1.send = send;
     d1.body.addEventListener('submit', e => { e.preventDefault(); sendInvite(); });
+    // đấu với NPC Hắc Phong Ma Khách
+    const dn = ui.dNpc = mkDlg('Luận võ với Hắc Phong Ma Khách', 'Ma kiếm khách cùng cấp nội công với bạn. Trận này không tính vào thắng thua và bậc chiến tích.'); ui.dlgs.push(dn.dlg);
+    const nfs = h('fieldset'), nopts = h('div', 'opts');
+    add(nfs, h('legend', null, 'Mức đấu'), nopts);
+    for (const L of NPC_LEVELS) {
+      const lab = h('label', 'opt'), inp = h('input', null, null, { type: 'radio', name: 'ar-npc', value: String(L.id) }), sp = h('span');
+      add(sp, h('b', null, L.name), h('small', null, L.desc)); add(lab, inp, sp); nopts.appendChild(lab);
+    }
+    const ngo = btn('btn primary', 'Vào sảnh', { type: 'submit' }), nlater = btn('btn', 'Để sau');
+    nlater.addEventListener('click', () => dn.dlg.close());
+    add(dn.foot, nlater, ngo); add(dn.body, nfs, dn.warn, dn.foot);
+    dn.go = ngo;
+    dn.body.addEventListener('submit', e => { e.preventDefault(); const v = dn.body.querySelector('input[name="ar-npc"]:checked'); challengeNpc(v ? +v.value : S.npcLevel); });
     // chặn
     const d2 = ui.dBlock = mkDlg('Chặn đạo hữu này?', ''); ui.dlgs.push(d2.dlg);
     const no = btn('btn', 'Không chặn'), yes = btn('btn primary', 'Chặn');
@@ -885,6 +904,34 @@
       S.dndBusy = false;
       if (ack && ack.ok) S.dnd = ack.dnd != null ? !!ack.dnd : on; else fail(ack, 'Chưa đổi được, thử lại nhé.');
       renderRoster();
+    });
+  }
+
+  /* đấu với NPC */
+  function openNpc() {
+    if (!S.ui || !S.visible) return false;
+    if (S.screen !== 'roster') { toast('Bạn đang trong trận, xong trận rồi hãy thách đấu nhé.'); return false; }
+    if (S.loginNeeded) { toast('Cần đăng nhập Google để luận võ.'); return false; }
+    if (S.out) { toast('Bạn đang chờ một lời mời khác.'); return false; }
+    const d = S.ui.dNpc;
+    d.body.querySelectorAll('input[name="ar-npc"]').forEach(i => { i.checked = +i.value === S.npcLevel; });
+    d.warn.hidden = true; d.go.disabled = !canSend();
+    openDlg(d.dlg);
+    return true;
+  }
+  function challengeNpc(level) {
+    const d = S.ui.dNpc;
+    if (!canSend()) { d.warn.textContent = 'Mất kết nối, chưa vào sảnh được.'; d.warn.hidden = false; if (!d.dlg.open) toast(d.warn.textContent); return; }
+    S.npcLevel = level; d.go.disabled = true;
+    S.sock.emit('pk:npc', { level }, ack => {
+      d.go.disabled = !canSend();
+      if (!ack || !ack.ok) {
+        const why = (ack && ack.reason) || 'Chưa vào sảnh được, thử lại nhé.';
+        if (ack && ack.code === 'login') setLogin(true);
+        if (d.dlg.open) { d.warn.textContent = why; d.warn.hidden = false; } else toast(why);
+        return;
+      }
+      if (d.dlg.open) d.dlg.close();
     });
   }
 
@@ -1850,7 +1897,7 @@
     stopLoopsForEnd();
     const info = endInfo(d), wrap = h('div', 'ar-ewrap ar-e-' + info.cls), card = h('div', 'ar-ecard');
     const name = (m && m.op && m.op.name) || 'Đối thủ', my = (m && m.you && m.you.name) || 'Bạn';
-    add(card, h('span', 'eyebrow', info.cls === 'void' ? 'Không tính thắng thua' : 'Kết quả luận võ'), h('h3', 'ar-etitle', info.title, { 'data-focus': '' }), h('p', 'ar-etext', info.text));
+    add(card, h('span', 'eyebrow', info.cls === 'void' || d.npc ? 'Không tính thắng thua' : 'Kết quả luận võ'), h('h3', 'ar-etitle', info.title, { 'data-focus': '' }), h('p', 'ar-etext', info.text));
     const st = d.state || (m && m.state);
     if (st) {
       const bars = h('div', 'ar-ebars');
@@ -1864,7 +1911,10 @@
     const facts = h('dl', 'ar-facts');
     const fact = (k, v) => { const w = h('div'); add(w, h('dt', null, k), h('dd', null, v)); facts.appendChild(w); };
     fact('Số lượt', String(num(d.turns, m && m.turn)));
-    if (d.record) {
+    if (d.npc) {
+      fact('Đối thủ', `Hắc Phong Ma Khách · ${d.npc.name}`);
+      if (d.npc.record) fact('Với Hắc Phong (mọi mức)', `Thắng ${num(d.npc.record.wins)} · Thua ${num(d.npc.record.losses)} · Hòa ${num(d.npc.record.draws)}`);
+    } else if (d.record) {
       const r = d.record, delta = info.cls === 'win' ? ' (thắng +1)' : info.cls === 'lose' ? ' (thua +1)' : info.cls === 'draw' ? ' (hòa +1)' : ' (không đổi)';
       fact('Thành tích', `Thắng ${num(r.wins)} · Thua ${num(r.losses)} · Hòa ${num(r.draws)}${delta}`);
       const title = M.pkTitle(r.wins, r.draws);
@@ -1873,6 +1923,11 @@
     card.appendChild(facts);
     const act = h('div', 'ar-eact'), again = btn('btn primary big', 'Về sân'), hall = btn('btn big', 'Về chánh điện');
     again.addEventListener('click', backToRoster); hall.addEventListener('click', () => S.host.goto('hall'));
+    if (d.npc) {
+      const re = btn('btn gold big', 'Đấu lại');
+      re.addEventListener('click', () => { re.disabled = true; backToRoster(); challengeNpc(num(d.npc.level, S.npcLevel)); });
+      add(act, re);
+    }
     add(act, again, hall); card.appendChild(act);
     if (m && m.ui && m.ui.logList && m.ui.logList.children.length) {
       const dt = h('details', 'ar-edet'), sm = h('summary', null, 'Xem lại nhật ký trận'), ol = h('ol', 'ar-logl');
@@ -2055,7 +2110,7 @@
     S.loginNeeded = !!(mc.loginRequired && au && au.enabled !== false && !au.signedIn);
     S.ui.roster.login.hidden = !S.loginNeeded;
     if (a.enabled === false) { S.ui.roster.emptyT.textContent = 'Sân đấu chưa mở.'; S.ui.roster.emptyS.textContent = 'Nhà chùa chưa mở sân đấu. Bạn quay lại sau nhé.'; }
-    else { S.ui.roster.emptyT.textContent = 'Sân đang vắng.'; S.ui.roster.emptyS.textContent = 'Chưa có đạo hữu nào ra luận võ. Bạn cứ chờ một lát hoặc rủ bạn bè cùng ra sân. Có người vào là thấy ngay.'; }
+    else { S.ui.roster.emptyT.textContent = 'Sân đang vắng.'; S.ui.roster.emptyS.textContent = 'Chưa có đạo hữu nào ra luận võ. Bạn cứ chờ một lát, hoặc đi tìm Hắc Phong Ma Khách đang lang thang trong chùa để thách đấu. Có người vào là thấy ngay.'; }
     if (S.screen === 'end') { S.m = null; S.stage = null; dropPaint('lobby'); dropPaint('match'); }
     if (S.screen !== 'lobby' && S.screen !== 'match') go('roster'); else refreshCtl();
     yardOn(S.screen === 'roster');
@@ -2080,5 +2135,5 @@
     }
   }
 
-  root.Arena = { init, mount, show, hide, inMatch, pick, inYard };
+  root.Arena = { init, mount, show, hide, inMatch, pick, inYard, openNpc };
 })(this);

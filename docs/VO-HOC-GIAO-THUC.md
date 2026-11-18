@@ -94,6 +94,16 @@ Hạn lời mời 20 giây. Mỗi người một lời mời đang chờ gửi �
 
 `Buff = { Lc, Lq, Ld, offExt, defP, dodgeB, labels:[string] }` (số thập phân: `0.03` = 3%; `dodgeB` là điểm % cộng xác suất né).
 
+### Luận võ với NPC Hắc Phong Ma Khách
+| Sự kiện | Tham số | Ack |
+|---|---|---|
+| `pk:npc` | `{level: 1\|2\|3}` (1 Thử chiêu · 2 Luận võ · 3 Toàn lực) | `{ok:true, matchId, level}` |
+
+- Chỉ ở Sân đấu, cần tài khoản (bọc `inArena`). Trình duyệt gọi khi người chơi gặp Hắc Phong Ma Khách (NPC đi lang thang khắp chùa, `pk: true` trong `hall.js`) và bấm Thách đấu: `app.js` đưa người chơi ra Sân đấu rồi `Arena.openNpc()`.
+- Trận đi đúng luồng thường (`pk:lobby` → `pk:turn` / `pk:locked` / `pk:reveal` → `pk:end`), `mode:'balanced'`, không buff. NPC (`lib/pk/npc.js`) cùng cấp nội công với người chơi, khóa bộ chiêu ngay (`pk:lobby:status opLocked`), mỗi lượt "suy nghĩ" 1,2–3,8 giây rồi khóa kín; chiêu chỉ lộ ở `pk:reveal`. Bên NPC: `op.pid = -777`, `op.name = 'Hắc Phong Ma Khách'`.
+- `pk:lobby`, ảnh chụp `pk:resume` và `pk:end` có thêm `npc:{level, name}`; `pk:end.npc.record = {wins, losses, draws}` là thành tích riêng với NPC. `pk:end.record` (thắng / thua / hòa PK) **không đổi**: trận với NPC không gọi `recordResult`, không vào điểm chiến tích hay danh hiệu.
+- Người chơi vắng đủ `BOTH_AWAY_MS` thì trận hủy, không ghi gì. Biên bản trận lưu `npc:{level}` trong `matches[]`.
+
 ### Một trận
 1. **Sảnh chọn bộ chiêu** (30 giây): `pk:lobby`
 ```
@@ -168,11 +178,12 @@ Máy chủ khởi động lại giữa trận: trận bị hủy, không ai bị
 ## 5. Dữ liệu lưu bền (`db.martial`)
 ```
 profiles[uid] = { uid, congLuc, tam:{cuong,toc,nhu}, learned:[id], mastery:{[skillId]:xp}, loadout:[id], activeSession:id|null, activeMatch:id|null,
-                  vouchers:[{id,value,code,createdAt,usedAt?,usedFor?}], wins, losses, draws, dnd, blocked:[{uid,name}], createdAt }
+                  vouchers:[{id,value,code,createdAt,usedAt?,usedFor?}], wins, losses, draws, dnd, blocked:[{uid,name}], createdAt,
+                  botRecord:{wins,losses,draws} }   // botRecord: trận với NPC Hắc Phong, ghi riêng
 sessions[id]  = { id, uid, methodId, durationKey, startedAt, endsAt, price, status:'active'|'completed'|'cancelled',
                   via, completedAt, reward, seen, speedupCode }
 ledger[key]   = { uid, at, congLuc, tam }          // key = 'session:<id>' — mỗi phiên chỉ được cộng một lần
-matches[]     = { id, at, mode, seed, a:{uid,name}, b:{uid,name}, loadouts, buffs, result, reason, turns, log }
+matches[]     = { id, at, mode, seed, npc?:{level}, a:{uid,name}, b:{uid,name}, loadouts, buffs, result, reason, turns, log }   // trận NPC: b.uid = '#npc:hac-phong:<id>'
 audit[]       = { id, at, actor, action, target, detail }
 ```
 Cúng dường hoàn thành ngay dùng chung `db.donations` với `purpose:'speedup'`, `sessionId`, `methodId`, `durationKey`, `price`, `outcome` (`applied` | `late` | `rejected`), `bank:{at,amount,ref}` khi SePay báo.

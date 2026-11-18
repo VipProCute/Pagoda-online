@@ -1355,6 +1355,11 @@ io.on('connection', socket => {
     const result = martial.inheritSweeper(p.uid, event.id);
     if (result.ok && !(await store.flush())) return ack({ ok: false, reason: 'Chưa lưu được truyền thừa, hãy thử lại sau ít giây.', updates: result.updates });
     if (result.ok && !result.already) emitToUid(p.uid, 'martial:inheritance', { level: result.level, gain: result.gain });
+    // Trao xong cơ duyên cho một người thì cao nhân rời đi (chỉ khi lần nhận này thật sự cộng thưởng)
+    if (result.ok && !result.already && sweeper.release(event.id)) {
+      io.emit('sweeper:appear', null);
+      io.emit('ticker', { text: `${p.name} đã nhận truyền thừa của Tảo Địa Tăng. Cao nhân đã rời Tàng Kinh Các.` });
+    }
     ack(result);
   }));
   socket.on('martial:secret-encounter', martialOnly(async (d, ack) => {
@@ -1467,6 +1472,7 @@ io.on('connection', socket => {
   socket.on('pk:invite', inArena((d, ack) => ack(arena.invite(p.uid, Number(d.toPid), d.mode))));
   socket.on('pk:invite:cancel', inArena((d, ack) => ack(arena.cancelInvite(p.uid, d.inviteId))));
   socket.on('pk:respond', inArena((d, ack) => ack(arena.respond(p.uid, d.inviteId, !!d.accept))));
+  socket.on('pk:npc', inArena((d, ack) => ack(arena.challengeBot(p.uid, Number(d.level)))));
   socket.on('pk:loadout', inArena((d, ack) => ack(arena.setLoadout(p.uid, d.matchId, d.skills))));
   socket.on('pk:pick', inArena((d, ack) => ack(arena.pick(p.uid, d.matchId, d.turn, d.skillId))));
   socket.on('pk:forfeit', inArena((d, ack) => ack(arena.forfeit(p.uid, d.matchId))));
@@ -1597,8 +1603,16 @@ setInterval(() => {
     if (arr.length) io.volatile.emit('p', arr);
   }
   if (tick % 20 === 0) {
-    const encounter = sweeper.tick();
-    if (encounter.changed) io.emit('sweeper:appear', encounter.event);
+    const encounter = MARTIAL_ENABLED ? sweeper.tick() : { changed: false };
+    if (encounter.changed) {
+      io.emit('sweeper:appear', encounter.event);
+      // Báo toàn chùa: cao nhân đứng chờ ở Tàng Kinh Các tới khi trao cơ duyên cho một người
+      if (encounter.event && MARTIAL_ENABLED) {
+        const text = 'Tảo Địa Tăng vừa xuất hiện ở Tàng Kinh Các. Cao nhân chờ người hữu duyên tới trò chuyện.';
+        io.emit('notice', { text });
+        io.emit('ticker', { text });
+      }
+    }
     for (const p of players.values()) {
       const authKey = p.socket.data.authKey;
       if (authKey && !auth.sessionFor(authKey)) { p.socket.disconnect(true); continue; }
@@ -1675,6 +1689,7 @@ async function main() {
     fighterOf: uid => martial.pkIdentity(uid),
     buffInputsOf,
     recordResult: (uid, r) => martial.recordResult(uid, r),
+    recordBotResult: (uid, r) => martial.recordBotResult(uid, r),
     setActiveMatch: (uid, id) => { martial.profile(uid, true).activeMatch = id; store.save(); },
     getActiveMatch: uid => { const pr = martial.profile(uid, false); return pr ? pr.activeMatch || null : null; },
     saveMatch: rec => { db.martial.matches.push(rec); if (db.martial.matches.length > 150) db.martial.matches.splice(0, db.martial.matches.length - 150); store.save(); },
