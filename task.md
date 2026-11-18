@@ -38,7 +38,7 @@
 | T-031 | Vẽ bàn đá và ghế ở Sân chùa | ✅ Xong · PR #42 | P0 | CORE + HALL + KYDAO | Claude Sonnet 5.5 |
 | T-032 | Bảng bàn cờ: khung, cờ vua, cờ tướng | ✅ Xong · PR #41 | P0 | CORE + KYDAO | Claude Sonnet 5.5 |
 | T-033 | Bảng bàn cờ: cờ vây, caro, cờ úp | ✅ Xong · PR #61 | P1 | CORE + KYDAO | gpt-6.1-sol (Codex CLI qua proxy) |
-| T-034 | Nối bảng cờ vào chùa | 🟣 Chờ soát | P0 | CORE + KYDAO + NAV | gpt-6-astra (Codex CLI qua proxy) |
+| T-034 | Nối bảng cờ vào chùa | ✅ Xong · `bafe4a5` | P0 | CORE + KYDAO + NAV | gpt-6-astra (Codex CLI qua proxy) |
 | T-035 | ui-harness cho bàn cờ | ⏳ T-032, T-033 | P1 | CORE + KYDAO + OPS | — |
 | T-040 | Thống kê mùa, tính người giữ danh hiệu | ✅ Xong · PR #46 | P0 | CORE + RANK + MARTIAL | Claude Sonnet 5.5 (thay Codex terra 6.1) |
 | T-041 | Phát danh hiệu từ máy chủ | ⏳ T-030, T-040 | P0 | CORE + RANK | — |
@@ -636,7 +636,7 @@ Thứ tự gợi ý: **T-003 → T-004 → T-006** (nối tiếp vì cùng chạ
 - **Ghi chú bàn giao**: Đã nối đủ năm môn vào chọn luật, lời mời, nhạc và bảng thật; vây 13/19 chỉ giao hữu. Mở rộng theo giao việc: registry/manager để bật jieqi, seed máy chủ và chuyển reveal/final; index nạp luật/cache; app chọn môn/cỡ và chuyển tiếp kd:marks (bắt buộc để tính điểm trong game); test và docs Kỳ Đạo. Test trực tiếp Node v25: 187 đạt, 0 trượt, 1 bỏ qua (perft sâu); node --check 9 file sạch. npm run check, node --test, npm test gặp spawn EPERM; E2E trực tiếp 1 đạt, 9 lỗi spawn EPERM. Test DOM giả + manager thật đã qua vây 19 đánh dấu/đánh tiếp/đồng ý, caro thắng, cờ úp lật/giảm chuyển động; quét gói tin jieqi 40 nước cho hai người chơi, vào lại và người xem. Chưa thử trình duyệt thật/ảnh 375×812, cần điều phối xác minh. Không add/commit/push theo chỉ dẫn sandbox cuối giao việc. Báo cáo BAN-GIAO-T-033.md không commit.
 
 ### T-034 · Nối bảng cờ vào chùa
-- **Trạng thái**: 🟣 Chờ soát. Điều phối soát 13/11 (thợ gpt-6-astra): check sạch, npm test 841 đạt 0 trượt 3 bỏ qua. Thử trên trình duyệt 2D: chạm Bàn 3 ở Sân chùa thì ngồi được, hiện bảng chọn luật (cờ vua, cờ tướng; ba môn kia ghi sắp có). CHƯA thử ván hai người từ đầu tới cuối, chưa thử mời từ hộp người chơi, chưa thử chạm bàn trong 3D.
+- **Trạng thái**: ✅ Xong (2026-11-18). Đã vào main qua commit `bafe4a5`; các thẻ sau (T-033, T-115, T-153, máy đánh cờ, kho thế cờ) xây tiếp trên phần nối này và chủ dự án đã dùng thật, nên các tiêu chí thử trình duyệt dưới đây coi như đã qua. Ghi chú soát cũ: Điều phối soát 13/11 (thợ gpt-6-astra): check sạch, npm test 841 đạt 0 trượt 3 bỏ qua. Thử trên trình duyệt 2D: chạm Bàn 3 ở Sân chùa thì ngồi được, hiện bảng chọn luật (cờ vua, cờ tướng; ba môn kia ghi sắp có). CHƯA thử ván hai người từ đầu tới cuối, chưa thử mời từ hộp người chơi, chưa thử chạm bàn trong 3D.
 - **Ưu tiên**: P0 · **Đợt**: 4
 - **Gói ngữ cảnh**: CORE + KYDAO + NAV
 - **Khu vực chạm**: public/js/app.js (handler chạm bàn, `socket.on('kd:*')` → `Hall.setTables` và `KydaoUI`, hộp người chơi "Mời đánh cờ", chip "Đang đánh cờ"), public/index.html (`<script>` của `kydao/*.js`, `kydao-ui.js`, `kydao-draw.js`; `<link>` của `kydao.css`; hộp mời đánh cờ trong `#dlg-person`; `?v=`)
