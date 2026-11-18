@@ -261,6 +261,14 @@
   }
   const obitoArt = root.Image ? new Image() : null;
   if (obitoArt) obitoArt.src = '/img/obito-sprite.png';
+  // NPC có ảnh 2D chụp từ chính mô hình 3D (tools/blender/npc/sprite.py), vẽ cùng khung 68 × 104 như Obito.
+  const npcArt = {};
+  if (root.Image) for (const [role, src] of [['kysu', '/img/npc/ngoa-long.webp?v=1']]) { npcArt[role] = new Image(); npcArt[role].src = src; }
+  const artOf = p => {
+    if (!p.npc) return null;
+    const a = p.npc.role === 'obito' ? obitoArt : npcArt[p.npc.role];
+    return a && a.complete && a.naturalWidth ? a : null;
+  };
   function drawNpcAccessory(g, role) {
     g.save(); g.lineCap = 'round';
     if (role === 'beggar') {
@@ -1055,9 +1063,10 @@
       } else {
       if (rk) meritHalo(g, rk, t + p.id * 0.3, aur && aa > 0.3 ? tierColor(aur.t) : null);
       if (aur) aura(g, aur.t, t, aa, p.id * 1.7, false);
-      if (p.npc && p.npc.role === 'obito' && obitoArt && obitoArt.complete && obitoArt.naturalWidth) {
+      const art = artOf(p);
+      if (art) {
         g.fillStyle = 'rgba(0,0,0,.32)'; g.beginPath(); g.ellipse(0, 0, 17, 4.5, 0, 0, TAU); g.fill();
-        g.drawImage(obitoArt, -34, -104, 68, 104);
+        g.drawImage(art, -34, -104, 68, 104);
       } else {
         drawAvatar(g, p.look, p.front, t + p.id, bow, p.walking);
         if (p.npc) drawNpcAccessory(g, p.npc.role);

@@ -33,7 +33,7 @@ SF = 'sketchfab-npc/'   # mô hình tải từ Sketchfab (CC BY), xem public/img
 SOURCES = {
     'te-cong': dict(src='Te_Cong.glb', height=1.6, tris=11000, arm=74),
     # Ngọa Long Kỳ Sư (NPC đánh cờ): "Zhuge Liang_ Armoured" của kitkeat, CC BY (NOTICE mục 3f). Tải bản glTF/GLB
-    # trên Sketchfab, đặt tên zhuge-liang.glb trong NPC_SRC/sketchfab-npc/. Góc tay 74° là phỏng đoán: xem ảnh thử rồi chỉnh.
+    # trên Sketchfab, đặt tên zhuge-liang.glb trong NPC_SRC/sketchfab-npc/. Ảnh 2D: chạy tiếp tools/blender/npc/sprite.py ngoa-long.
     'ngoa-long': dict(src=SF + 'zhuge-liang.glb', height=1.74, tris=14000, arm=74, img='WEBP'),
     'van-ly': dict(src='Van_Ly_Doc_Hanh.glb', height=1.66, tris=11000, arm=74, img='JPEG',
                    prop=dict(src=SF + 'dao.glb', length=0.9, grip=0.175, point='max', roll=90, tilt=14, splay=-6, bone='hand_R')),

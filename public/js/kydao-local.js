@@ -21,7 +21,8 @@
     { key: 'mate2', name: 'Chiếu hết 2 nước', goal: 'mate', n: 2 },
     { key: 'mate3', name: 'Chiếu hết 3 nước', goal: 'mate', n: 3 },
     { key: 'draw', name: 'Tìm đường hòa', goal: 'draw' },
-    { key: 'win', name: 'Thắng thế', goal: 'win' }
+    { key: 'win-end', name: 'Thắng thế tàn cục', goal: 'win' },
+    { key: 'win-mid', name: 'Đòn phối hợp trung cuộc', goal: 'win' }
   ];
   const STORE = 'ta-kd-puzzles';
   // Kỳ thủ máy mang tên NPC Ngọa Long Kỳ Sư (hall.js; mô hình 3D: world3d/npc-glb.mjs vai 'kysu')
@@ -36,7 +37,8 @@
   const modOf = game => (game === 'chess' ? root.KyChess : game === 'xiangqi' ? root.KyXiangqi : null);
   const other = s => (s === 'a' ? 'b' : 'a');
   const toast = t => { try { if (host.toast) host.toast(t); } catch (e) { /* bỏ qua */ } };
-  const catOf = p => (p.goal === 'mate' ? 'mate' + p.n : p.goal);
+  // nhóm đề: trường group của tools/kydao-puzzles/build.js (mate1..3, draw, win-end, win-mid)
+  const catOf = p => (typeof p.group === 'string' ? p.group : p.goal === 'mate' ? 'mate' + p.n : p.goal === 'win' ? 'win-mid' : p.goal);
 
   function solvedMap() { try { return JSON.parse(root.localStorage.getItem(STORE) || '{}') || {}; } catch (e) { return {}; } }
   function markSolved(id) {

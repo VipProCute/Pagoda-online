@@ -134,6 +134,10 @@
 | T-211 | Viết lại README cho bản hiện tại, thêm cẩm nang nâng cấp `docs/HUONG-DAN-NANG-CAP.md`, cập nhật AGENTS.md 👤 chủ dự án yêu cầu 15/11 | 🟡 Chờ merge | P1 | CORE | gpt-6.1-sol (viết), Claude Fable 5.2 (điều phối, soát) |
 | T-212 | NPC Obito 3D dùng mô hình `tobi.glb` của chủ dự án (CC BY 4.0, Cyrone); bản 2D giữ nguyên 👤 chủ dự án yêu cầu 15/11 | 🟣 Chờ soát | P2 | CORE + HALL | Claude Opus 5.5 |
 | T-213 | NPC 3D Tế Công, Vạn Lý Độc Hành (đao), Tảo Địa Tăng (chổi) và 4 cô nương dùng mô hình riêng; bản 2D giữ nguyên 👤 chủ dự án yêu cầu 15/11 | 🟣 Chờ soát | P2 | CORE + HALL | Claude Opus 5.5 |
+| T-214 | Tảo Địa Tăng: rút 1/512 mỗi phút, báo toàn chùa, đứng chờ tới khi trao cơ duyên 👤 chủ dự án yêu cầu 18/11 | 🟣 Chờ soát | P1 | CORE + HALL | Claude Opus 5.5 |
+| T-215 | NPC luận võ Hắc Phong Ma Khách (đi lang thang, Thách đấu, ba mức, ghi riêng ngoài thành tích PK) 👤 chủ dự án yêu cầu 18/11 | 🟣 Chờ soát | P1 | CORE + PK + HALL | Claude Opus 5.5 |
+| T-216 | Đánh cờ vua / cờ tướng với máy và giải thế cờ (Lichess CC0 + thế cờ tướng sinh bằng máy) 👤 chủ dự án yêu cầu 18/11 | 🟣 Chờ soát | P1 | CORE + KYDAO | Claude Opus 5.5 (+ agent phụ dựng máy và kho thế) |
+| T-217 | NPC Ngọa Long Kỳ Sư: mô hình 3D "Zhuge Liang_ Armoured" (CC BY) và ảnh 2D chụp từ mô hình 👤 chủ dự án yêu cầu 18/11 | 🟣 Chờ soát | P2 | CORE + HALL + KYDAO | Claude Opus 5.5 |
 | T-152 | (Tùy chọn) Chụp lại ảnh 2D từ mô hình 3D | ⚪ Hộp thư đến 👤 | P3 | CORE + HALL | — |
 | T-153 | Nghiệm thu chéo đợt Pháp Tướng 3D | ⏳ T-151 | P1 | CORE + HALL | — (gợi ý: gemini-4-argon-high soát hình, gpt-6.1-sol soát mã) |
 | T-160 | Danh mục 8 bộ đá cho cờ vây và caro (`STONES`), `kd:skin` nhận theo môn | ✅ Xong · PR #64 | P1 | CORE + KYDAO + KYDAI | gpt-6.1-terra |
@@ -1858,6 +1862,34 @@ Thiết kế, hợp đồng mã, ngân sách và định tuyến mô hình: [doc
 - **Đổi gì**: công cụ mới `tools/blender/npc/build.py` biến tệp gốc nặng, không xương (Tripo của chủ dự án: `Te_Cong.glb`, `Van_Ly_Doc_Hanh.glb`, `Tao_Dia_Tang.glb`; Sketchfab CC BY: chổi, đao, 4 cô nương) thành `public/models/npc/{te-cong,van-ly,tao-dia,co-nuong-do,co-nuong-lam,co-nuong-hong,co-nuong-cam}.glb`: gộp lưới, giảm còn 11–14 nghìn tam giác, thu ảnh ≤ 1024 px, dựng bộ xương chung, gán trọng số, hạ tay, gắn chổi/đao vào tay phải, nhuộm áo (sườn xám xanh → hồng sen, áo trắng → cam đào). Tệp gốc để ngoài repo (`~/Downloads`, Sketchfab ở `~/Downloads/sketchfab-npc/`). `npc-glb.mjs` thêm bộ xương `npc`, vai `beggar` (Tế Công = Lão Ăn Mày), `wanderer`, `sweeper`, và `LADY_GLB` chọn mô hình cô nương theo màu áo trong look (0 đỏ, 2 hồng, 5 lam = Tiểu Thư Mê Chùa, 7 cam = Du Xuân). Ba mẫu cô nương chủ dự án gửi đầu tiên không dùng được (hai tượng ngồi, Ming-Mei là hàng bán), chủ dự án chọn lại 4 mẫu. Ghi nguồn ở NOTICE mục 3e, 3f. Bản 2D không đổi. **Thêm (15/11, 👤 chủ dự án yêu cầu):** thầy bói Tarot ở Sân chùa 3D thành nữ áo tím ngồi: tượng "Crimson Empress" (RYStudio, CC BY) cắt bỏ bệ/ngai/hoa/bình/nến theo hộp toạ độ, chỉ nhuộm váy đỏ → tím trong vùng dưới cằm (tóc đỏ giữ nguyên), không xương, `public/models/npc/thay-boi-tarot.glb`; `READER_GLB[4]` trong npc-glb.mjs, `scenes/yard.mjs` đổi look thầy Tarot sang nữ, áo tím (c = 4); thầy Tử Vi vẫn bản mã.
 - **Kiểm**: `npm run check` sạch; `npm test` 1111 test, 1108 đạt, 0 trượt, 3 bỏ qua (PostgreSQL); `test/world3d-avatar-glb.test.js` 18/18 (thêm 2 test: xương chung, chọn mô hình cô nương, đánh tay ngược chân, tay cầm đạo cụ đánh nhẹ, tệp có xương + đạo cụ + ghi nguồn). Trang `world3d-avatar.html` tư thế "Bước đi": cả 7 NPC nạp, bước đúng chiều, không lỗi console. Tarot: 130/130 test world3d đạt; dựng lại ghế đá + bàn bói đúng kích thước: mặt ghế tượng khớp ghế đá 0,45 m, chân duỗi dưới bàn.
 - **Còn mở**: dung lượng 0,24–1,48 MB mỗi tệp (chỉ tải khi NPC đó có mặt trong cảnh); cô nương sườn xám và áo cam gán trọng số theo vỏ bao (trọng số tự động hỏng vì lưới rời), chưa soát kỹ ở cự ly gần; cô áo đỏ và áo lam giữ dáng tay gốc. Sườn xám là trang phục nhân vật Mai Shiranui (© SNK), cùng lưu ý bản quyền như Obito.
+
+### T-214 · Tảo Địa Tăng hiện thường hơn, báo toàn chùa, đứng chờ tới khi trao cơ duyên
+- **Trạng thái**: 🟣 Chờ soát · chủ dự án yêu cầu 18/11 · **Ưu tiên**: P1 · **Gói ngữ cảnh**: CORE + HALL
+- **Người làm**: Claude Opus 5.5 · **Nhánh**: claude/sleepy-hamilton-m8w1eb
+- **Đổi gì**: `lib/sweeper.js` mỗi phút rút 1/512 (trước 1/1000, ở 2 phút); khi hiện, `server.js` phát `notice` + `ticker` toàn chùa; cao nhân không tự rời theo giờ mà chỉ rời khi một người nhận truyền thừa thành công (`release`, phát `sweeper:appear null` và ticker tên người nhận). Không rút khi `MARTIAL_ENABLED=0`.
+- **Kiểm**: `test/sweeper.test.js`, `test/e2e-sweeper.test.js` đạt.
+- **Còn mở**: sự kiện đang đứng chờ chỉ nằm trong RAM: máy chủ khởi động lại thì cao nhân biến mất (sổ cộng vẫn chống nhận trùng). Hai người nhận cùng lúc có thể cùng được thưởng (đều qua kiểm tra trước khi ghi).
+
+### T-215 · NPC luận võ Hắc Phong Ma Khách
+- **Trạng thái**: 🟣 Chờ soát · chủ dự án yêu cầu 18/11 · **Ưu tiên**: P1 · **Gói ngữ cảnh**: CORE + PK + HALL
+- **Người làm**: Claude Opus 5.5 · **Nhánh**: claude/sleepy-hamilton-m8w1eb
+- **Đổi gì**: NPC Hắc Phong có sẵn vẫn đi lang thang như cũ (👤 chủ dự án muốn "đi tìm ổng rồi đòi solo"), thêm nút Thách đấu: ra Sân đấu, chọn mức Thử chiêu / Luận võ / Toàn lực, sự kiện `pk:npc`. `lib/pk/npc.js` dựng hồ sơ NPC (cùng cấp người chơi) và chọn chiêu bằng bot của công cụ mô phỏng (chuyển sang `lib/pk/bots.js`, `enumerate.js`; `tools/pk-sim` dùng lại). `lib/pk/manager.js` thêm `challengeBot`; trận không gọi `recordResult`, ghi riêng `botRecord`. Giao thức ở `docs/VO-HOC-GIAO-THUC.md`, luật ở `docs/VO-HOC.md`.
+- **Kiểm**: `test/pk-npc.test.js` (4), `test/e2e-pk-npc.test.js` (máy chủ thật) đạt; mức Toàn lực đo 0,7 ms trung bình, tệ nhất 12 ms mỗi lượt.
+- **Còn mở**: chưa chạy ui-harness Sân đấu và chưa thử bằng trình duyệt màn chọn mức / màn kết quả trận NPC. Mô hình 3D mới cho Hắc Phong: agent phụ đã lập danh sách ứng viên (báo trong phiên 18/11), chủ dự án chưa chọn.
+
+### T-216 · Đánh cờ với máy và giải thế cờ
+- **Trạng thái**: 🟣 Chờ soát · chủ dự án yêu cầu 18/11 · **Ưu tiên**: P1 · **Gói ngữ cảnh**: CORE + KYDAO
+- **Người làm**: Claude Opus 5.5 (giao diện, bộ điều khiển) + agent phụ (máy, kho thế) · **Nhánh**: claude/sleepy-hamilton-m8w1eb
+- **Đổi gì**: `public/js/kydao/ai-chess.js`, `ai-xiangqi.js` (alpha-beta, ba mức 150 / 400 / 1200 ms) chạy trong `ai-worker.js`; `public/js/kydao-local.js` đóng vai máy chủ giả cho KydaoUI (cờ `start.local`). Ngồi bàn đá một mình thì hộp bàn cờ có "Đánh với máy" và "Giải thế cờ". Kho `public/data/kydao-puzzles.json`: 300 thế cờ vua Lichess CC0 (chiếu hết 1/2/3, tìm đường hòa, thắng thế tàn cục, đòn trung cuộc), 40 thế cờ tướng sinh và giải bằng máy (`tools/kydao-puzzles/build.js`). Đề đã giải lưu `ta-kd-puzzles`.
+- **Kiểm**: `test/kydao-ai.test.js`, `test/kydao-puzzles.test.js` (19), `test/kydao-local.test.js` (4) đạt; thử trên Chromium: ván cờ tướng với máy và thế cờ vua mở đúng, máy đáp qua Worker thật, không lỗi console.
+- **Còn mở**: chỉ cờ vua và cờ tướng (cờ úp, vây, caro chưa có máy); thế cờ tướng chỉ có loại Đỏ đi trước; nước đi khác lời giải ở bước giữa bị coi là sai dù cũng thắng; chưa có ui-harness cho chế độ này.
+
+### T-217 · NPC Ngọa Long Kỳ Sư (kỳ thủ máy) có bản 3D và 2D
+- **Trạng thái**: 🟣 Chờ soát · chủ dự án yêu cầu 18/11 · **Ưu tiên**: P2 · **Gói ngữ cảnh**: CORE + HALL + KYDAO
+- **Người làm**: Claude Opus 5.5 · **Nhánh**: claude/sleepy-hamilton-m8w1eb
+- **Đổi gì**: NPC mới đi lang thang (vai `kysu`, nút Đánh cờ mở hộp đánh với máy). Mô hình "Zhuge Liang_ Armoured" của kitkeat (CC BY 4.0, chủ dự án gửi tệp) dựng bằng `tools/blender/npc/build.py ngoa-long` → `public/models/npc/ngoa-long.glb` (14.000 tam giác, 1,17 MB, có xương). Ảnh 2D chụp từ chính mô hình bằng công cụ mới `tools/blender/npc/sprite.py` → `public/img/npc/ngoa-long.webp`, `hall.js` vẽ như sprite Obito. Ghi công `public/img/NOTICE.txt` mục 3f.
+- **Kiểm**: chụp trong game 2D (Tàng Kinh Các) và 3D: hình hiện đúng, không lỗi console. Blender chạy bằng gói `bpy` 5.3 + Mesa phần mềm trong máy ảo.
+- **Còn mở**: 👤 trang mô hình ghi "lấy cảm hứng từ nhân vật trong Dynasty Warriors": giấy phép CC BY không thay cho quyền với thiết kế nhân vật của Koei Tecmo, cần chủ dự án xác minh trước khi phát hành rộng (giống Obito). Sprite 2D là ảnh đứng yên (không bước chân), giống Obito.
 ---
 
 ## Hộp thư đến (ý tưởng, chưa đủ để giao)
