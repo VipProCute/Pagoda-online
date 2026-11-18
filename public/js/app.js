@@ -606,7 +606,7 @@
     if (r.uid && r.uid !== uid) { uid = r.uid; store.set('ta-uid', uid); }
     if (!offset) { offset = r.serverTime - Date.now(); Hall.setOffset(offset); }
     $('#siteName').textContent = cfg.siteName; document.title = cfg.siteName + ' · Đi chùa online';
-    Hall.setMe(me); Hall.setPlayers(r.players); Hall.setSweeper(r.sweeper); Hall.setIncense(r.incense); fortune.reset(r.fortuneQueue);
+    Hall.setTitles(cfg.titles); Hall.setMe(me); Hall.setPlayers(r.players); Hall.setSweeper(r.sweeper); Hall.setIncense(r.incense); fortune.reset(r.fortuneQueue);
     $('#feed').textContent = ''; r.chat.forEach(addMsg); pruneChat(); scrollFeed(true);
     renderPrayers(r.prayers); renderBoard(r.board); renderDonations(r.donations, r.funds);
     setStats(r.today, r.online); setMerit(r.merit);
@@ -664,6 +664,8 @@
 
   /* ---------- sự kiện từ máy chủ ---------- */
   socket.on('pj', p => { Hall.addPlayer(p); $('#online').textContent = NUM(Hall.count()); });
+  socket.on('ptt', d => { if (d && typeof d === 'object') { Hall.setPlayerTitles(d.id, d.tt); if (personId === d.id) renderPersonTitles(d.id); } });
+  socket.on('titles', d => { titleHolders = d && typeof d === 'object' ? d : {}; });   // người giữ hiện tại (chỉ tên); Bảng Vàng (T-043) sẽ dùng
   socket.on('pl', d => { Voice.drop(d.id); Hall.removePlayer(d.id); $('#online').textContent = NUM(Hall.count()); voiceUI(); });
   socket.on('pv', d => { Hall.setVoice(d.id, d.v); voiceUI(); });
   socket.on('prd', d => Hall.setReading(d.id, d.rd));
@@ -1114,6 +1116,29 @@
   }
   let personId = null;
   /** Hộp tương tác chung: người chơi hay NPC đều là Actor (public/js/actors.js), nút hiện theo actor.menu(). */
+  let titleHolders = {};
+  // Một câu giải thích cho từng danh hiệu (theo hạng mục và loại), giọng nhà chùa.
+  const TITLE_WHY = {
+    merit: { history: 'Công đức tích lũy cao nhất chùa từ trước tới nay.', current: 'Gieo nhiều công đức nhất trong tháng âm lịch này.' },
+    pk: { history: 'Chiến tích luận võ tích lũy cao nhất chùa.', current: 'Chiến tích luận võ cao nhất trong tháng âm lịch này.' }
+  };
+  function titleWhy(t) {
+    const m = TITLE_WHY[t.cat];
+    if (m) return m[t.kind];
+    return t.kind === 'history' ? 'Điểm Elo cao nhất từng đạt của môn này, cao nhất chùa.' : 'Đang có điểm Elo cao nhất chùa ở môn này.';
+  }
+  function renderPersonTitles(id) {
+    const p = Hall.player(id), box = $('#person-titles'), ul = $('#person-titles-list');
+    ul.textContent = '';
+    const list = p && !p.isNpc ? Hall.titleList(p.tt) : [];
+    box.hidden = !list.length;
+    for (const t of list) {
+      const li = document.createElement('li'); li.className = 'tt-item';
+      const chip = document.createElement('b'); chip.className = 'tt-chip tt-' + t.kind; chip.textContent = t.name;
+      const why = document.createElement('span'); why.textContent = titleWhy(t);
+      li.append(chip, why); ul.append(li);
+    }
+  }
   function openPerson(id) {
     const p = Hall.player(id) || Hall.npc(id); if (!p) return;
     personId = id;
@@ -1128,6 +1153,7 @@
     $('#person-talk').hidden = !menu.includes('talk');
     $('#person-kydao').textContent = p.isNpc ? 'Đánh cờ' : 'Mời đánh cờ';
     $('#person-kydao').hidden = p.isNpc ? !(menu.includes('kydao') && kydaoEnabled() && globalThis.KydaoLocal) : id === me || !kydaoEnabled() || Places.current !== 'hall' || !['hall', 'yard'].includes(curScene) || (p.place || 'hall') !== 'hall';
+    renderPersonTitles(id);
     openDlg('person');
   }
   /* ---------- trò chuyện với NPC: đi tới gần (NPC vẫn đi lang thang), tới nơi thì NPC đáp một câu ---------- */
