@@ -509,6 +509,11 @@
     toast,
     sound(kind) { if (kind === 'check') SFX.ting(); else if (kind === 'capture') SFX.pop(); else SFX.mo(); },
     onOpen(game) { closeDlg('kd-lobby'); closeDlg('kd-ai'); closeDlg('kd-puzzle'); SFX.setMusicGame(game); },
+    // "Xem lời giải" cần cúng dường vui: tạo xong mã QR là mở; nhà chùa chưa mở nhận tịnh tài thì cho xem luôn
+    unlockSolution(done) {
+      if (!(cfg && cfg.donation)) { done(); return; }
+      openDonate({ note: 'Xem lời giải thế cờ', hint: 'Cúng dường tùy tâm để xem lời giải. Tạo xong mã QR là lời giải hiện ra, không cần chờ nhà chùa xác nhận.', onQr: done });
+    },
     onClose() { SFX.setMusicGame(null); }
   });
   function kdLocalBusy() {
@@ -1005,8 +1010,11 @@
   });
 
   /* ---------- cúng dường ---------- */
-  let pendingCode = null;
-  function openDonate() {
+  let pendingCode = null, donateFor = null;
+  /** extra (tùy chọn): { note, hint, onQr() } — việc "cúng dường vui" mở khóa ngay khi tạo xong mã QR
+   *  (không chờ ngân hàng / Ban điều hành xác nhận; khoản cúng dường vẫn đi luồng xác nhận bình thường). */
+  function openDonate(extra) {
+    donateFor = extra && typeof extra.onQr === 'function' ? extra : null;
     const on = !!(cfg && cfg.donation);
     $('#dnOff').hidden = on; $('#dnForm').hidden = !on; $('#dnQr').hidden = true; $('#dnDone').hidden = true; $('#dnWarn').hidden = true;
     if (on) {
@@ -1021,6 +1029,9 @@
         return lb;
       }));
       $('#dnName').value = myName;
+      if (donateFor && donateFor.note) $('#dnNote').value = donateFor.note;
+      else if ($('#dnNote').value === 'Xem lời giải thế cờ') $('#dnNote').value = '';   // bỏ lời nhắn tự điền của lần trước
+      if (donateFor && donateFor.hint) $('#dnFormHint').textContent = donateFor.hint;
     }
     openDlg('donate');
   }
@@ -1045,6 +1056,7 @@
       $('#qrAmt').textContent = VND(r.amount); $('#qrCode').textContent = r.code; $('#qrFund').textContent = r.fund;
       $('#qrStatus').textContent = 'Đang chờ xác nhận cúng dường. Trang sẽ tự cập nhật.';
       $('#dnForm').hidden = true; $('#dnQr').hidden = false;
+      if (donateFor) { const f = donateFor; donateFor = null; try { f.onQr(); } catch (e) { /* mở khóa lỗi không chặn mã QR */ } }
     });
   });
   $('#qrBack').addEventListener('click', () => { $('#dnQr').hidden = true; $('#dnForm').hidden = false; });

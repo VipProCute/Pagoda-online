@@ -107,3 +107,21 @@ test('xem lời giải kết thúc thế cờ và ghi đủ dòng nước', asyn
   assert.equal(end.head, 'Lời giải');
   assert.equal(end.text.split(' · ').length, 3);
 });
+
+test('xem lời giải phải qua cúng dường vui: chỉ hiện sau khi host báo đã tạo mã QR; gợi ý miễn phí', async () => {
+  const E = sandbox();
+  let unlock = null;
+  E.L.init({ name: () => 'Người Thử', toast: t => E.toasts.push(t), sound() {}, onOpen() {}, onClose() {}, unlockSolution: done => { unlock = done; } });
+  await E.L.loadPuzzles();
+  E.L.playPuzzle('chess', 'mate1');
+  const { start, hooks } = E.opened[0];
+  assert.match(start.resignLabel, /cúng dường/);
+  hooks.hint();
+  assert.match(E.toasts.at(-1), /Gợi ý/);
+  await send(hooks, 'kd:resign', {});
+  assert.equal(E.applied.filter(e => e.type === 'kd:end').length, 0, 'chưa tạo mã thì chưa có lời giải');
+  assert.equal(typeof unlock, 'function');
+  unlock();
+  const end = E.applied.find(e => e.type === 'kd:end');
+  assert.equal(end.head, 'Lời giải');
+});

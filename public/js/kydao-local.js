@@ -4,7 +4,8 @@
  * và đẩy kd:moved / kd:end vào KydaoUI.apply. Không cộng công đức, không Elo, máy chủ không biết gì về ván này.
  *
  * API:
- *   KydaoLocal.init(host)                host: { name(), sound(kind), toast(text), onOpen(game), onClose() }
+ *   KydaoLocal.init(host)                host: { name(), sound(kind), toast(text), onOpen(game), onClose(), unlockSolution?(done) }
+ *     unlockSolution: "Xem lời giải" cần cúng dường vui; host gọi done() khi đã tạo xong mã QR. Gợi ý thì miễn phí.
  *   KydaoLocal.playAi({ game, level, side })      game 'chess' | 'xiangqi'; level 1..3; side 'a' | 'b' | 'random'
  *   KydaoLocal.loadPuzzles() → Promise<data>      tải /data/kydao-puzzles.json một lần
  *   KydaoLocal.categories(game) → [{ key, name, total, solved }]
@@ -135,7 +136,12 @@
     if (name === 'kd:move') return onMove(s, d, cb);
     if (name === 'kd:resign') {
       cb({ ok: true });
-      if (s.kind === 'puzzle') return showSolution(s);
+      if (s.kind === 'puzzle') {
+        if (s.over) return;
+        if (typeof host.unlockSolution === 'function') host.unlockSolution(() => { if (session === s && !s.closed) showSolution(s); });
+        else showSolution(s);
+        return;
+      }
       return end(s, { result: other(s.you), reason: 'resign', text: 'Bạn đã chịu thua.', head: BOT_NAME + ' thắng' });
     }
     if (name === 'kd:draw') return cb({ ok: false, reason: s.kind === 'ai' ? 'Kỳ sư không nhận hòa, đánh tiếp nhé.' : 'Thế cờ không xin hòa được.' });
@@ -210,7 +216,7 @@
     if (p.last) moves.push({ m: p.last, t: 'Nước vừa đi' });
     open(s, Object.assign({
       gameId: s.gameId, table: null, game, rated: false, pace: 'normal', you, state, ply: 0, moves, clock: null,
-      local: 'puzzle', resignLabel: 'Xem lời giải',
+      local: 'puzzle', resignLabel: 'Xem lời giải · cúng dường',
       title: `Thế cờ · ${cat.name} · Bài ${no}/${list.length}` + (p.rating ? ` · Độ khó ${p.rating}` : '')
     }, names(you, typeof host.name === 'function' ? host.name() || 'Bạn' : 'Bạn', 'Đề bài')));
     toast(`${goalText}. Bạn cầm quân ${you === 'a' ? (game === 'chess' ? 'Trắng' : 'Đỏ') : 'Đen'}.`);
