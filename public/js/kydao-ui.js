@@ -848,6 +848,7 @@
     ui.drawBtn.hidden = ui.resignBtn.hidden = !live;
     if (S.local) ui.drawBtn.hidden = true;
     ui.hintBtn.hidden = !live || typeof hooks.hint !== 'function';
+    ui.hintBtn.textContent = hooks.hintLabel || 'Gợi ý';
     ui.resignBtn.textContent = S.resignLabel || 'Đầu hàng';
     ui.actions.hidden = false;
     ui.drawBtn.disabled = S.offer === S.you;

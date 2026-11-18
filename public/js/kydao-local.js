@@ -5,7 +5,8 @@
  *
  * API:
  *   KydaoLocal.init(host)                host: { name(), sound(kind), toast(text), onOpen(game), onClose(), unlockSolution?(done) }
- *     unlockSolution: "Xem lời giải" cần cúng dường vui; host gọi done() khi đã tạo xong mã QR. Gợi ý thì miễn phí.
+ *     unlockSolution: "Xem lời giải" cần cúng dường vui; host gọi done() khi đã tạo xong mã QR.
+ *     requestHint(puzzleId, step, cb): gợi ý trừ 5 công đức trên máy chủ (kd:hint), cb({ ok, square, cost } | { ok:false, reason }).
  *   KydaoLocal.playAi({ game, level, side })      game 'chess' | 'xiangqi'; level 1..3; side 'a' | 'b' | 'random'
  *   KydaoLocal.loadPuzzles() → Promise<data>      tải /data/kydao-puzzles.json một lần
  *   KydaoLocal.categories(game) → [{ key, name, total, solved }]
@@ -87,7 +88,7 @@
       again: () => (s.kind === 'ai' ? playAi(s.opts) : playPuzzle(s.game, s.cat)),
       againLabel: s.kind === 'ai' ? 'Ván mới' : 'Thế kế tiếp'
     };
-    if (s.kind === 'puzzle') hooks.hint = () => hint(s);
+    if (s.kind === 'puzzle') { hooks.hint = () => hint(s); hooks.hintLabel = typeof host.requestHint === 'function' ? 'Gợi ý · −5 công đức' : 'Gợi ý'; }
     try { if (host.onOpen) host.onOpen(s.game); } catch (e) { /* bỏ qua */ }
     UI().open(start, hooks);
   }
@@ -248,10 +249,22 @@
       text: (s.tries ? `Bạn giải được sau ${s.tries} lần thử.` : 'Giải ngay lần đầu, cao tay!') + (s.puzzle.source && s.puzzle.source.startsWith('lichess:') ? ' Đề bài từ kho thế cờ Lichess.' : '')
     });
   }
+  // Gợi ý trừ 5 công đức trên máy chủ (kd:hint qua host.requestHint); cùng một bước chỉ trả một lần.
   function hint(s) {
     if (s.over) return;
-    const m = s.puzzle.moves[s.k];
-    if (m) toast('Gợi ý: hãy xem quân ở ô ' + m.slice(0, 2) + '.');
+    const k = s.k;
+    if (!s.hints) s.hints = {};
+    const show = sq => toast('Gợi ý: hãy xem quân ở ô ' + sq + '.');
+    if (s.hints[k]) { show(s.hints[k]); return; }
+    if (typeof host.requestHint !== 'function') { const m = s.puzzle.moves[k]; if (m) show(m.slice(0, 2)); return; }
+    if (s.hintBusy) return;
+    s.hintBusy = true;
+    host.requestHint(s.puzzle.id, k, r => {
+      s.hintBusy = false;
+      if (!r || !r.ok) { toast((r && r.reason) || 'Chưa xin được gợi ý, thử lại nhé.'); return; }
+      s.hints[k] = r.square;
+      if (session === s && !s.closed) toast(`Gợi ý (−${r.cost} công đức): hãy xem quân ở ô ${r.square}.`);
+    });
   }
   function showSolution(s) {
     const p = s.puzzle, words = [];

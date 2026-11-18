@@ -46,6 +46,17 @@ const BOOKS = (() => {
   }
 })();
 
+// Kho thế cờ (public/data/kydao-puzzles.json): máy chủ chỉ cần lời giải để trả gợi ý có thu công đức (kd:hint)
+const PUZZLES = (() => {
+  const map = new Map();
+  try {
+    const j = JSON.parse(fs.readFileSync(path.join(__dirname, 'public', 'data', 'kydao-puzzles.json'), 'utf8'));
+    for (const g of ['chess', 'xiangqi']) for (const p of Array.isArray(j[g]) ? j[g] : []) if (p && typeof p.id === 'string' && Array.isArray(p.moves)) map.set(p.id, p.moves.slice());
+  } catch (e) { console.error('Không đọc được public/data/kydao-puzzles.json:', e.message); }
+  return map;
+})();
+const HINT_COST = 5;   // gợi ý thế cờ: trừ 5 công đức mỗi lần (miễn phí nhưng không vô hạn)
+
 /* ---------------- cấu hình (biến môi trường) ---------------- */
 const PORT = Number(process.env.PORT) || 3000;
 const ADMIN_KEY = process.env.ADMIN_KEY || '';
@@ -1503,6 +1514,17 @@ io.on('connection', socket => {
   ].forEach(kdPass);
   /* Cửa hàng skin: client chỉ gửi { kind, id }; GIÁ do máy chủ lấy từ shop (bỏ mọi `amount` client gửi). Duyệt đi qua đúng đường xác nhận cúng dường. */
   socket.on('kd:shop:state', kydaoOnly('any', () => shopStateFor(p.uid)));
+  // Gợi ý giải thế cờ: máy chủ đọc lời giải, trừ công đức rồi chỉ ô quân cần đi (không lộ cả nước đi)
+  socket.on('kd:hint', kydaoOnly('any', d => {
+    const id = typeof d.puzzle === 'string' && d.puzzle.length <= 40 ? d.puzzle : '';
+    const moves = id ? PUZZLES.get(id) : null, step = d.step;
+    if (!moves || !Number.isInteger(step) || step < 0 || step >= moves.length || step % 2) return { ok: false, reason: 'Không tìm thấy thế cờ này.' };
+    const have = meritTotal(accountOf(p.uid));
+    if (have < HINT_COST) return { ok: false, code: 'merit', reason: `Cần ít nhất ${HINT_COST} công đức để xin gợi ý (bạn đang có ${have}). Thắp nhang, vái lạy để tích thêm nhé.` };
+    if (!allow('kdHint', 1500)) return { ok: false, reason: 'Đợi một chút rồi xin gợi ý tiếp nhé.' };   // chỉ tính lượt có trừ công đức
+    addMerit(p, -HINT_COST);
+    return { ok: true, square: String(moves[step]).slice(0, 2), cost: HINT_COST, total: meritTotal(accountOf(p.uid)) };
+  }));
   socket.on('kd:shop:buy', kydaoOnly('any', async d => {
     if (!DONATION_ENABLED) return { ok: false, reason: 'Nhà chùa chưa mở nhận tịnh tài trực tuyến.' };
     if (!shop.publicConfig().on) return { ok: false, code: 'off', reason: 'Skin hiện đang miễn phí, chưa cần cúng dường.' };

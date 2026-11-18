@@ -470,14 +470,15 @@
     $('#kd-lobby-title').textContent = 'Bàn ' + t.table;
     $('#kd-lobby-info').textContent = t.seats.map(s => s ? s.name + (s.ready ? ' · Sẵn sàng' : ' · Chưa sẵn sàng') : 'Ghế trống').join(' / ');
     setKydaoRules(t);
-    $('#kd-rules').disabled = !kdIsMe(t.host);
-    $('#kd-setup').hidden = !kdIsMe(t.host);
+    const canRule = kdIsMe(t.host) || !t.game;   // chưa có luật thì ai ngồi bàn cũng chọn được; có rồi thì chỉ chủ bàn đổi
+    $('#kd-rules').disabled = !canRule;
+    $('#kd-setup').hidden = !canRule;
     $('#kd-ready').hidden = $('#kd-stand').hidden = false;
     $('#kd-invite-send').hidden = true;
     $('#kd-ready').disabled = !kdSupported(t.game);
     $('#kd-ready').textContent = mine.ready ? 'Thôi sẵn sàng' : 'Sẵn sàng';
     $('#kd-solo-row').hidden = !(globalThis.KydaoLocal && t.seats.some(s => !s));   // ngồi một mình: đánh với máy hoặc giải thế cờ
-    $('#kd-lobby-note').textContent = (t.note ? t.note + ' ' : '') + (t.game && !kdSupported(t.game) ? 'Môn này sắp có. Chủ bàn hãy chọn cờ vua hoặc cờ tướng.' : t.game ? 'Mời người ngồi cùng chạm ghế trống. Cả hai sẵn sàng thì bắt đầu.' : 'Chủ bàn chọn luật trước khi sẵn sàng.');
+    $('#kd-lobby-note').textContent = (t.note ? t.note + ' ' : '') + (t.game && !kdSupported(t.game) ? 'Môn này sắp có. Chủ bàn hãy chọn cờ vua hoặc cờ tướng.' : t.game ? 'Mời người ngồi cùng chạm ghế trống. Cả hai sẵn sàng thì bắt đầu.' : 'Chọn luật trước khi sẵn sàng (ai ngồi bàn cũng chọn được).');
   }
   $('#kd-setup').addEventListener('click', () => {
     if (kdLobby != null) kdSend('kd:setup', { table: kdLobby, ...kdRules() });
@@ -509,6 +510,8 @@
     toast,
     sound(kind) { if (kind === 'check') SFX.ting(); else if (kind === 'capture') SFX.pop(); else SFX.mo(); },
     onOpen(game) { closeDlg('kd-lobby'); closeDlg('kd-ai'); closeDlg('kd-puzzle'); SFX.setMusicGame(game); },
+    // Gợi ý thế cờ: máy chủ trừ 5 công đức rồi trả ô quân cần đi
+    requestHint(puzzle, step, cb) { socket.emit('kd:hint', { puzzle, step }, cb); },
     // "Xem lời giải" cần cúng dường vui: tạo xong mã QR là mở; nhà chùa chưa mở nhận tịnh tài thì cho xem luôn
     unlockSolution(done) {
       if (!(cfg && cfg.donation)) { done(); return; }

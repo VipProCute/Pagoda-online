@@ -125,3 +125,21 @@ test('xem lời giải phải qua cúng dường vui: chỉ hiện sau khi host 
   const end = E.applied.find(e => e.type === 'kd:end');
   assert.equal(end.head, 'Lời giải');
 });
+
+test('gợi ý gọi máy chủ (trừ công đức) một lần mỗi bước, lỗi thì báo lý do', async () => {
+  const E = sandbox();
+  const asks = [];
+  let answer = { ok: false, reason: 'Cần ít nhất 5 công đức để xin gợi ý (bạn đang có 0).' };
+  E.L.init({ name: () => 'Người Thử', toast: t => E.toasts.push(t), sound() {}, onOpen() {}, onClose() {}, requestHint: (id, step, cb) => { asks.push([id, step]); cb(answer); } });
+  await E.L.loadPuzzles();
+  E.L.playPuzzle('chess', 'mate2');
+  const { hooks } = E.opened[0];
+  assert.match(hooks.hintLabel, /5 công đức/);
+  hooks.hint();
+  assert.match(E.toasts.at(-1), /Cần ít nhất 5 công đức/);
+  answer = { ok: true, square: 'e2', cost: 5 };
+  hooks.hint(); hooks.hint(); hooks.hint();
+  assert.equal(asks.length, 2, 'đã có gợi ý của bước này thì không hỏi (không trừ) lại');
+  assert.match(E.toasts.at(-1), /ô e2/);
+  assert.equal(asks[0][1], 0);
+});
