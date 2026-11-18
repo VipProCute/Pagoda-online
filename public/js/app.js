@@ -476,7 +476,7 @@
     $('#kd-invite-send').hidden = true;
     $('#kd-ready').disabled = !kdSupported(t.game);
     $('#kd-ready').textContent = mine.ready ? 'Thôi sẵn sàng' : 'Sẵn sàng';
-    $('#kd-solo-row').hidden = !(window.KydaoLocal && t.seats.some(s => !s));   // ngồi một mình: đánh với máy hoặc giải thế cờ
+    $('#kd-solo-row').hidden = !(globalThis.KydaoLocal && t.seats.some(s => !s));   // ngồi một mình: đánh với máy hoặc giải thế cờ
     $('#kd-lobby-note').textContent = (t.note ? t.note + ' ' : '') + (t.game && !kdSupported(t.game) ? 'Môn này sắp có. Chủ bàn hãy chọn cờ vua hoặc cờ tướng.' : t.game ? 'Mời người ngồi cùng chạm ghế trống. Cả hai sẵn sàng thì bắt đầu.' : 'Chủ bàn chọn luật trước khi sẵn sàng.');
   }
   $('#kd-setup').addEventListener('click', () => {
@@ -490,7 +490,7 @@
     if (kdLobby != null) kdSend('kd:stand', { table: kdLobby }, r => { if (r && r.ok) { closeDlg('kd-lobby'); kdLobby = null; } });
   });
   $('#person-kydao').addEventListener('click', () => {
-    const n = Hall.npc(personId);
+    const n = typeof Hall.npc === 'function' ? Hall.npc(personId) : null;
     if (n && n.isNpc) { closeDlg('person'); Hall.npcTalk(n.id); if (!kdLocalBusy()) openDlg('kd-ai'); return; }   // Ngọa Long Kỳ Sư: đánh với máy
     const p = Hall.player(personId); if (!p) return;
     kdTarget = personId; kdLobby = null; closeDlg('person');
@@ -504,7 +504,7 @@
     openDlg('kd-lobby');
   });
   /* ---------- ván trên máy: đánh với máy, giải thế cờ (public/js/kydao-local.js; máy chủ không tham gia) ---------- */
-  if (window.KydaoLocal) KydaoLocal.init({
+  if (globalThis.KydaoLocal) globalThis.KydaoLocal.init({
     name: () => (Hall.player(me) || {}).name || 'Bạn',
     toast,
     sound(kind) { if (kind === 'check') SFX.ting(); else if (kind === 'capture') SFX.pop(); else SFX.mo(); },
@@ -519,18 +519,18 @@
   $('#kd-ai-start').addEventListener('click', () => {
     if (kdLocalBusy()) return;
     if (kdStart && !kdStart.you) KydaoUI.close();
-    KydaoLocal.playAi({ game: $('input[name="kd-ai-game"]:checked').value, level: Number($('input[name="kd-ai-level"]:checked').value), side: $('input[name="kd-ai-side"]:checked').value });
+    globalThis.KydaoLocal.playAi({ game: $('input[name="kd-ai-game"]:checked').value, level: Number($('input[name="kd-ai-level"]:checked').value), side: $('input[name="kd-ai-side"]:checked').value });
   });
   function renderKdPuzzles() {
     const game = $('input[name="kd-puzzle-game"]:checked').value, box = $('#kd-puzzle-list');
     box.textContent = '';
-    for (const c of KydaoLocal.categories(game)) {
+    for (const c of globalThis.KydaoLocal.categories(game)) {
       const b = document.createElement('button');
       b.type = 'button'; b.className = 'btn kd-puzzle-cat'; b.setAttribute('role', 'listitem');
       const t = document.createElement('b'); t.textContent = c.name;
       const n = document.createElement('small'); n.textContent = `Đã giải ${c.solved}/${c.total}`;
       b.append(t, n);
-      b.addEventListener('click', () => { if (kdLocalBusy()) return; if (kdStart && !kdStart.you) KydaoUI.close(); KydaoLocal.playPuzzle(game, c.key); });
+      b.addEventListener('click', () => { if (kdLocalBusy()) return; if (kdStart && !kdStart.you) KydaoUI.close(); globalThis.KydaoLocal.playPuzzle(game, c.key); });
       box.appendChild(b);
     }
     $('#kd-puzzle-note').textContent = box.children.length ? '' : 'Chưa có đề cho môn này.';
@@ -540,7 +540,7 @@
     if (kdLocalBusy()) return;
     $('#kd-puzzle-list').textContent = ''; $('#kd-puzzle-note').textContent = 'Đang tải kho thế cờ…';
     openDlg('kd-puzzle');
-    KydaoLocal.loadPuzzles().then(renderKdPuzzles).catch(() => { $('#kd-puzzle-note').textContent = 'Chưa tải được kho thế cờ, xin thử lại sau.'; });
+    globalThis.KydaoLocal.loadPuzzles().then(renderKdPuzzles).catch(() => { $('#kd-puzzle-note').textContent = 'Chưa tải được kho thế cờ, xin thử lại sau.'; });
   });
   $('#kd-invite-send').addEventListener('click', () => {
     if (kdTarget == null) return;
@@ -1112,7 +1112,7 @@
     $('#person-challenge').hidden = !menu.includes('challenge') || !(cfg && cfg.martial && cfg.martial.pk);
     $('#person-talk').hidden = !menu.includes('talk');
     $('#person-kydao').textContent = p.isNpc ? 'Đánh cờ' : 'Mời đánh cờ';
-    $('#person-kydao').hidden = p.isNpc ? !(menu.includes('kydao') && kydaoEnabled() && window.KydaoLocal) : id === me || !kydaoEnabled() || Places.current !== 'hall' || !['hall', 'yard'].includes(curScene) || (p.place || 'hall') !== 'hall';
+    $('#person-kydao').hidden = p.isNpc ? !(menu.includes('kydao') && kydaoEnabled() && globalThis.KydaoLocal) : id === me || !kydaoEnabled() || Places.current !== 'hall' || !['hall', 'yard'].includes(curScene) || (p.place || 'hall') !== 'hall';
     openDlg('person');
   }
   /* ---------- trò chuyện với NPC: đi tới gần (NPC vẫn đi lang thang), tới nơi thì NPC đáp một câu ---------- */
@@ -1160,7 +1160,7 @@
   $('#person-challenge').addEventListener('click', () => {
     const id = personId; closeDlg('person');
     if (id == null) return;
-    const npc = Hall.npc(id);
+    const npc = typeof Hall.npc === 'function' ? Hall.npc(id) : null;
     if (npc && npc.isNpc) {
       // Hắc Phong Ma Khách: gặp ở đâu cũng thách đấu được; trận diễn ra ở Sân đấu
       if (Places.current === 'arena') { if (window.Arena && Arena.openNpc) Arena.openNpc(); return; }
