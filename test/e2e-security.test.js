@@ -96,3 +96,28 @@ test('hoàn thành ngay: bỏ giới hạn ngày cũ, yêu cầu cũ vẫn có t
   assert.ok((await call(c.socket, 'tu:speedup:cancel', { code: sp1.code })).ok);
   assert.ok((await call(c.socket, 'tu:speedup', { sessionId: s2.session.id })).ok);
 });
+
+test('danh hiệu: gói ptt, titles, ticker và tt trong danh sách người chơi không chứa uid của ai', async t => {
+  const fs = require('fs'), os = require('os'), path = require('path');
+  const day = new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10);
+  const ua = 'uid-ttl-sec-a0001', ub = 'uid-ttl-sec-b0001';
+  const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'chua-ttl-')), 'db.json');
+  fs.writeFileSync(file, JSON.stringify({ version: 2, day, merit: { [ua]: { name: 'Nguoi A', total: 500, today: 0, day }, [ub]: { name: 'Nguoi B', total: 495, today: 0, day } } }));
+  const srv = await startServer({ DATA_FILE: file, TITLE_MIN_MERIT_TOTAL: '100', TITLE_MIN_MERIT_SEASON: '5', TITLES_SWEEP_MS: '300' });
+  t.after(() => srv.stop());
+  const A = await enter(srv, 'Nguoi A', ua), B = await enter(srv, 'Nguoi B', ub);
+  const moved = waitFor(A.socket, 'ptt', x => x.id === B.pid && x.tt.length > 0);
+  assert.ok((await call(B.socket, 'incense', { sticks: 1, kind: 'Cầu an' })).ok);
+  await moved;
+  const C = await enter(srv, 'Nguoi C', 'uid-ttl-sec-c0001');
+  await sleep(200);
+  const seen = new Set();
+  for (const who of [A, B, C]) for (const x of who.socket.log) if (['ptt', 'titles', 'ticker'].includes(x.ev)) {
+    seen.add(x.ev);
+    const j = JSON.stringify(x.payload);
+    assert.ok(!j.includes(ua) && !j.includes(ub) && !j.includes('uid-ttl-sec-c0001'), x.ev + ' lộ uid');
+  }
+  assert.ok(seen.has('ptt') && seen.has('titles'), 'có phát ptt và titles');
+  assert.ok(!JSON.stringify(C.join.players).includes(ua) && !JSON.stringify(C.join.players).includes(ub), 'danh sách người chơi (kèm tt) không có uid');
+  assert.ok(C.join.players.some(p => Array.isArray(p.tt) && p.tt.length > 0));
+});
