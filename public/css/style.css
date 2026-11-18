@@ -543,3 +543,14 @@ dialog.lib.dark-read .lib-page figure img { mix-blend-mode: normal; background: 
 @media (prefers-reduced-motion: reduce) { .medi { animation: none; } .md-bar i { transition: none; } }
 
 body[data-place="dojo"] .voicebar, body[data-place="arena"] .voicebar { bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
+
+/* Danh hiệu (T-042): viên trong hộp người chơi và ở danh sách Sân đấu; lịch sử = mực đen viền vàng, hiện tại = son đỏ viền vàng */
+.tt-box { margin: 12px 0 4px; }
+.tt-box h3 { margin: 0 0 6px; font-size: 13px; color: var(--muted); font-weight: 600; }
+.tt-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.tt-item { display: flex; flex-direction: column; gap: 3px; align-items: flex-start; font-size: 13px; color: var(--muted); }
+.tt-chip { display: inline-block; padding: 2px 10px; border-radius: 999px; border: 1px solid #e0b04a; color: #f6eddc; font-size: 12px; font-weight: 700; line-height: 1.5; }
+.tt-chip.tt-history { background: #17110d; }
+.tt-chip.tt-current { background: #a32a22; }
+.ar-rtt { margin-right: 6px; font-size: 11px; vertical-align: middle; }
+.ar-rtt[hidden] { display: none; }

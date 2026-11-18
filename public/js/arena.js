@@ -849,14 +849,16 @@
   }
   function rowNode() {
     const li = h('li', 'ar-row'), cv = h('canvas', 'ar-mini', null, { 'aria-hidden': 'true' }), info = h('div', 'ar-rinfo');
-    const name = h('b', 'ar-rname'), meta = h('span', 'ar-rmeta'), st = h('span', 'ar-st'), act = h('div', 'ar-ract');
+    const name = h('b', 'ar-rname'), meta = h('span', 'ar-rmeta'), ptt = h('span', 'ar-rtt'), st = h('span', 'ar-st'), act = h('div', 'ar-ract');
     const inv = btn('btn small primary ar-inv', 'Mời luận võ'), blk = btn('btn small ar-blk', 'Chặn');
     inv.addEventListener('click', () => openInvite(+li.dataset.pid)); blk.addEventListener('click', () => openBlock(+li.dataset.pid));
-    add(info, name, meta); add(act, inv, blk); add(li, cv, info, st, act);
-    return { li, cv, name, meta, st, inv, blk, look: null, drawn: false };
+    add(info, name, ptt, meta); add(act, inv, blk); add(li, cv, info, st, act);
+    return { li, cv, name, meta, ptt, st, inv, blk, look: null, drawn: false };
   }
   function updRow(r, p) {
     r.li.dataset.pid = p.pid;
+    const pt = root.Hall && root.Hall.player && root.Hall.titleList ? root.Hall.titleList((root.Hall.player(p.pid) || {}).tt).find(t => t.cat === 'pk') : null;   // danh hiệu PK (nếu có)
+    r.ptt.textContent = pt ? pt.name : ''; r.ptt.hidden = !pt; r.ptt.className = 'ar-rtt tt-chip tt-' + (pt ? pt.kind : 'history');
     r.name.textContent = p.name; r.meta.textContent = `${M.pkTitle(p.wins, p.draws).name} · ${M.realmName(p.lv)} · ${num(p.wins)} thắng · ${num(p.losses)} thua`;
     const st = ST[p.st] || ST.free;
     r.st.textContent = st[0]; r.st.className = 'ar-st ar-st-' + st[1];

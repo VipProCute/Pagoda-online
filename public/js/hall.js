@@ -1136,6 +1136,18 @@
         g.font = `600 ${fs}px "Be Vietnam Pro", system-ui, sans-serif`;
         up = th + 2;
       }
+      const tl = p.tt && p.tt.length ? titleOf(p.tt) : null;   // danh hiệu: một viên theo thứ tự ưu tiên, ở mọi cảnh
+      if (tl) {
+        const tfs = Math.max(9, fs - 2);
+        g.font = `700 ${tfs}px "Be Vietnam Pro", system-ui, sans-serif`;
+        const cw = tl.crown ? tfs + 2 : 0, tw3 = g.measureText(tl.name).width + 14 + cw, th3 = tfs + 5, ty3 = y - h / 2 - up - th3 / 2 - 2;
+        g.fillStyle = tl.kind === 'history' ? '#17110d' : '#a32a22'; rrect(g, p.sx - tw3 / 2, ty3 - th3 / 2, tw3, th3, th3 / 2); g.fill();
+        g.strokeStyle = '#e0b04a'; g.lineWidth = 1.2; g.stroke();
+        if (tl.crown) crownIcon(p.sx - tw3 / 2 + 7 + tfs / 2, ty3, tfs * 0.5);
+        g.fillStyle = '#f6eddc'; g.fillText(tl.name, p.sx + cw / 2, ty3 + 0.5);
+        g.font = `600 ${fs}px "Be Vietnam Pro", system-ui, sans-serif`;
+        up += th3 + 2;
+      }
       if (innerPids.has(p.id)) {                            // đang đánh cờ ở "bàn trong": biểu tượng bàn cờ nhỏ trên đầu
         const br = Math.max(6, fs * 0.62), by0 = y - h / 2 - br - 3 - up;
         boardBadge(p.sx, by0, br); up += br * 2 + 5;
@@ -1156,6 +1168,12 @@
         g.globalAlpha = 1;
       }
     }
+  }
+  // Vương miện vàng nhỏ cho danh hiệu "Thiên Hạ Vô Song" (x, y là tâm, r là nửa rộng)
+  function crownIcon(x, y, r) {
+    g.fillStyle = '#ffd36b';
+    g.beginPath(); g.moveTo(x - r, y + r * 0.6); g.lineTo(x - r, y - r * 0.5); g.lineTo(x - r * 0.45, y + r * 0.05); g.lineTo(x, y - r * 0.7);
+    g.lineTo(x + r * 0.45, y + r * 0.05); g.lineTo(x + r, y - r * 0.5); g.lineTo(x + r, y + r * 0.6); g.closePath(); g.fill();
   }
   // Biểu tượng nhỏ cạnh tên: mic (đang nói chuyện) và sách (đang đọc kinh)
   function micBadge(x, y, r, on, talk) {
@@ -2060,7 +2078,31 @@
     if (RO) RO.observe(c);
   }
 
-  function mk(p) { return new Actors.Player(p); }          // người chơi: cùng lớp gốc Actor với NPC
+  function mk(p) { const a = new Actors.Player(p); a.tt = Array.isArray(p.tt) ? p.tt.slice() : []; return a; }   // người chơi: cùng lớp gốc Actor với NPC; tt = mã danh hiệu
+
+  /* ---------- danh hiệu (T-042): bảng tên và thứ tự ưu tiên do máy chủ gửi qua cấu hình ---------- */
+  const CAT_NAMES = { merit: 'Công Đức', pk: 'Luận Võ', xiangqi: 'Cờ Tướng', chess: 'Cờ Vua', jieqi: 'Cờ Tướng Úp', go: 'Cờ Vây', gomoku: 'Cờ Caro' };
+  let titleCfg = { enabled: false, names: {}, priority: [] };
+  const titleName = code => { const t = hasOwn(titleCfg.names, code) ? titleCfg.names[code] : null; return t && typeof t === 'object' ? String(t.name || '') : typeof t === 'string' ? t : ''; };
+  const titleKind = code => String(code).endsWith('.history') ? 'history' : 'current';
+  /** Danh hiệu hiển thị trên đầu của một danh sách mã: { code, name, kind, crown } hoặc null. Giữ cả lịch sử lẫn hiện tại của một hạng mục → "Thiên Hạ Vô Song · <hạng mục>". */
+  function titleOf(tt) {
+    if (!titleCfg.enabled || !Array.isArray(tt) || !tt.length) return null;
+    const list = titleList(tt); if (!list.length) return null;
+    for (const t of list) {
+      if (t.kind === 'history' && list.some(o => o.cat === t.cat && o.kind === 'current')) {
+        return { code: t.code, name: `Thiên Hạ Vô Song · ${CAT_NAMES[t.cat] || t.cat}`, kind: 'history', crown: true };
+      }
+    }
+    return { code: list[0].code, name: list[0].name, kind: list[0].kind, crown: false };
+  }
+  /** Mọi danh hiệu của một danh sách mã, theo thứ tự ưu tiên: [{ code, cat, kind, name }]. */
+  function titleList(tt) {
+    if (!titleCfg.enabled || !Array.isArray(tt)) return [];
+    const rank = c => { const i = titleCfg.priority.indexOf(c); return i < 0 ? 1e6 : i; };
+    return tt.filter(c => typeof c === 'string' && titleName(c)).sort((a, b) => rank(a) - rank(b))
+      .map(c => ({ code: c, cat: c.split('.')[0], kind: titleKind(c), name: titleName(c) }));
+  }
 
   // Bản chụp dùng danh sách trường cho phép, không chia sẻ đối tượng nội bộ hay uid.
   function freezeView(value) {
@@ -2160,6 +2202,15 @@
     /** Ngồi bồ đoàn (sit = số bồ đoàn, −1 là đứng dậy) và công pháp đang tu (để vẽ linh khí). */
     setSit(id, sit, cm) { const p = players.get(id); if (p) { p.sit = sit >= 0 ? sit : -1; p.cm = p.sit >= 0 ? cm || '' : ''; } },
     /** Sân đấu: hàm cho biết nhãn trên đầu từng người { text, color } (rảnh / đang đấu / tạm nghỉ). */
+    /** Cấu hình danh hiệu từ /api/config: { enabled, names: { mã: tên | { name } }, priority: [mã] }. */
+    setTitles(c) {
+      const ok = c && typeof c === 'object';
+      titleCfg = { enabled: !!(ok && c.enabled), names: ok && c.names && typeof c.names === 'object' ? c.names : {}, priority: ok && Array.isArray(c.priority) ? c.priority : [] };
+    },
+    /** Cập nhật mã danh hiệu của một người chơi (sự kiện ptt). */
+    setPlayerTitles(id, tt) { const p = players.get(id); if (p) p.tt = Array.isArray(tt) ? tt.slice() : []; },
+    titleOf, titleList,
+    titlesOn() { return titleCfg.enabled; },
     setTagger(fn) { tagger = typeof fn === 'function' ? fn : null; },
     seatCount: LIB_SEATS.length,
     seatPos: i => LIB_SEATS[i] || null,
