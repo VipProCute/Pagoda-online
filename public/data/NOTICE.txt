@@ -16,3 +16,10 @@ tuvi.vi.json
   Không chép nguyên văn từ sách hay trang web nào. Tên sao, tên cung và tên cách cục là
   thuật ngữ chung của bộ môn; sách của các tác giả khác chỉ được dùng để tra quy tắc, không chép câu chữ.
   Giấy phép: cùng giấy phép của dự án. Nội dung chỉ để tham khảo và chiêm nghiệm.
+
+kydao-puzzles.json
+  Kho thế cờ cho Kỳ Đạo (giải thế cờ vua và cờ tướng), dựng bằng tools/kydao-puzzles/build.js.
+  Cờ vua: chọn từ kho thế cờ của Lichess (https://database.lichess.org/#puzzles),
+  giấy phép Creative Commons CC0 (phạm vi công cộng). Mỗi thế ghi nguồn 'lichess:<PuzzleId>'.
+  Cờ tướng: do công cụ trong repo sinh và giải bằng máy (nguồn 'tao-bang-may'),
+  không chép từ sách hay trang web nào. Giấy phép: cùng giấy phép của dự án.

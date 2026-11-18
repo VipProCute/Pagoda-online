@@ -42,7 +42,9 @@ test('hai người ngồi bàn, chơi cờ vua tới chiếu hết, Elo ghi vào
   assert.equal((await ask(B, 'kd:sit', { table: 1, seat: 1 })).ok, true);
   await arrived;     // nhân vật đi tới ghế 0 của bàn 1 (YARD_TABLES)
   assert.equal((await ask(O,'kd:sit', { table: 1, seat: 0 })).ok, false, 'ghế đã có người');
-  assert.equal((await ask(B, 'kd:setup', { table: 1, game: 'chess', rated: true, pace: 'fast' })).ok, false, 'chỉ chủ bàn chọn luật');
+  // bàn chưa có luật: người ngồi sau cũng chọn được; có luật rồi thì chỉ chủ bàn đổi
+  assert.equal((await ask(B, 'kd:setup', { table: 1, game: 'xiangqi', rated: false, pace: 'fast' })).ok, true, 'người ngồi sau chọn luật khi bàn chưa có luật');
+  assert.equal((await ask(B, 'kd:setup', { table: 1, game: 'chess', rated: true, pace: 'fast' })).ok, false, 'có luật rồi thì chỉ chủ bàn đổi');
   assert.equal((await ask(A, 'kd:setup', { table: 1, game: 'chess', rated: true, pace: 'fast' })).ok, true);
 
   const startA = waitFor(A.s, 'kd:start'), startB = waitFor(B.s, 'kd:start');

@@ -46,6 +46,17 @@ const BOOKS = (() => {
   }
 })();
 
+// Kho thế cờ (public/data/kydao-puzzles.json): máy chủ chỉ cần lời giải để trả gợi ý có thu công đức (kd:hint)
+const PUZZLES = (() => {
+  const map = new Map();
+  try {
+    const j = JSON.parse(fs.readFileSync(path.join(__dirname, 'public', 'data', 'kydao-puzzles.json'), 'utf8'));
+    for (const g of ['chess', 'xiangqi']) for (const p of Array.isArray(j[g]) ? j[g] : []) if (p && typeof p.id === 'string' && Array.isArray(p.moves)) map.set(p.id, p.moves.slice());
+  } catch (e) { console.error('Không đọc được public/data/kydao-puzzles.json:', e.message); }
+  return map;
+})();
+const HINT_COST = 5;   // gợi ý thế cờ: trừ 5 công đức mỗi lần (miễn phí nhưng không vô hạn)
+
 /* ---------------- cấu hình (biến môi trường) ---------------- */
 const PORT = Number(process.env.PORT) || 3000;
 const ADMIN_KEY = process.env.ADMIN_KEY || '';
@@ -1355,6 +1366,11 @@ io.on('connection', socket => {
     const result = martial.inheritSweeper(p.uid, event.id);
     if (result.ok && !(await store.flush())) return ack({ ok: false, reason: 'Chưa lưu được truyền thừa, hãy thử lại sau ít giây.', updates: result.updates });
     if (result.ok && !result.already) emitToUid(p.uid, 'martial:inheritance', { level: result.level, gain: result.gain });
+    // Trao xong cơ duyên cho một người thì cao nhân rời đi (chỉ khi lần nhận này thật sự cộng thưởng)
+    if (result.ok && !result.already && sweeper.release(event.id)) {
+      io.emit('sweeper:appear', null);
+      io.emit('ticker', { text: `${p.name} đã nhận truyền thừa của Tảo Địa Tăng. Cao nhân đã rời Tàng Kinh Các.` });
+    }
     ack(result);
   }));
   socket.on('martial:secret-encounter', martialOnly(async (d, ack) => {
@@ -1467,6 +1483,7 @@ io.on('connection', socket => {
   socket.on('pk:invite', inArena((d, ack) => ack(arena.invite(p.uid, Number(d.toPid), d.mode))));
   socket.on('pk:invite:cancel', inArena((d, ack) => ack(arena.cancelInvite(p.uid, d.inviteId))));
   socket.on('pk:respond', inArena((d, ack) => ack(arena.respond(p.uid, d.inviteId, !!d.accept))));
+  socket.on('pk:npc', inArena((d, ack) => ack(arena.challengeBot(p.uid, Number(d.level)))));
   socket.on('pk:loadout', inArena((d, ack) => ack(arena.setLoadout(p.uid, d.matchId, d.skills))));
   socket.on('pk:pick', inArena((d, ack) => ack(arena.pick(p.uid, d.matchId, d.turn, d.skillId))));
   socket.on('pk:forfeit', inArena((d, ack) => ack(arena.forfeit(p.uid, d.matchId))));
@@ -1497,6 +1514,17 @@ io.on('connection', socket => {
   ].forEach(kdPass);
   /* Cửa hàng skin: client chỉ gửi { kind, id }; GIÁ do máy chủ lấy từ shop (bỏ mọi `amount` client gửi). Duyệt đi qua đúng đường xác nhận cúng dường. */
   socket.on('kd:shop:state', kydaoOnly('any', () => shopStateFor(p.uid)));
+  // Gợi ý giải thế cờ: máy chủ đọc lời giải, trừ công đức rồi chỉ ô quân cần đi (không lộ cả nước đi)
+  socket.on('kd:hint', kydaoOnly('any', d => {
+    const id = typeof d.puzzle === 'string' && d.puzzle.length <= 40 ? d.puzzle : '';
+    const moves = id ? PUZZLES.get(id) : null, step = d.step;
+    if (!moves || !Number.isInteger(step) || step < 0 || step >= moves.length || step % 2) return { ok: false, reason: 'Không tìm thấy thế cờ này.' };
+    const have = meritTotal(accountOf(p.uid));
+    if (have < HINT_COST) return { ok: false, code: 'merit', reason: `Cần ít nhất ${HINT_COST} công đức để xin gợi ý (bạn đang có ${have}). Thắp nhang, vái lạy để tích thêm nhé.` };
+    if (!allow('kdHint', 1500)) return { ok: false, reason: 'Đợi một chút rồi xin gợi ý tiếp nhé.' };   // chỉ tính lượt có trừ công đức
+    addMerit(p, -HINT_COST);
+    return { ok: true, square: String(moves[step]).slice(0, 2), cost: HINT_COST, total: meritTotal(accountOf(p.uid)) };
+  }));
   socket.on('kd:shop:buy', kydaoOnly('any', async d => {
     if (!DONATION_ENABLED) return { ok: false, reason: 'Nhà chùa chưa mở nhận tịnh tài trực tuyến.' };
     if (!shop.publicConfig().on) return { ok: false, code: 'off', reason: 'Skin hiện đang miễn phí, chưa cần cúng dường.' };
@@ -1597,8 +1625,16 @@ setInterval(() => {
     if (arr.length) io.volatile.emit('p', arr);
   }
   if (tick % 20 === 0) {
-    const encounter = sweeper.tick();
-    if (encounter.changed) io.emit('sweeper:appear', encounter.event);
+    const encounter = MARTIAL_ENABLED ? sweeper.tick() : { changed: false };
+    if (encounter.changed) {
+      io.emit('sweeper:appear', encounter.event);
+      // Báo toàn chùa: cao nhân đứng chờ ở Tàng Kinh Các tới khi trao cơ duyên cho một người
+      if (encounter.event && MARTIAL_ENABLED) {
+        const text = 'Tảo Địa Tăng vừa xuất hiện ở Tàng Kinh Các. Cao nhân chờ người hữu duyên tới trò chuyện.';
+        io.emit('notice', { text });
+        io.emit('ticker', { text });
+      }
+    }
     for (const p of players.values()) {
       const authKey = p.socket.data.authKey;
       if (authKey && !auth.sessionFor(authKey)) { p.socket.disconnect(true); continue; }
@@ -1675,6 +1711,7 @@ async function main() {
     fighterOf: uid => martial.pkIdentity(uid),
     buffInputsOf,
     recordResult: (uid, r) => martial.recordResult(uid, r),
+    recordBotResult: (uid, r) => martial.recordBotResult(uid, r),
     setActiveMatch: (uid, id) => { martial.profile(uid, true).activeMatch = id; store.save(); },
     getActiveMatch: uid => { const pr = martial.profile(uid, false); return pr ? pr.activeMatch || null : null; },
     saveMatch: rec => { db.martial.matches.push(rec); if (db.martial.matches.length > 150) db.martial.matches.splice(0, db.martial.matches.length - 150); store.save(); },

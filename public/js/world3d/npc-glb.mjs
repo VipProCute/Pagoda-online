@@ -3,7 +3,8 @@
 import * as THREE from 'three';
 
 // NPC có mô hình .glb riêng ở bản 3D (bản 2D không đổi):
-//   Obito (T-212) · Tế Công = Lão Ăn Mày, Vạn Lý Độc Hành, Tảo Địa Tăng, bốn cô nương, thầy bói Tarot (T-213).
+//   Obito (T-212) · Tế Công = Lão Ăn Mày, Vạn Lý Độc Hành, Tảo Địa Tăng, bốn cô nương, thầy bói Tarot (T-213),
+//   Ngọa Long Kỳ Sư (NPC đánh cờ, mô hình Sketchfab "Zhuge Liang_ Armoured").
 // Bản dựng bằng mã vẫn là THẾ THÂN: giữ nhãn tên, bong bóng lời, bóng chân; .glb nạp xong thì ẩn cây `hips` của bản mã.
 // Mô hình không có clip chuyển động: đi, thở, vái, nói đều xoay xương bằng mã, giảm chuyển động thì đứng yên.
 // .glb lỗi hoặc 404 thì giữ nguyên thế thân, không ghi console.
@@ -23,7 +24,9 @@ export const NPC_GLB = Object.freeze({
   }),
   beggar: model('te-cong', 1, { height: 1.6 }),                         // Tế Công
   wanderer: model('van-ly', 1, { height: 1.66, hold: true }),           // Vạn Lý Độc Hành, tay phải cầm đao
-  sweeper: model('tao-dia', 1, { height: 1.56, hold: true, stride: 0.3 }) // Tảo Địa Tăng, tay phải cầm chổi, áo dài bước ngắn
+  sweeper: model('tao-dia', 1, { height: 1.56, hold: true, stride: 0.3 }), // Tảo Địa Tăng, tay phải cầm chổi, áo dài bước ngắn
+  // Ngọa Long Kỳ Sư (NPC đánh cờ với máy). Tệp dựng bằng tools/blender/npc/build.py ngoa-long; chưa có tệp thì dùng bản mã.
+  kysu: model('ngoa-long', 1, { height: 1.74, stride: 0.3, armSwing: 0.35 })
 });
 
 // Bốn cô nương: chọn mô hình theo màu áo trong look (Đỏ 0, Hồng 2, Trắng ngà 5, Cam 7), màu đã nhuộm sẵn trong tệp.

@@ -309,14 +309,19 @@ function play(e, g, moves) {
 }
 function lastEnd(e) { return e.sent.filter(x => x.ev === 'kd:end').at(-1).payload; }
 
-test('Ngồi, chọn luật, sẵn sàng: chỉ chủ bàn chọn luật, đổi luật xóa sẵn sàng', () => {
+test('Ngồi, chọn luật, sẵn sàng: bàn chưa có luật thì ai ngồi cũng chọn, có luật rồi chỉ chủ bàn đổi, đổi luật xóa sẵn sàng', () => {
   const e = managerEnv(); const m = e.manager;
   const a = { uid: 'ua', pid: 'pa', name: 'An' }, b = { uid: 'ub', pid: 'pb', name: 'Bình' };
   assert.equal(m.sit(a, { table: 1, seat: 0 }).ok, true);
   assert.equal(m.sit(a, { table: 2, seat: 0 }).ok, false, 'mỗi uid một chỗ');
   assert.equal(m.sit(b, { table: 1, seat: 0 }).ok, false, 'ghế có người');
   assert.equal(m.sit(b, { table: 1, seat: 1 }).ok, true);
-  assert.equal(m.setup(b, { table: 1, game: 'chess', pace: 'fast', rated: false }).ok, false);
+  const o = { uid: 'uo', pid: 'po', name: 'Ông Ngoài' };
+  assert.equal(m.setup(o, { table: 1, game: 'chess', pace: 'fast', rated: false }).ok, false, 'không ngồi bàn thì không chọn luật');
+  assert.equal(m.ready(b, { table: 1, ready: true }).reason, 'Bàn chưa có luật, hãy chọn luật trước.');
+  assert.equal(m.setup(b, { table: 1, game: 'chess', pace: 'fast', rated: false }).ok, true, 'người ngồi sau chọn được khi bàn chưa có luật');
+  assert.equal(m.tables(a).tables.find(x => x.table === 1).game, 'chess');
+  assert.equal(m.setup(b, { table: 1, game: 'xiangqi', pace: 'fast', rated: false }).reason, 'Bàn đã có luật; chỉ chủ bàn đổi được.');
   assert.equal(m.setup(a, { table: 1, game: 'jieqi', pace: 'fast', rated: false }).ok, true);
   assert.equal(m.setup(a, { table: 1, game: 'go', size: 13, pace: 'fast', rated: true }).ok, false, 'vây 13 không xếp hạng');
   assert.equal(m.setup(a, { table: 1, game: '__proto__', pace: 'fast', rated: false }).ok, false);

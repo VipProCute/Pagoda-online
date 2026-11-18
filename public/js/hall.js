@@ -206,7 +206,8 @@
     { name: 'Cô Nương Hồng', look: { g: 'nu', c: 2, h: 0, npcFashion: true }, role: 'lady', lines: ['Hoa rơi cửa Phật, vạn vật tùy duyên.', 'Mình có thói quen cardio tại ban công.', 'Thèm nhiêu anh đủ cắc?'] },
     { name: 'Cô Nương Đỏ', look: { g: 'nu', c: 0, h: 0, npcFashion: true }, role: 'lady', lines: ['Đi chùa cầu duyên, gặp Wi-Fi mạnh cũng là có duyên!', 'Hoa rơi cửa Phật, vạn vật tùy duyên.', 'Anh ơi, tu tâm trước rồi hãy thả tim nha!'] },
     { name: 'Đại Hiệp Giang Hồ', look: { g: 'nam', c: 0, h: 2 }, role: 'sword', lines: ['Tại hạ đến luận võ, nhưng xin uống trà trước.', 'Kiếm pháp của ta rất nhanh, rửa chén còn nhanh hơn.', 'Giang hồ đồn chùa này cao thủ nhiều hơn muỗi!'] },
-    { name: 'Hắc Phong Ma Khách', look: { g: 'nam', c: 11, h: 2 }, role: 'sword', demon: true, lines: ['Quỷ sau lưng ta dữ lắm, nhưng nó sợ ăn chay.', 'Ta đi tìm đối thủ, quỷ đi tìm chỗ sạc pin.', 'Đừng nhìn ta, nhìn sau lưng ta kìa!'] },
+    { name: 'Hắc Phong Ma Khách', look: { g: 'nam', c: 11, h: 2 }, role: 'sword', demon: true, pk: true, lines: ['Quỷ sau lưng ta dữ lắm, nhưng nó sợ ăn chay.', 'Ta đi tìm đối thủ, quỷ đi tìm chỗ sạc pin.', 'Đừng nhìn ta, nhìn sau lưng ta kìa!'] },
+    { name: 'Ngọa Long Kỳ Sư', look: { g: 'nam', c: 5, h: 3 }, role: 'kysu', kydao: true, lines: ['Một nước cờ sai, cả ván thành tro.', 'Thí chủ có dám đấu với lão một ván?', 'Bày binh bố trận, chẳng qua cũng như bày bàn cờ.'] },
     { name: 'Nữ Hiệp Áo Tím', look: { g: 'nu', c: 4, h: 1 }, role: 'sword', lines: ['Kiếm chưa rút mà bụng đã réo rồi.', 'Đại hiệp xin nhường đường, ta đang đi tìm trà đá.', 'Võ công cao mấy cũng phải cởi dép vào chùa.'] },
     { name: 'Tiểu Thư Mê Chùa', look: { g: 'nu', c: 5, h: 1 }, role: 'lady', lines: ['Xin Phật độ con qua deadline tuần này.', 'Chùa yên tĩnh, trừ cái bụng của tiểu nữ.', 'Hôm nay mang dép đôi, mong về vẫn đủ đôi.'] },
     { name: 'Thư Sinh Lạc Đường', look: { g: 'nam', c: 5, h: 3 }, role: 'visitor', lines: ['Đọc hết kinh rồi, có ai thấy kính của ta không?', 'Học võ dùng não, đừng dùng nồi cơm điện nhé.', 'Tại hạ đang suy ngẫm... mai ăn gì.'] },
@@ -260,6 +261,14 @@
   }
   const obitoArt = root.Image ? new Image() : null;
   if (obitoArt) obitoArt.src = '/img/obito-sprite.png';
+  // NPC có ảnh 2D chụp từ chính mô hình 3D (tools/blender/npc/sprite.py), vẽ cùng khung 68 × 104 như Obito.
+  const npcArt = {};
+  if (root.Image) for (const [role, src] of [['kysu', '/img/npc/ngoa-long.webp?v=1']]) { npcArt[role] = new Image(); npcArt[role].src = src; }
+  const artOf = p => {
+    if (!p.npc) return null;
+    const a = p.npc.role === 'obito' ? obitoArt : npcArt[p.npc.role];
+    return a && a.complete && a.naturalWidth ? a : null;
+  };
   function drawNpcAccessory(g, role) {
     g.save(); g.lineCap = 'round';
     if (role === 'beggar') {
@@ -1054,9 +1063,10 @@
       } else {
       if (rk) meritHalo(g, rk, t + p.id * 0.3, aur && aa > 0.3 ? tierColor(aur.t) : null);
       if (aur) aura(g, aur.t, t, aa, p.id * 1.7, false);
-      if (p.npc && p.npc.role === 'obito' && obitoArt && obitoArt.complete && obitoArt.naturalWidth) {
+      const art = artOf(p);
+      if (art) {
         g.fillStyle = 'rgba(0,0,0,.32)'; g.beginPath(); g.ellipse(0, 0, 17, 4.5, 0, 0, TAU); g.fill();
-        g.drawImage(obitoArt, -34, -104, 68, 104);
+        g.drawImage(art, -34, -104, 68, 104);
       } else {
         drawAvatar(g, p.look, p.front, t + p.id, bow, p.walking);
         if (p.npc) drawNpcAccessory(g, p.npc.role);

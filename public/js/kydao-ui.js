@@ -97,7 +97,11 @@
       moves: Array.isArray(start.moves) ? start.moves.map(x => ({ m: x.m, t: x.t, r: x.r })) : [],
       clock: start.clock || null, over: false, sel: null, targets: [], last: [], inCheck: false,
       offer: start.offer || null, downgraded: start.downgraded || null,
-      marks: start.marks || null, win: [], zoom: 1, skins: readSkins(start.skins, start.game), jolt: null
+      marks: start.marks || null, win: [], zoom: 1, skins: readSkins(start.skins, start.game), jolt: null,
+      // ván chơi trên máy (đánh với máy, giải thế cờ: public/js/kydao-local.js): không đồng hồ, không skin, không xin hòa
+      local: start.local === 'ai' || start.local === 'puzzle' ? start.local : null,
+      title: typeof start.title === 'string' ? start.title : null,
+      resignLabel: typeof start.resignLabel === 'string' ? start.resignLabel : null
     };
     if (S.moves.length) S.last = lastSquares(S.game, S.moves[S.moves.length - 1].m);
     if (S.game === 'chess' && mod.inCheck) S.inCheck = !!mod.inCheck(S.state);
@@ -325,7 +329,11 @@
     el.offer = h('div', { class: 'kd-offerbar', hidden: true }, el.offerText,
       btn('', 'Đồng ý', () => drawAct('accept')), btn('kd-ghost', 'Từ chối', () => drawAct('decline')));
     el.drawBtn = btn('', 'Xin hòa', () => drawAct('offer'));
-    el.resignBtn = btn('kd-danger', 'Đầu hàng', () => { confirmOpen = true; renderControls(); });
+    el.resignBtn = btn('kd-danger', 'Đầu hàng', () => {
+      if (S && S.resignLabel) { send('kd:resign', { gameId: S.gameId }, ack => { if (ack && !ack.ok) say(ack.reason || ''); }); return; }
+      confirmOpen = true; renderControls();
+    });
+    el.hintBtn = btn('', 'Gợi ý', () => { if (S && typeof hooks.hint === 'function') hooks.hint(); });
     el.movesBtn = btn('', 'Nước đi ▾', () => { el.moves.hidden = !el.moves.hidden; el.movesBtn.setAttribute('aria-expanded', String(!el.moves.hidden)); }, { 'aria-expanded': 'false' });
     el.viBtn = btn('', 'Chữ Việt', () => setVi(!vi), { 'aria-pressed': 'false' });
     el.boardBtn = btn('', 'Bàn 3D', toggleBoard3D, { 'aria-pressed': 'false' });
@@ -333,7 +341,7 @@
     el.skins = h('div', { class: 'kd-skins', hidden: true });
     el.webgl = hasBoardWebGL();
     el.boardBtn.hidden = !el.webgl;
-    el.actions = h('div', { class: 'kd-actions' }, el.drawBtn, el.resignBtn, el.movesBtn, el.viBtn, el.boardBtn, el.zoomBtn, el.skinBtn);
+    el.actions = h('div', { class: 'kd-actions' }, el.hintBtn, el.drawBtn, el.resignBtn, el.movesBtn, el.viBtn, el.boardBtn, el.zoomBtn, el.skinBtn);
     el.confirm = h('div', { class: 'kd-confirm', hidden: true }, h('span', null, 'Đầu hàng ván này?'),
       btn('kd-danger', 'Đầu hàng', () => { confirmOpen = false; renderControls(); send('kd:resign', { gameId: S && S.gameId }, ack => { if (ack && !ack.ok) say(ack.reason || ''); }); }),
       btn('kd-ghost', 'Thôi', () => { confirmOpen = false; renderControls(); }));
@@ -470,7 +478,7 @@
     render();
   }
 
-  const canSkin = () => !!(S && S.you && !S.over && root.KydaoSkins && root.KydaoSkins.supportsPieces(S.game));
+  const canSkin = () => !!(S && S.you && !S.over && !S.local && root.KydaoSkins && root.KydaoSkins.supportsPieces(S.game));
   const canField = () => !!(canSkin() && root.KydaoSkins.supports(S.game));
   /** Lựa chọn ưa thích còn dùng được: skin đang khóa (cửa hàng bật mà chưa mở) coi như chưa chọn, không tự gửi. */
   const curField = () => (pref.field != null && skinLocked(shop, 'field', pref.field) ? null : pref.field);
@@ -683,6 +691,8 @@
     const t = now();
     const top = S.you === 'a' ? 'b' : 'a', bot = S.you === 'a' ? 'a' : 'b';
     const set = (p, side) => {
+      p.clock.hidden = !!S.local;
+      if (S.local) { p.root.classList.toggle('kd-turn', !S.over && sessionTurn(S) === side); return; }
       const ms = clockRemaining(S.clock, side, t);
       p.clock.textContent = fmtClock(ms);
       p.clock.classList.toggle('kd-low', ms < 30000 && !S.over);
@@ -690,7 +700,8 @@
     };
     set(ui.top, top); set(ui.bot, bot);
     if (S.game === 'go' && S.marks) renderGo();
-    if (minimized) ui.chip.textContent = 'Đang đánh cờ · ' + fmtClock(clockRemaining(S.clock, S.you || 'a', t));
+    if (minimized && S.local) ui.chip.textContent = S.local === 'puzzle' ? 'Đang giải thế cờ' : 'Đang đánh với máy';
+    else if (minimized) ui.chip.textContent = 'Đang đánh cờ · ' + fmtClock(clockRemaining(S.clock, S.you || 'a', t));
   }
 
   function tick() {
@@ -835,6 +846,10 @@
     if (!ui || !S) return;
     const player = !!S.you, live = player && !S.over;
     ui.drawBtn.hidden = ui.resignBtn.hidden = !live;
+    if (S.local) ui.drawBtn.hidden = true;
+    ui.hintBtn.hidden = !live || typeof hooks.hint !== 'function';
+    ui.hintBtn.textContent = hooks.hintLabel || 'Gợi ý';
+    ui.resignBtn.textContent = S.resignLabel || 'Đầu hàng';
     ui.actions.hidden = false;
     ui.drawBtn.disabled = S.offer === S.you;
     ui.viBtn.hidden = !['xiangqi', 'jieqi'].includes(S.game);
@@ -881,7 +896,7 @@
   function render() {
     if (!ui || !S) return;
     const gname = GAME_NAME[S.game] || S.game;
-    ui.title.textContent = (S.table ? 'Bàn ' + S.table : 'Bàn trong') + ' · ' + gname + ' · ' + (S.rated ? 'Xếp hạng' : 'Giao hữu');
+    ui.title.textContent = S.title || ((S.table ? 'Bàn ' + S.table : 'Bàn trong') + ' · ' + gname + ' · ' + (S.rated ? 'Xếp hạng' : 'Giao hữu'));
     const top = S.you === 'a' ? 'b' : 'a', bot = S.you === 'a' ? 'a' : 'b';
     fillPlayer(ui.top, top); fillPlayer(ui.bot, bot);
     ui.canvas.setAttribute('aria-label', 'Bàn ' + gname + (S.you ? ', bạn cầm quân ' + sideLabel(S.you) : ''));
@@ -897,6 +912,7 @@
     else if (ev.result === 'draw') head = 'Hòa cờ';
     else if (S.you) head = ev.result === S.you ? 'Bạn thắng' : 'Bạn thua';
     else head = (sideLabel(ev.result) || '') + ' thắng';
+    if (S.local && typeof ev.head === 'string') head = ev.head;   // ván trên máy: "Giải đúng", "Lời giải"…
     ui.result.appendChild(h('div', { class: 'kd-result-head' }, head));
     if (ev.score) ui.result.appendChild(h('div', { class: 'kd-result-text' }, 'Đen ' + ev.score.a + ' · Trắng ' + ev.score.b + ' (bù ' + ev.score.komi + ')'));
     if (ev.text) ui.result.appendChild(h('div', { class: 'kd-result-text' }, ev.text));
@@ -905,7 +921,10 @@
       ui.result.appendChild(h('div', { class: 'kd-result-elo' }, 'Elo: ' + e.from + ' → ' + e.to + ' (' + (d >= 0 ? '+' : '') + d + ')'));
     }
     const row = h('div', { class: 'kd-result-btns' });
-    if (S.you && S.table != null) {
+    if (S.local && typeof hooks.again === 'function') {
+      row.appendChild(h('button', { type: 'button', class: 'kd-btn', onclick: () => hooks.again() }, hooks.againLabel || 'Ván mới'));
+      row.appendChild(h('button', { type: 'button', class: 'kd-btn kd-ghost', onclick: () => api.close() }, 'Đóng'));
+    } else if (S.you && S.table != null) {
       const again = h('button', { type: 'button', class: 'kd-btn' }, 'Đấu lại');
       again.addEventListener('click', () => {
         if (rematchSent) return;

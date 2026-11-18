@@ -27,12 +27,13 @@ Pháp Tướng 3D trong game (bản đang hoàn thiện).
 | Sân chùa | Đi lại, gặp NPC, xin xăm và ngồi tại bốn bàn đá Kỳ Đạo. Thanh đổi map nối Chánh điện, Sân chùa, Tàng Kinh Các và Sân đấu. |
 | Tàng Kinh Các | Đọc kinh theo chương, đổi cỡ chữ, nền sáng / tối và nhớ chỗ đọc. Có tám bồ đoàn để ngồi thiền và chọn phiên tu luyện nội công. |
 | Kỳ Đạo | Danh mục gồm Cờ vua, Cờ tướng, Cờ tướng úp, Cờ vây và Caro. Máy chủ kiểm nước đi, đồng hồ, kết quả và Elo; ván cờ không cộng công đức. |
+| Đánh với máy, giải thế cờ | Ngồi bàn đá một mình (hoặc gặp NPC Ngọa Long Kỳ Sư đi lang thang) thì chọn đánh cờ vua / cờ tướng với máy ba mức Sơ cơ, Trung cơ, Cao cơ, hoặc giải thế cờ: chiếu hết 1 / 2 / 3 nước, tìm đường hòa, thắng thế. Thế cờ vua lấy từ kho Lichess (CC0), thế cờ tướng do công cụ trong repo dựng và kiểm. Gợi ý trừ 5 công đức mỗi lần (máy chủ trừ, cần đủ công đức); xem lời giải thì cúng dường tùy tâm (tạo xong mã QR là xem được). Chạy trên trình duyệt, không Elo, không công đức. |
 | Kỳ Đài | Bàn 2D và bàn 3D; cờ vua, cờ tướng, cờ úp có lãnh địa nửa sân và bộ quân. Cờ vây, caro có bộ đá riêng; có hiệu ứng khai mở, phong cấp và kết thúc ván. |
 | Võ Học Các | Sáu công pháp, 15 chiêu thuộc Cương / Tốc / Nhu, tu luyện nội công và luyện độ thành thạo chiêu. Phiên tu vẫn chạy khi đóng trang; hoàn thành ngay qua cúng dường không giới hạn lượt mỗi ngày. |
-| Sân đấu | Luận võ tự nguyện 1 đấu 1 (mời ngay trong cảnh; có chặn đối thủ và chế độ không làm phiền), chọn bốn chiêu, mỗi lượt hai bên chọn kín cùng lúc. Máy chủ giải lượt; trận không cược công đức, có ghi thắng / thua / hòa. |
+| Sân đấu | Luận võ tự nguyện 1 đấu 1 (mời ngay trong cảnh; có chặn đối thủ và chế độ không làm phiền), chọn bốn chiêu, mỗi lượt hai bên chọn kín cùng lúc. Máy chủ giải lượt; trận không cược công đức, có ghi thắng / thua / hòa. Vắng người thì đi tìm NPC Hắc Phong Ma Khách đang lang thang trong chùa để thách đấu (ba mức; không tính vào thành tích PK). |
 | Bói toán | Xin xăm có hàng chờ và giới hạn từ máy chủ; tarot có 78 lá theo tám chủ đề. Tử Vi mới có bộ máy an sao và dữ liệu luận giải; giao diện lá số T-057 chưa xong. |
 | Danh hiệu và Bảng Vàng | Bậc chiến tích luận võ (9 bậc theo thắng / hòa) hiện ở Sân đấu và Võ Học Các. Danh hiệu mùa đã có bộ tính nhưng máy chủ chưa phát; hiển thị trên nhân vật và bia Bảng Vàng chưa xong. |
-| Cơ duyên | Tảo Địa Tăng thỉnh thoảng xuất hiện ở Tàng Kinh Các trong 2 phút và truyền thừa cho người gặp; ba NPC cơ duyên ở Chánh điện, Sân chùa và Tàng Kinh Các. Mọi lần xuất hiện do máy chủ quyết định. |
+| Cơ duyên | Tảo Địa Tăng thỉnh thoảng xuất hiện ở Tàng Kinh Các (mỗi phút rút thăm 1/512), cả chùa được báo; cao nhân đứng chờ tới khi truyền thừa cho một người rồi mới rời đi; ba NPC cơ duyên ở Chánh điện, Sân chùa và Tàng Kinh Các. Mọi lần xuất hiện do máy chủ quyết định. |
 | Chế độ 3D và góc nhìn | 2D là mặc định; nút `3D` / `2D` ở góc cảnh đổi sang không gian 3D dựng bằng Three.js, có góc nhìn thứ nhất và thứ ba (phím `V`). Bàn cờ cũng có bản 3D xoay được. Phần thế giới 3D còn đang hoàn thiện. |
 | Pháp Tướng 3D | Trong chế độ 3D, quỷ hộ thân, đài sen và lửa hộ thân hiện bằng mô hình 3D (bản đang hoàn thiện, bật sẵn). Chưa đủ bốn quỷ, chín bậc hào quang và sáu pháp tướng bằng lưới 3D; phần chưa có vẫn dùng hình 2D. |
 | Nói chuyện bằng giọng | WebRTC cho tiếng nói theo khoảng cách và hướng trái / phải, tối đa tám người gần nhất. Máy chủ chùa chuyển tín hiệu kết nối, không ghi âm; có tắt tiếng từng người và khóa mic quản trị. |
@@ -61,7 +62,7 @@ Bàn 3D mặc định nạp mô hình quân và mặt bàn; lỗi tài nguyên t
 
 | Công đức | Quy tắc hiện hành |
 |---|---|
-| Cộng điểm | Nhang +10; cùng tụng hết bài +15; dâng lễ và khởi tụng +5; chuông +3; vái lạy +2; mõ, tim và Tùy hỷ +1. Cúng dường đã xác nhận: mỗi 1.000 đ được một điểm. |
+| Cộng điểm | Nhang +10; cùng tụng hết bài +15; dâng lễ và khởi tụng +5; chuông +3; vái lạy +2; mõ, tim và Tùy hỷ +1. Cúng dường đã xác nhận: mỗi 1.000 đ được một điểm. Xin gợi ý giải thế cờ: trừ 5 (cần còn ít nhất 5). |
 | Trừ điểm | Lời thô, xúc phạm, tục tĩu, chửi cha mẹ / trù ẻo, báng bổ có mức gốc lần lượt 5, 15, 30, 60, 100. Có cộng dồn và tăng khi tái phạm; tối đa 300 điểm một tin, theo `lib/moderation.js`. |
 | Pháp tướng | Tổng điểm đạt 100 / 500 / 1.000 / 5.000 / 10.000 / 50.000 mở lần lượt Linh Quang Hoàn, Thanh Liên Bảo Quan, Kim Diễm Song Dực, Vạn Kiếm Quy Tông, Kim Long Pháp Tướng, Cửu Tiêu Thánh Luân. |
 | Quỷ | Công đức âm hiện Tiểu Quỷ; từ −200 là Ác Quỷ, −500 là Quỷ Vương, −1.000 là Ma Vương. Mốc đặc biệt đúng 666 tổng điểm cũng có Ma Vương. |

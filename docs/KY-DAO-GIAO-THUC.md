@@ -193,6 +193,7 @@ const YARD_TABLES = [
 
 - Ván đầu của một lượt ngồi: **ghế 0 là bên `a`** (đi trước), ghế 1 là bên `b`. "Đấu lại" **đổi bên** (người ngồi ghế 0 làm bên `b`).
 - **Chủ bàn** (`host`) là người ngồi trước. Chủ bàn rời ghế thì người còn lại làm chủ bàn; bàn có luật đã chọn thì giữ nguyên.
+- **Chọn luật** (`kd:setup`): bàn chưa có luật thì người nào đang ngồi bàn cũng chọn được (người ngồi sau không phải chờ chủ bàn); bàn đã có luật thì chỉ chủ bàn đổi (👤 chủ dự án chốt 18/11).
 - Mỗi uid một chỗ: không ngồi hai ghế, không vừa ngồi bàn vừa có ván khác, không ngồi cả hai ghế của một bàn (hai tab cùng uid → `reason:'Bạn đang ở một bàn khác.'`). Không tự đánh với chính mình.
 - Bàn `waiting` mà không bắt đầu trong **5 phút** thì tự mời người ngồi đứng dậy (giữ bàn mãi là chiếm chỗ). Giao diện biết qua `kd:table` mới.
 - Người đang **đấu** ở bàn bị khóa vị trí: sự kiện `move` (di chuyển) của họ bị bỏ qua. Người đang `waiting` mà di chuyển đi khỏi ghế thì tự đứng dậy (`leave`).
@@ -226,8 +227,9 @@ Sự kiện xếp hạng cần `accountReady(p)`, không thì `{ ok:false, code:
 |---|---|---|---|---|
 | `kd:tables` | `{}` | ở sân để lấy bàn thật; bàn trong thì lấy được từ mọi nơi trong `hall` (ở chánh điện chỉ nhận các bàn trong) | `{ ok:true, tables:[T], serverTime }`; `T` ở mục 5.2 (cả bàn thật lẫn "bàn trong" đang đấu) | — |
 | `kd:sit` | `{ table, seat }` `seat` ∈ 0,1 | ở sân; bàn `free` hoặc `waiting` còn ghế; chưa có chỗ khác | `{ ok:true, table, seat }` | "Không có bàn này." · "Ghế này đã có người." · "Bàn đang đấu; chạm bàn để xem." · "Bạn đang ở một bàn khác." |
-| `kd:setup` | `{ table, game, rated, pace, size? }` | chỉ **chủ bàn**, bàn chưa bắt đầu; `size` chỉ với `go`; `rated` chỉ khi môn/cỡ cho phép (cờ vây 9×9) | `{ ok:true }` | "Chỉ chủ bàn chọn luật." · "Ván đã bắt đầu." · "Cờ vây chỉ xếp hạng ở bàn 9×9." (`login` nếu `rated` mà chưa đăng nhập) |
+| `kd:setup` | `{ table, game, rated, pace, size? }` | người đang ngồi bàn khi bàn chưa có luật, hoặc **chủ bàn** (đổi luật đã có); bàn chưa bắt đầu; `size` chỉ với `go`; `rated` chỉ khi môn/cỡ cho phép (cờ vây 9×9) | `{ ok:true }` | "Bàn đã có luật; chỉ chủ bàn đổi được." · "Bạn chưa ngồi bàn này." · "Ván đã bắt đầu." · "Cờ vây chỉ xếp hạng ở bàn 9×9." (`login` nếu `rated` mà chưa đăng nhập) |
 | `kd:ready` | `{ table, ready:boolean }` | đang ngồi ghế bàn đó; bàn đã có luật; ván bắt đầu khi **cả hai** đang `ready:true` với bộ luật hiện tại | `{ ok:true }` | "Chủ bàn chưa chọn luật." · `login` nếu bàn xếp hạng |
+| `kd:hint` | `{ puzzle, step }` (mã thế trong `public/data/kydao-puzzles.json`, `step` là chỉ số nước của người giải: 0, 2, 4…) | mọi nơi; công đức tổng ≥ 5 | `{ ok:true, square, cost:5, total }` (`square`: ô quân cần đi) | "Không tìm thấy thế cờ này." · `merit` khi chưa đủ 5 công đức · "Đợi một chút rồi xin gợi ý tiếp nhé." (1,5 giây mỗi lượt có trừ) |
 | `kd:stand` | `{ table }` | đang ngồi | `{ ok:true, resigned:boolean }`; đang đấu thì là **đầu hàng** | — |
 | `kd:invite` | `{ toPid, game, rated, pace, size? }` | người gửi ở chánh điện hoặc sân (`p.place` là `hall`); người nhận cũng vậy, không phải chính mình, chưa ngồi bàn/chưa có ván | `{ ok:true, inviteId, expiresAt, downgraded?:string }` (`downgraded` có khi `rated:true` mà cặp đã đủ 3 ván hôm nay, mục 8.3) | "Người này đang bận." · "Người này không nhận lời mời." · "Bạn vừa bị từ chối, đợi 5 phút." · `login` nếu xếp hạng và người **gửi** chưa đăng nhập; cờ vây xếp hạng chỉ 9×9 (câu như `kd:setup`) |
 | `kd:invite:cancel` | `{ inviteId }` | người mời | `{ ok:true }` | — |

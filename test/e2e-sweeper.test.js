@@ -24,7 +24,10 @@ test('gặp cao nhân: máy chủ kiểm tra vị trí, chống cộng trùng v�
   assert.equal(reward.ok, true, reward.reason);
   assert.equal(reward.gain, 60);
   assert.equal(reward.level, 2);
-  assert.equal((await call(a, 'sweeper:claim', { id })).already, true);
+  // trao xong cơ duyên thì cao nhân rời đi, mọi người nhận sweeper:appear null
+  const again = await call(a, 'sweeper:claim', { id });
+  assert.equal(again.ok, false);
+  assert.match(again.reason, /rời đi/);
   assert.equal((await call(a, 'martial:state', {})).profile.congLuc, 60);
   a.close(); await srv.restart();
   a = await connect(srv.port);

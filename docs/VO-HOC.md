@@ -79,6 +79,18 @@ Cặp chiêu gặp nhau:
 - **Quá giờ, mất mạng**: quá giờ thì tự "Đứng yên"; 3 lượt liền quá giờ thì thua; rớt mạng vẫn vào lại được đúng trận; cả hai vắng quá 60 giây thì hủy trận; máy chủ khởi động lại giữa trận thì hủy, không ai bị tính thua. Rời sân giữa trận là bỏ cuộc (có hỏi xác nhận). Rời hoặc bỏ ở phòng chờ chọn chiêu (trận chưa bắt đầu) thì trận **hủy, không ai bị tính thua**. Nếu trận kết thúc lúc một người đang offline thì lần vào lại sau đó, trang báo kết quả bằng một thông báo ngắn. Người không kịp chọn 4 chiêu thì máy chủ tự chọn bộ mặc định: ưu tiên chiêu bậc thấp và luôn có ít nhất một đòn công.
 - PK không có thưởng, không cược công đức; chỉ ghi thắng / thua / hòa.
 
+### Luận võ với Hắc Phong Ma Khách
+
+Hắc Phong Ma Khách là NPC đi lang thang khắp chùa (chánh điện, sân chùa, Tàng Kinh Các, Sân đấu; mỗi máy thấy ông ở một chỗ). Gặp ông, chạm vào rồi bấm **Thách đấu**: trang tự ra Sân đấu và mở hộp chọn mức.
+
+| Mức | Cách ra chiêu | Bộ chiêu, thành thạo |
+|---|---|---|
+| Thử chiêu | ngẫu nhiên | bộ nhập môn, thành thạo 0 |
+| Luận võ | tham lam một lượt | bộ tốt nhất trong phạm vi cấp, thành thạo bằng trung bình của người chơi |
+| Toàn lực | cân bằng kéo-búa-bao như bot `eq` của công cụ mô phỏng | bộ mạnh (có Tứ Lạng khi đủ cấp), thành thạo bằng chiêu giỏi nhất của người chơi |
+
+NPC luôn cùng cấp nội công với người chơi, không có chiêu bí truyền, không buff. Trận **không tính** vào thắng / thua, điểm chiến tích và danh hiệu PK; thành tích riêng với Hắc Phong ghi ở `botRecord`. Bộ não bot nằm ở `lib/pk/bots.js` (dùng chung với `tools/pk-sim`), luật NPC ở `lib/pk/npc.js`.
+
 ### Phòng có buff
 
 Chỉ khi cả hai đồng ý. Buff được **chụp một lần lúc nhận lời** và hiện cho cả hai thấy trước; hào quang hết giờ hay công đức đổi giữa trận không đổi gì.
