@@ -26,6 +26,7 @@ test('gợi ý thế cờ trừ 5 công đức, kiểm mã thế và bước, kh
   const r = await call(s, 'kd:hint', { puzzle: p.id, step: 0 });
   assert.equal(r.ok, true, r.reason);
   assert.equal(r.square, p.moves[0].slice(0, 2));
+  assert.equal(r.move, p.moves[0], 'gợi ý cho đúng một nước');
   assert.equal(r.cost, 5);
   assert.equal(r.total, 5);
   assert.equal((await call(s, 'kd:hint', { puzzle: p.id, step: 2 })).ok, false, 'xin quá nhanh');

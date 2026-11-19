@@ -923,6 +923,7 @@
     const row = h('div', { class: 'kd-result-btns' });
     if (S.local && typeof hooks.again === 'function') {
       if (ev.canRetry && typeof hooks.retry === 'function') row.appendChild(h('button', { type: 'button', class: 'kd-btn', onclick: () => hooks.retry() }, 'Thử lại'));
+      if (ev.canSolution && typeof hooks.solution === 'function') row.appendChild(h('button', { type: 'button', class: 'kd-btn kd-ghost', onclick: () => hooks.solution() }, 'Xem lời giải · cúng dường'));
       row.appendChild(h('button', { type: 'button', class: 'kd-btn' + (ev.canRetry ? ' kd-ghost' : ''), onclick: () => hooks.again() }, hooks.againLabel || 'Ván mới'));
       row.appendChild(h('button', { type: 'button', class: 'kd-btn kd-ghost', onclick: () => api.close() }, 'Đóng'));
     } else if (S.you && S.table != null) {

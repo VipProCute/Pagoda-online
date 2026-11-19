@@ -107,7 +107,9 @@ test('giải thế cờ: đi sai một nước là trượt (một mạng), th�
   let end = E.applied.find(e => e.type === 'kd:end');
   assert.equal(end.head, 'Chưa giải được');
   assert.equal(end.canRetry, true);
-  assert.match(end.text, /Đáp án/);
+  assert.equal(end.canSolution, true, 'có nút cúng dường xem lời giải');
+  assert.doesNotMatch(end.text, /Đáp án/, 'trượt không được lộ đáp án');
+  assert.ok(!end.text.includes(E.ctx.KyChess.notation(start.state, puzzle.moves[0])), 'không có nước đáp án trong chữ');
   assert.equal((await send(hooks, 'kd:move', { gameId: start.gameId, ply: 1, move: wrong })).ok, false, 'trượt rồi thì không đi tiếp');
   // Thử lại đúng bài đó, giải đúng: chỉ tính đã giải, không tính lần đầu
   E.opened.length = 0; E.applied.length = 0;
@@ -200,9 +202,31 @@ test('gợi ý gọi máy chủ (trừ công đức) một lần mỗi bước, 
   assert.match(hooks.hintLabel, /5 công đức/);
   hooks.hint();
   assert.match(E.toasts.at(-1), /Cần ít nhất 5 công đức/);
-  answer = { ok: true, square: 'e2', cost: 5 };
+  const pz = PUZ.chess.filter(x => x.group === 'mate2')[0];
+  answer = { ok: true, move: pz.moves[0], cost: 5 };
   hooks.hint(); hooks.hint(); hooks.hint();
   assert.equal(asks.length, 2, 'đã có gợi ý của bước này thì không hỏi (không trừ) lại');
-  assert.match(E.toasts.at(-1), /ô e2/);
+  const want = E.ctx.KyChess.notation(E.ctx.KyChess.create({ fen: pz.fen }), pz.moves[0]);
+  assert.ok(E.toasts.at(-1).includes(want), 'gợi ý cho đúng một nước: ' + want);
   assert.equal(asks[0][1], 0);
+});
+
+test('trượt bài: chỉ thấy lời giải sau khi qua cúng dường (nút ở màn trượt)', async () => {
+  const E = sandbox();
+  let unlock = null;
+  E.L.init({ name: () => 'Người Thử', toast: t => E.toasts.push(t), sound() {}, onOpen() {}, onClose() {}, unlockSolution: done => { unlock = done; } });
+  await E.L.loadPuzzles();
+  E.L.playPuzzle('chess', 'draw');
+  const { start, hooks } = E.opened[0];
+  const puzzle = PUZ.chess.filter(x => x.group === 'draw')[0];
+  const wrong = E.ctx.KyChess.legalMoves(start.state).find(m => m !== puzzle.moves[0]);
+  await send(hooks, 'kd:move', { gameId: start.gameId, ply: 0, move: wrong });
+  assert.equal(E.applied.filter(e => e.type === 'kd:end').length, 1);
+  assert.equal(typeof hooks.solution, 'function');
+  hooks.solution();
+  assert.equal(E.applied.filter(e => e.type === 'kd:end').length, 1, 'chưa tạo mã QR thì chưa có lời giải');
+  unlock();
+  const sol = E.applied.filter(e => e.type === 'kd:end').at(-1);
+  assert.equal(sol.head, 'Lời giải');
+  assert.ok(sol.text.includes(E.ctx.KyChess.notation(start.state, puzzle.moves[0])));
 });
