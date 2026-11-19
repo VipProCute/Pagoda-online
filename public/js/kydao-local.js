@@ -6,7 +6,7 @@
  * API:
  *   KydaoLocal.init(host)                host: { name(), sound(kind), toast(text), onOpen(game), onClose(), unlockSolution?(done) }
  *     unlockSolution: "Xem lời giải" cần cúng dường vui; host gọi done() khi đã tạo xong mã QR.
- *     requestHint(puzzleId, step, cb): gợi ý trừ 5 công đức trên máy chủ (kd:hint), cb({ ok, square, cost } | { ok:false, reason }).
+ *     requestHint(puzzleId, step, cb): gợi ý trừ 5 công đức trên máy chủ (kd:hint), cb({ ok, move, cost } | { ok:false, reason }).
  *   KydaoLocal.playAi({ game, level, side })      game 'chess' | 'xiangqi'; level 1..3; side 'a' | 'b' | 'random'
  *   KydaoLocal.loadPuzzles() → Promise<data>      tải /data/kydao-puzzles.json một lần
  *   KydaoLocal.categories(game) → [{ key, name, total, solved }]
@@ -96,7 +96,7 @@
       again: () => (s.kind === 'ai' ? playAi(s.opts) : playPuzzle(s.game, s.cat)),
       againLabel: s.kind === 'ai' ? 'Ván mới' : 'Thế kế tiếp'
     };
-    if (s.kind === 'puzzle') hooks.retry = () => playPuzzle(s.game, s.cat, s.puzzle.id);
+    if (s.kind === 'puzzle') { hooks.retry = () => playPuzzle(s.game, s.cat, s.puzzle.id); hooks.solution = () => askSolution(s); }
     if (s.kind === 'puzzle') { hooks.hint = () => hint(s); hooks.hintLabel = typeof host.requestHint === 'function' ? 'Gợi ý · −5 công đức' : 'Gợi ý'; }
     try { if (host.onOpen) host.onOpen(s.game); } catch (e) { /* bỏ qua */ }
     UI().open(start, hooks);
@@ -148,8 +148,7 @@
       cb({ ok: true });
       if (s.kind === 'puzzle') {
         if (s.over) return;
-        if (typeof host.unlockSolution === 'function') host.unlockSolution(() => { if (session === s && !s.closed) showSolution(s); });
-        else showSolution(s);
+        askSolution(s);
         return;
       }
       return end(s, { result: other(s.you), reason: 'resign', text: 'Bạn đã chịu thua.', head: BOT_NAME + ' thắng' });
@@ -263,7 +262,8 @@
     return words.join(' · ');
   }
   function failed(s, why) {
-    end(s, { result: other(s.you), reason: 'puzzle-fail', head: 'Chưa giải được', text: why + ' Đáp án: ' + lineText(s) + '.', canRetry: true });
+    // Không lộ đáp án khi trượt (👤 chủ dự án 19/11): chỉ Thử lại, hoặc cúng dường để xem lời giải.
+    end(s, { result: other(s.you), reason: 'puzzle-fail', head: 'Chưa giải được', text: why + ' Thử lại, xin gợi ý (−5 công đức) hoặc cúng dường để xem lời giải.', canRetry: true, canSolution: true });
   }
   function solved(s) {
     const first = !s.retried && !s.hinted;
@@ -332,20 +332,29 @@
     if (!s.onLine) { toast('Bạn đang đi khác đáp án nên không còn gợi ý. Cứ tiếp tục, chiếu hết đúng hạn vẫn tính đúng.'); return; }
     const k = s.k;
     if (!s.hints) s.hints = {};
-    const show = sq => toast('Gợi ý: hãy xem quân ở ô ' + sq + '.');
+    // Gợi ý cho đúng một nước của đáp án (viết theo ký hiệu của thế hiện tại)
+    const say = m => s.mod.notation(s.state, m) || m;
+    const show = m => toast('Gợi ý: ' + say(m) + '.');
     if (s.hints[k]) { show(s.hints[k]); return; }
-    if (typeof host.requestHint !== 'function') { const m = s.puzzle.moves[k]; if (m) { s.hinted = true; show(m.slice(0, 2)); } return; }
+    if (typeof host.requestHint !== 'function') { const m = s.puzzle.moves[k]; if (m) { s.hinted = true; show(m); } return; }
     if (s.hintBusy) return;
     s.hintBusy = true;
     host.requestHint(s.puzzle.id, k, r => {
       s.hintBusy = false;
       if (!r || !r.ok) { toast((r && r.reason) || 'Chưa xin được gợi ý, thử lại nhé.'); return; }
-      s.hints[k] = r.square; s.hinted = true;
-      if (session === s && !s.closed) toast(`Gợi ý (−${r.cost} công đức): hãy xem quân ở ô ${r.square}.`);
+      if (typeof r.move !== 'string') { toast('Chưa xin được gợi ý, thử lại nhé.'); return; }
+      s.hints[k] = r.move; s.hinted = true;
+      if (session === s && !s.closed) toast(`Gợi ý (−${r.cost} công đức): ${say(r.move)}.`);
     });
   }
+  // Lời giải chỉ hiện sau khi cúng dường (host.unlockSolution gọi lại khi đã tạo mã QR); dùng được cả lúc đang giải lẫn sau khi trượt.
   function showSolution(s) {
-    end(s, { result: other(s.you), reason: 'solution', head: 'Lời giải', text: lineText(s), canRetry: true });
+    s.over = true;
+    emit(s, { type: 'kd:end', gameId: s.gameId, result: other(s.you), reason: 'solution', head: 'Lời giải', text: lineText(s), canRetry: true });
+  }
+  function askSolution(s) {
+    if (typeof host.unlockSolution === 'function') host.unlockSolution(() => { if (session === s && !s.closed) showSolution(s); });
+    else showSolution(s);
   }
 
   function init(h) { host = h || {}; }

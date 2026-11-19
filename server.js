@@ -1549,7 +1549,7 @@ io.on('connection', socket => {
   ].forEach(kdPass);
   /* Cửa hàng skin: client chỉ gửi { kind, id }; GIÁ do máy chủ lấy từ shop (bỏ mọi `amount` client gửi). Duyệt đi qua đúng đường xác nhận cúng dường. */
   socket.on('kd:shop:state', kydaoOnly('any', () => shopStateFor(p.uid)));
-  // Gợi ý giải thế cờ: máy chủ đọc lời giải, trừ công đức rồi chỉ ô quân cần đi (không lộ cả nước đi)
+  // Gợi ý giải thế cờ: máy chủ đọc lời giải, trừ công đức rồi cho đúng một nước của đáp án (cả lời giải thì phải cúng dường)
   socket.on('kd:hint', kydaoOnly('any', d => {
     const id = typeof d.puzzle === 'string' && d.puzzle.length <= 40 ? d.puzzle : '';
     const moves = id ? PUZZLES.get(id) : null, step = d.step;
@@ -1558,7 +1558,7 @@ io.on('connection', socket => {
     if (have < HINT_COST) return { ok: false, code: 'merit', reason: `Cần ít nhất ${HINT_COST} công đức để xin gợi ý (bạn đang có ${have}). Thắp nhang, vái lạy để tích thêm nhé.` };
     if (!allow('kdHint', 1500)) return { ok: false, reason: 'Đợi một chút rồi xin gợi ý tiếp nhé.' };   // chỉ tính lượt có trừ công đức
     addMerit(p, -HINT_COST);
-    return { ok: true, square: String(moves[step]).slice(0, 2), cost: HINT_COST, total: meritTotal(accountOf(p.uid)) };
+    return { ok: true, move: String(moves[step]), square: String(moves[step]).slice(0, 2), cost: HINT_COST, total: meritTotal(accountOf(p.uid)) };
   }));
   socket.on('kd:shop:buy', kydaoOnly('any', async d => {
     if (!DONATION_ENABLED) return { ok: false, reason: 'Nhà chùa chưa mở nhận tịnh tài trực tuyến.' };
