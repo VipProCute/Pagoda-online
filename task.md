@@ -1874,6 +1874,7 @@ Thiết kế, hợp đồng mã, ngân sách và định tuyến mô hình: [doc
 - **Trạng thái**: 🟣 Chờ soát · chủ dự án yêu cầu 18/11 · **Ưu tiên**: P1 · **Gói ngữ cảnh**: CORE + PK + HALL
 - **Người làm**: Claude Opus 5.5 · **Nhánh**: claude/sleepy-hamilton-m8w1eb
 - **Đổi gì**: NPC Hắc Phong có sẵn vẫn đi lang thang như cũ (👤 chủ dự án muốn "đi tìm ổng rồi đòi solo"), thêm nút Thách đấu: ra Sân đấu, chọn mức Thử chiêu / Luận võ / Toàn lực, sự kiện `pk:npc`. `lib/pk/npc.js` dựng hồ sơ NPC (cùng cấp người chơi) và chọn chiêu bằng bot của công cụ mô phỏng (chuyển sang `lib/pk/bots.js`, `enumerate.js`; `tools/pk-sim` dùng lại). `lib/pk/manager.js` thêm `challengeBot`; trận không gọi `recordResult`, ghi riêng `botRecord`. Giao thức ở `docs/VO-HOC-GIAO-THUC.md`, luật ở `docs/VO-HOC.md`.
+- **Sửa 19/11**: NPC mức Toàn lực từng suy tính trên `Duel` thật nên biết chiêu bí truyền chưa lộ của người chơi (lượt đầu chọn Tứ Lạng 85% thay vì 20%); nay `NPC.decide` suy tính trên bản sao không có bí truyền của đối thủ. Nhật ký trận gọi đúng tên đòn bị Tứ Lạng phản (Như Lai Thần Chưởng thay vì luôn ghi Phá Sơn).
 - **Kiểm**: `test/pk-npc.test.js` (4), `test/e2e-pk-npc.test.js` (máy chủ thật) đạt; mức Toàn lực đo 0,7 ms trung bình, tệ nhất 12 ms mỗi lượt.
 - **Còn mở**: chưa chạy ui-harness Sân đấu và chưa thử bằng trình duyệt màn chọn mức / màn kết quả trận NPC. Mô hình 3D mới cho Hắc Phong: agent phụ đã lập danh sách ứng viên (báo trong phiên 18/11), chủ dự án chưa chọn.
 

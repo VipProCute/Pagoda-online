@@ -138,3 +138,21 @@ test('người chơi rớt mạng đủ lâu thì trận với NPC bị hủy, k
   assert.deepEqual(E.botResults, []);
   assert.deepEqual(E.results, []);
 });
+
+test('NPC không biết chiêu bí truyền chưa lộ của người chơi: có hay không có bí truyền, NPC chọn y hệt', () => {
+  const full = Object.fromEntries(M.SKILL_ORDER.map(id => [id, 240]));
+  const npc = NPC.fighter({ level: 10, mastery: full }, 3);
+  const me = secrets => ({ level: 10, loadout: ['tu-luc-pha-son', 'trong-quyen', 'tat-phong-quyen', 'thiet-bich'], mastery: full, secretSkills: secrets });
+  const withS = new Duel({ seed: 'bi-truyen', a: me(['nhu-lai-than-chuong', 'kamui']), b: { level: 10, loadout: npc.loadout, mastery: npc.mastery } });
+  const noS = new Duel({ seed: 'bi-truyen', a: me([]), b: { level: 10, loadout: npc.loadout, mastery: npc.mastery } });
+  const ra = makeRng('cung-hat'), rb = makeRng('cung-hat');
+  const picksA = [], picksB = [];
+  for (let i = 0; i < 40; i++) { picksA.push(NPC.decide(withS, 'b', 3, ra)); picksB.push(NPC.decide(noS, 'b', 3, rb)); }
+  assert.deepEqual(picksA, picksB);
+  // trận thật giữ nguyên chiêu bí truyền của người chơi
+  assert.ok(withS.legal('a').picks.includes('nhu-lai-than-chuong'));
+  assert.ok(withS.secrets.a.has('kamui'));
+  // NPC vẫn thấy điều công khai: người chơi đang tụ lực thì NPC (đủ cấp có Tứ Lạng) chọn Tứ Lạng
+  withS.step('tu-luc-pha-son', 'trong-quyen');
+  assert.equal(NPC.decide(withS, 'b', 3, makeRng('x')), 'tu-lang-bat-thien-can');
+});

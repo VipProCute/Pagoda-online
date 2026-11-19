@@ -1504,6 +1504,8 @@
   /** Kể từng sự kiện bằng một câu ngắn. who: bên làm việc đó ('you' | 'op' | 'both'). */
   function buildSteps(rev) {
     const P = rev.picks || {}, out = [], S_ = s => (s === 'you' ? 'Bạn' : 'Đối thủ'), tg = s => (s === 'you' ? 'bạn' : 'đối thủ'), nth = e => (e.of > 1 ? ` nhịp ${e.idx}/${e.of}` : ' nhịp 1');
+    // Tứ Lạng phản cả Phá Sơn lẫn Như Lai Thần Chưởng: gọi đúng tên đòn bị phản theo chiêu bên đó đã ra
+    const reflectedName = who => { const pk = P[who] && P[who].skill, sk = pk && skillOf(pk); return pk === 'nhu-lai-than-chuong' && sk ? sk.name : 'Phá Sơn'; };
     for (const e of rev.events || []) {
       switch (e.k) {
         case 'kamui': out.push({ who: e.side, text: 'dùng Kamui, miễn nhiễm sát thương trong lượt', fx: [['float', e.side, 'Kamui!', 'good']] }); break;
@@ -1517,7 +1519,7 @@
             fx: e.ok ? [['float', e.def, 'Né!', 'good']] : [] });
           break;
         case 'parry':
-          out.push({ who: e.def, text: e.reflect ? 'dùng Tứ Lạng hóa giải Phá Sơn, trả nguyên sát thương' : e.ok ? `đỡ thành công${nth(e)} (${pc(e.p)}%)` : `đỡ hụt${nth(e)} (${pc(e.p)}%)`,
+          out.push({ who: e.def, text: e.reflect ? `dùng Tứ Lạng hóa giải ${reflectedName(e.atk)}, trả nguyên sát thương` : e.ok ? `đỡ thành công${nth(e)} (${pc(e.p)}%)` : `đỡ hụt${nth(e)} (${pc(e.p)}%)`,
             fx: e.ok ? [['float', e.def, 'Đỡ!', 'good']] : [] });
           break;
         case 'hit': {
@@ -1527,7 +1529,7 @@
           break;
         }
         case 'counter':
-          out.push({ who: e.side, text: `${e.reflect ? 'phản nguyên Phá Sơn' : 'phản đòn'}, ${tg(e.target)} mất ${e.dmg}`, fx: [['hp', e.target, e.dmg], ['float', e.target, '−' + e.dmg, 'dmg']] });
+          out.push({ who: e.side, text: `${e.reflect ? 'phản nguyên ' + reflectedName(e.target) : 'phản đòn'}, ${tg(e.target)} mất ${e.dmg}`, fx: [['hp', e.target, e.dmg], ['float', e.target, '−' + e.dmg, 'dmg']] });
           break;
         case 'exposed': out.push({ who: e.side, text: `sơ hở: lượt sau nhận thêm ${EXPOSED_PCT}% sát thương`, fx: [['float', e.side, 'Sơ hở', 'warn']] }); break;
         case 'kc': out.push({ who: e.side, text: `nhận Kim Chung: trong ${KC_TURNS} lượt tới, đòn công đầu tiên mạnh thêm ${KC_PCT}%`, fx: [['float', e.side, 'Kim Chung', 'gold']] }); break;
