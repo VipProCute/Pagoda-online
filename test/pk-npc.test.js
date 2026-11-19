@@ -96,6 +96,8 @@ test('trận với NPC: sảnh tự khóa, NPC khóa kín rồi lật chiêu, k�
   assert.equal(lobby[0].p.op.pid, BOT_PID);
   assert.equal(lobby[0].p.op.level, 7);
   assert.equal(lobby[0].p.npc.level, 3);
+  assert.equal(lobby[0].p.buffs.op.Lq, 4, 'Hắc Phong mang Quỷ ám cấp 4 như hình ở chùa');
+  assert.ok(lobby[0].p.buffs.op.offExt > 0);
   assert.equal(E.of('pk:lobby:status')[0].p.opLocked, true);
   assert.ok(E.sent.every(x => x.uid === 'u1'), 'không gửi gì cho uid của NPC');
   assert.equal(E.active.size, 1);
@@ -137,4 +139,39 @@ test('người chơi rớt mạng đủ lâu thì trận với NPC bị hủy, k
   assert.equal(E.mgr.hasMatch('u1'), false);
   assert.deepEqual(E.botResults, []);
   assert.deepEqual(E.results, []);
+});
+
+test('NPC không biết chiêu bí truyền chưa lộ của người chơi: có hay không có bí truyền, NPC chọn y hệt', () => {
+  const full = Object.fromEntries(M.SKILL_ORDER.map(id => [id, 240]));
+  const npc = NPC.fighter({ level: 10, mastery: full }, 3);
+  const me = secrets => ({ level: 10, loadout: ['tu-luc-pha-son', 'trong-quyen', 'tat-phong-quyen', 'thiet-bich'], mastery: full, secretSkills: secrets });
+  const withS = new Duel({ seed: 'bi-truyen', a: me(['nhu-lai-than-chuong', 'kamui']), b: { level: 10, loadout: npc.loadout, mastery: npc.mastery } });
+  const noS = new Duel({ seed: 'bi-truyen', a: me([]), b: { level: 10, loadout: npc.loadout, mastery: npc.mastery } });
+  const ra = makeRng('cung-hat'), rb = makeRng('cung-hat');
+  const picksA = [], picksB = [];
+  for (let i = 0; i < 40; i++) { picksA.push(NPC.decide(withS, 'b', 3, ra)); picksB.push(NPC.decide(noS, 'b', 3, rb)); }
+  assert.deepEqual(picksA, picksB);
+  // trận thật giữ nguyên chiêu bí truyền của người chơi
+  assert.ok(withS.legal('a').picks.includes('nhu-lai-than-chuong'));
+  assert.ok(withS.secrets.a.has('kamui'));
+  // NPC vẫn thấy điều công khai: người chơi đang tụ lực thì NPC (đủ cấp có Tứ Lạng) chọn Tứ Lạng
+  withS.step('tu-luc-pha-son', 'trong-quyen');
+  assert.equal(NPC.decide(withS, 'b', 3, makeRng('x')), 'tu-lang-bat-thien-can');
+});
+
+test('mức Toàn lực: bốn chiêu Đại viên mãn, nhìn trước 2 lượt mà mỗi lượt vẫn nhanh', () => {
+  const f = NPC.fighter({ level: 10, mastery: {} }, 3);
+  for (const id of f.loadout) assert.equal(f.mastery[id], M.MASTERY_MAX, id);
+  assert.equal(NPC.LEVELS[3].depth, 2);
+  const d = new Duel({ seed: 'nhanh', a: { level: 10, loadout: ['tu-luc-pha-son', 'trong-quyen', 'lien-hoan-cuoc', 'khinh-than-bo'], secretSkills: ['kamui'] }, b: { level: 10, loadout: f.loadout, mastery: f.mastery } });
+  const r = makeRng('nhanh');
+  let worst = 0;
+  while (!d.over) {
+    const t = Date.now(), pb = NPC.decide(d, 'b', 3, r);
+    worst = Math.max(worst, Date.now() - t);
+    assert.ok(d.legal('b').picks.includes(pb));
+    const l = d.legal('a');
+    d.step(l.forced || l.picks[0], pb);
+  }
+  assert.ok(worst < 1000, 'mỗi lượt dưới 1 giây (đo được ~40 ms)');
 });

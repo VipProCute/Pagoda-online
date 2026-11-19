@@ -100,7 +100,7 @@ Hạn lời mời 20 giây. Mỗi người một lời mời đang chờ gửi �
 | `pk:npc` | `{level: 1\|2\|3}` (1 Thử chiêu · 2 Luận võ · 3 Toàn lực) | `{ok:true, matchId, level}` |
 
 - Chỉ ở Sân đấu, cần tài khoản (bọc `inArena`). Trình duyệt gọi khi người chơi gặp Hắc Phong Ma Khách (NPC đi lang thang khắp chùa, `pk: true` trong `hall.js`) và bấm Thách đấu: `app.js` đưa người chơi ra Sân đấu rồi `Arena.openNpc()`.
-- Trận đi đúng luồng thường (`pk:lobby` → `pk:turn` / `pk:locked` / `pk:reveal` → `pk:end`), `mode:'balanced'`, không buff. NPC (`lib/pk/npc.js`) cùng cấp nội công với người chơi, khóa bộ chiêu ngay (`pk:lobby:status opLocked`), mỗi lượt "suy nghĩ" 1,2–3,8 giây rồi khóa kín; chiêu chỉ lộ ở `pk:reveal`. Bên NPC: `op.pid = -777`, `op.name = 'Hắc Phong Ma Khách'`.
+- Trận đi đúng luồng thường (`pk:lobby` → `pk:turn` / `pk:locked` / `pk:reveal` → `pk:end`), `mode:'balanced'`; NPC có `buffs.op` Quỷ ám cấp 4 (`lib/pk/npc.js` `BUFF_INPUT`). NPC (`lib/pk/npc.js`) cùng cấp nội công với người chơi, khóa bộ chiêu ngay (`pk:lobby:status opLocked`), mỗi lượt "suy nghĩ" 1,2–3,8 giây rồi khóa kín; chiêu chỉ lộ ở `pk:reveal`. Bên NPC: `op.pid = -777`, `op.name = 'Hắc Phong Ma Khách'`.
 - `pk:lobby`, ảnh chụp `pk:resume` và `pk:end` có thêm `npc:{level, name}`; `pk:end.npc.record = {wins, losses, draws}` là thành tích riêng với NPC. `pk:end.record` (thắng / thua / hòa PK) **không đổi**: trận với NPC không gọi `recordResult`, không vào điểm chiến tích hay danh hiệu.
 - Người chơi vắng đủ `BOTH_AWAY_MS` thì trận hủy, không ghi gì. Biên bản trận lưu `npc:{level}` trong `matches[]`.
 

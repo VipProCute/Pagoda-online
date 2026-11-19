@@ -536,7 +536,7 @@
       const b = document.createElement('button');
       b.type = 'button'; b.className = 'btn kd-puzzle-cat'; b.setAttribute('role', 'listitem');
       const t = document.createElement('b'); t.textContent = c.name;
-      const n = document.createElement('small'); n.textContent = `Đã giải ${c.solved}/${c.total}`;
+      const n = document.createElement('small'); n.textContent = `Giải lần đầu ${c.first} · Đã giải ${c.solved}/${c.total}`;
       b.append(t, n);
       b.addEventListener('click', () => { if (kdLocalBusy()) return; if (kdStart && !kdStart.you) KydaoUI.close(); globalThis.KydaoLocal.playPuzzle(game, c.key); });
       box.appendChild(b);

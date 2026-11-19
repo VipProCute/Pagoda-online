@@ -182,7 +182,7 @@ test('Web Worker nhận lệnh và trả nước', () => {
   const ctx = { postMessage: m => messages.push(m), Date, Math };
   ctx.self = ctx;
   ctx.importScripts = (...urls) => {
-    for (const u of urls) vm.runInContext(fs.readFileSync(path.join(dir, u), 'utf8'), ctx, { filename: u });
+    for (const u of urls) vm.runInContext(fs.readFileSync(path.join(dir, u.split('?')[0]), 'utf8'), ctx, { filename: u });   // bỏ ?v= như máy chủ tĩnh
   };
   vm.createContext(ctx);
   vm.runInContext(fs.readFileSync(path.join(dir, 'js/kydao/ai-worker.js'), 'utf8'), ctx);
@@ -197,4 +197,24 @@ test('Web Worker nhận lệnh và trả nước', () => {
   assert.ok(KyXiangqi.legalMoves(xq).includes(messages[1].move));
   assert.equal(messages[2].id, 3);
   assert.ok(messages[2].error);
+});
+
+test('máy phòng thủ (defend): đi đúng nước đầu của mọi thế chiếu hết thì không thoát được; hết nước thì trả null', () => {
+  const PUZ = require('../public/data/kydao-puzzles.json');
+  const C = require('../public/js/kydao/chess.js'), X = require('../public/js/kydao/xiangqi.js');
+  const AC = require('../public/js/kydao/ai-chess.js'), AX = require('../public/js/kydao/ai-xiangqi.js');
+  let n = 0;
+  for (const [game, R, AI] of [['chess', C, AC], ['xiangqi', X, AX]]) {
+    for (const p of PUZ[game].filter(x => x.goal === 'mate' && x.n >= 2)) {
+      const st0 = game === 'chess' ? R.create({ fen: p.fen }) : R.fromFen(p.fen);
+      const st = R.play(st0, p.moves[0]).state;
+      const d = AI.defend(st, p.n - 1);
+      assert.ok(d && !d.escape, `${p.id}: máy không được thoát sau nước đúng`);
+      assert.ok(R.legalMoves(st).includes(d.move));
+      n++;
+    }
+  }
+  assert.ok(n >= 150);
+  const mated = C.play(C.create({ fen: '6k1/5ppp/8/8/8/8/8/R5K1 w - - 0 1' }), 'a1a8').state;
+  assert.equal(AC.defend(mated, 1), null);
 });
