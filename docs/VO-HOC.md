@@ -87,9 +87,9 @@ Hắc Phong Ma Khách là NPC đi lang thang khắp chùa (chánh điện, sân 
 |---|---|---|
 | Thử chiêu | ngẫu nhiên | bộ nhập môn, thành thạo 0 |
 | Luận võ | tham lam một lượt | bộ tốt nhất trong phạm vi cấp, thành thạo bằng trung bình của người chơi |
-| Toàn lực | cân bằng kéo-búa-bao như bot `eq` của công cụ mô phỏng | bộ mạnh (có Tứ Lạng khi đủ cấp), thành thạo bằng chiêu giỏi nhất của người chơi |
+| Toàn lực | cân bằng kéo-búa-bao, nhìn trước 2 lượt (mỗi lựa chọn lượt này chấm bằng giá trị cân bằng của lượt sau); thắng bot 1 lượt cũ 61,9% trên 180 trận | bộ mạnh (có Tứ Lạng khi đủ cấp), bốn chiêu Đại viên mãn |
 
-NPC luôn cùng cấp nội công với người chơi, không có chiêu bí truyền, không buff. NPC chỉ biết điều người thật ở vị trí đó biết: trạng thái công khai (máu, nội lực, nộ, đang tụ lực) và bộ 4 chiêu đã công bố. NPC không đọc chiêu bạn vừa khóa và không biết chiêu bí truyền của bạn (Như Lai Thần Chưởng, Kamui, Tẩu Vi) trước khi bạn dùng. Thấy bạn đang tụ lực Phá Sơn thì NPC (đủ cấp, có Tứ Lạng) sẽ chọn Tứ Lạng, như người thật. Trận **không tính** vào thắng / thua, điểm chiến tích và danh hiệu PK; thành tích riêng với Hắc Phong ghi ở `botRecord`. Bộ não bot nằm ở `lib/pk/bots.js` (dùng chung với `tools/pk-sim`), luật NPC ở `lib/pk/npc.js`.
+NPC luôn cùng cấp nội công với người chơi, không có chiêu bí truyền. NPC mang Quỷ ám cấp 4 (Ma Vương sau lưng như ở chùa), tính bằng đúng công thức buff của người chơi. NPC chỉ biết điều người thật ở vị trí đó biết: trạng thái công khai (máu, nội lực, nộ, đang tụ lực) và bộ 4 chiêu đã công bố. NPC không đọc chiêu bạn vừa khóa và không biết chiêu bí truyền của bạn (Như Lai Thần Chưởng, Kamui, Tẩu Vi) trước khi bạn dùng. Thấy bạn đang tụ lực Phá Sơn thì NPC (đủ cấp, có Tứ Lạng) sẽ chọn Tứ Lạng, như người thật. Trận **không tính** vào thắng / thua, điểm chiến tích và danh hiệu PK; thành tích riêng với Hắc Phong ghi ở `botRecord`. Bộ não bot nằm ở `lib/pk/bots.js` (dùng chung với `tools/pk-sim`), luật NPC ở `lib/pk/npc.js`.
 
 ### Phòng có buff
 

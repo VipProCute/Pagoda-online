@@ -838,5 +838,26 @@
 
   // _think, _legalMoves: chỉ để kiểm thử lõi riêng
   const _legalMoves = state => legalList(fromState(state)).map(moveStr);
-  return { bestMove, mateIn, LEVELS, _think: think, _legalMoves };
+
+  /**
+   * Phòng thủ trong chế độ giải thế cờ (bên đang đi là bên bị chiếu): chọn nước khiến bên công KHÔNG chiếu hết được
+   * trong `left` nước của họ; không có thì chọn nước kéo dài nhất. Trả { move, escape, n } hoặc null khi hết nước.
+   * escape = true nghĩa là người giải đã đi sai (máy thoát được), người giải sẽ thua bài khi hết số nước.
+   */
+  function defend(state, left, opts) {
+    const moves = Rules.legalMoves(state);
+    if (!moves.length) return null;
+    let best = null, bestN = -1;
+    for (const m of moves) {
+      const r = Rules.play(state, m);
+      if (!r || !r.ok) continue;
+      const st = Rules.status(r.state);
+      if (st && st.over) { if (st.winner !== Rules.turn(r.state)) return { move: m, escape: true, n: 0 }; continue; }
+      const mate = left > 0 ? mateIn(r.state, left, opts) : null;
+      if (!mate) return { move: m, escape: true, n: 0 };
+      if (mate.n > bestN) { bestN = mate.n; best = m; }
+    }
+    return best ? { move: best, escape: false, n: bestN } : { move: moves[0], escape: false, n: 0 };
+  }
+  return { bestMove, mateIn, defend, LEVELS, _think: think, _legalMoves };
 });

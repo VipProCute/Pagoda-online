@@ -42,36 +42,44 @@
   // nhóm đề: trường group của tools/kydao-puzzles/build.js (mate1..3, draw, win-end, win-mid)
   const catOf = p => (typeof p.group === 'string' ? p.group : p.goal === 'mate' ? 'mate' + p.n : p.goal === 'win' ? 'win-mid' : p.goal);
 
+  // Sổ thế cờ trên máy: 1 = giải đúng ngay lần đầu (không gợi ý), 2 = giải được sau khi trượt / có gợi ý, 'x' = đã thử, chưa giải.
   function solvedMap() { try { return JSON.parse(root.localStorage.getItem(STORE) || '{}') || {}; } catch (e) { return {}; } }
-  function markSolved(id) {
-    try { const m = solvedMap(); m[id] = 1; root.localStorage.setItem(STORE, JSON.stringify(m)); } catch (e) { /* bỏ qua */ }
+  function markPuzzle(id, mark) {
+    try {
+      const m = solvedMap(), cur = m[id];
+      if (cur === 1 || (cur === 2 && mark === 'x')) return;   // không hạ bậc kết quả đã có
+      m[id] = mark; root.localStorage.setItem(STORE, JSON.stringify(m));
+    } catch (e) { /* bỏ qua */ }
   }
 
   /* ---------- máy nghĩ nước (Web Worker; lỗi thì đi nước hợp lệ ngẫu nhiên để ván không treo) ---------- */
   function getWorker() {
     if (worker || workerBroken || typeof root.Worker !== 'function') return worker;
     try {
-      worker = new root.Worker('/js/kydao/ai-worker.js?v=ai1');
+      worker = new root.Worker('/js/kydao/ai-worker.js?v=ai2');
       worker.onmessage = e => {
         const d = e.data || {}, p = pending.get(d.id);
         if (!p) return;
         pending.delete(d.id); clearTimeout(p.timer);
-        p.resolve(typeof d.move === 'string' ? d.move : null);
+        p.resolve(d);
       };
       worker.onerror = () => { workerBroken = true; worker = null; for (const p of pending.values()) { clearTimeout(p.timer); p.resolve(null); } pending.clear(); };
     } catch (e) { workerBroken = true; worker = null; }
     return worker;
   }
-  function think(game, state, level) {
+  function ask(msg) {
     return new Promise(resolve => {
       const w = getWorker();
       if (!w) { resolve(null); return; }
       const id = ++reqSeq;
       const timer = setTimeout(() => { pending.delete(id); resolve(null); }, AI_TIMEOUT_MS);
       pending.set(id, { resolve, timer });
-      try { w.postMessage({ id, game, state, level }); } catch (e) { pending.delete(id); clearTimeout(timer); resolve(null); }
+      try { w.postMessage(Object.assign({ id }, msg)); } catch (e) { pending.delete(id); clearTimeout(timer); resolve(null); }
     });
   }
+  const think = (game, state, level) => ask({ game, state, level }).then(d => (d && typeof d.move === 'string' ? d.move : null));
+  // Máy phòng thủ thế chiếu hết: { move, escape, n } (engine.defend trong Worker) hoặc null khi lỗi
+  const defend = (game, state, left) => ask({ kind: 'defend', game, state, left }).then(d => (d && d.defend && typeof d.defend.move === 'string' ? d.defend : null));
 
   /* ---------- phiên ---------- */
   function names(you, mine, theirs) {
@@ -88,6 +96,7 @@
       again: () => (s.kind === 'ai' ? playAi(s.opts) : playPuzzle(s.game, s.cat)),
       againLabel: s.kind === 'ai' ? 'Ván mới' : 'Thế kế tiếp'
     };
+    if (s.kind === 'puzzle') hooks.retry = () => playPuzzle(s.game, s.cat, s.puzzle.id);
     if (s.kind === 'puzzle') { hooks.hint = () => hint(s); hooks.hintLabel = typeof host.requestHint === 'function' ? 'Gợi ý · −5 công đức' : 'Gợi ý'; }
     try { if (host.onOpen) host.onOpen(s.game); } catch (e) { /* bỏ qua */ }
     UI().open(start, hooks);
@@ -187,32 +196,49 @@
     return loading;
   }
   function categories(game) {
-    const list = (data && data[game]) || [], solved = solvedMap();
+    const list = (data && data[game]) || [], book = solvedMap();
     return CATS.map(c => {
       const ps = list.filter(p => catOf(p) === c.key);
-      return { key: c.key, name: c.name, total: ps.length, solved: ps.filter(p => solved[p.id]).length };
+      return {
+        key: c.key, name: c.name, total: ps.length,
+        first: ps.filter(p => book[p.id] === 1).length,                       // giải đúng ngay lần đầu
+        solved: ps.filter(p => book[p.id] === 1 || book[p.id] === 2).length,  // đã giải (kể cả sau khi trượt)
+        tried: ps.filter(p => book[p.id] != null).length
+      };
     }).filter(c => c.total > 0);
   }
   function stateFrom(game, fen) {
     const mod = modOf(game);
     return game === 'chess' ? mod.create({ fen }) : mod.fromFen(fen);
   }
-  function playPuzzle(game, key) {
-    if (!data) { loadPuzzles().then(() => playPuzzle(game, key)).catch(() => toast('Chưa tải được kho thế cờ, xin thử lại.')); return false; }
+  /**
+   * Mở một thế cờ. Luật (👤 chủ dự án chốt 19/11):
+   *  - Chiếu hết N nước: đi nước hợp lệ nào cũng được, máy phòng thủ tìm nước chống lâu nhất; hết N nước mà chưa chiếu hết
+   *    (hoặc máy đã thoát được) là trượt. Chấp nhận cả lời giải khác đáp án.
+   *  - Tìm đường hòa, thắng thế: phải đi đúng đường của đề (Lichess), đi sai một nước là trượt.
+   *  - Mỗi lần mở là một mạng; trượt thì Thử lại. Chỉ giải đúng ngay lần đầu, không gợi ý, mới tính "giải lần đầu".
+   */
+  function playPuzzle(game, key, id) {
+    if (!data) { loadPuzzles().then(() => playPuzzle(game, key, id)).catch(() => toast('Chưa tải được kho thế cờ, xin thử lại.')); return false; }
     const mod = modOf(game), cat = CATS.find(c => c.key === key);
     if (!mod || !cat || !UI()) return false;
     const list = (data[game] || []).filter(p => catOf(p) === key);
     if (!list.length) { toast('Nhóm thế cờ này chưa có bài.'); return false; }
-    const solved = solvedMap();
-    const last = session && session.kind === 'puzzle' && session.game === game && session.cat === key ? list.indexOf(session.puzzle) : -1;
-    const order = list.slice(last + 1).concat(list.slice(0, last + 1));
-    const p = order.find(x => !solved[x.id]) || order[0];
+    const book = solvedMap();
+    let p = id ? list.find(x => x.id === id) : null;
+    if (!p) {
+      const last = session && session.kind === 'puzzle' && session.game === game && session.cat === key ? list.indexOf(session.puzzle) : -1;
+      const order = list.slice(last + 1).concat(list.slice(0, last + 1));
+      p = order.find(x => book[x.id] !== 1 && book[x.id] !== 2) || order[0];
+    }
     let state;
     try { state = stateFrom(game, p.fen); } catch (e) { toast('Thế cờ này bị lỗi, chuyển sang thế khác.'); return false; }
     const you = mod.turn(state);
-    const s = { kind: 'puzzle', game, mod, you, gameId: 'local-' + (++seq), state, ply: 0, over: false, closed: false, puzzle: p, cat: key, k: 0, tries: 0 };
+    const retried = book[p.id] != null;
+    const s = { kind: 'puzzle', game, mod, you, gameId: 'local-' + (++seq), state, start: state, ply: 0, over: false, closed: false,
+      puzzle: p, cat: key, k: 0, used: 0, onLine: true, hinted: false, retried, busy: false };
     const no = list.indexOf(p) + 1;
-    const goalText = p.goal === 'mate' ? `Chiếu hết sau ${p.n} nước` : p.goal === 'draw' ? 'Tìm đường cầm hòa' : 'Tìm nước giành thế thắng';
+    const goalText = p.goal === 'mate' ? `Chiếu hết trong ${p.n} nước` : p.goal === 'draw' ? 'Tìm đường cầm hòa' : 'Tìm nước giành thế thắng';
     const moves = [];
     if (p.last) moves.push({ m: p.last, t: 'Nước vừa đi' });
     open(s, Object.assign({
@@ -220,62 +246,106 @@
       local: 'puzzle', resignLabel: 'Xem lời giải · cúng dường',
       title: `Thế cờ · ${cat.name} · Bài ${no}/${list.length}` + (p.rating ? ` · Độ khó ${p.rating}` : '')
     }, names(you, typeof host.name === 'function' ? host.name() || 'Bạn' : 'Bạn', 'Đề bài')));
-    toast(`${goalText}. Bạn cầm quân ${you === 'a' ? (game === 'chess' ? 'Trắng' : 'Đỏ') : 'Đen'}.`);
+    markPuzzle(p.id, 'x');
+    toast(`${goalText}. Bạn cầm quân ${you === 'a' ? (game === 'chess' ? 'Trắng' : 'Đỏ') : 'Đen'}. Đi sai là trượt bài.`);
     return true;
   }
-  function puzzleMove(s, move, r, cb) {
-    const p = s.puzzle, expect = p.moves[s.k];
-    const st = s.mod.status(r.state);
-    const mated = p.goal === 'mate' && st && st.over && st.winner === s.you;
-    if (move !== expect && !mated) {
-      s.tries++;
-      return cb({ ok: false, reason: 'Chưa phải nước hay nhất. Thử nước khác nhé.' });
+  // Dòng nước của đáp án, viết theo ký hiệu, tính từ thế ban đầu.
+  function lineText(s) {
+    const words = [];
+    let st = s.start;
+    for (const m of s.puzzle.moves) {
+      words.push(s.mod.notation(st, m) || m);
+      const r = s.mod.play(st, m);
+      if (!r || !r.ok) break;
+      st = r.state;
     }
-    s.state = r.state; s.ply += 1; s.k += 1;
-    cb({ ok: true });
-    if (mated || s.k >= p.moves.length) { solved(s); return; }
-    const answer = p.moves[s.k];
-    setTimeout(() => {
-      if (s.over || s.closed) return;
-      if (!reply(s, answer)) { solved(s); return; }
-      s.k += 1;
-      if (s.k >= p.moves.length) solved(s);
-    }, REPLY_MS);
+    return words.join(' · ');
+  }
+  function failed(s, why) {
+    end(s, { result: other(s.you), reason: 'puzzle-fail', head: 'Chưa giải được', text: why + ' Đáp án: ' + lineText(s) + '.', canRetry: true });
   }
   function solved(s) {
-    markSolved(s.puzzle.id);
+    const first = !s.retried && !s.hinted;
+    markPuzzle(s.puzzle.id, first ? 1 : 2);
     end(s, {
       result: s.you, reason: 'puzzle', head: 'Giải đúng!',
-      text: (s.tries ? `Bạn giải được sau ${s.tries} lần thử.` : 'Giải ngay lần đầu, cao tay!') + (s.puzzle.source && s.puzzle.source.startsWith('lichess:') ? ' Đề bài từ kho thế cờ Lichess.' : '')
+      text: (first ? 'Giải ngay lần đầu, cao tay!' : s.hinted ? 'Giải đúng, có dùng gợi ý.' : 'Giải đúng sau khi thử lại.')
+        + (s.onLine ? '' : ' Bạn tìm được đường khác đáp án, vẫn tính đúng.')
+        + (s.puzzle.source && s.puzzle.source.startsWith('lichess:') ? ' Đề bài từ kho thế cờ Lichess.' : '')
+    });
+  }
+  function puzzleMove(s, move, r, cb) {
+    if (s.busy) return cb({ ok: false, reason: 'Đợi đối phương đi đã.' });
+    const p = s.puzzle;
+    if (p.goal !== 'mate') {
+      // Tìm đường hòa / thắng thế: đi đúng đường của đề, sai một nước là trượt (nước sai vẫn hiện trên bàn)
+      s.state = r.state; s.ply += 1; s.used += 1;
+      cb({ ok: true });
+      if (move !== p.moves[s.k]) { failed(s, 'Nước này chưa đúng.'); return; }
+      s.k += 1;
+      if (s.k >= p.moves.length) { solved(s); return; }
+      const answer = p.moves[s.k];
+      s.busy = true;
+      setTimeout(() => {
+        s.busy = false;
+        if (s.over || s.closed) return;
+        if (!reply(s, answer)) { solved(s); return; }
+        s.k += 1;
+        if (s.k >= p.moves.length) solved(s);
+      }, REPLY_MS);
+      return;
+    }
+    // Chiếu hết N nước: chấm theo kết quả, máy phòng thủ
+    s.state = r.state; s.ply += 1; s.used += 1;
+    if (s.onLine && move === p.moves[s.k]) s.k += 1; else s.onLine = false;
+    cb({ ok: true });
+    const st = s.mod.status(s.state);
+    if (st && st.over) {
+      if (st.winner === s.you) solved(s);
+      else failed(s, 'Ván kết thúc mà chưa chiếu hết (hết nước đi, hòa).');
+      return;
+    }
+    const left = p.n - s.used;
+    if (left <= 0) { failed(s, `Đã đi đủ ${p.n} nước mà chưa chiếu hết.`); return; }
+    s.busy = true;
+    const at = s.ply, t0 = Date.now();
+    defend(s.game, s.state, left).then(d => {
+      if (s.over || s.closed || s.ply !== at) return;
+      let move2 = null, escape = false;
+      const stored = s.onLine ? p.moves[s.k] : null;
+      if (d) { escape = !!d.escape; move2 = !escape && stored && s.mod.legalMoves(s.state).includes(stored) ? stored : d.move; }
+      else move2 = stored || randomLegal(s);            // Worker lỗi: đi theo đáp án, không có thì nước bất kỳ
+      if (s.onLine && move2 === stored) s.k += 1; else s.onLine = false;
+      setTimeout(() => {
+        s.busy = false;
+        if (s.over || s.closed) return;
+        if (!move2 || !reply(s, move2)) { failed(s, 'Đối phương không còn nước đi, ván hòa.'); return; }
+        if (escape) failed(s, `Nước vừa rồi chưa đủ mạnh: đối phương thoát được, không thể chiếu hết trong ${p.n} nước.`);
+      }, Math.max(0, REPLY_MS - (Date.now() - t0)));
     });
   }
   // Gợi ý trừ 5 công đức trên máy chủ (kd:hint qua host.requestHint); cùng một bước chỉ trả một lần.
+  // Gợi ý theo đường đáp án: đi khác đáp án (vẫn có thể thắng) thì không còn gợi ý.
   function hint(s) {
     if (s.over) return;
+    if (!s.onLine) { toast('Bạn đang đi khác đáp án nên không còn gợi ý. Cứ tiếp tục, chiếu hết đúng hạn vẫn tính đúng.'); return; }
     const k = s.k;
     if (!s.hints) s.hints = {};
     const show = sq => toast('Gợi ý: hãy xem quân ở ô ' + sq + '.');
     if (s.hints[k]) { show(s.hints[k]); return; }
-    if (typeof host.requestHint !== 'function') { const m = s.puzzle.moves[k]; if (m) show(m.slice(0, 2)); return; }
+    if (typeof host.requestHint !== 'function') { const m = s.puzzle.moves[k]; if (m) { s.hinted = true; show(m.slice(0, 2)); } return; }
     if (s.hintBusy) return;
     s.hintBusy = true;
     host.requestHint(s.puzzle.id, k, r => {
       s.hintBusy = false;
       if (!r || !r.ok) { toast((r && r.reason) || 'Chưa xin được gợi ý, thử lại nhé.'); return; }
-      s.hints[k] = r.square;
+      s.hints[k] = r.square; s.hinted = true;
       if (session === s && !s.closed) toast(`Gợi ý (−${r.cost} công đức): hãy xem quân ở ô ${r.square}.`);
     });
   }
   function showSolution(s) {
-    const p = s.puzzle, words = [];
-    let st = s.state;
-    for (let i = s.k; i < p.moves.length; i++) {
-      words.push(s.mod.notation(st, p.moves[i]) || p.moves[i]);
-      const r = s.mod.play(st, p.moves[i]);
-      if (!r || !r.ok) break;
-      st = r.state;
-    }
-    end(s, { result: other(s.you), reason: 'solution', head: 'Lời giải', text: words.join(' · ') });
+    end(s, { result: other(s.you), reason: 'solution', head: 'Lời giải', text: lineText(s), canRetry: true });
   }
 
   function init(h) { host = h || {}; }

@@ -922,7 +922,8 @@
     }
     const row = h('div', { class: 'kd-result-btns' });
     if (S.local && typeof hooks.again === 'function') {
-      row.appendChild(h('button', { type: 'button', class: 'kd-btn', onclick: () => hooks.again() }, hooks.againLabel || 'Ván mới'));
+      if (ev.canRetry && typeof hooks.retry === 'function') row.appendChild(h('button', { type: 'button', class: 'kd-btn', onclick: () => hooks.retry() }, 'Thử lại'));
+      row.appendChild(h('button', { type: 'button', class: 'kd-btn' + (ev.canRetry ? ' kd-ghost' : ''), onclick: () => hooks.again() }, hooks.againLabel || 'Ván mới'));
       row.appendChild(h('button', { type: 'button', class: 'kd-btn kd-ghost', onclick: () => api.close() }, 'Đóng'));
     } else if (S.you && S.table != null) {
       const again = h('button', { type: 'button', class: 'kd-btn' }, 'Đấu lại');
