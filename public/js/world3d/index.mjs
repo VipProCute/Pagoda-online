@@ -39,8 +39,14 @@ function updatePeople(world, state, dt) {
   for (const person of list) {
     seen.add(person.id);
     let entry = world.people.get(person.id);
+    // NPC đổi người theo đợt mà giữ nguyên mã ô (hall.js randomizeNpcs): vai hoặc dáng khác thì dựng lại nhân vật,
+    // vì mô hình .glb của NPC chọn một lần lúc tạo (npc-glb.mjs), setLook không nạp lại.
+    const kind = person.role ? person.role + '|' + JSON.stringify(person.look) : '';
+    if (entry && entry.kind !== kind) {
+      entry.avatar.dispose(); entry.avatar.group.removeFromParent(); world.people.delete(person.id); entry = null;
+    }
     if (!entry) {
-      entry = { avatar: world.createAvatar(person.look, { role: person.role }), look: '' };
+      entry = { avatar: world.createAvatar(person.look, { role: person.role }), look: '', kind };
       world.people.set(person.id, entry); world.ctx.scene.add(entry.avatar.group);
     }
     const look = JSON.stringify(person.look);
