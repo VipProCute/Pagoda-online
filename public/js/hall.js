@@ -991,7 +991,9 @@
     if (lines.length === maxLines && lines.join(' ').length < text.length) lines[maxLines - 1] = lines[maxLines - 1].replace(/\s*\S*$/, '') + '…';
     return lines.map(l => { while (g.measureText(l).width > maxW && l.length > 2) l = l.slice(0, -2) + '…'; return l; });
   }
+  let anyMoving = false;                                      // có ai đang đi / nội suy bước không (để frame() biết có cần vẽ đủ 60 fps)
   function stepPlayers(now, dt) {
+    anyMoving = false;
     const k = 1 - Math.exp(-dt / 90);
     // mỗi người chỉ hiện ở đúng cảnh mình đang ở (chánh điện, sân chùa, Tàng Kinh Các, Sân đấu); ở Võ Học Các thì không hiện
     const list = [...players.values()].filter(p => viewOf(p) === scene);
@@ -999,9 +1001,14 @@
     const kl = 1 - Math.exp(-dt / 80);
     for (const p of list) {
       const ox = p.dx, oz = p.dz;
-      p.dx += (p.x - p.dx) * k; p.dz += (p.z - p.dz) * k;
+      if (p.it && p.id !== me) {                              // người khác: nội suy tuyến tính giữa hai gói vị trí (~100 ms/gói) cho bước đi đều
+        const a = Math.min(1, (now - p.it) / 110);
+        p.dx = p.fx + (p.x - p.fx) * a; p.dz = p.fz + (p.z - p.fz) * a;
+        if (a >= 1) p.it = 0;
+      } else { p.dx += (p.x - p.dx) * k; p.dz += (p.z - p.dz) * k; }
       const vx = p.dx - ox, vz = p.dz - oz, sp = Math.hypot(vx * 1.6, vz);
       p.walking = sp > 0.0003;
+      if (p.walking || p.it) anyMoving = true;
       if (p.walking) p.viewYaw = Math.atan2(vx * 1.6, vz);
       if (p.walking) { p.idleT = now; if (vz > 0.0004) p.front = true; else if (vz < -0.0004) p.front = false; }
       else if (now - (p.idleT || 0) > 700) p.front = false;
@@ -1951,7 +1958,14 @@
   }
 
   let paused = false, held3d = false;
+  // Khi không ai đi lại và không có hiệu ứng ngắn (tim, gợn nước, chữ bay, vòng chạm, hover, tu vi...) thì chỉ còn
+  // các chuyển động nền chậm (lửa đèn, khói nhang, hào quang, bong bóng) nên vẽ ~30 fps cho đỡ tốn pin.
+  const calm = () => !anyMoving && !hearts.length && !ripples.length && !floaters.length && !clickMark && !hover && !hoverTable && !hoverLib
+    && ![...players.values()].some(p => p.burst || p.rburst || (p.pens && p.pens.length));
+  let lastDraw = 0;
   function frame(ts) {
+    if (!paused && !document.hidden && lastDraw && ts - lastDraw < 28 && calm()) { requestAnimationFrame(frame); return; }
+    lastDraw = ts;
     const dt = Math.min(64, ts - (last || ts)); last = ts;
     if (W && H && !document.hidden && !paused) {
       const now = serverNow();
@@ -2197,6 +2211,7 @@
     setPlace(id, place, x, z) {
       const p = players.get(id); if (!p) return;
       p.place = place || 'hall'; p.sit = -1; p.cm = ''; p.lift = 0;
+      p.it = 0;
       if (x != null && z != null) { p.x = p.dx = x; p.z = p.dz = z; } else { p.dx = p.x; p.dz = p.z; }
     },
     /** Ngồi bồ đoàn (sit = số bồ đoàn, −1 là đứng dậy) và công pháp đang tu (để vẽ linh khí). */
@@ -2233,13 +2248,22 @@
     setTable(t) { applyTables([t], true); },
     YARD_TABLES,
     setScene(value) { if (value === scene) return; scene = value; hover = ''; hoverTable = null; hoverLib = false; if (W && H) geo(); bg = null; },
-    playerScene(d) { const p = players.get(d.id); if (p) { p.scene = d.scene; p.sit = -1; p.cm = ''; p.x = p.dx = d.x; p.z = p.dz = d.z; } },
+    playerScene(d) { const p = players.get(d.id); if (p) { p.scene = d.scene; p.sit = -1; p.cm = ''; p.it = 0; p.x = p.dx = d.x; p.z = p.dz = d.z; } },
     setOffset(ms) { offset = ms; },
     setPlayers(list) { players.clear(); list.forEach(p => players.set(p.id, mk(p))); },
     addPlayer(p) { players.set(p.id, mk(p)); },
     removePlayer(id) { players.delete(id); },
     updatePlayer(d) { const p = players.get(d.id); if (p) { p.name = d.name; p.look = d.look; } },
-    positions(arr) { for (const [id, x, z] of arr) { const p = players.get(id); if (p) { p.x = x / 1000; p.z = z / 1000; } } },
+    positions(arr) {
+      const t = performance.now();
+      for (const [id, x, z] of arr) {
+        const p = players.get(id); if (!p) continue;
+        const nx = x / 1000, nz = z / 1000;
+        if (id !== me && (nx !== p.x || nz !== p.z) && Math.hypot(nx - p.dx, nz - p.dz) < 0.35) { p.fx = p.dx; p.fz = p.dz; p.it = t; }   // bước nhảy xa (dịch chuyển) thì để làm mượt cũ
+        else p.it = 0;
+        p.x = nx; p.z = nz;
+      }
+    },
     player(id) { return players.get(id); },
     list() { return [...players.values()]; },
     count() { return players.size; },

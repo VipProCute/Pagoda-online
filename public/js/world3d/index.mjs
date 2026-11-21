@@ -149,12 +149,26 @@ function resize(world) {
   world.ctx.camera.updateProjectionMatrix();
 }
 
+// Tự hạ mức đồ họa khi máy yếu: trung bình khung > 40 ms trong ~3 giây thì hạ một bậc (high → medium → low).
+// Chỉ đổi trong phiên này, không ghi đè mức đã lưu của người dùng. Khung > 500 ms (chuyển tab) không tính.
+const AUTO_NEXT = { high: 'medium', medium: 'low' };
+function autoQuality(world, ms) {
+  if (ms > 500 || !AUTO_NEXT[world.ctx.quality]) { world.slow = null; return; }
+  const w = world.slow || (world.slow = { sum: 0, n: 0 });
+  w.sum += ms; w.n++;
+  if (w.sum < 3000) return;
+  const avg = w.sum / w.n;
+  world.slow = null;
+  if (avg > 40) setQuality(AUTO_NEXT[world.ctx.quality]);
+}
+
 function schedule(world) {
   if (active !== world || document.hidden || world.frame) return;
   world.frame = requestAnimationFrame(time => {
     world.frame = 0;
     if (active !== world || document.hidden) return;
     const dt = world.last === null ? 0 : Math.min(0.1, (time - world.last) / 1000);
+    if (world.last !== null) autoQuality(world, time - world.last);
     world.last = time;
     try {
       world.input?.update(time);
