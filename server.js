@@ -23,6 +23,7 @@ const { mergeMartialGuest, mergeKydaoGuest, donatedBy, mergeMeritSeason } = requ
 const Records = require('./lib/records');
 const { createTitles } = require('./lib/titles');
 const { createArenaManager } = require('./lib/pk/manager');
+const { createNpcPool } = require('./lib/pk/npc-pool');
 const { createKydaoManager } = require('./lib/kydao/manager');
 const { createShop } = require('./lib/kydao/shop');
 const KydaoSkins = require('./public/js/kydao-skins.js');
@@ -1739,6 +1740,7 @@ async function main() {
     })
   });
   arena = createArenaManager({
+    npcPool: createNpcPool({ size: 1 }),   // NPC Hắc Phong mức Toàn lực tính ở luồng phụ, không chặn vòng lặp chính
     now, setTimer: (fn, ms) => setTimeout(fn, ms), clearTimer: h => clearTimeout(h),
     // gói pk:* chỉ gửi cho tab đang ở Sân đấu (tab chánh điện của cùng tài khoản không nhận)
     emit: (uid, ev, payload) => { for (const q of players.values()) if (q.uid === uid && q.place === 'arena') q.socket.emit(ev, payload); },
