@@ -375,9 +375,13 @@ app.get('/vendor/three-addons/:dir/:file', (req, res) => {
   // root + đường dẫn tương đối: sendFile với đường dẫn tuyệt đối sẽ từ chối khi thư mục cha có dấu chấm đầu tên (ví dụ .claude).
   res.sendFile(rel, { root: path.join(__dirname, 'node_modules', 'three', 'examples', 'jsm'), maxAge: '10m' });
 });
+// Tệp gọi kèm ?v= (số đã tăng mỗi khi đổi nội dung) được cache dài và immutable; tệp khác giữ 10 phút.
 app.use(express.static(path.join(__dirname, 'public'), {
   maxAge: '10m',
-  setHeaders: (res, file) => { if (file.endsWith('.html')) res.set('Cache-Control', 'no-cache'); }
+  setHeaders: (res, file) => {
+    if (file.endsWith('.html')) res.set('Cache-Control', 'no-cache');
+    else if (res.req && res.req.query && res.req.query.v && /\.(js|css|webp|png|jpe?g|svg|woff2?|mp3|json|glb)$/i.test(file)) res.set('Cache-Control', 'public, max-age=31536000, immutable');
+  }
 }));
 app.get('/healthz', (req, res) => { const st = store.status(); res.json({ ok: true, online: players.size, voice: voiceCount(), db: store.backend, dbOk: !!st.ready && !st.lastError }); });
 app.get('/api/config', (req, res) => res.json(clientConfig()));
@@ -664,7 +668,7 @@ app.post('/api/admin/announce', admin, (req, res) => {
 app.post('/api/admin/chant/stop', admin, (req, res) => { endChant(false); audit(req, 'chant.stop', 'chant'); res.json({ ok: true }); });
 
 const server = http.createServer(app);
-const io = new Server(server, { maxHttpBufferSize: 16e3, pingInterval: 20000, pingTimeout: 25000 });
+const io = new Server(server, { maxHttpBufferSize: 16e3, pingInterval: 20000, pingTimeout: 25000, perMessageDeflate: { threshold: 1024 } });
 
 /* ---------------- trạng thái phòng ---------------- */
 const players = new Map();     // pid -> player
@@ -852,6 +856,18 @@ function syncCult(uid) {
     if (cm !== (q.cm || '')) { q.cm = cm; io.emit('psit', sitInfo(q)); }
   }
 }
+/** Mỗi cảnh một phòng socket: gói vị trí 'p' và hiệu ứng thị giác chỉ gửi cho người đang ở cảnh đó. */
+const sceneRoom = scene => 'scene:' + scene;
+function enterSceneRoom(p) {
+  for (const r of p.socket.rooms) if (r.startsWith('scene:') && r !== sceneRoom(p.scene)) p.socket.leave(r);
+  p.socket.join(sceneRoom(p.scene));
+}
+/** Vị trí hiện tại của mọi người trong cảnh (người vừa đổi cảnh không còn nhận gói 'p' của cảnh mới trước đó). */
+function sceneSnapshot(scene) {
+  const arr = [];
+  for (const o of players.values()) if (o.scene === scene) arr.push([o.id, Math.round(o.x * 1000), Math.round(o.z * 1000)]);
+  return arr;
+}
 function leaveArena(p, reason) {
   p.socket.leave('arena');
   if (!otherInArena(p)) arena.leave(p.uid, reason);     // còn tab khác của cùng tài khoản ở sân thì giữ nguyên chỗ
@@ -888,7 +904,9 @@ function kdGoYard(q) {
   fortuneQueue.remove(q.id); standUp(q);
   const [x, z] = SCENES.yard;
   q.scene = 'yard'; q.x = q.tx = x; q.z = q.tz = z; q.dirty = true;
+  enterSceneRoom(q);
   io.emit('pscene', { id: q.id, scene: 'yard', x: q.x, z: q.z });
+  q.socket.emit('p', sceneSnapshot('yard'));
 }
 /** Gói gửi tới từng người chơi (mọi tab của uid). Vào ván thì thôi xem bàn khác; có bàn thật thì cả hai ra sân. */
 function kdEmit(uid, ev, payload) {
@@ -1013,6 +1031,7 @@ io.on('connection', socket => {
     p.tx = p.x; p.tz = p.z;
     p.mkey = MERITS.visualKey(meritTotal(uid));
     players.set(p.id, p);
+    enterSceneRoom(p);
     socket.data.pid = p.id;
     rollDay(); bump('visits');
     const serverTime = now();
@@ -1042,7 +1061,9 @@ io.on('connection', socket => {
       standUp(p);
       const [x, z] = SCENES[scene];
       p.scene = scene; p.x = p.tx = x; p.z = p.tz = z; p.dirty = true;
+      enterSceneRoom(p);
       io.emit('pscene', { id: p.id, scene, x: p.x, z: p.z });
+      socket.emit('p', sceneSnapshot(scene));       // vị trí hiện tại của người trong cảnh mới
     }
     if (typeof ack === 'function') ack({ ok: true });
   });
@@ -1146,11 +1167,11 @@ io.on('connection', socket => {
     if (d.type === 'heart') {
       if (!bucket('heart', 4, 8)) return;
       bump('hearts'); addMerit(p, MERIT.heart);
-      io.volatile.emit('emote', { pid: p.id, type: 'heart' });
+      io.to(sceneRoom(p.scene)).volatile.emit('emote', { pid: p.id, type: 'heart' });
     } else if (d.type === 'bow') {
       if (!allow('bow', 2500)) return;
       bump('bows'); addMerit(p, MERIT.bow);
-      io.emit('emote', { pid: p.id, type: 'bow' });
+      io.to(sceneRoom(p.scene)).emit('emote', { pid: p.id, type: 'bow' });
     }
   });
 
@@ -1655,9 +1676,9 @@ setInterval(() => {
   }
   tick++;
   if (tick % 2 === 0) {
-    const arr = [];
-    for (const p of players.values()) if (p.dirty) { arr.push([p.id, Math.round(p.x * 1000), Math.round(p.z * 1000)]); p.dirty = false; }
-    if (arr.length) io.volatile.emit('p', arr);
+    const byScene = {};
+    for (const p of players.values()) if (p.dirty) { (byScene[p.scene] || (byScene[p.scene] = [])).push([p.id, Math.round(p.x * 1000), Math.round(p.z * 1000)]); p.dirty = false; }
+    for (const sc in byScene) io.to(sceneRoom(sc)).volatile.emit('p', byScene[sc]);
   }
   if (tick % 20 === 0) {
     const encounter = MARTIAL_ENABLED ? sweeper.tick() : { changed: false };
