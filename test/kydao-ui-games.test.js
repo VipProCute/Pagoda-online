@@ -19,7 +19,7 @@ function surface(reduced = false, extra = {}) {
       classList: { toggle() {} }, setAttribute(k, v) { this.attrs[k] = v; if (k === 'hidden') this.hidden = true; },
       addEventListener(k, fn) { this.listeners[k] = fn; }, append(...nodes) { this.children.push(...nodes); },
       appendChild(node) { this.children.push(node); }, prepend(node) { this.children.unshift(node); }, remove() {},
-      getContext: type => type === '2d' ? context : null,
+      getContext: type => type === '2d' ? context : type === 'webgl2' && extra.webgl ? { getExtension: () => null } : null,
       getBoundingClientRect() { return { left: 0, top: 0, width: this._w, height: this._h }; }
     };
     Object.defineProperty(el, 'textContent', { get() { return this._text || ''; }, set(value) { this._text = value; this.children = []; } });
@@ -266,4 +266,21 @@ test('hiệu ứng thắng ném lỗi thì bảng kết quả vẫn hiện', () 
   while (a.timers.length) a.timers.shift()();
   assert.equal(a.result.hidden, false);
   e.manager.shutdown();
+});
+
+test('UI thật: có WebGL2 thì cờ úp có nút Bàn 3D như cờ tướng; cờ vây vẫn không', () => {
+  for (const [game, size, shown] of [['xiangqi', undefined, true], ['jieqi', undefined, true], ['chess', undefined, true], ['go', 19, false], ['gomoku', undefined, false]]) {
+    const e = gameEnv(game, size, false, { webgl: true });
+    assert.equal(e.views[0].button('Bàn 3D').hidden, !shown, game);
+    e.manager.shutdown();
+  }
+  const noGl = gameEnv('jieqi');
+  assert.equal(noGl.views[0].button('Bàn 3D').hidden, true, 'không WebGL2 thì giữ bàn 2D');
+  noGl.manager.shutdown();
+});
+
+test('UI thật: lãnh địa (skin sân) bật cho cả cờ tướng và cờ úp, không cho cờ vây', () => {
+  const Skins = require('../public/js/kydao-skins.js');
+  for (const game of ['xiangqi', 'jieqi']) assert.ok(Skins.supports(game) && Skins.supportsPieces(game), game);
+  assert.ok(!Skins.supports('go') && Skins.supportsPieces('go'));
 });
