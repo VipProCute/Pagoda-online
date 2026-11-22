@@ -128,7 +128,7 @@
     if (muted || (root.document && document.hidden)) return;
     if (!ambience) {
       ambience = new Audio(currentMusic());
-      ambience.loop = true; ambience.preload = 'auto';
+      ambience.loop = true; ambience.preload = 'metadata';
       ambience.setAttribute('playsinline', '');
       // iOS phát nhạc nền bằng media player trực tiếp, tránh đường resampling Web Audio gây rè/lặp mẫu.
       if (!ios) {

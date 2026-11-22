@@ -29,4 +29,13 @@ function waitFor(socket, ev, pred = () => true, ms = 8000, includePast = false) 
 }
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-module.exports = { connect, call, join, waitFor, sleep };
+/** Giải gói vị trí 'p' (Buffer 8 byte/người: id u32, x*1000 u16, z*1000 u16, little-endian) về [[id, x, z], ...]; nhận cả dạng mảng cũ. */
+function decodePositions(payload) {
+  if (Array.isArray(payload)) return payload;
+  const b = Buffer.from(payload.buffer ? payload : new Uint8Array(payload));
+  const out = [];
+  for (let o = 0; o + 8 <= b.length; o += 8) out.push([b.readUInt32LE(o), b.readUInt16LE(o + 4), b.readUInt16LE(o + 6)]);
+  return out;
+}
+
+module.exports = { decodePositions, connect, call, join, waitFor, sleep };

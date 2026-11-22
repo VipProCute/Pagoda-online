@@ -149,12 +149,26 @@ function resize(world) {
   world.ctx.camera.updateProjectionMatrix();
 }
 
+// Tự hạ mức đồ họa khi máy yếu: trung bình khung > 40 ms trong ~3 giây thì hạ một bậc (high → medium → low).
+// Chỉ đổi trong phiên này, không ghi đè mức đã lưu của người dùng. Khung > 500 ms (chuyển tab) không tính.
+const AUTO_NEXT = { high: 'medium', medium: 'low' };
+function autoQuality(world, ms) {
+  if (ms > 500 || !AUTO_NEXT[world.ctx.quality]) { world.slow = null; return; }
+  const w = world.slow || (world.slow = { sum: 0, n: 0 });
+  w.sum += ms; w.n++;
+  if (w.sum < 3000) return;
+  const avg = w.sum / w.n;
+  world.slow = null;
+  if (avg > 40) setQuality(AUTO_NEXT[world.ctx.quality]);
+}
+
 function schedule(world) {
   if (active !== world || document.hidden || world.frame) return;
   world.frame = requestAnimationFrame(time => {
     world.frame = 0;
     if (active !== world || document.hidden) return;
     const dt = world.last === null ? 0 : Math.min(0.1, (time - world.last) / 1000);
+    if (world.last !== null) autoQuality(world, time - world.last);
     world.last = time;
     try {
       world.input?.update(time);
@@ -167,6 +181,7 @@ function schedule(world) {
         updatePeople(world, state, dt);
         world.rig.update(state, world.content);
       }
+      if ((world.tick = (world.tick || 0) + 1) % 2 === 0) world.renderer.shadowMap.needsUpdate = true;   // bóng cập nhật nửa số khung hình
       world.renderer.render(world.ctx.scene, world.ctx.camera);
     } catch (error) {
       const notify = world.ctx.on.error;
@@ -191,6 +206,7 @@ export async function setScene(scene = 'test') {
     clearPeople(world); release(world.content);
     world.content = content; world.sceneName = scene;
     world.ctx.scene.add(content.group);
+    applyShadows(world);   // đèn của cảnh mới theo mức đồ họa hiện tại, vẽ bóng ngay khung đầu
     return { ok: true };
   } catch (error) {
     return failure('Cảnh này chưa có 3D. Xin dùng giao diện 2D.');
@@ -209,10 +225,29 @@ export function setQuality(quality) {
   if (!active) return failure('Chưa mở cảnh 3D.');
   if (!Object.hasOwn(QUALITY, quality)) return failure('Mức đồ họa chưa hợp lệ.');
   active.ctx.quality = quality;
-  active.renderer.shadowMap.enabled = quality === 'high';
-  active.renderer.shadowMap.type = active.ctx.THREE.PCFSoftShadowMap;
+  applyShadows(active);
   resize(active);
   return { ok: true };
+}
+
+// Bóng chỉ bật ở mức 'high'. PCFShadowMap (không PCFSoft) rẻ hơn, khác biệt nhìn không rõ ở kích thước bản đồ bóng 1024-2048.
+// autoUpdate tắt: bóng chỉ vẽ lại khi cần (mỗi 2 khung hình, và ngay sau khi đổi cảnh / mức đồ họa), vì người chơi cử động liên tục
+// còn vật cố định thì không. Khi hạ xuống mức không bóng, đèn cũng thôi đổ bóng để vật liệu không còn lấy mẫu bản đồ bóng cũ.
+function applyShadows(world) {
+  const on = world.ctx.quality === 'high', map = world.renderer.shadowMap;
+  map.enabled = on; map.type = world.ctx.THREE.PCFShadowMap; map.autoUpdate = false; map.needsUpdate = true;
+  world.ctx.scene.traverse(object => {
+    if (!object.isLight || !object.shadow) return;
+    if (object.userData.castShadow === undefined) object.userData.castShadow = object.castShadow;
+    object.castShadow = on && object.userData.castShadow;
+  });
+}
+
+/** Số liệu vẽ hiện tại (cho kiểm thử và gỡ lỗi): { quality, calls, triangles, geometries, textures }. */
+export function stats() {
+  if (!active) return null;
+  const { render, memory } = active.renderer.info;
+  return { quality: active.ctx.quality, scene: active.sceneName, calls: render.calls, triangles: render.triangles, geometries: memory.geometries, textures: memory.textures, people: active.people.size };
 }
 
 export function stop() {

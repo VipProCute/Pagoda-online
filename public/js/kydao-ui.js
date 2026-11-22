@@ -411,12 +411,12 @@
   }
 
   async function toggleBoard3D() {
-    if (!ui || !S || !['chess', 'xiangqi'].includes(S.game)) return;
+    if (!ui || !S || !['chess', 'xiangqi', 'jieqi'].includes(S.game)) return;
     if (ui.board3d) { stopBoard3D(); fit(); redraw(); return; }
     const panel = ui, session = S, token = {};
     panel.boardLoad = token; panel.boardBtn.disabled = true; panel.boardBtn.textContent = 'Đang mở…';
     try {
-      const { createBoard3D } = await import('/js/world3d/board3d.mjs?v=8');
+      const { createBoard3D } = await import('/js/world3d/board3d.mjs?v=9');
       if (ui !== panel || S !== session || panel.boardLoad !== token) return;
       panel.canvas3d = h('canvas', { class: 'kd-canvas', tabindex: '0', 'aria-label': 'Bàn cờ 3D. Kéo hoặc dùng phím mũi tên để xoay; cuộn để thu phóng.' });
       panel.canvas3d.style.width = panel.canvas._w + 'px'; panel.canvas3d.style.height = panel.canvas._h + 'px';
@@ -853,7 +853,7 @@
     ui.actions.hidden = false;
     ui.drawBtn.disabled = S.offer === S.you;
     ui.viBtn.hidden = !['xiangqi', 'jieqi'].includes(S.game);
-    ui.boardBtn.hidden = !['chess', 'xiangqi'].includes(S.game) || !ui.webgl;
+    ui.boardBtn.hidden = !['chess', 'xiangqi', 'jieqi'].includes(S.game) || !ui.webgl;
     ui.zoomBtn.hidden = !isGrid(S.game);
     ui.goBar.hidden = S.game !== 'go';
     renderGo();
@@ -1036,7 +1036,7 @@
         const names = root.KydaoDraw.VIET;
         say((ev.reveal.mover ? 'Lật quân: ' + names[ev.reveal.mover] + '.' : '') + (ev.reveal.captured ? ' Quân úp bị ăn: ' + names[ev.reveal.captured] + '.' : ''));
       }
-      if (S.game === 'jieqi' && ev.reveal && ev.reveal.mover && !reduced()) {
+      if (S.game === 'jieqi' && ev.reveal && ev.reveal.mover && !reduced() && !ui.board3d) { // bàn 3D tự lật quân trong board3d.mjs
         const session = S, started = Date.now(), square = ev.move.slice(2, 4);
         const animate = () => {
           if (S !== session || !ui || S.over) return;

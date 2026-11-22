@@ -149,9 +149,9 @@ test('ghi file tạm rồi đổi tên, không để lại file tạm', async t 
   fill(store.get());
   store.save();
   const calls = [];
-  const origWrite = fs.writeFileSync, origRename = fs.renameSync;
-  const w = t.mock.method(fs, 'writeFileSync', function (p, ...r) { calls.push(['write', p]); return origWrite.call(this, p, ...r); });
-  const rn = t.mock.method(fs, 'renameSync', function (a, b) { calls.push(['rename', a, b]); return origRename.call(this, a, b); });
+  const origWrite = fs.promises.writeFile, origRename = fs.promises.rename;
+  const w = t.mock.method(fs.promises, 'writeFile', function (p, ...r) { calls.push(['write', p]); return origWrite.call(this, p, ...r); });
+  const rn = t.mock.method(fs.promises, 'rename', function (a, b) { calls.push(['rename', a, b]); return origRename.call(this, a, b); });
   assert.equal(await store.flush(), true);
   w.mock.restore(); rn.mock.restore();
   assert.deepEqual(calls, [['write', file + '.tmp'], ['rename', file + '.tmp', file]]);
@@ -167,9 +167,9 @@ test('ghi dở dang (lỗi giữa chừng) không làm hỏng file cũ, flush tr
   store.get().merit.u1 = { name: 'Mới', total: 2 };
   store.save();
   let fail = true;
-  const origWrite = fs.writeFileSync;
-  t.mock.method(fs, 'writeFileSync', function (p, ...r) {
-    if (fail) { origWrite.call(this, p, '{"cut":'); throw new Error('đĩa đầy giả'); }
+  const origWrite = fs.promises.writeFile;
+  t.mock.method(fs.promises, 'writeFile', async function (p, ...r) {
+    if (fail) { await origWrite.call(this, p, '{"cut":'); throw new Error('đĩa đầy giả'); }
     return origWrite.call(this, p, ...r);
   });
   assert.equal(await store.flush(), false);
@@ -184,14 +184,14 @@ test('ghi dở dang (lỗi giữa chừng) không làm hỏng file cũ, flush tr
   assert.equal(store.status().lastError, null);
 });
 
-test('flush trả Promise<boolean> và ghi file ngay trong lời gọi (đồng bộ)', async t => {
+test('flush trả Promise<boolean>, ghi bất đồng bộ và xong khi promise được giải quyết', async t => {
   const { store, file } = setup(t);
   store.load();
   store.get().merit.u1 = { name: 'A', total: 1 };
   const p = store.flush();
   assert.ok(p instanceof Promise);
-  assert.equal(fs.existsSync(file), true, 'file đã có trước khi await');
   assert.equal(await p, true);
+  assert.equal(fs.existsSync(file), true, 'file đã bền khi promise xong');
   fs.rmSync(file);
   assert.equal(typeof (await store.flush()), 'boolean');
 });
@@ -223,6 +223,7 @@ test('save() hẹn ghi sau 4 giây, nhiều lần save chỉ ghi một lần', a
   assert.equal(fs.existsSync(file), false, 'chưa tới 4 giây');
   assert.equal(store.status().dirty, true);
   t.mock.timers.tick(1);
+  for (let i = 0; i < 500 && store.status().flushes < 1; i++) await new Promise(r => setImmediate(r));   // ghi bất đồng bộ: chờ xong
   assert.equal(fs.existsSync(file), true);
   assert.equal(store.status().dirty, false);
   assert.equal(store.status().flushes, 1);
@@ -406,4 +407,48 @@ test('store-sections: chuỗi có NUL hoặc surrogate lẻ được làm sạch
   assert.equal(v.a, 'xy');
   assert.equal(v.b, 'z�');
   assert.equal(v.c, 'ok \\u0000 giữ nguyên chữ');
+});
+
+test('flush chồng nhau: không bao giờ hai lần ghi cùng lúc, lần sau thấy thay đổi mới', async t => {
+  const { store, file } = setup(t);
+  store.load();
+  let active = 0, maxActive = 0, writes = 0;
+  const origWrite = fs.promises.writeFile;
+  t.mock.method(fs.promises, 'writeFile', async function (p, ...r) {
+    active++; writes++; maxActive = Math.max(maxActive, active);
+    await new Promise(res => setTimeout(res, 40));
+    try { return await origWrite.call(this, p, ...r); } finally { active--; }
+  });
+  store.get().merit.u1 = { name: 'Một', total: 1 };
+  const p1 = store.flush();
+  store.get().merit.u1 = { name: 'Hai', total: 2 };
+  const p2 = store.flush();
+  const p3 = store.flush();   // dùng chung lần ghi kế tiếp với p2
+  assert.deepEqual(await Promise.all([p1, p2, p3]), [true, true, true]);
+  assert.equal(maxActive, 1, 'không chồng nhau');
+  assert.equal(writes, 2, 'p2 và p3 chung một lần ghi');
+  assert.equal(JSON.parse(fs.readFileSync(file, 'utf8')).merit.u1.name, 'Hai');
+});
+
+test('flush không chặn vòng lặp sự kiện trong lúc ghi', async t => {
+  const { store } = setup(t);
+  store.load();
+  store.get().merit.u1 = { name: 'A', total: 1 };
+  let ticked = false;
+  setImmediate(() => { ticked = true; });
+  const p = store.flush();
+  assert.equal(ticked, false);
+  await p;
+  assert.equal(ticked, true);
+});
+
+test('close() ghi nốt thay đổi cuối khi đang có một lần ghi dở', async t => {
+  const { store, file } = setup(t);
+  store.load();
+  store.get().merit.u1 = { name: 'Đầu', total: 1 };
+  const p = store.flush();
+  store.get().merit.u1 = { name: 'Cuối', total: 2 };
+  assert.equal(await store.close(), true);
+  await p;
+  assert.equal(JSON.parse(fs.readFileSync(file, 'utf8')).merit.u1.name, 'Cuối');
 });
