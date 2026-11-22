@@ -991,9 +991,43 @@
     if (lines.length === maxLines && lines.join(' ').length < text.length) lines[maxLines - 1] = lines[maxLines - 1].replace(/\s*\S*$/, '') + '…';
     return lines.map(l => { while (g.measureText(l).width > maxW && l.length > 2) l = l.slice(0, -2) + '…'; return l; });
   }
+  // Bộ nhớ đệm chữ: nhớ độ rộng chữ (measureText) và kết quả ngắt dòng bong bóng, khỏi đo lại mỗi khung hình cho từng người.
+  const FONT = 'px "Be Vietnam Pro", system-ui, sans-serif', widthCache = new Map(), wrapCache = new Map();
+  function textW(font, text) {                               // g.font phải đang là font
+    const k = font + '|' + text; let w = widthCache.get(k);
+    if (w === undefined) { if (widthCache.size > 600) widthCache.clear(); g.font = font; w = g.measureText(text).width; widthCache.set(k, w); }
+    return w;
+  }
+  function wrapCached(text, maxW, maxLines, font) {         // g.font phải đang là font
+    const k = font + '|' + maxW + '|' + text; let r = wrapCache.get(k);
+    if (!r) { if (wrapCache.size > 80) wrapCache.clear(); r = wrap(text, maxW, maxLines); wrapCache.set(k, r); }
+    return r;
+  }
   let anyMoving = false;                                      // có ai đang đi / nội suy bước không (để frame() biết có cần vẽ đủ 60 fps)
+  // Đệm gói vị trí của người khác. Máy chủ gửi ~10 gói/giây (volatile, có thể rớt, đến không đều) nên không vẽ thẳng vị trí mới nhất:
+  // mỗi gói ghi kèm giờ nhận, rồi vẽ ở thời điểm (bây giờ − SNAP_DELAY), nội suy giữa hai gói kẹp quanh đó. Hết gói thì ngoại suy ngắn
+  // (≤ SNAP_EXTRA) theo vận tốc hai gói cuối nếu gói cuối còn là bước đi đủ dài (không phải bước dừng), rồi đứng yên.
+  const SNAP_DELAY = 120, SNAP_EXTRA = 150, SRV_STEP = 0.024, SNAP_SLEW = 0.6;   // SRV_STEP: SPEED 0.24 × 0.1 s của máy chủ
+  function snapStep(p, pnow, dt) {
+    const b = p.buf, rt = pnow - SNAP_DELAY;
+    while (b.length > 2 && b[1].t <= rt) b.shift();            // chỉ giữ hai gói kẹp thời điểm vẽ và các gói sau nó
+    const q0 = b[0], q1 = b[b.length > 1 ? 1 : 0];
+    let tx = q0.x, tz = q0.z;
+    if (b.length > 1 && rt > q0.t) {
+      const span = Math.max(1, q1.t - q0.t);
+      if (rt <= q1.t) { const f = (rt - q0.t) / span; tx = q0.x + (q1.x - q0.x) * f; tz = q0.z + (q1.z - q0.z) * f; }
+      else {                                                   // gói tới muộn: ngoại suy ngắn nếu gói cuối là bước đi đủ dài
+        const len = Math.hypot((q1.x - q0.x) * 1.6, q1.z - q0.z), ex = len >= SRV_STEP * 0.8 ? Math.min(SNAP_EXTRA, rt - q1.t) / span : 0;
+        tx = q1.x + (q1.x - q0.x) * ex; tz = q1.z + (q1.z - q0.z) * ex;
+      }
+    }
+    // vị trí vẽ bám theo vị trí đích với tốc độ tối đa, để lúc gói đến muộn / rớt không bị giật nhảy
+    const ddx = tx - p.dx, ddz = tz - p.dz, dd = Math.hypot(ddx * 1.6, ddz), mx = SNAP_SLEW * dt / 1000;
+    if (dd <= mx) { p.dx = tx; p.dz = tz; } else { const r = mx / dd; p.dx += ddx * r; p.dz += ddz * r; }
+  }
   function stepPlayers(now, dt) {
     anyMoving = false;
+    const pnow = performance.now();
     const k = 1 - Math.exp(-dt / 90);
     // mỗi người chỉ hiện ở đúng cảnh mình đang ở (chánh điện, sân chùa, Tàng Kinh Các, Sân đấu); ở Võ Học Các thì không hiện
     const list = [...players.values()].filter(p => viewOf(p) === scene);
@@ -1001,14 +1035,11 @@
     const kl = 1 - Math.exp(-dt / 80);
     for (const p of list) {
       const ox = p.dx, oz = p.dz;
-      if (p.it && p.id !== me) {                              // người khác: nội suy tuyến tính giữa hai gói vị trí (~100 ms/gói) cho bước đi đều
-        const a = Math.min(1, (now - p.it) / 110);
-        p.dx = p.fx + (p.x - p.fx) * a; p.dz = p.fz + (p.z - p.fz) * a;
-        if (a >= 1) p.it = 0;
-      } else { p.dx += (p.x - p.dx) * k; p.dz += (p.z - p.dz) * k; }
+      if (p.buf && p.id !== me) snapStep(p, pnow, dt);        // người khác: đệm gói vị trí, vẽ chậm ~120 ms để nội suy giữa hai gói
+      else { p.dx += (p.x - p.dx) * k; p.dz += (p.z - p.dz) * k; }
       const vx = p.dx - ox, vz = p.dz - oz, sp = Math.hypot(vx * 1.6, vz);
       p.walking = sp > 0.0003;
-      if (p.walking || p.it) anyMoving = true;
+      if (p.walking || (p.buf && pnow - p.buf[p.buf.length - 1].t < 400)) anyMoving = true;
       if (p.walking) p.viewYaw = Math.atan2(vx * 1.6, vz);
       if (p.walking) { p.idleT = now; if (vz > 0.0004) p.front = true; else if (vz < -0.0004) p.front = false; }
       else if (now - (p.idleT || 0) > 700) p.front = false;
@@ -1101,24 +1132,21 @@
       p.sx = sx; p.sy = sy; p.s = s;
     }
     // tên + bong bóng chat vẽ sau cùng để không bị che
-    const fs = Math.round(clamp(8 + 4 * au, 10, 13));
+    const fs = Math.round(clamp(8 + 4 * au, 10, 13)), fontB = '600 ' + fs + FONT;
     g.textAlign = 'center'; g.textBaseline = 'middle';
     if (scene === 'yard') drawTableSigns(fs);
     for (const p of list) {
       const top = p.sy - (p.hy || 104) * p.s;
-      g.font = `600 ${fs}px "Be Vietnam Pro", system-ui, sans-serif`;
-      const label = p.mod ? '✿ ' + p.name : p.name;
-      const w = g.measureText(label).width + 10, h = fs + 6, y = top - h / 2 - 2;
-      const aur = p.au && p.au.t && p.au.until > serverNow() ? p.au : null;
-      g.fillStyle = p.id === me ? 'rgba(60,35,8,.82)' : 'rgba(12,7,5,.6)';
-      rrect(g, p.sx - w / 2, y - h / 2, w, h, h / 2); g.fill();
-      if (p.talk > 0.05) { g.strokeStyle = `rgba(134,227,180,${0.5 + 0.5 * p.talk})`; g.lineWidth = 1.5; g.stroke(); }
-      else if (aur) { g.strokeStyle = rgba(tierColor(aur.t), 0.95); g.lineWidth = 1.3; g.stroke(); }
-      else if (p.id === me || p.mod) { g.strokeStyle = 'rgba(255,211,107,.8)'; g.lineWidth = 1; g.stroke(); }
-      g.fillStyle = p.id === me || p.mod ? '#ffd36b' : '#f6eddc';
-      g.fillText(label, p.sx, y + 0.5);
+      const label = p.mod ? '✿ ' + p.name : p.name, hl = p.id === me ? 2 : p.mod ? 1 : 0;
+      const w = textW(fontB, label) + 10, h = fs + 6, y = top - h / 2 - 2;
+      const aur = p.au && p.au.t && p.au.until > srvNow ? p.au : null;
+      g.font = fontB; g.fillStyle = hl === 2 ? 'rgba(60,35,8,.82)' : 'rgba(12,7,5,.6)'; rrect(g, p.sx - w / 2, y - h / 2, w, h, h / 2); g.fill();
+      g.fillStyle = hl ? '#ffd36b' : '#f6eddc'; g.fillText(label, p.sx, y + 0.5);
+      const stroke = p.talk > 0.05 ? `rgba(134,227,180,${0.5 + 0.5 * p.talk})` : aur ? rgba(tierColor(aur.t), 0.95) : hl ? 'rgba(255,211,107,.8)' : '';
+      if (stroke) { g.strokeStyle = stroke; g.lineWidth = p.talk > 0.05 ? 1.5 : aur ? 1.3 : 1; rrect(g, p.sx - w / 2, y - h / 2, w, h, h / 2); g.stroke(); }
+      g.font = fontB;
       if (p.pens && p.pens.length) {                        // −công đức bay lên khi nói tục
-        g.font = `700 ${fs}px "Be Vietnam Pro", system-ui, sans-serif`;
+        g.font = '700 ' + fs + FONT;
         p.pens = p.pens.filter(e => now - e.t < 2600);
         for (const e of p.pens) {
           const q = (now - e.t) / 2600;
@@ -1126,33 +1154,33 @@
           g.fillStyle = '#ff6b6b'; g.fillText(`−${e.n} công đức`, p.sx, y - h - q * 34);
         }
         g.globalAlpha = 1;
-        g.font = `600 ${fs}px "Be Vietnam Pro", system-ui, sans-serif`;
+        g.font = fontB;
       }
       if (p.v) micBadge(p.sx - w / 2 - h / 2 - 2, y, h / 2, p.v === 2, p.talk);
       if (p.rd) bookBadge(p.sx + w / 2 + h / 2 + 2, y, h / 2);
       let up = 0;
       const tg = scene === 'arena' && tagger ? tagger(p.id) : null;   // Sân đấu: rảnh / đang đấu / tạm nghỉ, cấp nội công
       if (tg && tg.text) {
-        const tfs = Math.max(9, fs - 2);
-        g.font = `600 ${tfs}px "Be Vietnam Pro", system-ui, sans-serif`;
-        const tw2 = g.measureText(tg.text).width + 16, th = tfs + 5, ty2 = y - h / 2 - th / 2 - 2;
+        const tfs = Math.max(9, fs - 2), tfont = '600 ' + tfs + FONT;
+        g.font = tfont;
+        const tw2 = textW(tfont, tg.text) + 16, th = tfs + 5, ty2 = y - h / 2 - th / 2 - 2;
         g.fillStyle = 'rgba(12,7,5,.72)'; rrect(g, p.sx - tw2 / 2, ty2 - th / 2, tw2, th, th / 2); g.fill();
         g.strokeStyle = tg.color || '#86b38a'; g.lineWidth = 1; g.stroke();
         g.fillStyle = tg.color || '#86b38a'; circle(g, p.sx - tw2 / 2 + 7, ty2, 2.4);
         g.fillStyle = '#f6eddc'; g.fillText(tg.text, p.sx + 3, ty2 + 0.5);
-        g.font = `600 ${fs}px "Be Vietnam Pro", system-ui, sans-serif`;
+        g.font = fontB;
         up = th + 2;
       }
       const tl = p.tt && p.tt.length ? titleOf(p.tt) : null;   // danh hiệu: một viên theo thứ tự ưu tiên, ở mọi cảnh
       if (tl) {
-        const tfs = Math.max(9, fs - 2);
-        g.font = `700 ${tfs}px "Be Vietnam Pro", system-ui, sans-serif`;
-        const cw = tl.crown ? tfs + 2 : 0, tw3 = g.measureText(tl.name).width + 14 + cw, th3 = tfs + 5, ty3 = y - h / 2 - up - th3 / 2 - 2;
+        const tfs = Math.max(9, fs - 2), tfont = '700 ' + tfs + FONT;
+        g.font = tfont;
+        const cw = tl.crown ? tfs + 2 : 0, tw3 = textW(tfont, tl.name) + 14 + cw, th3 = tfs + 5, ty3 = y - h / 2 - up - th3 / 2 - 2;
         g.fillStyle = tl.kind === 'history' ? '#17110d' : '#a32a22'; rrect(g, p.sx - tw3 / 2, ty3 - th3 / 2, tw3, th3, th3 / 2); g.fill();
         g.strokeStyle = '#e0b04a'; g.lineWidth = 1.2; g.stroke();
         if (tl.crown) crownIcon(p.sx - tw3 / 2 + 7 + tfs / 2, ty3, tfs * 0.5);
         g.fillStyle = '#f6eddc'; g.fillText(tl.name, p.sx + cw / 2, ty3 + 0.5);
-        g.font = `600 ${fs}px "Be Vietnam Pro", system-ui, sans-serif`;
+        g.font = fontB;
         up += th3 + 2;
       }
       if (innerPids.has(p.id)) {                            // đang đánh cờ ở "bàn trong": biểu tượng bàn cờ nhỏ trên đầu
@@ -1163,9 +1191,11 @@
         const age = now - p.bubble.t;
         if (age > 6500) { p.bubble = null; continue; }
         const a = age > 5900 ? 1 - (age - 5900) / 600 : 1;
-        g.font = `500 ${fs}px "Be Vietnam Pro", system-ui, sans-serif`;
-        const lines = wrap(p.bubble.text, Math.max(150, 190 * Math.min(1, au)), 3);
-        const bw = Math.max(...lines.map(l => g.measureText(l).width)) + 14, bh = lines.length * (fs + 3) + 9;
+        const bfont = '500 ' + fs + FONT;
+        g.font = bfont;
+        const lines = wrapCached(p.bubble.text, Math.max(150, 190 * Math.min(1, au)), 3, bfont);
+        let bw0 = 0; for (const l of lines) bw0 = Math.max(bw0, textW(bfont, l));
+        const bw = bw0 + 14, bh = lines.length * (fs + 3) + 9;
         const bx = clamp(p.sx - bw / 2, 4, W - bw - 4), by = y - h / 2 - bh - 8 - up;
         g.globalAlpha = a;
         g.fillStyle = '#fbf5e8'; rrect(g, bx, by, bw, bh, 8); g.fill();
@@ -1214,13 +1244,13 @@
       g.strokeStyle = `rgba(240,200,120,${(0.7 * (1 - q)).toFixed(3)})`; g.lineWidth = 2;
       g.beginPath(); g.ellipse(G.bowl.x, G.hb, 30 * u + q * W * 0.55, (12 * u + q * W * 0.55) * 0.35, 0, 0, TAU); g.stroke();
     }
-    const fs = Math.round(clamp(10 + 3 * au, 11, 14));
-    g.font = `600 ${fs}px "Be Vietnam Pro", system-ui, sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+    const fs = Math.round(clamp(10 + 3 * au, 11, 14)), fontF = '600 ' + fs + FONT;
+    g.font = fontF; g.textAlign = 'center'; g.textBaseline = 'middle';
     for (let i = floaters.length - 1; i >= 0; i--) {
       const f = floaters[i]; f.t += dt;
       if (f.t > 3200) { floaters.splice(i, 1); continue; }
       const q = f.t / 3200, a = q < 0.12 ? q / 0.12 : 1 - (q - 0.12) / 0.88, y = f.y - q * 40 * au;
-      const w = g.measureText(f.text).width + 18, h = fs + 10;
+      const w = textW(fontF, f.text) + 18, h = fs + 10;
       g.globalAlpha = Math.max(0, a);
       g.fillStyle = 'rgba(20,10,6,.7)'; rrect(g, f.x - w / 2, y - h / 2, w, h, h / 2); g.fill();
       g.fillStyle = '#ffd36b'; g.fillText(f.text, f.x, y + 0.5);
@@ -1914,11 +1944,12 @@
   // Biển tên nổi phía trên bàn (vẽ trước tên người để tên người không bị che).
   // Đặt dưới chân bàn (không đè chữ "Chạm để xem" của thầy bói ở phía trên), kẹp trong màn; màn hẹp dùng nhãn ngắn.
   function drawTableSigns(fs) {
-    g.font = `600 ${fs}px "Be Vietnam Pro", system-ui, sans-serif`;
+    const fontT = '600 ' + fs + FONT;
+    g.font = fontT;
     signRects.clear();
     for (const t of YARD_TABLES) {
       const q = yardGeo.get('t' + t.id); if (!q) continue;
-      const T = tableState.get(t.id), text = tableLabel(t.id, W < 600), w = g.measureText(text).width + 14, h = fs + 7;
+      const T = tableState.get(t.id), text = tableLabel(t.id, W < 600), w = textW(fontT, text) + 14, h = fs + 7;
       const cx = clamp(q.x, w / 2 + 4, Math.max(w / 2 + 4, W - w / 2 - 4)), y = Math.min(q.y + 8 * q.s + h / 2, H - h / 2 - 2);
       signRects.set(t.id, { x: cx - w / 2, y: y - h / 2, w, h });
       const col = T && T.status === 'playing' ? '#e2463c' : T && T.status === 'waiting' ? '#e8c477' : '#9a8b78';
@@ -1961,7 +1992,8 @@
   // Khi không ai đi lại và không có hiệu ứng ngắn (tim, gợn nước, chữ bay, vòng chạm, hover, tu vi...) thì chỉ còn
   // các chuyển động nền chậm (lửa đèn, khói nhang, hào quang, bong bóng) nên vẽ ~30 fps cho đỡ tốn pin.
   const calm = () => !anyMoving && !hearts.length && !ripples.length && !floaters.length && !clickMark && !hover && !hoverTable && !hoverLib
-    && ![...players.values()].some(p => p.burst || p.rburst || (p.pens && p.pens.length));
+    && !busyPlayer();
+  function busyPlayer() { for (const p of players.values()) if (p.burst || p.rburst || (p.pens && p.pens.length)) return true; return false; }
   let lastDraw = 0;
   function frame(ts) {
     if (!paused && !document.hidden && lastDraw && ts - lastDraw < 28 && calm()) { requestAnimationFrame(frame); return; }
@@ -2211,7 +2243,7 @@
     setPlace(id, place, x, z) {
       const p = players.get(id); if (!p) return;
       p.place = place || 'hall'; p.sit = -1; p.cm = ''; p.lift = 0;
-      p.it = 0;
+      p.buf = null;
       if (x != null && z != null) { p.x = p.dx = x; p.z = p.dz = z; } else { p.dx = p.x; p.dz = p.z; }
     },
     /** Ngồi bồ đoàn (sit = số bồ đoàn, −1 là đứng dậy) và công pháp đang tu (để vẽ linh khí). */
@@ -2248,7 +2280,7 @@
     setTable(t) { applyTables([t], true); },
     YARD_TABLES,
     setScene(value) { if (value === scene) return; scene = value; hover = ''; hoverTable = null; hoverLib = false; if (W && H) geo(); bg = null; },
-    playerScene(d) { const p = players.get(d.id); if (p) { p.scene = d.scene; p.sit = -1; p.cm = ''; p.it = 0; p.x = p.dx = d.x; p.z = p.dz = d.z; } },
+    playerScene(d) { const p = players.get(d.id); if (p) { p.scene = d.scene; p.sit = -1; p.cm = ''; p.buf = null; p.x = p.dx = d.x; p.z = p.dz = d.z; } },
     setOffset(ms) { offset = ms; },
     setPlayers(list) { players.clear(); list.forEach(p => players.set(p.id, mk(p))); },
     addPlayer(p) { players.set(p.id, mk(p)); },
@@ -2259,8 +2291,16 @@
       for (const [id, x, z] of arr) {
         const p = players.get(id); if (!p) continue;
         const nx = x / 1000, nz = z / 1000;
-        if (id !== me && (nx !== p.x || nz !== p.z) && Math.hypot(nx - p.dx, nz - p.dz) < 0.35) { p.fx = p.dx; p.fz = p.dz; p.it = t; }   // bước nhảy xa (dịch chuyển) thì để làm mượt cũ
-        else p.it = 0;
+        if (id === me) { p.x = nx; p.z = nz; continue; }
+        if (nx === p.x && nz === p.z && p.buf) continue;
+        if (Math.hypot(nx - p.dx, nz - p.dz) >= 0.35) p.buf = null;   // bước nhảy xa (dịch chuyển): bỏ đệm, để làm mượt cũ lướt tới
+        else {
+          const b = p.buf || (p.buf = []);
+          // đứng yên lâu rồi mới đi: chèn vị trí nghỉ trước đó làm gói đầu để không bị "chạy trước" tới gói mới
+          if (!b.length || t - b[b.length - 1].t > 250) { b.length = 0; b.push({ t: t - 100, x: p.x, z: p.z }); }
+          b.push({ t, x: nx, z: nz });
+          if (b.length > 6) b.splice(0, b.length - 6);
+        }
         p.x = nx; p.z = nz;
       }
     },
