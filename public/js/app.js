@@ -688,7 +688,15 @@
   socket.on('martial:inheritance', d => { toast(`Tảo Địa Tăng truyền thừa: +${d.gain} công lực, lên cảnh giới ${d.level}!`); if (window.Dojo) Dojo.refresh(); });
   socket.on('voice:kicked', d => { Voice.forceMute(); voiceUI(); toast(d.text); });
   socket.on('pu', d => Hall.updatePlayer(d));
-  socket.on('p', arr => Hall.positions(arr));
+  // Gói vị trí: ArrayBuffer (mỗi người 8 byte little-endian: id uint32, x*1000 uint16, z*1000 uint16) hoặc dạng mảng cũ [[id, x, z], ...]
+  socket.on('p', data => {
+    if (Array.isArray(data)) return Hall.positions(data);
+    const buf = data instanceof ArrayBuffer ? data : (data && data.buffer instanceof ArrayBuffer ? data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) : null);
+    if (!buf) return;
+    const dv = new DataView(buf), arr = [];
+    for (let o = 0; o + 8 <= buf.byteLength; o += 8) arr.push([dv.getUint32(o, true), dv.getUint16(o + 4, true), dv.getUint16(o + 6, true)]);
+    if (arr.length) Hall.positions(arr);
+  });
   socket.on('chat', m => {
     if (!joined) return;
     addMsg(m); pruneChat(); scrollFeed();

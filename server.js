@@ -316,7 +316,7 @@ const titles = createTitles({
   emit: {
     ticker: text => io.emit('ticker', { text }),
     titles: snap => io.emit('titles', snap),
-    ptt: (uid, codes) => { for (const q of players.values()) if (accountOf(q.uid) === uid) io.emit('ptt', { id: q.id, tt: codes }); }
+    ptt: (uid, codes) => { for (const q of tabsOf(uid)) io.emit('ptt', { id: q.id, tt: codes }); }   // khách đã gộp bị ngắt kết nối ngay lúc gộp nên p.uid luôn là tài khoản
   }
 });
 function titlesTick() {
@@ -336,6 +336,7 @@ function myAura(uid) {
   const a = db.auras[uid];
   return a && a.until > now() ? { amount: a.amount, t: a.tier, until: a.until } : null;
 }
+const sameBoard = (a, b) => a.length === b.length && a.every((x, i) => x.name === b[i].name && x.v === b[i].v);
 function board() {
   const d = vnDay();
   return Object.values(db.merit).filter(m => m.day === d && m.today > 0)
@@ -673,6 +674,11 @@ const io = new Server(server, { maxHttpBufferSize: 16e3, pingInterval: 20000, pi
 
 /* ---------------- trạng thái phòng ---------------- */
 const players = new Map();     // pid -> player
+const byUid = new Map();       // uid -> Set<player>: chỉ mục để không phải quét cả phòng mỗi lần cần tìm các tab của một người
+const EMPTY = Object.freeze([]);
+const tabsOf = uid => byUid.get(uid) || EMPTY;
+function indexPlayer(p) { let s = byUid.get(p.uid); if (!s) byUid.set(p.uid, s = new Set()); s.add(p); }
+function unindexPlayer(p) { const s = byUid.get(p.uid); if (s) { s.delete(p); if (!s.size) byUid.delete(p.uid); } }
 const ipCount = new Map();
 let nextPid = 1;
 let chant = null, chantTimer = null, lastChantEnd = 0, lastGlobalBell = 0;
@@ -776,8 +782,7 @@ function confirmDonation(d, info) {
   store.save();
   io.emit('donation', { d: publicDonation(d), funds: fundsSummary() });
   sys(`${d.anon ? 'Một Phật tử ẩn danh' : d.name} vừa cúng dường tịnh tài cho quỹ “${d.fundName}”. Tùy hỷ công đức.`);
-  for (const p of players.values()) {
-    if (p.uid !== uid) continue;
+  for (const p of tabsOf(uid)) {
     p.socket.emit('donation:ok', { code: d.code, amount: d.amount, fund: d.fundName, test: d.mode === 'test', merit: gain, aura: aura && { ...myAura(uid), up: aura.up } });
     if (aura) io.emit('aura', { pid: p.id, au: auraOf(p.uid), up: aura.up });
   }
@@ -812,11 +817,11 @@ const LOGIN_MSG = 'Cần đăng nhập Google để tu luyện và luận võ, v
 const accountReady = p => !auth.enabled || !!auth.sessionFor(p.socket.data.authKey);
 const BLOCK_SECRET = crypto.randomBytes(24);     // chỉ sống trong tiến trình: mã mờ chỉ dùng trong một phiên làm việc
 const blockHandle = uid => crypto.createHmac('sha256', BLOCK_SECRET).update(String(uid)).digest('base64url').slice(0, 16);
-function emitToUid(uid, ev, payload) { for (const q of players.values()) if (q.uid === uid) q.socket.emit(ev, payload); }
+function emitToUid(uid, ev, payload) { for (const q of tabsOf(uid)) q.socket.emit(ev, payload); }
 /* Trạng thái cửa hàng skin gửi riêng từng người (owned là của chính họ, không bao giờ gửi cho người khác). */
 function shopStateFor(uid) { return { ok: true, ...shop.publicConfig(), owned: shop.owned(accountOf(uid)) }; }
 function pushShopState(q) { if (KYDAO_ENABLED) q.socket.emit('kd:shop:state', shopStateFor(q.uid)); }
-function pushShopStateToUid(account) { for (const q of players.values()) if (accountOf(q.uid) === account) pushShopState(q); }
+function pushShopStateToUid(account) { for (const q of tabsOf(account)) pushShopState(q); }
 function pushShopStateToAll() { for (const q of players.values()) pushShopState(q); }
 function deliverUpdates(r) { if (r && r.updates) for (const u of r.updates) { emitToUid(u.uid, 'tu:update', u.update); syncCult(u.uid); } }
 /** Cấp pháp tướng (Lc), quỷ (Lq), hào quang (Ld) ngay lúc này; lấy từ đúng dữ liệu công đức / cúng dường đang chạy. */
@@ -832,7 +837,7 @@ const guestMartialState = () => {
     session: null, recent: [], speedup: { enabled: false, perDay: SPEEDUP_PER_DAY, usedToday: 0 }
   };
 };
-const otherInArena = p => { for (const q of players.values()) if (q !== p && q.uid === p.uid && q.place === 'arena') return true; return false; };
+const otherInArena = p => { for (const q of tabsOf(p.uid)) if (q !== p && q.place === 'arena') return true; return false; };
 
 /* ---------------- Tàng Kinh Các: ngồi bồ đoàn tu luyện ---------------- */
 /** Công pháp đang tu (để người khác thấy linh khí quanh người ngồi trên bồ đoàn). Khách hay chưa tu thì ''. */
@@ -851,8 +856,8 @@ function standUp(p) {
 }
 /** Phiên tu của tài khoản vừa đổi (bắt đầu, hủy, xong): ai đang ngồi bồ đoàn thì cập nhật linh khí. */
 function syncCult(uid) {
-  for (const q of players.values()) {
-    if (q.uid !== uid || !(q.sit >= 0)) continue;
+  for (const q of tabsOf(uid)) {
+    if (!(q.sit >= 0)) continue;
     const cm = cultMethodOf(q);
     if (cm !== (q.cm || '')) { q.cm = cm; io.emit('psit', sitInfo(q)); }
   }
@@ -896,7 +901,7 @@ function kdTrackTable(T) {
     const cur = kdSeat.get(uid) || { table: T.table, status: T.status, pids: [] };
     cur.pids.push(s.pid); kdSeat.set(uid, cur); kdPidUid.set(s.pid, uid);
     const [x, z] = YARD_TABLES[T.table - 1].seats[i];
-    for (const o of players.values()) if (o.uid === uid && o.scene === 'yard') { o.tx = x; o.tz = z; }
+    for (const o of tabsOf(uid)) if (o.scene === 'yard') { o.tx = x; o.tz = z; }
   });
 }
 /** Chuyển người chơi sang Sân chùa (khi nhận lời mời từ chánh điện mà có bàn trống). */
@@ -911,8 +916,7 @@ function kdGoYard(q) {
 }
 /** Gói gửi tới từng người chơi (mọi tab của uid). Vào ván thì thôi xem bàn khác; có bàn thật thì cả hai ra sân. */
 function kdEmit(uid, ev, payload) {
-  for (const q of players.values()) {
-    if (q.uid !== uid) continue;
+  for (const q of tabsOf(uid)) {
     if (ev === 'kd:start' && payload && payload.you) {
       q.kdWatch = null;
       if (payload.table) kdGoYard(q);
@@ -932,9 +936,9 @@ function kdLeave(p, why) { p.kdWatch = null; if (kydao) kydao.leave(kdUser(p), w
 function kydaoDropUser(guest) {
   if (!kydao) return;
   let q = null;
-  for (const o of players.values()) if (o.uid === guest) { q = o; break; }
+  for (const o of tabsOf(guest)) { q = o; break; }
   try { kydao.leave(q ? kdUser(q) : { uid: guest, pid: 0, name: '' }, 'account'); } catch (e) { console.error('[kydao] dropUser:', e && e.message); }
-  for (const o of players.values()) if (o.uid === guest) o.kdWatch = null;
+  for (const o of tabsOf(guest)) o.kdWatch = null;
 }
 /* Lưu bền (db.kydao): Elo từng người, ván đã xong (giữ 500), ván đang dở, bộ đếm cặp trong ngày. */
 function kdGetRating(uid, game) {
@@ -1031,7 +1035,7 @@ io.on('connection', socket => {
     };
     p.tx = p.x; p.tz = p.z;
     p.mkey = MERITS.visualKey(meritTotal(uid));
-    players.set(p.id, p);
+    players.set(p.id, p); indexPlayer(p);
     enterSceneRoom(p);
     socket.data.pid = p.id;
     rollDay(); bump('visits');
@@ -1655,15 +1659,32 @@ io.on('connection', socket => {
       fortuneQueue.remove(p.id);
       if (p.place === 'arena' && arena) leaveArena(p, 'disconnect');
       const gone = p;
-      players.delete(p.id); io.emit('pl', { id: p.id }); p = null;
+      players.delete(p.id); unindexPlayer(p); io.emit('pl', { id: p.id }); p = null;
       // còn tab khác của cùng tài khoản thì giữ nguyên chỗ ngồi và ván cờ
-      if (kydao && ![...players.values()].some(q => q.uid === gone.uid)) kydao.leave(kdUser(gone), 'disconnect');
+      if (kydao && !byUid.has(gone.uid)) kydao.leave(kdUser(gone), 'disconnect');
     }
   });
 });
 
 /* ---------------- vòng lặp ---------------- */
-let tick = 0, lastBoard = '';
+/** Gói vị trí: mỗi người 8 byte little-endian = id (uint32) + x*1000 (uint16) + z*1000 (uint16); sàn chuẩn hóa 0..1 nên tối đa 1000.
+ *  Chỉ gói người đã đổi vị trí ≥ POS_EPS (đơn vị 1/1000 sàn) so với lần gửi trước, hoặc đã tới đích (luôn gửi vị trí cuối chính xác). */
+const POS_EPS = 3;
+function packPositions(list) {
+  let out = null, n = 0;
+  for (const p of list) {
+    if (!p.dirty) continue;
+    const rx = Math.round(p.x * 1000), rz = Math.round(p.z * 1000);
+    const moved = p.sx === undefined || Math.abs(rx - p.sx) >= POS_EPS || Math.abs(rz - p.sz) >= POS_EPS;
+    const arrived = p.x === p.tx && p.z === p.tz;
+    if (!moved && !(arrived && (rx !== p.sx || rz !== p.sz))) { if (arrived) p.dirty = false; continue; }   // đang đi mà nhích quá ít thì giữ dirty, gửi ở nhịp sau
+    if (!out) out = Buffer.allocUnsafe((Array.isArray(list) ? list.length : players.size) * 8);
+    out.writeUInt32LE(p.id, n); out.writeUInt16LE(rx, n + 4); out.writeUInt16LE(rz, n + 6); n += 8;
+    p.sx = rx; p.sz = rz; p.dirty = false;
+  }
+  return n ? out.subarray(0, n) : null;
+}
+let tick = 0, lastBoard = [];
 function startLoops() {
 setInterval(() => {
   const dt = 0.05;
@@ -1678,8 +1699,8 @@ setInterval(() => {
   tick++;
   if (tick % 2 === 0) {
     const byScene = {};
-    for (const p of players.values()) if (p.dirty) { (byScene[p.scene] || (byScene[p.scene] = [])).push([p.id, Math.round(p.x * 1000), Math.round(p.z * 1000)]); p.dirty = false; }
-    for (const sc in byScene) io.to(sceneRoom(sc)).volatile.emit('p', byScene[sc]);
+    for (const p of players.values()) if (p.dirty) (byScene[p.scene] || (byScene[p.scene] = [])).push(p);
+    for (const sc in byScene) { const buf = packPositions(byScene[sc]); if (buf) io.to(sceneRoom(sc)).volatile.emit('p', buf); }
   }
   if (tick % 20 === 0) {
     const encounter = MARTIAL_ENABLED ? sweeper.tick() : { changed: false };
@@ -1704,8 +1725,8 @@ setInterval(() => {
   if (tick % 100 === 0) {
     pruneSparOffers();
     rollDay();
-    const b = JSON.stringify(board());
-    if (b !== lastBoard) { lastBoard = b; io.emit('board', JSON.parse(b)); }
+    const b = board();
+    if (!sameBoard(b, lastBoard)) { lastBoard = b; io.emit('board', b); }
     io.emit('stats', { today: db.today, online: players.size });
   }
   if (tick % 1200 === 0) {
@@ -1764,16 +1785,16 @@ async function main() {
     npcPool: createNpcPool({ size: 1 }),   // NPC Hắc Phong mức Toàn lực tính ở luồng phụ, không chặn vòng lặp chính
     now, setTimer: (fn, ms) => setTimeout(fn, ms), clearTimer: h => clearTimeout(h),
     // gói pk:* chỉ gửi cho tab đang ở Sân đấu (tab chánh điện của cùng tài khoản không nhận)
-    emit: (uid, ev, payload) => { for (const q of players.values()) if (q.uid === uid && q.place === 'arena') q.socket.emit(ev, payload); },
+    emit: (uid, ev, payload) => { for (const q of tabsOf(uid)) if (q.place === 'arena') q.socket.emit(ev, payload); },
     emitRoom: (ev, payload) => io.to('arena').emit(ev, payload),
-    isOnline: uid => { for (const q of players.values()) if (q.uid === uid) return true; return false; },
+    isOnline: uid => byUid.has(uid),
     fighterOf: uid => martial.pkIdentity(uid),
     buffInputsOf,
     recordResult: (uid, r) => {
       const res = martial.recordResult(uid, r);
       // hồ sơ võ học cần tên gần nhất để Bảng Vàng hiện được khi người đó vắng
       let nm = '';
-      for (const q of players.values()) if (q.uid === uid) { nm = q.name; break; }
+      for (const q of tabsOf(uid)) { nm = q.name; break; }
       if (!nm) nm = (db.merit[accountOf(uid)] || {}).name || '';
       if (nm) martial.setName(uid, nm);
       titlesSoon();
