@@ -8,7 +8,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const { startServer } = require('./helpers/live');
-const { connect, call, join, waitFor, sleep } = require('./helpers/client');
+const { connect, decodePositions, call, join, waitFor, sleep } = require('./helpers/client');
 
 const UID = { a: 'kd-uid-an-0000001', b: 'kd-uid-binh-000001', w: 'kd-uid-xem-0000001', o: 'kd-uid-ngoai-00001' };
 const MATE = [['a', 'f2f3'], ['b', 'e7e5'], ['a', 'g2g4'], ['b', 'd8h4']];    // chiếu hết kiểu "đồ đệ": Đen thắng sau 4 nửa nước
@@ -37,7 +37,7 @@ test('hai người ngồi bàn, chơi cờ vua tới chiếu hết, Elo ghi vào
   assert.equal(tables.tables.length, 4);
   assert.ok(tables.tables.every(x => x.status === 'free'));
 
-  const arrived = waitFor(A.s, 'p', arr => arr.some(q => q[0] === A.pid && Math.abs(q[1] - 125) <= 2 && Math.abs(q[2] - 500) <= 2), 8000);
+  const arrived = waitFor(A.s, 'p', arr => decodePositions(arr).some(q => q[0] === A.pid && Math.abs(q[1] - 125) <= 2 && Math.abs(q[2] - 500) <= 2), 8000);
   assert.equal((await ask(A, 'kd:sit', { table: 1, seat: 0 })).ok, true);
   assert.equal((await ask(B, 'kd:sit', { table: 1, seat: 1 })).ok, true);
   await arrived;     // nhân vật đi tới ghế 0 của bàn 1 (YARD_TABLES)
@@ -194,7 +194,7 @@ test('đổi cảnh, ngắt kết nối và vào lại khi đang ngồi hoặc �
   B.s.emit('move', { x: 0.5, z: 0.9 });
   await sleep(2200);
   assert.equal(B.s.log.slice(before).some(x => x.ev === 'kd:end'), false, 'B không bị đầu hàng');
-  assert.equal(B.s.log.slice(before).some(x => x.ev === 'p' && x.payload.some(q => q[0] === B.pid && q[2] > 880)), false);
+  assert.equal(B.s.log.slice(before).some(x => x.ev === 'p' && decodePositions(x.payload).some(q => q[0] === B.pid && q[2] > 880)), false);
   const list = await call(W.s, 'kd:tables', {});
   const t2 = list.tables.find(x => x.table === 2);
   assert.equal(t2.status, 'playing', 'ván bàn 2 vẫn chạy');
