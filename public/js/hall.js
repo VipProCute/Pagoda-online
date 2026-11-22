@@ -224,17 +224,18 @@
     { name: 'Obito', role: 'obito', look: { g: 'nam', c: 11, h: 2 }, lines: ['Không gian này có những bí mật riêng.', 'Đi một vòng Tàng Kinh Các, gặp toàn duyên cũ.', 'Mặt nạ này không che được tâm đâu.'] }
   ];
   const sweeperDef = { name: 'Tảo Địa Tăng', role: 'sweeper', look: { g: 'nam', c: 8, h: 2 }, lines: ['Quét lá cũng là quét tâm.', 'Lá rụng về cội, người tu về tâm.', 'Sân sạch thì lòng nhẹ, thí chủ ngồi chơi.'] };
-  let npcs = [], fortuneNpcs = null, npcRefresh = 0, npcNextSpeech = 0, sweeper = null;
-  function randomizeNpcs(now) {
+  let npcs = [], fortuneNpcs = null, npcSlot = null, npcNextSpeech = 0, sweeper = null;
+  // Khách vãng lai xáo theo đợt giờ máy chủ (Actors.npcSlotPlan): mọi máy cùng đợt thì thấy cùng cảnh, cùng chỗ.
+  function randomizeNpcs(slot) {
     const pool = npcDefs.filter(d => d.role !== 'beggar' && d.role !== 'wanderer');
-    for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+    const plan = Actors.npcSlotPlan(slot, pool.length, 8);
     const t = serverNow();
     npcs = [];
     ['hall', 'yard', 'library', 'arena'].forEach((place, n) => {
       for (let i = 0; i < 2; i++) {
-        const def = pool[n * 2 + i];
+        const def = pool[plan[n * 2 + i].pool];
         npcs.push(new Actors.Npc({ id: -100 - n * 2 - i, name: def.name + ' · NPC', look: def.look, scene: place, at: place === 'arena' ? 'arena' : 'hall', mt: def.demon ? -1000 : 0,
-          seed: Math.random() * 4294967296, area: place === 'library' ? Actors.LIBRARY : Actors.FLOOR, t }, def));
+          seed: plan[n * 2 + i].seed, area: place === 'library' ? Actors.LIBRARY : Actors.FLOOR, t }, def));
       }
     });
     // NPC cơ duyên tạo một lần, không đổi theo đợt (mọi máy cùng thấy, máy chủ kiểm được khoảng cách).
@@ -243,11 +244,11 @@
       return new Actors.FortuneNpc({ id: -300 - i, name: def.name + ' · NPC', look: def.look, scene: f.scene, at: 'hall', seed: f.seed, area: f.area, t }, def);
     });
     npcs.push(...fortuneNpcs);
-    npcRefresh = now + rand(90000, 150000);
+    npcSlot = slot;
   }
   function updateNpcs(now, dt) {
-    if (!npcRefresh || now >= npcRefresh) randomizeNpcs(now);
-    const srv = serverNow();
+    const srv = serverNow(), slot = Actors.npcSlotOf(srv);
+    if (slot !== npcSlot) randomizeNpcs(slot);
     const visible = npcs.filter(p => viewOf(p) === scene);
     if (scene === 'library' && sweeper && sweeper.until > srv) visible.push(sweeper);
     for (const p of visible) p.think(now, dt, srv, reduceMotion);   // cùng một kiểu đi lang thang cho mọi NPC

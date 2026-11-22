@@ -73,6 +73,40 @@
     return best;
   }
 
+  // Khách vãng lai đổi cảnh theo "đợt" giờ máy chủ: mọi máy cùng đợt thì cùng xáo, cùng hạt giống đường đi.
+  const NPC_SLOT_MS = 120000;
+  /** Bộ số giả ngẫu nhiên có hạt giống (mulberry32), trả hàm cho số trong [0, 1). */
+  function mulberry32(seed) {
+    let s = seed >>> 0;
+    return () => {
+      s = (s + 0x6d2b79f5) >>> 0;
+      let t = Math.imul(s ^ (s >>> 15), 1 | s);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  /** Chỉ số đợt chứa thời điểm t (ms giờ máy chủ). */
+  const npcSlotOf = t => Math.floor(t / NPC_SLOT_MS);
+  /** Kế hoạch của một đợt: xáo `poolSize` mẫu NPC, lấy `count` người đầu, mỗi người một hạt giống đường đi.
+   *  Thuần tuý, chỉ phụ thuộc (slot, poolSize, count). Phần tử i: { pool: chỉ số mẫu, seed }. */
+  function npcSlotPlan(slot, poolSize, count) {
+    const rnd = mulberry32(seedOf('npc-slot:' + slot));
+    const idx = Array.from({ length: poolSize }, (_, i) => i);
+    for (let i = idx.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [idx[i], idx[j]] = [idx[j], idx[i]]; }
+    return idx.slice(0, count).map(pool => ({ pool, seed: Math.floor(rnd() * 4294967296) }));
+  }
+
+  const NPC_SCENES = Object.freeze(['hall', 'yard', 'library', 'arena']);   // mỗi cảnh 2 NPC thường, theo thứ tự này
+  /** Danh sách NPC thường ở thời điểm t (giờ máy chủ): `roles` là vai của từng mẫu trong kho (cùng thứ tự ở mọi nơi).
+   *  Trả [{ index, role, scene, seed, area, x, z }]. Máy chủ có thể dùng để biết ai đang đứng đâu (vd. Hắc Phong, Ngọa Long). */
+  function npcRosterAt(t, roles) {
+    const plan = npcSlotPlan(npcSlotOf(t), roles.length, NPC_SCENES.length * 2);
+    return plan.map((e, i) => {
+      const scene = NPC_SCENES[i >> 1], area = scene === 'library' ? LIBRARY : FLOOR, p = wanderAt(e.seed, area, t);
+      return { index: e.pool, role: roles[e.pool], scene, seed: e.seed, area, x: p.x, z: p.z };
+    });
+  }
+
   class Actor {
     constructor(o) {
       this.id = o.id; this.name = o.name; this.look = o.look;
@@ -142,7 +176,7 @@
 
   const api = {
     X_WEIGHT, LEG_MS, WALK_SPEED, TALK_RANGE, TALK_SLACK_MS, FLOOR, LIBRARY, FORTUNE_NPCS, SWEEPER,
-    seedOf, wanderAt, distanceTo, Actor, Player, Npc, FortuneNpc
+    seedOf, wanderAt, distanceTo, NPC_SLOT_MS, mulberry32, npcSlotOf, npcSlotPlan, NPC_SCENES, npcRosterAt, Actor, Player, Npc, FortuneNpc
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.Actors = api;
