@@ -962,3 +962,30 @@ test('Kỳ Đài 3D: đổi bộ đá 20 lần không tăng bộ nhớ GPU; disp
     assert.deepEqual([after.geometries, after.textures], [0, 0], game + ': dispose giải phóng mọi hình và texture');
   }
 });
+
+test('Cờ tướng úp 3D: quân úp lật ngửa khi bị đi tới, lật xong dọn mặt úp; giảm chuyển động thì đổi ngay', async () => {
+  const { env, view } = await openBoard('jieqi');
+  const st = Xiangqi.view(Xiangqi.create({ variant: 'jieqi', seed: 3 }));
+  const T0 = performance.now() + 9000;
+  view.setState({ game: 'jieqi', ...st }); env.flushAt(T0);
+  const from = st.board.findIndex((ch, i) => ch === 'X' && i + 9 < 90 && !st.board[i + 9]), to = from + 9;
+  assert.ok(from >= 0, 'có quân úp đi thẳng được một ô');
+  const after = st.board.slice(); after[to] = 'R'; after[from] = '';
+  const name = i => 'abcdefghi'[i % 9] + Math.floor(i / 9);
+  const count = () => { let n = 0; renderedScene.traverse(o => { if (o.type === 'Group' && o.parent && o.parent.parent === renderedScene) n++; }); return n; };
+  const before = count();
+  view.setState({ game: 'jieqi', ...st, board: after, last: [name(from), name(to)] });
+  env.flushAt(T0 + 100);
+  assert.equal(count(), before + 1, 'mặt úp còn trên bàn trong lúc lật');
+  env.flushAt(T0 + 5000);
+  assert.equal(count(), before, 'lật xong thì dọn mặt úp');
+  const piece = pieceAt(to % 9 - 4, 4.5 - Math.floor(to / 9));
+  assert.ok(piece && piece.visible && piece.rotation.x === 0);
+  const calm = await openBoard('jieqi');
+  calm.env.media.matches = true;
+  calm.view.setState({ game: 'jieqi', ...st }); calm.env.flushAt(T0);
+  const n0 = count();
+  calm.view.setState({ game: 'jieqi', ...st, board: after, last: [name(from), name(to)] }); calm.env.flushAt(T0 + 100);
+  assert.equal(count(), n0, 'giảm chuyển động: không dựng mặt úp phụ');
+  view.dispose(); calm.view.dispose();
+});

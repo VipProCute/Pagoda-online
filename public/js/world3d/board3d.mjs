@@ -4,6 +4,7 @@
 import * as THREE from '/vendor/three/three.module.js?v=0.187.0';
 
 const FILES = 'abcdefghijklmno';
+const FLIP_MS = 520; // thời gian lật quân úp (cờ tướng úp)
 const GO_FILES = 'ABCDEFGHJKLMNOPQRST';
 const HAN = { r: ['俥', '車'], n: ['傌', '馬'], b: ['相', '象'], a: ['仕', '士'], k: ['帥', '將'], c: ['炮', '砲'], p: ['兵', '卒'] };
 const VIET = { r: 'Xe', n: 'Mã', b: 'Tượng', a: 'Sĩ', k: 'Tướng', c: 'Pháo', p: 'Tốt' };
@@ -840,6 +841,7 @@ export function createBoard3D({ canvas, game, skins: catalogInput, quality: qual
   function visual(ch, old) {
     const id = visualId(ch);
     if (old && old.id === id) return old;
+    if (old) endFlip(old);
     const v = template(ch), record = { ...v, ch, target: old ? old.target.clone() : new THREE.Vector3(), from: old ? old.from.clone() : new THREE.Vector3(), started: old ? old.started : 0 };
     if (old) {
       record.group.position.copy(old.group.position);
@@ -847,6 +849,35 @@ export function createBoard3D({ canvas, game, skins: catalogInput, quality: qual
       board.remove(old.group);
     }
     board.add(record.group); return record;
+  }
+  /* Cờ tướng úp: quân úp ('x'/'X') lật ngửa khi bị đi tới. Mặt úp quay nửa vòng xuống, mặt thật quay lên từ phía dưới.
+   * Chỉ là hoạt ảnh; thế cờ vẫn do máy chủ quyết, trình duyệt không biết danh tính quân trước khi máy chủ gửi. */
+  const isHiddenCh = ch => typeof ch === 'string' && ch.toLowerCase() === 'x' && !layout.stones && !layout.chess;
+  function endFlip(record) {
+    if (!record || !record.flip) return;
+    board.remove(record.flip.back); record.flip = null;
+    record.group.visible = true; record.group.rotation.x = 0;
+  }
+  function startFlip(record, hiddenCh) {
+    if (!record || calm() || !isHiddenCh(hiddenCh)) return;
+    const back = template(hiddenCh).group; board.add(back);
+    record.group.visible = false; record.flip = { back, started: 0 };
+  }
+  function stepFlips(now) {
+    let busy = false;
+    for (const p of pieces.values()) if (p.flip) {
+      if (!p.flip.started) p.flip.started = now;
+      const t = Math.min(1, (now - p.flip.started) / FLIP_MS);
+      if (t >= 1) { endFlip(p); p.group.position.copy(p.target); continue; }
+      const base = p.started ? p.group.position.clone() : p.target.clone(), a = Math.PI * t;
+      const up = a < Math.PI / 2, spin = up ? a : a - Math.PI, lift = 0.5 * Math.sin(a);
+      p.flip.back.visible = up; p.group.visible = !up;
+      for (const g of [p.flip.back, p.group]) {
+        g.rotation.x = spin; g.position.set(base.x, base.y + lift + 0.15 * (1 - Math.cos(spin)), base.z - 0.15 * Math.sin(spin));
+      }
+      busy = true;
+    }
+    return busy;
   }
   function travel(record, target, animate) {
     record.from.copy(record.group.position); record.target.copy(target);
@@ -1449,6 +1480,7 @@ export function createBoard3D({ canvas, game, skins: catalogInput, quality: qual
       p.group.position.lerpVectors(p.from, p.target, eased);
       if (t === 1) p.started = 0; else moving = true;
     }
+    if (stepFlips(now)) moving = true;
     shake.x = 0; shake.y = 0;
     const busy = effects.size > 0 && stepFx(now);
     if (shake.x || shake.y || shaken) {
@@ -1476,7 +1508,7 @@ export function createBoard3D({ canvas, game, skins: catalogInput, quality: qual
     let next = Array.from(o.board || o.cells || []);
     if (game === 'gomoku' && !o.board) next = Array.from({ length: layout.rows }, (_, r) => next.slice((layout.rows - 1 - r) * layout.cols, (layout.rows - r) * layout.cols)).flat();
     if (next.length !== layout.cols * layout.rows) throw new Error('Số ô không khớp với bàn.');
-    if (resized) { previous = []; for (const p of pieces.values()) board.remove(p.group); pieces.clear(); }
+    if (resized) { previous = []; for (const p of pieces.values()) { endFlip(p); board.remove(p.group); } pieces.clear(); }
     const languageChanged = vi !== !!o.vi;
     if (!surface || resized || languageChanged) rebuildBoard();
     const piecesChanged = applySkins(readSkins(o));
@@ -1488,7 +1520,9 @@ export function createBoard3D({ canvas, game, skins: catalogInput, quality: qual
     next.forEach((ch, index) => {
       if (!ch) return;
       const oldIndex = delta.pairs.get(index), old = pieces.get(oldIndex);
+      const hiddenBefore = old && old.ch !== ch && isHiddenCh(old.ch) && !isHiddenCh(ch) ? old.ch : null;
       const record = visual(ch, old); if (old) retained.add(old);
+      if (hiddenBefore) startFlip(record, hiddenBefore);
       if (!old) record.group.position.copy(targetAt(index));
       // Une sélection répétée ne redémarre pas une glissade en cours.
       const target = targetAt(index);
@@ -1499,6 +1533,7 @@ export function createBoard3D({ canvas, game, skins: catalogInput, quality: qual
       for (const p of captured) board.remove(p.group); captured = [];
     }
     for (const [index, record] of pieces) if (!retained.has(record)) {
+      endFlip(record);
       if (delta.captured.includes(index)) {
         captured.push(record);
         const side = layout.stones ? record.ch === 'a' : record.ch === record.ch.toUpperCase();
